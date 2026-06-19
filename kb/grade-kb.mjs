@@ -98,8 +98,12 @@ export async function gradeQuestion(q, { store, k, variant }) {
   const anyKHit = paths.some((p) => pathMatches(p, q.wantPaths)) ? 1 : 0;
   const M1 = W_M1_TOP1 * top1Hit + W_M1_ANYK * anyKHit;
 
-  // M2 — answer correctness/completeness over the assembled top-k full docs
-  const answer = topK.map((r) => `${r.path}\n${r.fullText || r.text || ''}`).join('\n\n').toLowerCase();
+  // M2 — answer correctness/completeness over the assembled top-k full docs.
+  // Collapse whitespace so a multi-word mustContain phrase that is genuinely present but
+  // WRAPPED across a newline (e.g. "not the\nraw image") still matches — a line-wrap is not
+  // a content gap. Substring matching stays case-insensitive (contains() lowercases).
+  const answer = topK.map((r) => `${r.path}\n${r.fullText || r.text || ''}`).join('\n\n')
+    .replace(/\s+/g, ' ').toLowerCase();
   const coverage = frac(q.mustContain, answer);
   const niceToHave = frac(q.niceToHave, answer);
   const penaltyFrac = frac(q.forbidden, answer);

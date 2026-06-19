@@ -1,0 +1,21 @@
+{ "dimension": "onboarding", "query": "I just got this repo. How do I install, build, run, and test ruqu from scratch? Give me the exact commands.", "mustContain": ["cargo add ruqu-core", "cargo build", "cargo test", "wasm-pack build", "npx @ruvector/ruqu"] }
+{ "dimension": "onboarding", "query": "What is the fastest way to see ruqu actually run something, with no Rust toolchain set up?", "mustContain": ["npx @ruvector/ruqu", "simulate", "qubits"] }
+{ "dimension": "onboarding", "query": "How do I build the WebAssembly bundle so ruqu runs in a browser?", "mustContain": ["wasm-pack build", "ruqu-wasm", "--target web"] }
+{ "dimension": "what-it-is", "query": "What is ruqu and what specific problem does it solve for me?", "mustContain": ["quantum", "state-vector", "simulator", "no quantum hardware", "Rust"] }
+{ "dimension": "what-it-is", "query": "Why would I use ruqu instead of running on a real quantum computer, and what are its answers like?", "mustContain": ["exact", "no quantum hardware", "simulator"] }
+{ "dimension": "what-it-is", "query": "What does 'state-vector simulator' mean in ruqu and why does it matter?", "mustContain": ["full quantum state", "complex amplitudes", "exact"] }
+{ "dimension": "architecture", "query": "What crates make up ruqu and how do they depend on each other? Which crate is the foundation?", "mustContain": ["ruqu-core", "ruqu-algorithms", "ruqu-exotic", "ruqu-wasm", "coherence"] }
+{ "dimension": "architecture", "query": "If I change something in ruqu-core, which other crates could be affected?", "mustContain": ["ruqu-algorithms", "ruqu-exotic", "ruqu-wasm"] }
+{ "dimension": "architecture", "query": "What is the coherence engine (ruQu) and where does it sit relative to the simulator crates?", "mustContain": ["coherence", "ruQu"] }
+{ "dimension": "capabilities", "query": "What can ruqu do? List the algorithms and features it ships with.", "mustContain": ["VQE", "Grover", "QAOA", "Surface Code", "noise"] }
+{ "dimension": "capabilities", "query": "Which CLI commands does ruqu expose and what does each do?", "mustContain": ["simulate", "grover", "qaoa", "capabilities", "doctor"] }
+{ "dimension": "capabilities", "query": "What quantum algorithms come built in, and what does each one solve (chemistry, search, optimization, error correction)?", "mustContain": ["VQE", "Grover", "QAOA", "Surface Code"] }
+{ "dimension": "usage", "query": "Show me how to build and run a quantum circuit in ruqu-core — what are the key types and functions and a real example?", "mustContain": ["QuantumCircuit", "Simulator", "StateVector"] }
+{ "dimension": "usage", "query": "How do I run Grover's search with ruqu-algorithms? What is the function signature and config?", "mustContain": ["run_grover", "Grover"] }
+{ "dimension": "usage", "query": "What is the public API for picking a simulation backend — what function analyzes a circuit and what does it return?", "mustContain": ["analyze_circuit", "backend"] }
+{ "dimension": "best-practices", "query": "Is ruqu production-ready? What are its honest limits and how many qubits can it handle?", "mustContain": ["simulator", "no quantum hardware", "qubit", "MIT"] }
+{ "dimension": "best-practices", "query": "What is experimental or quantum-inspired in ruqu that I should treat with caution?", "mustContain": ["exotic", "experimental"] }
+{ "dimension": "best-practices", "query": "What are the gotchas around qubit count and memory when running large circuits?", "mustContain": ["qubit", "memory", "state-vector"] }
+{ "dimension": "extensibility", "query": "If I want to add a new quantum algorithm, which crate should it go in and what does it depend on?", "mustContain": ["ruqu-algorithms", "ruqu-core"] }
+{ "dimension": "extensibility", "query": "How would I safely add a new gate or backend to ruqu-core without breaking the algorithms or wasm crates?", "mustContain": ["ruqu-core", "backend"] }
+{ "dimension": "extensibility", "query": "Where do I add a new CLI subcommand or wasm binding, and what wires the Rust simulator to JavaScript?", "mustContain": ["ruqu-wasm", "wasm-bindgen"] }

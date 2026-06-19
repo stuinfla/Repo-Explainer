@@ -16,7 +16,7 @@
 //
 // Env overrides: KB_TRANSFORMERS_PATH, KB_MODEL_CACHE (see ask-kb.mjs).
 
-import { searchKb } from './ask-kb.mjs';
+import { searchKb, lookupSymbol, getEntrypoints, getDepGraph } from './ask-kb.mjs';
 import { targets, defaultTarget } from './kb.config.mjs';
 
 const PROTOCOL_VERSION = '2024-11-05';
@@ -54,6 +54,38 @@ const TOOLS = [
       required: ['query'],
     },
   },
+  {
+    name: 'lookup_symbol',
+    description:
+      `EXACT public-API lookup over the ${META_NAME} symbol index (<store>-symbols.json). Given a `
+      + 'name substring, returns matching functions/structs/enums/traits/modules with their signature, '
+      + 'module path, source file:line, and doc summary. Use this for "what is the signature of X" / '
+      + '"where is X defined" instead of semantic search.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Symbol name or module substring (case-insensitive).' },
+        store: { type: 'string', enum: STORE_SLUGS, default: DEFAULT_STORE },
+        kind: { type: 'string', description: 'Optional kind filter: fn|struct|enum|trait|module|type_alias|const.' },
+        limit: { type: 'integer', default: 25 },
+      },
+      required: ['name'],
+    },
+  },
+  {
+    name: 'get_entrypoints',
+    description:
+      `The ${META_NAME} build/test/run/install commands + binaries (<store>-entrypoints.json). Use to `
+      + 'answer "how do I build/test/run/install this" with the EXACT commands.',
+    inputSchema: { type: 'object', properties: { store: { type: 'string', enum: STORE_SLUGS, default: DEFAULT_STORE } } },
+  },
+  {
+    name: 'get_dep_graph',
+    description:
+      `The ${META_NAME} component dependency graph (<store>-dep-graph.json): which crates/packages `
+      + 'depend on which, + external deps. Use for architecture / blast-radius reasoning before editing.',
+    inputSchema: { type: 'object', properties: { store: { type: 'string', enum: STORE_SLUGS, default: DEFAULT_STORE } } },
+  },
 ];
 
 // ---------- minimal JSON-RPC over stdio (newline-delimited, also tolerates LSP framing) ----------
@@ -84,27 +116,43 @@ async function handle(msg) {
     case 'tools/call': {
       const name = params?.name;
       const args = params?.arguments || {};
-      if (name !== 'search_kb') return err(id, -32602, `unknown tool: ${name}`);
+      const store = String(args.store || DEFAULT_STORE).trim();
+      if (!KNOWN_STORES.has(store)) return err(id, -32602, `store must be one of: ${STORE_SLUGS.join(', ')}`);
       try {
-        const query = String(args.query || '').trim();
-        const store = String(args.store || DEFAULT_STORE).trim();
-        const k = Math.max(1, parseInt(args.k ?? 6, 10) || 6);
-        if (!query) return err(id, -32602, 'query is required');
-        if (!KNOWN_STORES.has(store)) return err(id, -32602, `store must be one of: ${STORE_SLUGS.join(', ')}`);
-        const results = await searchKb({ query, k, store });
-        const text = results.map((r, i) =>
-          `#${i + 1}  (distance ${r.bestDistance.toFixed(4)})\n`
-          + `path : ${r.path}\n`
-          + `title: ${r.title}\n`
-          + `----- full document (${r.fullText.length} chars, ${r.chunksJoined} chunk(s)${r.truncated ? ', truncated' : ''}) -----\n`
-          + `${r.fullText}\n`
-        ).join('\n========================================================\n\n');
-        return ok(id, {
-          content: [{ type: 'text', text: text || '(no results)' }],
-          isError: false,
-        });
+        if (name === 'search_kb') {
+          const query = String(args.query || '').trim();
+          const k = Math.max(1, parseInt(args.k ?? 6, 10) || 6);
+          if (!query) return err(id, -32602, 'query is required');
+          const results = await searchKb({ query, k, store });
+          const text = results.map((r, i) =>
+            `#${i + 1}  (distance ${r.bestDistance.toFixed(4)})\n`
+            + `path : ${r.path}\n`
+            + `title: ${r.title}\n`
+            + `----- full document (${r.fullText.length} chars, ${r.chunksJoined} chunk(s)${r.truncated ? ', truncated' : ''}) -----\n`
+            + `${r.fullText}\n`
+          ).join('\n========================================================\n\n');
+          return ok(id, { content: [{ type: 'text', text: text || '(no results)' }], isError: false });
+        }
+        if (name === 'lookup_symbol') {
+          const r = lookupSymbol(store, String(args.name || ''), { kind: args.kind, limit: Math.max(1, parseInt(args.limit ?? 25, 10) || 25) });
+          if (!r.available) return ok(id, { content: [{ type: 'text', text: `no ${store}-symbols.json present` }], isError: true });
+          const text = `${r.count} symbol(s) matching "${args.name}" (via ${r.method}):\n\n`
+            + r.matches.map((s) => `${s.kind} ${s.signature}\n   @ ${s.file}:${s.line}${s.doc ? `\n   ${s.doc}` : ''}`).join('\n\n');
+          return ok(id, { content: [{ type: 'text', text }], isError: false });
+        }
+        if (name === 'get_entrypoints') {
+          const e = getEntrypoints(store);
+          if (!e) return ok(id, { content: [{ type: 'text', text: `no ${store}-entrypoints.json present` }], isError: true });
+          return ok(id, { content: [{ type: 'text', text: JSON.stringify({ workspace: e.workspace, install: e.install, quickstart: e.quickstart, binaries: e.binaries, commands: e.commands }, null, 2) }], isError: false });
+        }
+        if (name === 'get_dep_graph') {
+          const g = getDepGraph(store);
+          if (!g) return ok(id, { content: [{ type: 'text', text: `no ${store}-dep-graph.json present` }], isError: true });
+          return ok(id, { content: [{ type: 'text', text: JSON.stringify({ nodes: g.nodes.map((nn) => ({ name: nn.name, ecosystem: nn.ecosystem, description: nn.description })), internalEdges: g.internalEdges, externalDepNames: g.externalDepNames }, null, 2) }], isError: false });
+        }
+        return err(id, -32602, `unknown tool: ${name}`);
       } catch (e) {
-        return ok(id, { content: [{ type: 'text', text: `search_kb error: ${e.message}` }], isError: true });
+        return ok(id, { content: [{ type: 'text', text: `${name} error: ${e.message}` }], isError: true });
       }
     }
     default:

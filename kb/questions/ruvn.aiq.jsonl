@@ -1,0 +1,25 @@
+// ruvn.aiq.jsonl — AI-comprehension question battery (dimensions 1-6 + 8; dim-7 deep-dive is
+// generated at runtime from random buried files). Facts verified against .targets/ruvn 2026-06-19
+// (README.md, CLAUDE.md, package.json, bin/cli.js, src/agents/*.ts, src/init.ts,
+// scripts/openrouter-validate.mjs, __tests__/*). mustContain = anchors used only by the --dry proxy.
+{ "dimension": "onboarding", "query": "I just got this repo. How do I install, run, and test ruvn from scratch, including running it with no install? Give me the exact commands.", "mustContain": ["npm i -g @ruvnet/ruvn", "ruvn init", "ruvn doctor", "npx @ruvnet/ruvn", "npm test"] }
+{ "dimension": "onboarding", "query": "What is the fastest way to see ruvn actually do something, and what does `ruvn doctor` check?", "mustContain": ["ruvn doctor", "ruvn init", "kernel", "host adapter"] }
+{ "dimension": "onboarding", "query": "How do I validate ruvn end-to-end against a real model, and what env var do I need?", "mustContain": ["validate:openrouter", "OPENROUTER_API_KEY", "agents"] }
+{ "dimension": "what-it-is", "query": "What is ruvn and what specific problem does it solve for me?", "mustContain": ["research", "graded", "cited", "dossier", "evidence"] }
+{ "dimension": "what-it-is", "query": "Why would I use ruvn instead of just asking an AI a research question directly? What does it give me back?", "mustContain": ["grades every source", "cited", "dossier", "bibliography"] }
+{ "dimension": "what-it-is", "query": "What does a 'graded, cited evidence dossier' mean in ruvn, and what is ruvn explicitly NOT?", "mustContain": ["TL;DR", "bibliography", "not", "medical advice"] }
+{ "dimension": "architecture", "query": "What are the six agents in ruvn, in what order do they run, and how does information flow between them?", "mustContain": ["scout", "web-searcher", "source-grader", "synthesizer", "fact-checker", "citer"] }
+{ "dimension": "architecture", "query": "What does ruvn depend on (kernel, hosts), and how is the package structured? Which hosts does it support?", "mustContain": ["@metaharness/kernel", "host", "9 hosts"] }
+{ "dimension": "architecture", "query": "What does it mean that 'each agent only sees the previous agent's output', and why is the pipeline built that way?", "mustContain": ["previous agent", "grading", "verification", "gates"] }
+{ "dimension": "capabilities", "query": "What can ruvn do? List the pipeline stages and what each agent produces.", "mustContain": ["scout", "source-grader", "synthesizer", "fact-checker", "citer", "A/B/C/D"] }
+{ "dimension": "capabilities", "query": "How does ruvn grade sources — what do grades A, B, C, and D mean, and which grades is the synthesizer allowed to use?", "mustContain": ["primary source", "tertiary", "discard", "grade A and B"] }
+{ "dimension": "capabilities", "query": "Which CLI commands does ruvn expose and what does each do?", "mustContain": ["init", "doctor", "--version", "--help"] }
+{ "dimension": "usage", "query": "Show me how to actually run a research question through ruvn end-to-end and what I get back. What is the real workflow?", "mustContain": ["ruvn init", "Claude Code", "pipeline", "dossier"] }
+{ "dimension": "usage", "query": "What does each agent's SYSTEM_PROMPT instruct it to do, and what model tier runs each one?", "mustContain": ["SYSTEM_PROMPT", "TIER", "sonnet", "haiku"] }
+{ "dimension": "usage", "query": "How do I drive the CLI from code? What is the signature of the dispatcher and how do the tests call it?", "mustContain": ["run", "argv", "doctor", "exit code"] }
+{ "dimension": "best-practices", "query": "Is ruvn production-ready? What are its honest limits and scope?", "mustContain": ["research tool", "not", "medical advice", "starting dossier"] }
+{ "dimension": "best-practices", "query": "What are the gotchas around cost and latency when running ruvn, and where does the web search actually happen?", "mustContain": ["six", "model", "WebSearch", "host"] }
+{ "dimension": "best-practices", "query": "Why might my ruvn dossier come back empty or thin, and is that a bug?", "mustContain": ["grade A", "B", "only", "by design"] }
+{ "dimension": "extensibility", "query": "How do I add a new research agent to ruvn? What file does it go in, what does it export, and how do I keep the pipeline working?", "mustContain": ["src/agents", "SYSTEM_PROMPT", "NAME", "TIER", "pipeline"] }
+{ "dimension": "extensibility", "query": "Where is the A/B/C/D grading rubric defined and how do I safely change it without breaking ruvn's trust guarantee?", "mustContain": ["source-grader", "synthesizer", "grade A and B", "CLAUDE.md"] }
+{ "dimension": "extensibility", "query": "How do I change which model tier an agent uses, and how do I add a new CLI subcommand or a new host?", "mustContain": ["TIER", "TIER_MODEL", "bin/cli.js", "package.json"] }

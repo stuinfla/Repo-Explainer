@@ -24,7 +24,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadRvf, loadTransformers, configureModel } from './resolve-deps.mjs';
+import { loadRvf, loadTransformers, configureModel, chooseModelCache } from './resolve-deps.mjs';
 import { targets } from './kb.config.mjs';
 
 const KB_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -55,12 +55,24 @@ function primerPath(slug) {
   return fs.existsSync(local) ? local : legacy;
 }
 
+// Resolve the ship variant: a single-768 build (recipe v1.3.0) writes only <slug>-kb.big.rvf;
+// the legacy dual-variant build writes <slug>-kb.small.rvf. Prefer .big.rvf when present so the
+// primer is embedded with — and ingested into — the SAME store/model the corpus used.
+function resolveRvf(slug) {
+  const big = path.join(sd(slug), `${slug}-kb.big.rvf`);
+  const plain = path.join(sd(slug), `${slug}-kb.rvf`); // single-384 build (recipe v1.3.1)
+  const small = path.join(sd(slug), `${slug}-kb.small.rvf`);
+  if (fs.existsSync(big)) return big;
+  if (fs.existsSync(plain)) return plain;
+  return small;
+}
+
 // STORES is DERIVED from the config registry — NO hard-coded repo names.
 const STORES = Object.fromEntries(Object.keys(targets).map((slug) => {
   const ri = resolveIndex(slug);
   return [slug, {
     primer: primerPath(slug),
-    rvf: path.join(sd(slug), `${slug}-kb.small.rvf`),
+    rvf: resolveRvf(slug),
     passages: path.join(sd(slug), `${slug}-kb.passages.jsonl`),
     index: ri.index,
     chunkStyle: ri.chunkStyle,
@@ -173,13 +185,24 @@ async function main() {
     + `start-id=${startId + 1} (before: index=${beforeEntries}, passages.maxId=${beforePassages})`);
 
   // ---- embed (same model/pooling/normalize as the corpus build) ----
+  // Read the embedder config the build wrote next to the .rvf (<rvf>.embed.json). For a single-768
+  // bge store that is { model: bge, pooling: cls } so the primer is embedded with the SAME model
+  // (else 384-dim vectors would be rejected by a 768-dim store). PASSAGES get NO query prefix.
+  const embedCfg = (() => {
+    const p = `${conf.rvf}.embed.json`;
+    if (fs.existsSync(p)) { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { /* fall through */ } }
+    return { model: 'Xenova/all-MiniLM-L6-v2', pooling: 'mean', normalize: true };
+  })();
+  const EMBED_MODEL = embedCfg.model || 'Xenova/all-MiniLM-L6-v2';
+  const EMBED_POOLING = embedCfg.pooling || 'mean';
   const { mod: rvfMod, via: rvfVia } = loadRvf();
   const { RvfDatabase } = rvfMod;
-  const { T, modelCache, via: tVia } = await loadTransformers();
-  const { haveLocalModel } = configureModel(T, modelCache);
-  console.log(`[index-primer:${store}] rvf via ${rvfVia} | transformers via ${tVia} | model `
-    + `${haveLocalModel ? 'local' : 'remote'} (${modelCache})`);
-  const fe = await T.pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { quantized: true });
+  const { T, via: tVia } = await loadTransformers();
+  const modelCache = chooseModelCache(EMBED_MODEL);
+  const { haveLocalModel } = configureModel(T, modelCache, EMBED_MODEL);
+  console.log(`[index-primer:${store}] rvf via ${rvfVia} | transformers via ${tVia} | model ${EMBED_MODEL} `
+    + `${haveLocalModel ? 'local' : 'remote'} (${modelCache}) | pooling ${EMBED_POOLING}`);
+  const fe = await T.pipeline('feature-extraction', EMBED_MODEL, { quantized: true });
 
   // ---- append: ingest into .rvf (read-write), passages.jsonl, and the index ----
   const db = await RvfDatabase.open(conf.rvf);
@@ -189,7 +212,7 @@ async function main() {
   try {
     for (let i = 0; i < entries.length; i += BATCH) {
       const batch = entries.slice(i, i + BATCH);
-      const out = await fe(batch.map((e) => e.text), { pooling: 'mean', normalize: true });
+      const out = await fe(batch.map((e) => e.text), { pooling: EMBED_POOLING, normalize: true });
       const dim = out.dims[1];
       const ingest = batch.map((e, j) => {
         const id = String(startId + i + j + 1);

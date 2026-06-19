@@ -60,15 +60,27 @@ function indexFile(slug) {
 // STORES is DERIVED from the config registry — NO hard-coded repo names. The guard query for each
 // store is its first verificationQuery (a per-stage probe known to have a real answer); falls back
 // to a generic "what is <metaName>" when none is configured.
+// Resolve the ship variant the same way ask-kb / index-primer do: prefer the canonical un-suffixed
+// <slug>-kb.rvf (single-384 build, recipe v1.3.1), then the big variant, then the legacy small tag.
+function resolveRvf(slug) {
+  const plain = path.join(sd(slug), `${slug}-kb.rvf`);
+  const big = path.join(sd(slug), `${slug}-kb.big.rvf`);
+  const small = path.join(sd(slug), `${slug}-kb.small.rvf`);
+  if (fs.existsSync(plain)) return plain;
+  if (fs.existsSync(big)) return big;
+  return small;
+}
+
 const STORES = Object.fromEntries(Object.keys(targets).map((slug) => {
   const t = targets[slug];
   const guardQuery = (t.verificationQueries && t.verificationQueries[0] && t.verificationQueries[0].query)
     || `what is ${t.metaName || slug}`;
+  const rvf = resolveRvf(slug);
   return [slug, {
-    rvf: path.join(sd(slug), `${slug}-kb.small.rvf`),
+    rvf,
     passages: path.join(sd(slug), `${slug}-kb.passages.jsonl`),
     index: indexFile(slug),                                   // { entries: { id: {preview,...} } }
-    idmap: path.join(sd(slug), `${slug}-kb.small.rvf.idmap.json`),
+    idmap: `${rvf}.idmap.json`,
     query: guardQuery,
   }];
 }));

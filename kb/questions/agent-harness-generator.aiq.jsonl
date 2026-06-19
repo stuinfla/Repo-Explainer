@@ -1,0 +1,21 @@
+{ "dimension": "onboarding", "query": "I just got this repo. How do I install, scaffold a harness, build it, and run its tests from scratch? Give me the exact commands.", "mustContain": ["npx metaharness", "npm install", "npm run build", "npm test"] }
+{ "dimension": "onboarding", "query": "What is the fastest way to see metaharness actually produce a harness, with the least setup?", "mustContain": ["npx metaharness", "--wizard", "harness doctor"] }
+{ "dimension": "onboarding", "query": "How do I scaffold a coding harness for Claude Code in one command and then check it is healthy?", "mustContain": ["npx metaharness", "--template", "--host", "harness doctor"] }
+{ "dimension": "what-it-is", "query": "What is metaharness and what specific problem does it solve for me?", "mustContain": ["factory for agent frameworks", "harness is the product", "npx metaharness"] }
+{ "dimension": "what-it-is", "query": "Why would I use metaharness instead of forking ruflo, and what do I actually own after generating?", "mustContain": ["harness", "own", "brand"] }
+{ "dimension": "what-it-is", "query": "What does 'the harness is the product, not the generator' mean in metaharness?", "mustContain": ["harness", "generator", "own"] }
+{ "dimension": "architecture", "query": "What packages make up metaharness and how do they relate? What is the three-layer model?", "mustContain": ["kernel", "host-claude-code", "router", "three-layer"] }
+{ "dimension": "architecture", "query": "What is the kernel boundary and which packages are frozen vs free to change?", "mustContain": ["kernel", "@metaharness/kernel", "semver"] }
+{ "dimension": "architecture", "query": "If I change the kernel, what is the contract I must honor and what could break downstream?", "mustContain": ["kernel", "HostAdapter", "deprecation"] }
+{ "dimension": "capabilities", "query": "What can metaharness do? List the harness subcommands and what each does.", "mustContain": ["doctor", "validate", "score", "genome", "threat-model"] }
+{ "dimension": "capabilities", "query": "What can the tool do to a repo before and during scaffolding — scoring, genome, mcp-scan, threat-model, router, Darwin?", "mustContain": ["score", "genome", "mcp-scan", "threat-model", "router", "Darwin"] }
+{ "dimension": "capabilities", "query": "Which hosts can metaharness target and what are the main packages it ships?", "mustContain": ["claude-code", "codex", "kernel", "router", "host"] }
+{ "dimension": "usage", "query": "Show me how to define an agent, skill, and tool in code with the SDK — what are the functions and types and a real example?", "mustContain": ["defineAgent", "defineSkill", "defineTool", "AgentDef"] }
+{ "dimension": "usage", "query": "What is the public API of the Router — how do I construct it, what does route() return, and what options does it take?", "mustContain": ["Router", "route", "RouteResult", "RouterOptions"] }
+{ "dimension": "usage", "query": "What does a host adapter implement to turn a harness spec into config files? What is the function signature?", "mustContain": ["HostAdapter", "generateConfig", "HarnessSpec"] }
+{ "dimension": "best-practices", "query": "Is metaharness production-ready? What are its honest limits and what should I treat with caution?", "mustContain": ["v0.1.x beta", "kernel", "limit"] }
+{ "dimension": "best-practices", "query": "What are the performance budgets and the native vs WASM kernel tradeoff I should know about?", "mustContain": ["90s", "native", "WASM"] }
+{ "dimension": "best-practices", "query": "What are the gotchas around Codex trusted projects, Hermes thinking blocks, and the smoke gate?", "mustContain": ["Codex", "Hermes", "smoke"] }
+{ "dimension": "extensibility", "query": "How do I add a new host to metaharness? Which interface do I implement and which reference adapter should I copy?", "mustContain": ["HostAdapter", "host-claude-code", "generateConfig"] }
+{ "dimension": "extensibility", "query": "How do I add or modify a template, and what is the scaffold/render pipeline that turns a template into a harness?", "mustContain": ["scaffold", "render", "manifest"] }
+{ "dimension": "extensibility", "query": "How do I add a new vertical pack and a marketplace plugin safely without breaking the kernel API?", "mustContain": ["VerticalPack", "kernel", "plugin"] }

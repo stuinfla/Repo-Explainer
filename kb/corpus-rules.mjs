@@ -223,6 +223,34 @@ export function sourceBodies(ctx, rule) {
   return n;
 }
 
+// testsAndExamples — full bodies of TEST / EXAMPLE / BENCH source files under the roots. These are
+// the single best USAGE documentation a repo has (real call sites + expected results), so they are
+// ingested deliberately (sourceBodies excludes them on purpose; this rule is the complement). The
+// source_type tagger in build-kb.mjs marks each as 'test' or 'example' from its path. kind stays
+// 'source' so the existing source-routing/reranking treats them like code.
+export function testsAndExamples(ctx, rule) {
+  const exts = (rule.ext || ['.rs', '.ts', '.tsx', '.js', '.mjs']).map((e) => e.toLowerCase());
+  const IS_TEST_OR_EX = /(^|\/)(tests?|benches?|examples?|__tests__|spec)\//i;
+  const NAMED_TEST = /[._-](test|spec)\.[a-z]+$|\.test$/i;
+  let n = 0;
+  for (const root of resolveRoots(ctx, rule.roots)) {
+    for (const p of ctx.walk(root)) {
+      if (!hasExt(p, exts)) continue;
+      const rel = ctx.rel(p);
+      if (!IS_TEST_OR_EX.test(rel) && !NAMED_TEST.test(rel)) continue;
+      if (ctx.isFullBody(p)) continue;        // already ingested (shouldn't happen — sourceBodies skips these)
+      const body = read(p);
+      if (!body.trim()) continue;
+      ctx.markFullBody(p);
+      const isEx = /(^|\/)(examples?|demos?)\//i.test(rel);
+      const label = isEx ? 'Example' : 'Test';
+      ctx.addDoc(rel, 'source', path.basename(p), `${label} ${rel} (full):\n${body}`, /*absPath*/ undefined);
+      n++;
+    }
+  }
+  return n;
+}
+
 // docCommentSweep — leading doc comment ONLY from every source file under the roots that has one
 // and is NOT already indexed as a full body. Cheap orientation breadcrumbs across the whole tree.
 export function docCommentSweep(ctx, rule) {
@@ -303,6 +331,7 @@ export const RULE_IMPLS = {
   componentManifests,
   componentLead,
   sourceBodies,
+  testsAndExamples,
   docCommentSweep,
   literalFiles,
   htmlText,

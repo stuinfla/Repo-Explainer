@@ -1,0 +1,17 @@
+{
+  "id": "ruvn",
+  "displayName": "ruvn — AI Research Harness that Returns a Graded, Cited Evidence Dossier (Node/TS)",
+  "submodule": "https://github.com/ruvnet/ruvn",
+  "notebookId": "TODO:create-notebooklm-notebook",
+  "embedSmall": "Xenova/all-MiniLM-L6-v2",
+  "embedBig": "Xenova/bge-base-en-v1.5",
+  "scopeExclude": [
+    "vendor/**",
+    "dist/**",
+    "node_modules/**",
+    "**/node_modules/**",
+    "target/**",
+    "**/target/**",
+    "*.log"
+  ]
+}

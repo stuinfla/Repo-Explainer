@@ -107,8 +107,15 @@ function variantPaths(store, variant) {
     : (fs.existsSync(path.join(dir, legacyName)) ? legacyName : idsName);
   // BOTH versions are explicitly named: .big.rvf (768-dim) and .small.rvf (384-dim).
   // passages + metadata are SHARED (un-tagged) — built once, used by both.
-  const tag = variant === 'big' ? '.big' : '.small';
-  const rvf = `${base}${tag}.rvf`;
+  // Single-384 build (recipe v1.3.1) writes the canonical un-suffixed <store>-kb.rvf; prefer it
+  // for the small variant, falling back to the legacy .small.rvf tag.
+  let rvf;
+  if (variant === 'big') {
+    rvf = `${base}.big.rvf`;
+  } else {
+    const plain = `${base}.rvf`;
+    rvf = fs.existsSync(plain) ? plain : `${base}.small.rvf`;
+  }
   return {
     rvf,
     passages: `${base}.passages.jsonl`,
@@ -496,12 +503,12 @@ const ARCHETYPE_RES = [
   // NOTE: "not a" is intentionally NARROW — only specific maturity-context negations to avoid
   // catching "why is it called a factory and NOT a framework" (a whatis query).
   // The \bNOT[?!]?\s*$ tail catches "What is metaharness NOT?" (query ends in NOT + punctuation).
-  { name: 'maturity', re: /(\b(mature|maturity|production[- ]?ready|production\b|how (good|solid|reliable|complete)|how complete|is it (ready|done|complete)|works?\b.*\b(experiment|stub|today|yet)|ready for production|battle[- ]?tested|graded honestly|how many\b.*(stable|newer|addition|host)|which\b.*(stable|newer|addition)|release status|release pipeline|what release|not a (?:chatbot|no[- ]code|hosted service|fine[- ]?tune)|should i assert|fixed test count|honest limits|posture\b|default[- ]deny)\b|\bNOT[?!]?\s*$)/i },
+  { name: 'maturity', re: /(\b(mature|maturity|production[- ]?ready|production\b|how (good|solid|reliable|complete)|how complete|is it (ready|done|complete)|works?\b.*\b(experiment|stub|today|yet)|ready for production|battle[- ]?tested|graded honestly|how many\b.*(stable|newer|addition|host)|which\b.*(stable|newer|addition)|release status|release pipeline|what release|not a (?:chatbot|no[- ]code|hosted service|fine[- ]?tune)|should i assert|fixed test count|honest limits|posture\b|default[- ]deny|guarantee privacy|privacy guarantee|real hardware|simulator or hardware|hardware or a? ?simulator|out of scope|beat a cnn|beats? a cnn|state[- ]of[- ]the[- ]art)\b|\bNOT[?!]?\s*$)/i },
   // capabilities / features / "what can it do" / tool actions / sub-commands / specific tools
   // (score, genome, mcp-scan, threat-model, Darwin Mode, router, execute, cost, npm audit).
   // Capabilities BEFORE composer/crates so "What does Darwin Mode do" / "What does genome report"
   // / "What is the npm audit for agent tools command" routes here, not to whatis or composer.
-  { name: 'capabilities', re: /\b(capabilit(y|ies)|what can (it|the tool) do|what can ruv\w+ do|features?\b|what does it (do|offer)|what does ruv\w+ (do|offer)|big (capabilities|features)|does\b.*\bexecute\b|ever execute|how does\b.*\bcut\b|how (do i |to )?score\b|genome\b.*\breport|what does\b.*(genome|darwin|threat[- ]?model|mcp[- ]scan|router|mode) (do|report|produce)|what artifact\b|what can the\b|\bgenome\b|\bdarwin mode\b|mcp[- ]scan\b|threat[- ]model\b|npm audit\b|audit for agent\b)\b/i },
+  { name: 'capabilities', re: /\b(capabilit(y|ies)|what can (it|the tool) do|what can ruv\w+ do|what can photonlayer do|features?\b|what does it (do|offer)|what does ruv\w+ (do|offer)|big (capabilities|features)|does\b.*\bexecute\b|ever execute|how does\b.*\bcut\b|how (do i |to )?score\b|genome\b.*\breport|what does\b.*(genome|darwin|threat[- ]?model|mcp[- ]scan|router|mode) (do|report|produce)|what artifact\b|what can the\b|\bgenome\b|\bdarwin mode\b|mcp[- ]scan\b|threat[- ]model\b|npm audit\b|audit for agent\b|how much\b.*\bcompress|compress(es|ion)?\b.*\bcapture|what accuracy\b|gradient training\b.*\breach|reach\b.*\baccuracy|what does the (receipt|blake3 receipt)|receipt prove|reproduce the (exact|same)|multi[- ]?plane cascade\b.*(achieve|do))\b/i },
   // docs / tutorials / examples / ADRs / "where do I find/read" / "which doc covers/gives/lives" /
   // "where is X described/documented". BEFORE composer and crates so "where is the composer 9-stage
   // flow documented" / "where is the three-layer model described" route to docs (PRIMER#6), not
@@ -510,7 +517,7 @@ const ARCHETYPE_RES = [
   // composer / scaffold stages / overlays / HarnessChoice / template selection — PRIMER#4.
   // "scaffold" only matches when NOT preceded by "one-liner" or "show" (those are playbook).
   // "composer" without "where" context to avoid catching "where is the composer flow documented".
-  { name: 'composer', re: /\b(how does\b.*\b(composer\b.*scaffold|scaffold\b.*\bharness)\b|how many stages\b|template overlays?\b|overlay\b.*merge|merge\b.*overlay|default agents?\b|default skills?\b|harnesschoice\b|which (composer )?stage\b|toggles? kernel\b|7[- ]arc\b|teaching outline\b|last\b.*\bstage\b|stage\b.*\bgeneration\b|primitives\b.*\btoggle\b|9 stages?\b|what object drives\b|drives template\b)\b/i },
+  { name: 'composer', re: /\b(how does\b.*\b(composer\b.*scaffold|scaffold\b.*\bharness)\b|how many stages\b|template overlays?\b|overlay\b.*merge|merge\b.*overlay|default agents?\b|default skills?\b|harnesschoice\b|which (composer )?stage\b|toggles? kernel\b|7[- ]arc\b|teaching outline\b|last\b.*\bstage\b|stage\b.*\bgeneration\b|primitives\b.*\btoggle\b|9 stages?\b|what object drives\b|drives template\b|(optical )?pipeline\b.*\bstep[- ]by[- ]step\b|step[- ]by[- ]step\b.*\bpipeline\b|how (does|do)\b.*\b(optical )?pipeline\b.*\bwork\b|how (does|do)\b.*\b(a |the )?(quantum )?circuit\b.*\b(run|works?|simulat)|how (do i |to )?run a (circuit|simulation)\b|run a simulation\b.*\b(in javascript|entirely in|client-?side)|build (and run )?a bell state|steps to (build|run)|how does\b.*\bpick which backend|how does\b.*\bbackend\b.*\b(work|chosen|selected|pick)|how does\b.*\bspeed up\b.*\bsimulat|stages?\b.*\bfrom\b.*\b(image|input)\b.*\bto\b.*\b(decision|answer|output)\b)\b/i },
   // hardware / boards / devices — enumeration of supported physical hardware
   { name: 'hardware', re: /\b(hardware|boards?|devices?|which (chip|board|sensor)|supported (hardware|board|device))\b/i },
   // component inventory — enumeration of the components that make up the workspace / a domain.
@@ -523,7 +530,7 @@ const ARCHETYPE_RES = [
   { name: 'crates', re: /\b(which crates|crate inventory|what crates|crates (that |which )?(make up|in|for|comprise)|list of crates|\w+ domain crates|what are the (layers?|three layers?|subsystems?|adapters?)\b|which (host |adapter )?(packages?|adapters?)\b|kernel (boundary|subsystems?)\b|what is (in |the )?the kernel\b|what is the kernel\b|subsystems? (bundled|in)\b|surface layer\b|user[- ]facing (surface|layer|packages?)\b|model router (package|component)\b)\b/i },
   // playbook / setup / onboarding / end-to-end usage / wizard / publish / scaffold health /
   // fastest-path / one-liner / after-scaffolding / own-files / release-gate.
-  { name: 'playbook', re: /\b(how (do i |to )?(use|set ?up|onboard|get started|getting started|start|deploy|build|run|publish|check|generate)|end[- ]to[- ]end|end to end|quick ?start|playbook|walkthrough|step[- ]by[- ]step|get up and running|wizard\b|what does the wizard\b|fastest path\b|one[- ]liner\b|after scaffolding\b|own the files\b|what command\b.*\brelease\b|release gate\b|scaffold is healthy\b|harness doctor\b|harness validate\b|publish my harness\b|what do my users run\b|users run\b)\b/i },
+  { name: 'playbook', re: /\b(how (do i |to |can i )?(use|set ?up|onboard|get started|getting started|start|deploy|build|run|publish|check|generate|try|install)|try\b.*\bwithout\b.*\binstall|without\b.*\binstall\w*\b.*\banything|no[- ]install\b|try it (out|now|in (a |the )?browser)|end[- ]to[- ]end|end to end|quick ?start|playbook|walkthrough|step[- ]by[- ]step|get up and running|wizard\b|what does the wizard\b|fastest path\b|one[- ]liner\b|after scaffolding\b|own the files\b|what command\b.*\brelease\b|release gate\b|scaffold is healthy\b|harness doctor\b|harness validate\b|publish my harness\b|what do my users run\b|users run\b)\b/i },
   // what-is / overview / introduce / what-does-produce / is-X-a-Y / why-called / do-I-need.
   // "not another" catches "not another agent framework" (product identity). "why.*factory|framework"
   // catches "why is it called a factory and not a framework" without matching generic maturity.
@@ -586,7 +593,12 @@ function componentInventoryRe(store) {
 // wrapper", "why called a factory", "do I need an account", "in one line") are orientation queries
 // about the product as a whole, not about a sub-concept. They bypass the isProductOverviewQuery
 // concept-noun strip so they force-route to PRIMER#1 rather than falling to whatis-concept.
-const WHATIS_FORCE_RE = /\b(what does\b.*\b(produce|turn into|make into|forbid)\b|is\b.*\b(model|wrapper|framework|factory|account|server)\b|why (is it |a )?called\b|do i need\b|in one line\b|not another\b|called a factory\b|why a factory\b|published cli\b|cli name\b.*versus|versus\b.*cli name|what.*\bversus\b.*\balias\b)\b/i;
+const WHATIS_FORCE_RE = /\b(what does\b.*\b(produce|turn into|make into|forbid|turn light into|output)\b|is\b.*\b(model|wrapper|framework|factory|account|server)\b|why (is it |a )?called\b|do i need\b|in one line\b|not another\b|called a factory\b|why a factory\b|published cli\b|cli name\b.*versus|versus\b.*cli name|what.*\bversus\b.*\balias\b|learned phase mask\b|what is a phase mask\b|optical neural network\b|why.*\bfront end\b|described as a front end\b)\b/i;
+// A "what is X in one line" phrasing is a PRODUCT overview ONLY when it is NOT enumerating named
+// features/algorithms/commands. "What are VQE, Grover, and QAOA in one line each?" is a CAPABILITIES
+// query, not a product overview — the comma/"and"/"each" enumeration is the tell. This guard keeps
+// WHATIS_FORCE's "in one line" from hijacking feature-list questions. (Generic; no repo names.)
+const WHATIS_ENUMERATION_RE = /\b(what (are|is)\b[^?]*\b(and|,)\b[^?]*\b(in one line|each)\b|each\b.*\bin one line|in one line each)\b/i;
 
 // Classify the orientation archetype (most-specific-first). Returns archetype name or null.
 // `store` lets the what-is split distinguish a product-overview query from a concept query, and
@@ -604,6 +616,9 @@ function classifyArchetype(query, store) {
       // (let vector+rerank find the DEFINING doc; a mild concept boost is applied downstream).
       // WHATIS_FORCE_RE patterns are always product-overview (bypass the concept-noun strip).
       if (a.name === 'whatis') {
+        // An enumeration ("what are X, Y, and Z in one line each") is a capabilities/feature-list
+        // query, not a product overview — do NOT force-route it to PRIMER#1.
+        if (WHATIS_ENUMERATION_RE.test(query)) return 'whatis-concept';
         if (WHATIS_FORCE_RE.test(query) || isProductOverviewQuery(query, store)) return 'whatis';
         return 'whatis-concept';
       }
@@ -984,6 +999,23 @@ function seedAdjust(query, path, store) {
   return adj;
 }
 
+// disambigPrimerTargets — for the matched config disambiguation rules, extract any LITERAL PRIMER
+// section path named in the rule's goodSource (e.g. 'PRIMER#2-what-can-ruqu-do-for-you'). These are
+// force-injected into the candidate pool (like targetPrimerSlug) so the rule's goodBoost can rank a
+// synthesized section that bge ranked outside the raw vector window. Config-driven; no repo baked in.
+function disambigPrimerTargets(query, store) {
+  const out = [];
+  const t = cfgFor(store);
+  const raw = (t && Array.isArray(t.disambiguation)) ? t.disambiguation : [];
+  for (let i = 0; i < raw.length; i++) {
+    const d = disambigFor(store)[i];
+    if (!d || !d.when.test(query)) continue;
+    const gs = String(raw[i].goodSource || '');
+    for (const m of gs.matchAll(/PRIMER#[0-9][A-Za-z0-9#-]*/g)) out.push(m[0]);
+  }
+  return [...new Set(out)];
+}
+
 // The KB builder emits OVERLAPPING chunks (a sliding window repeats ~half of each neighbour).
 // Naively concatenating them duplicates paragraphs. stitch() drops the longest suffix of the
 // running text that is also a prefix of the next chunk, so the document reads cleanly as one.
@@ -1167,6 +1199,16 @@ export async function searchKb({ query, k = 6, store, n, variant }) {
   };
   if (targetPrimerSlug) ensureDoc(targetPrimerSlug);
   if (glossarySlug) ensureDoc(glossarySlug);   // concept query: glossary may softly win for ruview
+  // Config disambiguation: pull any PRIMER section named in a matched rule's goodSource into the
+  // pool so its goodBoost can rank it even if bge ranked the synthesized section out of the window.
+  // The goodSource names a PRIMER by PREFIX (e.g. "PRIMER#3-what-is-ruqu-made-of"); resolve it to
+  // the actual full slug path(s) in byPath (e.g. "...-the-five-crates") so ensureDoc finds them.
+  for (const pp of disambigPrimerTargets(query, store)) {
+    if (byPath.has(pp)) { ensureDoc(pp); continue; }
+    for (const realPath of byPath.keys()) {
+      if (realPath.startsWith(pp) && PRIMER_PATH_RE.test(realPath)) ensureDoc(realPath);
+    }
+  }
   // For an exact ADR query, find the real ADR doc path(s) by scanning the passages index.
   const adrDocPaths = [];
   if (adrNums.length) {
@@ -1358,9 +1400,59 @@ export async function searchKb({ query, k = 6, store, n, variant }) {
   return out;
 }
 
+// ---------- structured lookups (exact, not semantic) ----------
+// The drop-in for-ai/ ships <store>-symbols.json / -dep-graph.json / -entrypoints.json. These give
+// an AI EXACT answers (a function signature, who-depends-on-what, the build/test/run commands)
+// without a vector search. Exported so the MCP server can surface them too.
+export function loadStructured(store) {
+  const dir = storeDir(store);
+  const read = (suffix) => { try { return JSON.parse(fs.readFileSync(path.join(dir, `${store}-${suffix}.json`), 'utf8')); } catch { return null; } };
+  return { symbols: read('symbols'), depGraph: read('dep-graph'), entrypoints: read('entrypoints') };
+}
+
+// Exact symbol lookup: name substring (case-insensitive), optional kind filter. Returns matches
+// with signature + module + source location + doc.
+export function lookupSymbol(store, name, { kind, limit = 25 } = {}) {
+  const { symbols } = loadStructured(store);
+  if (!symbols) return { available: false, matches: [] };
+  const needle = String(name || '').toLowerCase();
+  let m = symbols.symbols.filter((s) => (!needle || s.name.toLowerCase().includes(needle) || (s.module || '').toLowerCase().includes(needle)));
+  if (kind) m = m.filter((s) => s.kind === kind);
+  return { available: true, count: m.length, method: symbols.method, matches: m.slice(0, limit) };
+}
+
+// Exact entrypoints + dep-graph passthroughs.
+export function getEntrypoints(store) { return loadStructured(store).entrypoints; }
+export function getDepGraph(store) { return loadStructured(store).depGraph; }
+
 // ---------- CLI ----------
 async function main() {
   const argv = process.argv.slice(2);
+
+  // Structured-lookup subcommands (exact, no vector search): --symbol NAME | --entrypoints | --deps.
+  const sIdx = argv.findIndex((a) => a === '--symbol' || a === '--entrypoints' || a === '--deps');
+  if (sIdx !== -1) {
+    const store = argv.find((a) => !a.startsWith('--')) || CONFIG_DEFAULT;
+    if (!knownStore(store)) { console.error(`unknown store: ${store}`); process.exit(2); }
+    const flag = argv[sIdx];
+    if (flag === '--symbol') {
+      const name = argv[sIdx + 1] || '';
+      const r = lookupSymbol(store, name, { limit: 40 });
+      if (!r.available) { console.error(`no ${store}-symbols.json present (run extract-symbols.mjs)`); process.exit(1); }
+      console.log(`\n=== ${store} symbols matching "${name}" (${r.count} via ${r.method}) ===\n`);
+      for (const s of r.matches) console.log(`${s.kind.padEnd(9)} ${s.signature}\n   @ ${s.file}:${s.line}${s.doc ? `\n   ${s.doc}` : ''}\n`);
+    } else if (flag === '--entrypoints') {
+      const e = getEntrypoints(store);
+      if (!e) { console.error(`no ${store}-entrypoints.json present`); process.exit(1); }
+      console.log(JSON.stringify({ workspace: e.workspace, install: e.install, quickstart: e.quickstart, binaries: e.binaries, commands: e.commands }, null, 2));
+    } else {
+      const g = getDepGraph(store);
+      if (!g) { console.error(`no ${store}-dep-graph.json present`); process.exit(1); }
+      console.log(JSON.stringify({ nodes: g.nodes.map((n) => ({ name: n.name, ecosystem: n.ecosystem, description: n.description })), internalEdges: g.internalEdges, externalDepNames: g.externalDepNames }, null, 2));
+    }
+    return;
+  }
+
   // optional trailing [big|small] variant selector; default auto-picks big if present
   let variant;
   const vIdx = argv.findIndex((a) => a === 'big' || a === 'small');
@@ -1368,6 +1460,7 @@ async function main() {
   const [store, query, kArg] = argv;
   if (!store || !query) {
     console.error(`Usage: node kb/ask-kb.mjs <${[...KNOWN_STORES].join('|')}> "question" [k] [big|small]`);
+    console.error(`   or: node kb/ask-kb.mjs <store> --symbol <name> | --entrypoints | --deps`);
     process.exit(2);
   }
   const k = Math.max(1, parseInt(kArg || '6', 10) || 6);

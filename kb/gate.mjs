@@ -116,15 +116,14 @@ async function gradeBoth(target, k) {
     const { file, questions } = loadQuestions(target.slug, set);
     if (!questions) { out[set] = { missing: true, file }; continue; }
     if (!questions.length) { out[set] = { empty: true, file }; continue; }
-    // grade BOTH variants; the SET passes only if BOTH variants pass.
+    // SINGLE shipped variant (recipe v1.3.1): one 384-dim bge-small store at <store>-kb.rvf.
+    // The 'small' variant auto-resolves to that canonical file. No separate big variant ships.
     const small = await gradeSet(questions, { store, k, variant: 'small' });
-    const big = await gradeSet(questions, { store, k, variant: 'big' });
+    const big = small; // alias for reporting back-compat; single variant only
     out[set] = {
       file, small, big,
-      // merge perQuestion for diagnosis (worst-of-both bucket per question would be ideal; here we
-      // report small's buckets, which is the evergreen-shipped variant). big is reported separately.
       perQuestion: small.perQuestion,
-      pass: small.pass && big.pass,
+      pass: small.pass,
     };
   }
   return out;

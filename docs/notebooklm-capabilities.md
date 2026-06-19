@@ -35,6 +35,6 @@ nlm doctor               # full diagnosis (install, cookies, account, Chrome)
 1. `nlm notebook create` for the target repo.
 2. `nlm source add` — the auto-drafted comprehension-arc doc + key repo docs.
 3. `nlm audio create` (audio overview) + `nlm report`.
-4. **Video overview / slide-deck** may still require the NotebookLM **UI**; then `nlm download` the result.
+4. **Video, slides, infographic are ALL CLI-scriptable** (verified 2026-06-19 — the earlier "UI-only" note was stale): `nlm video create <id>`, `nlm slides create <id>`, `nlm infographic create <id>` (+ `mindmap`/`quiz`/`flashcards`), then `nlm download`. Make a notebook public + linkable with `nlm share public <id>`. No UI step required.
 
 > Per ADR-0001 Part II D14, NotebookLM studio media is an *enhancement* layered after the two heroes (site + smart-zip) pass their quality gate — it never blocks them.
