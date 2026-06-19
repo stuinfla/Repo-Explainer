@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="100%" role="img" aria-labelledby="s03-t s03-d" style="max-width:1000px;height:auto;font-family:'Inter','IBM Plex Sans',system-ui,sans-serif;">
+  <title id="s03-t">Why this is a problem now: real quantum machines are out of reach</title>
+  <desc id="s03-d">Real quantum computers are rare, cost millions, live in fridges colder than space, and make mistakes constantly. So almost nobody gets hands-on time. The way to learn, prototype, or check your math is to simulate: run a faithful imitation on an ordinary computer.</desc>
+  <defs>
+    <linearGradient id="s03-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#181233"/><stop offset="1" stop-color="#120e26"/></linearGradient>
+    <linearGradient id="s03-mag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3df0"/><stop offset="1" stop-color="#8b5cff"/></linearGradient>
+    <marker id="s03-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff3df0"/></marker>
+  </defs>
+  <rect width="1000" height="520" rx="16" fill="url(#s03-bg)"/>
+  <text x="500" y="42" text-anchor="middle" fill="#f3eefb" font-size="22" font-weight="700">Real quantum hardware is scarce &#8212; so you simulate</text>
+
+  <!-- the wall: 4 reasons real machines are out of reach -->
+  <text x="250" y="92" text-anchor="middle" fill="#9a8fc4" font-size="13" letter-spacing="2">REAL QUANTUM COMPUTERS</text>
+  <g font-size="12.5">
+    <rect x="60" y="108" width="380" height="52" rx="9" fill="#211a40" stroke="#4a3f70"/>
+    <text x="80" y="130" fill="#ffd9f6" font-size="16">&#127860;</text><text x="110" y="130" fill="#e9e2fb" font-weight="600">Rare</text><text x="110" y="150" fill="#a99fce" font-size="11.5">only a handful exist worldwide</text>
+    <rect x="60" y="170" width="380" height="52" rx="9" fill="#211a40" stroke="#4a3f70"/>
+    <text x="80" y="192" fill="#ffd9f6" font-size="16">&#128176;</text><text x="110" y="192" fill="#e9e2fb" font-weight="600">Cost millions</text><text x="110" y="212" fill="#a99fce" font-size="11.5">cloud time burns real money fast</text>
+    <rect x="60" y="232" width="380" height="52" rx="9" fill="#211a40" stroke="#4a3f70"/>
+    <text x="80" y="254" fill="#7df0ff" font-size="16">&#10052;</text><text x="110" y="254" fill="#e9e2fb" font-weight="600">Colder than space</text><text x="110" y="274" fill="#a99fce" font-size="11.5">live inside dilution fridges</text>
+    <rect x="60" y="294" width="380" height="52" rx="9" fill="#211a40" stroke="#4a3f70"/>
+    <text x="80" y="316" fill="#ff8fa3" font-size="16">&#9889;</text><text x="110" y="316" fill="#e9e2fb" font-weight="600">Make mistakes constantly</text><text x="110" y="336" fill="#a99fce" font-size="11.5">qubits are fragile &#8212; errors everywhere</text>
+  </g>
+  <rect x="92" y="362" width="316" height="48" rx="9" fill="#2a1430" stroke="#8a4a6a"/>
+  <text x="250" y="385" text-anchor="middle" fill="#ffb3e6" font-size="13.5" font-weight="700">Result: almost nobody gets hands-on time</text>
+  <text x="250" y="403" text-anchor="middle" fill="#cf9bc0" font-size="11.5">so how do you learn, prototype, or check your math?</text>
+
+  <!-- arrow to the answer -->
+  <line x1="448" y1="386" x2="548" y2="386" stroke="#ff3df0" stroke-width="2.4" marker-end="url(#s03-ar)"/>
+  <text x="498" y="372" text-anchor="middle" fill="#ff8cf2" font-size="11.5" font-weight="700">you simulate</text>
+
+  <!-- the answer: a faithful imitation -->
+  <rect x="560" y="108" width="380" height="302" rx="13" fill="#1d1640" stroke="url(#s03-mag)" stroke-width="1.7"/>
+  <text x="750" y="138" text-anchor="middle" fill="#ff5cf2" font-size="16" font-weight="700">Run a faithful imitation</text>
+  <text x="750" y="160" text-anchor="middle" fill="#d8cff0" font-size="12.5">on an ordinary computer</text>
+
+  <rect x="586" y="180" width="328" height="60" rx="9" fill="#140f2b" stroke="#39e8ff"/>
+  <text x="750" y="204" text-anchor="middle" fill="#7df0ff" font-size="13" font-weight="700">A simulator acts EXACTLY like</text>
+  <text x="750" y="224" text-anchor="middle" fill="#bfe9ff" font-size="12">a real quantum machine &#8212; same physics</text>
+
+  <g font-size="12">
+    <text x="586" y="266" fill="#5cffaa">&#10003;</text><text x="608" y="266" fill="#d8cff0">Learn quantum without a lab</text>
+    <text x="586" y="292" fill="#5cffaa">&#10003;</text><text x="608" y="292" fill="#d8cff0">Prototype an idea for free</text>
+    <text x="586" y="318" fill="#5cffaa">&#10003;</text><text x="608" y="318" fill="#d8cff0">Validate your math before paying</text>
+    <text x="586" y="344" fill="#5cffaa">&#10003;</text><text x="608" y="344" fill="#d8cff0">Catch bugs before real hardware time</text>
+  </g>
+  <rect x="586" y="362" width="328" height="34" rx="8" fill="#231a44" stroke="#5a4d88"/>
+  <text x="750" y="384" text-anchor="middle" fill="#ffd9f6" font-size="12.5" font-weight="700">ruqu is that faithful imitation</text>
+
+  <text x="500" y="448" text-anchor="middle" fill="#cdc2ee" font-size="13">A free, faithful simulator lets you learn, prototype, and validate <tspan fill="#ff8cf2" font-weight="700">today</tspan> &#8212;</text>
+  <text x="500" y="470" text-anchor="middle" fill="#cdc2ee" font-size="13">and catch your bugs <tspan fill="#ff8cf2" font-weight="700">before</tspan> you burn money on actual hardware time.</text>
+</svg>

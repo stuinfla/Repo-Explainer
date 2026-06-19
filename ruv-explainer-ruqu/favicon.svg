@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ruqu — a glowing bloch sphere">
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="32%" r="80%">
+      <stop offset="0%" stop-color="#2a1f5e"/>
+      <stop offset="100%" stop-color="#13102b"/>
+    </radialGradient>
+    <radialGradient id="orb" cx="36%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#ff7bf6"/>
+      <stop offset="55%" stop-color="#ff3df0"/>
+      <stop offset="100%" stop-color="#8b5cff"/>
+    </radialGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1.6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <!-- bloch sphere -->
+  <circle cx="32" cy="33" r="18" fill="url(#orb)" opacity="0.92" filter="url(#glow)"/>
+  <ellipse cx="32" cy="33" rx="18" ry="6.5" fill="none" stroke="#39e8ff" stroke-width="1.1" opacity="0.65"/>
+  <ellipse cx="32" cy="33" rx="6.5" ry="18" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.5"/>
+  <line x1="32" y1="33" x2="44" y2="20" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="44" cy="20" r="2.4" fill="#ffffff"/>
+  <circle cx="32" cy="33" r="2" fill="#13102b"/>
+</svg>

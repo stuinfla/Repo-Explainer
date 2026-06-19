@@ -1,0 +1,23 @@
+{
+  "name": "ruv-explainer-rufield",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Slate + signal-violet ExplainerSite for RuField MFS (ruvnet/rufield): camera-free multimodal field sensing — invisible WiFi/radar/heat signals turned into privacy-labelled, provable room-state facts. Static, no build, no deps.",
+  "license": "MIT",
+  "homepage": "https://ruv-explainer-rufield.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stuinfla/ruv-explainer-rufield"
+  },
+  "keywords": [
+    "rufield",
+    "rufield-mfs",
+    "ruvnet",
+    "field-sensing",
+    "wifi-sensing",
+    "camera-free",
+    "explainer",
+    "static-site"
+  ],
+  "scripts": {}
+}

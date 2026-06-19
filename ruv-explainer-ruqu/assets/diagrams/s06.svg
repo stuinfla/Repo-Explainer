@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 540" width="100%" role="img" aria-labelledby="s06-t s06-d" style="max-width:1000px;height:auto;font-family:'Inter','IBM Plex Sans',system-ui,sans-serif;">
+  <title id="s06-t">How to implement ruqu: three surfaces, the same engine</title>
+  <desc id="s06-d">Pick the surface that fits your job. In the terminal, run npx @ruvector/ruqu with a subcommand. In a web page, npm install @ruvector/ruqu-wasm and build a Circuit. In a Rust program, add the crate and call the algorithms directly. All three drive the same pure-Rust state-vector engine.</desc>
+  <defs>
+    <linearGradient id="s06-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#181233"/><stop offset="1" stop-color="#120e26"/></linearGradient>
+    <linearGradient id="s06-mag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3df0"/><stop offset="1" stop-color="#8b5cff"/></linearGradient>
+    <marker id="s06-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8b5cff"/></marker>
+  </defs>
+  <rect width="1000" height="540" rx="16" fill="url(#s06-bg)"/>
+  <text x="500" y="40" text-anchor="middle" fill="#f3eefb" font-size="22" font-weight="700">Three ways in &#8212; pick the one that fits your job</text>
+
+  <!-- TERMINAL -->
+  <rect x="34" y="72" width="304" height="300" rx="12" fill="#1d1640" stroke="#5a4d88" stroke-width="1.3"/>
+  <text x="54" y="100" fill="#ff8cf2" font-size="14" font-weight="700">Terminal &#183; CLI</text>
+  <text x="54" y="120" fill="#a99fce" font-size="11.5">fastest demo, nothing to install</text>
+  <rect x="54" y="132" width="264" height="150" rx="8" fill="#0e0a1f" stroke="#3a2f66"/>
+  <g font-family="'IBM Plex Mono',ui-monospace,monospace" font-size="11">
+    <text x="68" y="154" fill="#7df0ff">npx @ruvector/ruqu \</text>
+    <text x="80" y="172" fill="#cdc2ee">  simulate --qubits 2</text>
+    <text x="68" y="198" fill="#7df0ff">npx @ruvector/ruqu \</text>
+    <text x="80" y="216" fill="#cdc2ee">  grover --qubits 3 \</text>
+    <text x="80" y="234" fill="#cdc2ee">  --target 5</text>
+    <text x="68" y="260" fill="#7df0ff">npx @ruvector/ruqu qaoa \</text>
+    <text x="80" y="278" fill="#cdc2ee">  --nodes 4</text>
+  </g>
+  <text x="54" y="310" fill="#d8cff0" font-size="11.5">Good for: live demos, quick</text>
+  <text x="54" y="328" fill="#d8cff0" font-size="11.5">experiments, teaching.</text>
+  <text x="54" y="354" fill="#9a8fc4" font-size="10.5" font-family="monospace">@ruvector/ruqu v0.2.0</text>
+
+  <!-- WEB -->
+  <rect x="348" y="72" width="304" height="300" rx="12" fill="#1c2444" stroke="#39e8ff" stroke-width="1.3"/>
+  <text x="368" y="100" fill="#bff3ff" font-size="14" font-weight="700">Web page &#183; WASM</text>
+  <text x="368" y="120" fill="#a9c8e0" font-size="11.5">in-page, no backend server</text>
+  <rect x="368" y="132" width="264" height="150" rx="8" fill="#0e0a1f" stroke="#2a4a66"/>
+  <g font-family="'IBM Plex Mono',ui-monospace,monospace" font-size="11">
+    <text x="382" y="154" fill="#5cffaa">npm i @ruvector/ruqu-wasm</text>
+    <text x="382" y="178" fill="#cdc2ee">const c = new Circuit(2);</text>
+    <text x="382" y="196" fill="#cdc2ee">c.h(0);</text>
+    <text x="382" y="214" fill="#cdc2ee">c.cnot(0, 1);</text>
+    <text x="382" y="232" fill="#cdc2ee">sim.run(c);</text>
+    <text x="382" y="256" fill="#7df0ff">state.measureAll();</text>
+    <text x="382" y="274" fill="#9a8fc4">// "00" or "11"</text>
+  </g>
+  <text x="368" y="310" fill="#d8cff0" font-size="11.5">Good for: live widgets,</text>
+  <text x="368" y="328" fill="#d8cff0" font-size="11.5">teaching apps, ~25 qubits.</text>
+  <text x="368" y="354" fill="#9a8fc4" font-size="10.5" font-family="monospace">@ruvector/ruqu-wasm v2.0.5 &#183; 180KB gz</text>
+
+  <!-- RUST -->
+  <rect x="662" y="72" width="304" height="300" rx="12" fill="#1d1640" stroke="#ff3df0" stroke-width="1.4"/>
+  <text x="682" y="100" fill="#ff5cf2" font-size="14" font-weight="700">Rust program &#183; crate</text>
+  <text x="682" y="120" fill="#a99fce" font-size="11.5">full power, up to 32 qubits</text>
+  <rect x="682" y="132" width="264" height="150" rx="8" fill="#0e0a1f" stroke="#3a2f66"/>
+  <g font-family="'IBM Plex Mono',ui-monospace,monospace" font-size="10.5">
+    <text x="696" y="152" fill="#cdc2ee">let h = Hamiltonian::</text>
+    <text x="708" y="168" fill="#cdc2ee">from_pauli_strings([..]);</text>
+    <text x="696" y="190" fill="#cdc2ee">let a = Ansatz::uccsd(..);</text>
+    <text x="696" y="212" fill="#7df0ff">VQE::new(h, a)</text>
+    <text x="708" y="228" fill="#7df0ff">.optimize();</text>
+    <text x="696" y="252" fill="#9a8fc4">// also: SurfaceCode,</text>
+    <text x="696" y="268" fill="#9a8fc4">// fabric.process_cycle,</text>
+    <text x="696" y="278" fill="#9a8fc4">// plan_execution(..)</text>
+  </g>
+  <text x="682" y="310" fill="#d8cff0" font-size="11.5">Good for: chemistry, error</text>
+  <text x="682" y="328" fill="#d8cff0" font-size="11.5">correction, coherence engine.</text>
+  <text x="682" y="354" fill="#9a8fc4" font-size="10.5" font-family="monospace">workspace v2.2.3</text>
+
+  <!-- converge to one engine -->
+  <line x1="186" y1="372" x2="460" y2="412" stroke="#8b5cff" stroke-width="1.8" marker-end="url(#s06-ar)"/>
+  <line x1="500" y1="372" x2="500" y2="412" stroke="#8b5cff" stroke-width="1.8" marker-end="url(#s06-ar)"/>
+  <line x1="814" y1="372" x2="540" y2="412" stroke="#8b5cff" stroke-width="1.8" marker-end="url(#s06-ar)"/>
+  <rect x="280" y="424" width="440" height="86" rx="12" fill="#231a44" stroke="url(#s06-mag)" stroke-width="1.8"/>
+  <text x="500" y="456" text-anchor="middle" fill="#f3eefb" font-size="15" font-weight="700">The same pure-Rust state-vector engine</text>
+  <text x="500" y="480" text-anchor="middle" fill="#d8cff0" font-size="12.5">Same physics underneath all three surfaces &#8212; you just choose the door.</text>
+  <text x="500" y="500" text-anchor="middle" fill="#a99fce" font-size="11">No Python &#183; no C++ &#183; no install for the CLI / web paths</text>
+</svg>

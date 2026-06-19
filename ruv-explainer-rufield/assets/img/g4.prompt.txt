@@ -1,0 +1,15 @@
+g4.png — PRIVACY + PROVENANCE: the guard and the seal (16:9).
+PROMPT:
+Warm, trustworthy illustration of "sensitive things stay home, and every fact gets
+a tamper-proof seal." A cozy little house outline glows softly on the left; inside
+it, several glowing data-droplets each wear a small colored privacy badge (a tiny
+P-label). A gentle, friendly gatekeeper figure stands at the doorway: the most
+sensitive, deeply-colored droplets are kindly held back inside the house, while
+only the calm, light "plain-fact" droplets are allowed out — and as each one
+leaves, the gatekeeper presses a glowing violet wax-seal "verified" receipt onto
+it. One droplet shows a broken seal being gently turned away. Deep slate-charcoal
+background (cool blue-grey #14161f), NOT warm/amber. Signal-violet (#a855f7) and
+magenta (#e84ef0) accents. The mood is safe, caring, and honest — privacy as
+kindness, not as a cold corporate lock. Soft rounded shapes, gentle bloom.
+RATIONALE (gate-E): makes "privacy classes P0–P5 + ed25519 provenance receipts"
+feel like a caring doorkeeper and a trust-sticker; warm, not corporate.

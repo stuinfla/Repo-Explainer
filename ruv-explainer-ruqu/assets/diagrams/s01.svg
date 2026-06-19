@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" role="img" aria-labelledby="s01-t s01-d" style="max-width:1000px;height:auto;font-family:'Inter','IBM Plex Sans',system-ui,sans-serif;">
+  <title id="s01-t">Before and after ruqu: teaching a Bell state</title>
+  <desc id="s01-d">Before ruqu, Aisha fights heavy Python installs and cloud credits and half the lab is gone. After ruqu, one npx command runs a real 2-qubit Bell-state simulation with no install, and every student runs the same circuit in their own browser, getting 00 or 11 with 50/50 odds.</desc>
+  <defs>
+    <linearGradient id="s01-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#181233"/><stop offset="1" stop-color="#120e26"/>
+    </linearGradient>
+    <linearGradient id="s01-mag" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff3df0"/><stop offset="1" stop-color="#8b5cff"/>
+    </linearGradient>
+    <marker id="s01-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#ff3df0"/>
+    </marker>
+    <marker id="s01-arc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b6390"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="600" rx="16" fill="url(#s01-bg)"/>
+  <text x="500" y="40" text-anchor="middle" fill="#f3eefb" font-size="22" font-weight="700">Aisha demos a Bell state to her intro-quantum class</text>
+  <text x="500" y="64" text-anchor="middle" fill="#b9aee0" font-size="13.5">Two qubits become &#8220;spookily&#8221; linked &#8212; measure one, you instantly know the other</text>
+  <line x1="500" y1="88" x2="500" y2="556" stroke="#332a5c" stroke-width="1.4" stroke-dasharray="3 7"/>
+
+  <!-- BEFORE -->
+  <text x="250" y="118" text-anchor="middle" fill="#9a8fc4" font-size="15" font-weight="700" letter-spacing="2">BEFORE</text>
+  <rect x="58" y="138" width="384" height="78" rx="10" fill="#211a40" stroke="#4a3f70" stroke-width="1.3"/>
+  <text x="250" y="166" text-anchor="middle" fill="#e9e2fb" font-size="13.5" font-weight="600">Install a heavy Python quantum toolkit</text>
+  <text x="250" y="188" text-anchor="middle" fill="#a99fce" font-size="12">Qiskit/Cirq + big dependency tree, on every laptop</text>
+  <text x="250" y="206" text-anchor="middle" fill="#7d739e" font-size="11">&#8230; or sign up for cloud quantum credits that run out</text>
+
+  <rect x="58" y="232" width="384" height="64" rx="10" fill="#211a40" stroke="#4a3f70" stroke-width="1.3"/>
+  <text x="250" y="258" text-anchor="middle" fill="#e9e2fb" font-size="13.5" font-weight="600">Fight dependency errors in the lab</text>
+  <text x="250" y="280" text-anchor="middle" fill="#a99fce" font-size="12">Nothing runs in the students&#8217; own browsers</text>
+  <line x1="250" y1="216" x2="250" y2="230" stroke="#6b6390" stroke-width="2" marker-end="url(#s01-arc)"/>
+
+  <rect x="92" y="332" width="316" height="64" rx="10" fill="#2a1430" stroke="#8a4a6a" stroke-width="1.4"/>
+  <text x="250" y="358" text-anchor="middle" fill="#ffb3e6" font-size="14" font-weight="700">Half the lab period is gone</text>
+  <text x="250" y="380" text-anchor="middle" fill="#cf9bc0" font-size="12">&#8230; before anything quantum happens</text>
+  <line x1="250" y1="296" x2="250" y2="330" stroke="#6b6390" stroke-width="2" marker-end="url(#s01-arc)"/>
+
+  <!-- AFTER -->
+  <text x="750" y="118" text-anchor="middle" fill="#ff5cf2" font-size="15" font-weight="700" letter-spacing="2">AFTER ruqu</text>
+  <rect x="558" y="138" width="384" height="78" rx="10" fill="#231a44" stroke="url(#s01-mag)" stroke-width="1.6"/>
+  <text x="750" y="164" text-anchor="middle" fill="#f3eefb" font-size="13.5" font-weight="600">One command &#8212; no install</text>
+  <rect x="578" y="176" width="344" height="28" rx="6" fill="#140f2b" stroke="#3a2f66"/>
+  <text x="750" y="195" text-anchor="middle" fill="#7df0ff" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,monospace">npx @ruvector/ruqu simulate --qubits 2</text>
+
+  <rect x="558" y="232" width="384" height="78" rx="10" fill="#231a44" stroke="url(#s01-mag)" stroke-width="1.6"/>
+  <text x="750" y="258" text-anchor="middle" fill="#f3eefb" font-size="13.5" font-weight="600">A real state-vector simulation runs</text>
+  <text x="750" y="280" text-anchor="middle" fill="#b9aee0" font-size="12">Outcome distribution prints in the terminal:</text>
+  <text x="750" y="300" text-anchor="middle" fill="#39e8ff" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,monospace">~50% &#8220;00&#8221;  &#183;  ~50% &#8220;11&#8221;  (Bell signature)</text>
+  <line x1="750" y1="216" x2="750" y2="230" stroke="#ff3df0" stroke-width="2" marker-end="url(#s01-ar)"/>
+
+  <rect x="592" y="332" width="316" height="78" rx="10" fill="#1c2444" stroke="#39e8ff" stroke-width="1.4"/>
+  <text x="750" y="358" text-anchor="middle" fill="#bff3ff" font-size="14" font-weight="700">Every student runs the SAME circuit</text>
+  <text x="750" y="379" text-anchor="middle" fill="#a9c8e0" font-size="12">in their own browser tab via the WASM package</text>
+  <text x="750" y="398" text-anchor="middle" fill="#7df0ff" font-size="11.5" font-family="'IBM Plex Mono',ui-monospace,monospace">Circuit(2) &#183; h(0) &#183; cnot(0,1) &#183; sim.run</text>
+  <line x1="750" y1="310" x2="750" y2="330" stroke="#ff3df0" stroke-width="2" marker-end="url(#s01-ar)"/>
+
+  <!-- payoff banner -->
+  <rect x="120" y="448" width="760" height="92" rx="12" fill="#1a1338" stroke="#5a4d88" stroke-width="1.2"/>
+  <text x="500" y="482" text-anchor="middle" fill="#ffd9f6" font-size="15.5" font-weight="700">&#8220;Oh &#8212; that&#8217;s what it&#8217;s for.&#8221;</text>
+  <text x="500" y="508" text-anchor="middle" fill="#cdc2ee" font-size="13">A real quantum computer&#8217;s behavior, in a browser tab or one terminal command &#8212;</text>
+  <text x="500" y="528" text-anchor="middle" fill="#cdc2ee" font-size="13">so you can touch quantum without owning a quantum computer. The class is doing quantum in 5 minutes.</text>
+</svg>

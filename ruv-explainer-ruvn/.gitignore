@@ -1,0 +1,17 @@
+# Binaries & bundles are NOT committed here [Constraint H] — they ship via GitHub Release.
+downloads/*.zip
+*.zip
+*.rvf
+*.rvf.lock
+*.embed.json
+*.passages.jsonl
+
+# Optional self-hosted fonts dropped in at build time (kept out of git).
+assets/fonts/*.woff2
+
+# Tooling noise
+node_modules/
+.vercel
+.vercel/
+.DS_Store
+*.log

@@ -1,0 +1,1 @@
+g8 — 'why this vs what you have' (16:9). Side-by-side: left = heavy crate with tangled cables + python snake, muted/grey-violet (heavy Python stack); right = tiny brilliant glowing Rust gear spinning in a small browser tab, magenta/violet/cyan glow (lightweight Rust-in-browser); deep indigo (#1b1640); playful, approachable.

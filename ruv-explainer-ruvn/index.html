@@ -1,0 +1,1224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ruvn — the AI research assistant that grades its sources and hands you a cited dossier</title>
+  <meta name="description" content="ruvn turns a question into a graded, cited evidence dossier: it searches the web, gives every source a letter grade, writes only from the trustworthy ones, tries to prove itself wrong, and gives you a report where every claim has a receipt. An explainer for non-technical Claude Code users. By Reuven Cohen / @ruvnet." />
+  <meta name="author" content="Reuven Cohen / @ruvnet — explainer by Stuart Kerr" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="canonical" href="https://ruv-explainer-ruvn.vercel.app/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="ruvn — graded, cited research instead of a confident guess" />
+  <meta property="og:description" content="An AI research assistant that grades every source A–D, writes only from the trustworthy ones, fact-checks itself, and gives you a dossier where every claim has a receipt." />
+  <meta property="og:image" content="https://ruv-explainer-ruvn.vercel.app/assets/img/g-hero.png" />
+  <meta property="og:url" content="https://ruv-explainer-ruvn.vercel.app/" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ===================== TOP BAR ===================== -->
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brandmark" href="#top" aria-label="ruvn home">
+        <img src="favicon.svg" alt="" width="26" height="26" />
+        ruvn<span class="dot">.</span>
+      </a>
+      <nav aria-label="Sections">
+        <a href="#s01">01 grounding</a>
+        <a href="#s02">02 problem</a>
+        <a href="#s03">03 why now</a>
+        <a href="#s04">04 how</a>
+        <a href="#s05">05 solved</a>
+        <a href="#s06">06 vs. tools</a>
+        <a href="#s07">07 gallery</a>
+        <a href="#s08">08 implement</a>
+        <a href="#s09">09 drop-in</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ===================== HERO ===================== -->
+    <section class="hero">
+      <div class="wrap">
+        <div class="hero-copy">
+          <p class="eyebrow">ruvnet · ruvn · an evidence-grading research agent</p>
+          <h1>Stop trusting the<br />confident paragraph.<br />Get a <span class="stamp-word">graded dossier.</span></h1>
+          <p class="lede">
+            <strong>ruvn</strong> is a free AI research assistant that turns a question into a
+            <em>graded, cited evidence dossier</em>. It searches the web, gives every source a
+            letter grade for trustworthiness, writes its answer using <em>only</em> the
+            trustworthy ones, tries to prove itself wrong, and hands you a report where
+            <em>every single claim has a receipt</em>. It runs inside the AI you already have
+            &mdash; <code>npm i -g @ruvnet/ruvn</code> &mdash; and adds no model of its own.
+          </p>
+          <div class="meta-row" aria-hidden="true">
+            <span>INSTALL&nbsp;<b>npm i -g @ruvnet/ruvn</b></span>
+            <span>PACKAGE&nbsp;<b>@ruvnet/ruvn</b></span>
+            <span>STATUS&nbsp;<b>v0.1.1 · early beta</b></span>
+          </div>
+          <div class="cta-row">
+            <a class="cta" href="#s01">Start with a real story &rarr;</a>
+            <a class="cta ghost" href="#s09">Get the drop-in</a>
+          </div>
+        </div>
+        <figure class="hero-art">
+          <span class="file-stamp">Case&nbsp;File</span>
+          <img src="assets/img/g-hero.png" width="1376" height="768"
+               alt="An open paper evidence dossier on a warm wooden desk, with source clippings paperclipped to the pages, each wearing a small rubber-stamp letter grade A, B, C or D, and a magnifying glass resting on top." />
+          <figcaption>What ruvn gives you back: an evidence dossier where every source carries a grade and every claim can be checked.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ===================== PROVENANCE ===================== -->
+    <section class="provenance" aria-label="Provenance and attribution">
+      <div class="wrap">
+        <span class="pv-label">Provenance</span>
+        <span>Original tool by <b>Reuven Cohen / @ruvnet</b></span>
+        <span>Source: <a href="https://github.com/ruvnet/ruvn" target="_blank" rel="noopener">github.com/ruvnet/ruvn</a></span>
+        <span>Updated <b>2026-06-19</b> · source <b>@ruvnet/ruvn v0.1.1</b> @ <span class="sha">5b5dd72</span></span>
+        <span>This page explains, and credits, ruv&rsquo;s work &mdash; it is not the tool itself.</span>
+      </div>
+    </section>
+
+    <!-- ===================== SECTIONS ===================== -->
+    <div class="sections">
+      <div class="wrap">
+
+        <!-- ===================================================================
+             01 — THE GROUNDING EXAMPLE (learning-order anchor; D20 / R)
+             ================================================================== -->
+        <details class="section" id="s01" open>
+          <summary>
+            <span class="num">01</span>
+            <span class="head-text">
+              <h2>Meet Dr. Priya &mdash; the &ldquo;oh, <em>that&rsquo;s</em> what it&rsquo;s for&rdquo; story</h2>
+              <span class="q">One real person, one real before &rarr; after.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p class="kicker">Start here</p>
+            <p>
+              <strong>Dr. Priya runs a small wellness studio.</strong> She&rsquo;s heard clients
+              ask about &ldquo;40&nbsp;Hz light-and-sound therapy&rdquo; for focus and sleep, and
+              she wants to know whether there&rsquo;s <em>real evidence</em> before she says
+              anything to anyone. She is not a scientist and she does not have time to read forty
+              browser tabs. She already uses Claude&nbsp;Code &mdash; mostly for her booking
+              spreadsheets &mdash; so the AI is right there on her laptop.
+            </p>
+
+            <p><strong>Before ruvn.</strong> She asks her normal AI chatbot,
+              <em>&ldquo;Does 40&nbsp;Hz light therapy actually help with sleep?&rdquo;</em> It hands
+              her one smooth, confident paragraph. It <em>sounds</em> authoritative. But she has no
+              idea whether that confidence came from a 2024 clinical trial or from a
+              supplement-seller&rsquo;s blog &mdash; they&rsquo;re blended together with no labels.
+              She can&rsquo;t tell what to trust, can&rsquo;t cite anything to a client, and
+              can&rsquo;t tell what&rsquo;s hype. She&rsquo;s stuck with a paragraph she can&rsquo;t
+              stand behind.</p>
+
+            <p><strong>After ruvn.</strong> She installs it once
+              (<code>npm i -g @ruvnet/ruvn</code>, then <code>ruvn init</code>) and asks Claude&nbsp;Code
+              to run the ruvn research pipeline on the same question. Now it splits her question into
+              precise sub-questions, goes and finds the sources, <strong>grades each one A/B/C/D</strong>,
+              writes the findings <strong>using only the A&rsquo;s and B&rsquo;s</strong>, then
+              <strong>tries to prove each statement wrong and deletes anything it can&rsquo;t back up</strong>,
+              and finally hands her a dossier where <strong>every claim has a numbered citation and
+              every source shows its grade</strong>. She gets a TL;DR, a cited body, and a graded
+              bibliography. She can see the strong claims rest on a graded-A 2024 paper and the weak
+              ones were thrown out. Now she can honestly tell a client, <em>&ldquo;here&rsquo;s what the
+              good evidence says, and here&rsquo;s what it doesn&rsquo;t.&rdquo;</em></p>
+
+            <div class="note">
+              <span class="note-k">The line that makes it click</span>
+              It&rsquo;s the difference between an AI that hands you a <em>confident paragraph you
+              can&rsquo;t check</em>, and one that hands you a <em>graded, cited dossier you can.</em>
+            </div>
+
+            <!-- TECHNICAL SVG: before/after data flow -->
+            <p class="fig-tier tech">Technical view &mdash; the same question, two very different paths</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="100%" role="img" aria-labelledby="s01t-title s01t-desc">
+                <title id="s01t-title">Before and after ruvn: one blended paragraph versus a six-stage graded pipeline</title>
+                <desc id="s01t-desc">Before ruvn, sources of every quality are blended into one unlabeled confident paragraph. After ruvn, the same question passes through scout, web-searcher, source-grader, synthesizer, fact-checker and citer, producing a dossier where every claim is cited and every source is graded A to D.</desc>
+                <defs>
+                  <marker id="s01-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                    <path d="M0,0 L10,5 L0,10 z" fill="#9e2b25"/>
+                  </marker>
+                  <marker id="s01-arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                    <path d="M0,0 L10,5 L0,10 z" fill="#3f6b3a"/>
+                  </marker>
+                </defs>
+                <rect x="0" y="0" width="1000" height="560" rx="12" fill="#fbf6ea"/>
+                <text x="500" y="34" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="20" font-weight="700">The same question: &#8220;Does 40&#160;Hz light therapy help sleep?&#8221;</text>
+                <line x1="500" y1="56" x2="500" y2="528" stroke="#d8c9a8" stroke-width="1.5" stroke-dasharray="3 6"/>
+
+                <!-- BEFORE (left) -->
+                <text x="250" y="84" text-anchor="middle" fill="#9e2b25" font-family="'Spline Sans Mono',monospace" font-size="13" font-weight="600">BEFORE &#8212; a plain AI chat</text>
+                <!-- mixed sources blob -->
+                <rect x="70" y="104" width="360" height="120" rx="9" fill="#f0e7d4" stroke="#d8c9a8"/>
+                <text x="250" y="128" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="13" font-weight="600">Sources of every quality, mixed together</text>
+                <rect x="92" y="142" width="100" height="26" rx="5" fill="#fbf6ea" stroke="#d8c9a8"/><text x="142" y="159" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">2024 trial</text>
+                <rect x="200" y="142" width="100" height="26" rx="5" fill="#fbf6ea" stroke="#d8c9a8"/><text x="250" y="159" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">forum post</text>
+                <rect x="308" y="142" width="100" height="26" rx="5" fill="#fbf6ea" stroke="#d8c9a8"/><text x="358" y="159" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">seller blog</text>
+                <text x="250" y="194" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="12">no labels &#183; no grades &#183; you can&#8217;t tell them apart</text>
+                <line x1="250" y1="224" x2="250" y2="262" stroke="#9e2b25" stroke-width="2" marker-end="url(#s01-arr)"/>
+                <!-- one paragraph -->
+                <rect x="120" y="264" width="260" height="96" rx="9" fill="#f0e7d4" stroke="#9e2b25" stroke-width="1.5"/>
+                <text x="250" y="290" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="14" font-weight="700">One confident paragraph</text>
+                <text x="250" y="312" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="11.5">sounds sure either way</text>
+                <text x="250" y="332" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="12" font-weight="600">&#8220;trust me&#8221;</text>
+                <text x="250" y="350" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">nothing to cite, nothing to check</text>
+                <text x="250" y="404" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="12">Result: a paragraph Priya can&#8217;t stand behind</text>
+
+                <!-- AFTER (right) -->
+                <text x="750" y="84" text-anchor="middle" fill="#3f6b3a" font-family="'Spline Sans Mono',monospace" font-size="13" font-weight="600">AFTER &#8212; the ruvn pipeline</text>
+                <!-- six mini stages -->
+                <g font-family="'Source Sans 3',sans-serif">
+                  <rect x="568" y="104" width="364" height="30" rx="6" fill="#fbf6ea" stroke="#3f6b3a"/><text x="750" y="124" text-anchor="middle" fill="#3f6b3a" font-size="12.5" font-weight="600">scout &#8212; split into precise sub-questions</text>
+                  <rect x="568" y="142" width="364" height="30" rx="6" fill="#fbf6ea" stroke="#d8c9a8"/><text x="750" y="162" text-anchor="middle" fill="#5a4a39" font-size="12.5">web-searcher &#8212; collect raw sources</text>
+                  <rect x="568" y="180" width="364" height="30" rx="6" fill="#fbf6ea" stroke="#9e2b25"/><text x="750" y="200" text-anchor="middle" fill="#9e2b25" font-size="12.5" font-weight="600">source-grader &#8212; stamp each A / B / C / D</text>
+                  <rect x="568" y="218" width="364" height="30" rx="6" fill="#fbf6ea" stroke="#3f6b3a"/><text x="750" y="238" text-anchor="middle" fill="#3f6b3a" font-size="12.5" font-weight="600">synthesizer &#8212; write from A &amp; B only</text>
+                  <rect x="568" y="256" width="364" height="30" rx="6" fill="#fbf6ea" stroke="#9e2b25"/><text x="750" y="276" text-anchor="middle" fill="#9e2b25" font-size="12.5" font-weight="600">fact-checker &#8212; disprove &amp; delete unsupported</text>
+                  <rect x="568" y="294" width="364" height="30" rx="6" fill="#fbf6ea" stroke="#d8c9a8"/><text x="750" y="314" text-anchor="middle" fill="#5a4a39" font-size="12.5">citer &#8212; attach a receipt to every claim</text>
+                </g>
+                <line x1="750" y1="324" x2="750" y2="356" stroke="#3f6b3a" stroke-width="2" marker-end="url(#s01-arrg)"/>
+                <rect x="600" y="358" width="300" height="74" rx="9" fill="#eef3e7" stroke="#3f6b3a" stroke-width="1.5"/>
+                <text x="750" y="384" text-anchor="middle" fill="#2f5230" font-family="Georgia,serif" font-size="14" font-weight="700">A graded, cited dossier</text>
+                <text x="750" y="406" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="11.5">TL;DR &#183; cited body &#183; graded bibliography</text>
+                <text x="750" y="423" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="11">every claim has a receipt; weak sources thrown out</text>
+
+                <text x="500" y="468" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="13">The clever part: each helper only sees what the one before it produced &#8212;</text>
+                <text x="500" y="488" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="13">so good information is <tspan font-weight="700" fill="#3a2f25">forced</tspan> through a grading gate and a fact-checking gate before it reaches you.</text>
+                <text x="500" y="516" text-anchor="middle" fill="#9e2b25" font-family="Georgia,serif" font-size="13.5" font-style="italic">A confident paragraph you can&#8217;t check &#8594; a graded dossier you can.</text>
+              </svg>
+              <figcaption>The whole idea in one diagram: a plain chat blends every source into one unlabeled paragraph (left); ruvn forces the same question through six checkpoints &mdash; grade, then write from the good ones only, then fact-check, then cite &mdash; and returns a dossier you can audit (right).</figcaption>
+            </figure>
+
+            <!-- FRIENDLY RASTER -->
+            <p class="fig-tier friendly">Friendly view &mdash; what it feels like for Priya</p>
+            <figure class="figure">
+              <img src="assets/img/g-persona.png" width="1376" height="768"
+                   alt="A relieved wellness-studio owner at a cozy desk holding a tidy cited report with letter-grade tabs, while a chaotic pile of browser tabs and sticky-note question marks fades away behind her." />
+              <figcaption>
+                Before: forty tabs, sticky notes, and a nagging &ldquo;can I actually trust this?&rdquo;
+                After: one tidy report she can hand to a client, with grades she can point to. Same
+                AI, same laptop &mdash; ruvn just made it show its work.
+              </figcaption>
+            </figure>
+
+            <div class="note warn">
+              <span class="note-k">Honest framing</span>
+              ruvn was <em>built</em> for exactly this kind of question &mdash; it was made for the
+              <strong>ruv-neural</strong> gamma-entrainment (40&nbsp;Hz) research project &mdash; but
+              the repo is explicit that <em>&ldquo;it works for any research question.&rdquo;</em> The
+              medical framing is the origin story, not a limit. And ruvn is a <em>research</em> tool:
+              it grades and cites evidence; it does <strong>not</strong> give medical advice or make
+              efficacy claims.
+            </div>
+          </div>
+        </details>
+
+        <!-- ===================================================================
+             02 — WHAT PROBLEM IT SOLVES (the stakes; D20 / O)
+             ================================================================== -->
+        <details class="section" id="s02">
+          <summary>
+            <span class="num">02</span>
+            <span class="head-text">
+              <h2>What problem it solves &mdash; the &ldquo;confident blend&rdquo; trap</h2>
+              <span class="q">What does it actually do? Why do I care?</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              When you ask a normal AI chatbot to &ldquo;research&rdquo; something, it blends good
+              sources and bad sources into <strong>one confident paragraph</strong> &mdash; and you
+              can&rsquo;t tell which parts came from a peer-reviewed paper and which came from a
+              random forum post. It sounds sure of itself either way. <em>That&rsquo;s the trap.</em>
+              The repo puts it bluntly: <em>&ldquo;Most &lsquo;ask an AI&rsquo; research blends good
+              and bad sources into one confident answer. ruvn refuses to.&rdquo;</em>
+            </p>
+            <p>So, plainly:</p>
+            <ul>
+              <li><strong>What does it actually do?</strong> It does disciplined research <em>for</em>
+                you &mdash; finds sources, grades them, writes only from the trustworthy ones,
+                fact-checks itself, and gives you a cited report instead of a confident guess.</li>
+              <li><strong>Why do I care?</strong> Because a confident-but-wrong answer is the most
+                expensive kind. ruvn makes the AI <strong>show its work</strong> &mdash; you can see
+                which claim came from which source, and how good that source is, at a glance. No more
+                &ldquo;trust me.&rdquo;</li>
+              <li><strong>Why do I need it?</strong> Because the AI you already use doesn&rsquo;t grade
+                its sources by default &mdash; it just answers. ruvn bolts a
+                <em>grading-and-verification discipline</em> onto the AI you already have, so
+                &ldquo;research&rdquo; stops meaning &ldquo;plausible paragraph&rdquo; and starts
+                meaning <em>&ldquo;evidence you can check.&rdquo;</em></li>
+              <li><strong>Why is it important?</strong> Because the output is <strong>auditable</strong>.
+                Every claim has a citation; every source has a grade. You &mdash; or a colleague, or a
+                skeptic &mdash; can re-check it. That&rsquo;s the difference between a vibe and a
+                dossier.</li>
+            </ul>
+
+            <!-- TECHNICAL SVG: the blend trap, anatomy -->
+            <p class="fig-tier tech">Technical view &mdash; why a single blended answer hides the problem</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="100%" role="img" aria-labelledby="s02t-title s02t-desc">
+                <title id="s02t-title">The confident-blend trap, and how grading + citation undoes it</title>
+                <desc id="s02t-desc">A plain AI flattens a strong paper, a weak blog and an unsourced forum post into one unlabeled paragraph, so a reader cannot trace any claim. ruvn keeps each source separate, grades it, and attaches the grade and a citation to every claim, making the output auditable.</desc>
+                <defs>
+                  <marker id="s02-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#84715a"/></marker>
+                </defs>
+                <rect x="0" y="0" width="1000" height="470" rx="12" fill="#fbf6ea"/>
+                <text x="500" y="34" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="19" font-weight="700">Why &#8220;one confident paragraph&#8221; is the trap</text>
+
+                <!-- three sources -->
+                <rect x="50" y="70" width="150" height="58" rx="8" fill="#eef3e7" stroke="#3f6b3a"/><text x="125" y="94" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="600">2024 clinical trial</text><text x="125" y="112" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="11">strong &#183; would be grade A</text>
+                <rect x="50" y="140" width="150" height="58" rx="8" fill="#f0e7d4" stroke="#b07d35"/><text x="125" y="164" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="600">a tidy summary</text><text x="125" y="182" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">background only &#183; grade C</text>
+                <rect x="50" y="210" width="150" height="58" rx="8" fill="#f7e9e6" stroke="#9e2b25"/><text x="125" y="234" text-anchor="middle" fill="#7a201c" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="600">unsourced forum post</text><text x="125" y="252" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="11">discard &#183; grade D</text>
+
+                <!-- PLAIN AI path: flatten -->
+                <line x1="200" y1="99" x2="300" y2="160" stroke="#84715a" stroke-width="1.5" marker-end="url(#s02-arr)"/>
+                <line x1="200" y1="169" x2="300" y2="169" stroke="#84715a" stroke-width="1.5" marker-end="url(#s02-arr)"/>
+                <line x1="200" y1="239" x2="300" y2="178" stroke="#84715a" stroke-width="1.5" marker-end="url(#s02-arr)"/>
+                <rect x="304" y="128" width="180" height="82" rx="9" fill="#f0e7d4" stroke="#9e2b25" stroke-width="1.5"/>
+                <text x="394" y="152" text-anchor="middle" fill="#9e2b25" font-family="'Spline Sans Mono',monospace" font-size="11" font-weight="600">PLAIN AI</text>
+                <text x="394" y="174" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="13" font-weight="700">one paragraph</text>
+                <text x="394" y="194" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">grades flattened away</text>
+                <text x="394" y="240" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="12" font-weight="600">you can&#8217;t trace any claim</text>
+                <text x="394" y="258" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">the D quietly counts as much as the A</text>
+
+                <!-- RUVN path -->
+                <line x1="200" y1="99" x2="556" y2="96" stroke="#3f6b3a" stroke-width="1.5" marker-end="url(#s02-arr)"/>
+                <line x1="200" y1="169" x2="556" y2="180" stroke="#b07d35" stroke-width="1.5" marker-end="url(#s02-arr)"/>
+                <line x1="200" y1="239" x2="556" y2="264" stroke="#9e2b25" stroke-width="1.5" marker-end="url(#s02-arr)"/>
+                <rect x="560" y="72" width="392" height="60" rx="9" fill="#eef3e7" stroke="#3f6b3a"/>
+                <text x="756" y="96" text-anchor="middle" fill="#2f5230" font-family="'Spline Sans Mono',monospace" font-size="11" font-weight="600">RUVN &#8212; keep them separate, graded, cited</text>
+                <text x="756" y="118" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="11.5">[A] kept &#183; used in the answer, with a citation</text>
+                <rect x="560" y="156" width="392" height="48" rx="9" fill="#f0e7d4" stroke="#b07d35"/>
+                <text x="756" y="184" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11.5">[C] background only &#8212; <tspan font-weight="700">not</tspan> evidence in the answer</text>
+                <rect x="560" y="228" width="392" height="48" rx="9" fill="#f7e9e6" stroke="#9e2b25"/>
+                <text x="756" y="256" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="11.5">[D] discarded &#8212; never reaches you</text>
+
+                <text x="500" y="318" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="14" font-weight="700">The difference: ruvn never lets the weak sources hide inside the strong ones.</text>
+                <rect x="120" y="338" width="760" height="92" rx="9" fill="#f0e7d4" stroke="#d8c9a8"/>
+                <text x="500" y="364" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="12.5">Plain AI: &#8220;trust me&#8221; &#8212; you can&#8217;t check it, can&#8217;t cite it, can&#8217;t tell hype from evidence.</text>
+                <text x="500" y="388" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="12.5">ruvn: every claim carries a citation; every source carries a grade.</text>
+                <text x="500" y="412" text-anchor="middle" fill="#9e2b25" font-family="Georgia,serif" font-size="13.5" font-style="italic">Auditable, not just plausible.</text>
+              </svg>
+              <figcaption>The trap, drawn out: a plain AI flattens a grade-A paper, a grade-C summary, and a grade-D forum post into one paragraph where the weak source secretly counts as much as the strong one. ruvn keeps them separate, grades each, and only lets the good ones into the answer &mdash; with a citation.</figcaption>
+            </figure>
+
+            <!-- FRIENDLY RASTER -->
+            <p class="fig-tier friendly">Friendly view &mdash; from &ldquo;trust me&rdquo; to a checkable case file</p>
+            <figure class="figure">
+              <img src="assets/img/g-before-after.png" width="1376" height="768"
+                   alt="On the left, a single grey blurry paragraph with a big question mark and the words trust me. On the right, the same content reorganized into a neat case file with numbered citation tags and green A and B grade stamps, joined by an arrow labelled transformation, verified." />
+              <figcaption>
+                Left: a confident grey blur you&rsquo;re asked to trust. Right: the same content as a
+                tidy case file &mdash; numbered citations, graded sources, checkable. That arrow in the
+                middle is the whole product.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- ===================================================================
+             03 — HOW THE GRADING WORKS / WHY IT MATTERS NOW
+             ================================================================== -->
+        <details class="section" id="s03">
+          <summary>
+            <span class="num">03</span>
+            <span class="head-text">
+              <h2>The grading rubric &mdash; how a source earns its way into your answer</h2>
+              <span class="q">A, B, C, D &mdash; and only A and B are allowed in.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              Here is the rule the whole tool turns on. The <strong>source-grader</strong> opens each
+              source and stamps it <strong>A, B, C, or D</strong> for how much you can trust it. The
+              <strong>synthesizer</strong> is then only allowed to write from the <strong>A and B</strong>
+              sources &mdash; the C&rsquo;s and D&rsquo;s are not allowed in. And the
+              <strong>fact-checker</strong> holds the bar higher still: a claim must be backed by
+              <strong>one grade-A source or two grade-B sources</strong>, or it gets stripped out.
+            </p>
+
+            <table class="grades">
+              <thead>
+                <tr><th>Grade</th><th>What it means</th><th>Allowed in the answer?</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><span class="gp a">A</span></td><td>Primary source (a real paper, an official doc), under ~2 years old, on-topic</td><td class="yes">&#10003;&nbsp; Yes</td></tr>
+                <tr><td><span class="gp b">B</span></td><td>Reputable secondary source (major outlet, named expert), under ~5 years</td><td class="yes">&#10003;&nbsp; Yes</td></tr>
+                <tr><td><span class="gp c">C</span></td><td>Tertiary (Wikipedia, a summary) &mdash; background only, <strong>not</strong> evidence</td><td class="no">&#10007;&nbsp; No</td></tr>
+                <tr><td><span class="gp d">D</span></td><td>Discarded (forum post, unsourced claim, dead link)</td><td class="no">&#10007;&nbsp; No</td></tr>
+              </tbody>
+            </table>
+
+            <div class="note">
+              <span class="note-k">The whole point in one line</span>
+              The synthesizer is only allowed to use <strong>A and B</strong>. The fact-checker then
+              keeps a claim only if it has <strong>one A or two B&rsquo;s</strong> behind it. Everything
+              else is background or gone.
+            </div>
+
+            <!-- TECHNICAL SVG: grading gate with thresholds -->
+            <p class="fig-tier tech">Technical view &mdash; the grading gate and the evidence threshold</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 430" width="100%" role="img" aria-labelledby="s03t-title s03t-desc">
+                <title id="s03t-title">The grading gate: sources sorted A to D, only A and B pass to the writer, and a claim survives only with one A or two B sources</title>
+                <desc id="s03t-desc">Every collected source is graded A, B, C or D. A and B pass the first gate into the synthesizer; C and D are blocked. Then the fact-checker applies a second gate: a claim is kept only if backed by one grade-A source or two grade-B sources, otherwise it is deleted.</desc>
+                <defs>
+                  <marker id="s03-arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3f6b3a"/></marker>
+                  <marker id="s03-arrx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9e2b25"/></marker>
+                </defs>
+                <rect x="0" y="0" width="1000" height="430" rx="12" fill="#fbf6ea"/>
+                <text x="500" y="32" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="19" font-weight="700">Two gates a source must clear</text>
+
+                <!-- collected sources -->
+                <text x="110" y="70" text-anchor="middle" fill="#84715a" font-family="'Spline Sans Mono',monospace" font-size="11" font-weight="600">COLLECTED</text>
+                <rect x="40" y="84" width="140" height="34" rx="6" fill="#eef3e7" stroke="#3f6b3a"/><text x="110" y="106" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="600">A &#183; primary paper</text>
+                <rect x="40" y="124" width="140" height="34" rx="6" fill="#eef3e7" stroke="#3f6b3a"/><text x="110" y="146" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="600">B &#183; reputable outlet</text>
+                <rect x="40" y="164" width="140" height="34" rx="6" fill="#f0e7d4" stroke="#b07d35"/><text x="110" y="186" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="12.5">C &#183; summary</text>
+                <rect x="40" y="204" width="140" height="34" rx="6" fill="#f7e9e6" stroke="#9e2b25"/><text x="110" y="226" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="12.5">D &#183; forum post</text>
+
+                <!-- GATE 1 -->
+                <rect x="250" y="84" width="36" height="154" rx="8" fill="#f0e7d4" stroke="#3a2f25" stroke-width="1.5"/>
+                <text x="268" y="166" text-anchor="middle" fill="#3a2f25" font-family="'Spline Sans Mono',monospace" font-size="11" font-weight="600" transform="rotate(90 268 166)">GATE 1 &#183; grade</text>
+                <line x1="180" y1="101" x2="248" y2="101" stroke="#3f6b3a" stroke-width="2" marker-end="url(#s03-arrg)"/>
+                <line x1="180" y1="141" x2="248" y2="141" stroke="#3f6b3a" stroke-width="2" marker-end="url(#s03-arrg)"/>
+                <line x1="180" y1="181" x2="248" y2="181" stroke="#9e2b25" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#s03-arrx)"/>
+                <line x1="180" y1="221" x2="248" y2="221" stroke="#9e2b25" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#s03-arrx)"/>
+
+                <!-- pass to synthesizer -->
+                <line x1="286" y1="121" x2="360" y2="121" stroke="#3f6b3a" stroke-width="2" marker-end="url(#s03-arrg)"/>
+                <rect x="362" y="92" width="160" height="58" rx="8" fill="#eef3e7" stroke="#3f6b3a" stroke-width="1.5"/>
+                <text x="442" y="116" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="600">synthesizer</text>
+                <text x="442" y="135" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="11">writes from A &amp; B only</text>
+
+                <!-- blocked -->
+                <text x="320" y="200" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="11.5" font-weight="600">C/D blocked</text>
+                <text x="320" y="218" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10.5">(C = background; D = gone)</text>
+
+                <!-- GATE 2 -->
+                <line x1="522" y1="121" x2="590" y2="121" stroke="#3f6b3a" stroke-width="2" marker-end="url(#s03-arrg)"/>
+                <rect x="592" y="84" width="36" height="120" rx="8" fill="#f0e7d4" stroke="#3a2f25" stroke-width="1.5"/>
+                <text x="610" y="144" text-anchor="middle" fill="#3a2f25" font-family="'Spline Sans Mono',monospace" font-size="11" font-weight="600" transform="rotate(90 610 144)">GATE 2 &#183; verify</text>
+
+                <rect x="660" y="74" width="300" height="64" rx="8" fill="#fbf6ea" stroke="#3f6b3a"/>
+                <text x="810" y="98" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="600">Claim KEPT</text>
+                <text x="810" y="118" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="11.5">backed by 1&#215;A &nbsp;or&nbsp; 2&#215;B</text>
+                <text x="810" y="132" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10.5">&#8230; then a citation is attached</text>
+
+                <rect x="660" y="150" width="300" height="54" rx="8" fill="#f7e9e6" stroke="#9e2b25"/>
+                <text x="810" y="174" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="600">Claim DELETED</text>
+                <text x="810" y="192" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">can&#8217;t meet the threshold &#8594; stripped out</text>
+                <line x1="628" y1="121" x2="658" y2="106" stroke="#3f6b3a" stroke-width="2" marker-end="url(#s03-arrg)"/>
+                <line x1="628" y1="144" x2="658" y2="177" stroke="#9e2b25" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#s03-arrx)"/>
+
+                <line x1="40" y1="270" x2="960" y2="270" stroke="#d8c9a8" stroke-width="1" stroke-dasharray="2 5"/>
+                <text x="500" y="300" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="14" font-weight="700">A source can be trusted (gate 1) and a claim can still be cut (gate 2).</text>
+                <text x="500" y="324" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="12.5">Gate 1 decides which <tspan font-weight="700">sources</tspan> are allowed in. Gate 2 decides which <tspan font-weight="700">claims</tspan> have enough backing to survive.</text>
+                <text x="500" y="356" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-style="italic">Two independent checks &#8212; that&#8217;s why the output is hard to fool.</text>
+                <text x="500" y="392" text-anchor="middle" fill="#84715a" font-family="'Spline Sans Mono',monospace" font-size="11">source: src/agents/source-grader.ts &#183; synthesizer.ts &#183; fact-checker.ts</text>
+              </svg>
+              <figcaption>The grading gate, exactly as the agents enforce it: Gate&nbsp;1 (the grader) only lets A and B sources reach the writer; Gate&nbsp;2 (the fact-checker) keeps a claim only if it has one grade-A or two grade-B sources behind it, then a citation is attached. Two separate checks, so weak evidence can&rsquo;t sneak through on either.</figcaption>
+            </figure>
+
+            <!-- FRIENDLY RASTER -->
+            <p class="fig-tier friendly">Friendly view &mdash; the four grade stamps</p>
+            <figure class="figure">
+              <img src="assets/img/g-grades.png" width="1024" height="1024"
+                   alt="Four rubber-stamp letter grades on cream paper: A and B stamped in green with checkmarks and the words used in answer; C and D stamped in oxblood red with crosses and the words not used." />
+              <figcaption>
+                Green stamps get used; red stamps don&rsquo;t. A and B are the evidence your answer is
+                built from; C is background only; D is thrown out. That&rsquo;s the entire rubric on
+                one piece of paper.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- ===================================================================
+             04 — HOW IT SOLVES IT (the six-agent pipeline — the core process)
+             ================================================================== -->
+        <details class="section" id="s04">
+          <summary>
+            <span class="num">04</span>
+            <span class="head-text">
+              <h2>How it works &mdash; six specialist helpers, in a line</h2>
+              <span class="q">A research process with checkpoints, not a single answer.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              ruvn is a <strong>research process with checkpoints</strong>, not a single answer. It runs
+              <strong>six specialist helpers in a line</strong>, and &mdash; this is the clever part &mdash;
+              <strong>each helper only sees what the one before it produced, never the raw mess.</strong>
+              So information is <em>forced</em> to pass through a grading gate and a fact-checking gate
+              before it ever reaches you. In plain words:
+            </p>
+            <ol>
+              <li><strong>scout</strong> &mdash; breaks your big question into 3&ndash;7 precise little
+                questions. <em>&ldquo;What exactly do we need to find out?&rdquo;</em></li>
+              <li><strong>web-searcher</strong> &mdash; goes and finds raw sources for each little
+                question; doesn&rsquo;t judge yet, just collects. <em>&ldquo;Go find the sources.&rdquo;</em></li>
+              <li><strong>source-grader</strong> &mdash; opens each source and stamps it A, B, C, or D
+                for how much you can trust it. <em>&ldquo;Which of these can we actually trust?&rdquo;</em></li>
+              <li><strong>synthesizer</strong> &mdash; writes the findings using <em>only</em> the A and
+                B sources. The C&rsquo;s and D&rsquo;s are not allowed in. <em>&ldquo;Summarize &mdash;
+                but only from the good stuff.&rdquo;</em></li>
+              <li><strong>fact-checker</strong> &mdash; goes back and tries to <em>disprove</em> every
+                claim; anything it can&rsquo;t support gets deleted. <em>&ldquo;Try to prove each
+                statement wrong, and cut what fails.&rdquo;</em></li>
+              <li><strong>citer</strong> &mdash; final pass: attaches a numbered citation to
+                <em>every</em> claim and builds the bibliography with the grades shown.
+                <em>&ldquo;No claim ships without a receipt.&rdquo;</em></li>
+            </ol>
+            <p>
+              <strong>What you get back:</strong> a Markdown dossier &mdash; a TL;DR up top, a body where
+              every sentence is cited, and a bibliography with a letter grade next to each source.
+            </p>
+
+            <!-- TECHNICAL SVG: the six-agent pipeline, hand-off contract + tiers -->
+            <p class="fig-tier tech">Technical view &mdash; the pipeline, its hand-off contract, and the model tier of each agent</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="100%" role="img" aria-labelledby="s04t-title s04t-desc">
+                <title id="s04t-title">The six-agent ruvn pipeline with its strict hand-off contract</title>
+                <desc id="s04t-desc">Six agents run in order: scout, web-searcher, source-grader, synthesizer, fact-checker, citer. Each agent receives only the previous agent's structured output, not the raw web. The grader and writer enforce the A/B gate; the fact-checker enforces the evidence threshold; the citer attaches citations. Five agents run on the sonnet tier; web-searcher runs on the cheaper haiku tier.</desc>
+                <defs>
+                  <marker id="s04-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9e2b25"/></marker>
+                </defs>
+                <rect x="0" y="0" width="1000" height="560" rx="12" fill="#fbf6ea"/>
+                <text x="500" y="32" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="19" font-weight="700">The pipeline &#8212; each helper only sees the one before it</text>
+                <text x="500" y="54" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="12.5">Your question enters at the left; a graded, cited dossier leaves at the right.</text>
+
+                <!-- input -->
+                <rect x="30" y="86" width="92" height="60" rx="9" fill="#f0e7d4" stroke="#3a2f25" stroke-width="1.5"/>
+                <text x="76" y="112" text-anchor="middle" fill="#3a2f25" font-family="'Source Sans 3',sans-serif" font-size="12" font-weight="600">your</text>
+                <text x="76" y="128" text-anchor="middle" fill="#3a2f25" font-family="'Source Sans 3',sans-serif" font-size="12" font-weight="600">question</text>
+
+                <!-- 6 stages -->
+                <!-- helper to build a stage box manually -->
+                <!-- 1 scout -->
+                <rect x="142" y="80" width="128" height="72" rx="9" fill="#fbf6ea" stroke="#3f6b3a" stroke-width="1.5"/>
+                <text x="206" y="100" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="700">1 &#183; scout</text>
+                <text x="206" y="118" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="10.5">split into 3&#8211;7</text>
+                <text x="206" y="131" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="10.5">sub-questions</text>
+                <text x="206" y="147" text-anchor="middle" fill="#84715a" font-family="'Spline Sans Mono',monospace" font-size="9">sonnet</text>
+                <!-- 2 web-searcher -->
+                <rect x="290" y="80" width="128" height="72" rx="9" fill="#fbf6ea" stroke="#b07d35" stroke-width="1.5"/>
+                <text x="354" y="100" text-anchor="middle" fill="#3a2f25" font-family="'Source Sans 3',sans-serif" font-size="12" font-weight="700">2 &#183; web-searcher</text>
+                <text x="354" y="118" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="10.5">collect raw sources</text>
+                <text x="354" y="131" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="10.5">(no judging yet)</text>
+                <text x="354" y="147" text-anchor="middle" fill="#b07d35" font-family="'Spline Sans Mono',monospace" font-size="9" font-weight="600">haiku &#183; cheaper tier</text>
+                <!-- 3 source-grader -->
+                <rect x="438" y="80" width="128" height="72" rx="9" fill="#fbf6ea" stroke="#9e2b25" stroke-width="1.5"/>
+                <text x="502" y="100" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="11.5" font-weight="700">3 &#183; source-grader</text>
+                <text x="502" y="118" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="10.5">stamp each</text>
+                <text x="502" y="131" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="10.5">A / B / C / D</text>
+                <text x="502" y="147" text-anchor="middle" fill="#84715a" font-family="'Spline Sans Mono',monospace" font-size="9">sonnet</text>
+                <!-- 4 synthesizer -->
+                <rect x="586" y="80" width="128" height="72" rx="9" fill="#fbf6ea" stroke="#3f6b3a" stroke-width="1.5"/>
+                <text x="650" y="100" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="12" font-weight="700">4 &#183; synthesizer</text>
+                <text x="650" y="118" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="10.5">write from</text>
+                <text x="650" y="131" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="10.5" font-weight="600">A &amp; B only</text>
+                <text x="650" y="147" text-anchor="middle" fill="#84715a" font-family="'Spline Sans Mono',monospace" font-size="9">sonnet</text>
+                <!-- 5 fact-checker -->
+                <rect x="734" y="80" width="128" height="72" rx="9" fill="#fbf6ea" stroke="#9e2b25" stroke-width="1.5"/>
+                <text x="798" y="100" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="11.5" font-weight="700">5 &#183; fact-checker</text>
+                <text x="798" y="118" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="10.5">disprove &amp;</text>
+                <text x="798" y="131" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="10.5" font-weight="600">delete unsupported</text>
+                <text x="798" y="147" text-anchor="middle" fill="#84715a" font-family="'Spline Sans Mono',monospace" font-size="9">sonnet</text>
+                <!-- 6 citer -->
+                <rect x="868" y="80" width="104" height="72" rx="9" fill="#fbf6ea" stroke="#3f6b3a" stroke-width="1.5"/>
+                <text x="920" y="100" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="700">6 &#183; citer</text>
+                <text x="920" y="118" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="10.5">cite every</text>
+                <text x="920" y="131" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="10.5">claim</text>
+                <text x="920" y="147" text-anchor="middle" fill="#84715a" font-family="'Spline Sans Mono',monospace" font-size="9">sonnet</text>
+
+                <!-- arrows between stages -->
+                <line x1="122" y1="116" x2="140" y2="116" stroke="#9e2b25" stroke-width="2" marker-end="url(#s04-arr)"/>
+                <line x1="270" y1="116" x2="288" y2="116" stroke="#9e2b25" stroke-width="2" marker-end="url(#s04-arr)"/>
+                <line x1="418" y1="116" x2="436" y2="116" stroke="#9e2b25" stroke-width="2" marker-end="url(#s04-arr)"/>
+                <line x1="566" y1="116" x2="584" y2="116" stroke="#9e2b25" stroke-width="2" marker-end="url(#s04-arr)"/>
+                <line x1="714" y1="116" x2="732" y2="116" stroke="#9e2b25" stroke-width="2" marker-end="url(#s04-arr)"/>
+                <line x1="862" y1="116" x2="866" y2="116" stroke="#9e2b25" stroke-width="2" marker-end="url(#s04-arr)"/>
+
+                <!-- hand-off contract band -->
+                <rect x="142" y="186" width="830" height="58" rx="9" fill="#f0e7d4" stroke="#3a2f25"/>
+                <text x="557" y="208" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="13.5" font-weight="700">The hand-off contract</text>
+                <text x="557" y="228" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="12">Each agent receives ONLY the previous agent&#8217;s structured output &#8212; never the raw web, never the raw mess.</text>
+
+                <!-- forced gates callouts -->
+                <line x1="502" y1="152" x2="502" y2="184" stroke="#9e2b25" stroke-width="1.5" stroke-dasharray="3 3"/>
+                <line x1="650" y1="152" x2="650" y2="184" stroke="#3f6b3a" stroke-width="1.5" stroke-dasharray="3 3"/>
+                <line x1="798" y1="152" x2="798" y2="184" stroke="#9e2b25" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+                <!-- output -->
+                <text x="500" y="290" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="15" font-weight="700">What leaves the pipeline</text>
+                <rect x="250" y="306" width="500" height="120" rx="10" fill="#eef3e7" stroke="#3f6b3a" stroke-width="1.5"/>
+                <text x="500" y="332" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="13.5" font-weight="700">A Markdown dossier</text>
+                <line x1="280" y1="346" x2="720" y2="346" stroke="#cdd9c4" stroke-width="1"/>
+                <text x="500" y="368" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="12">&#9656; a TL;DR up top</text>
+                <text x="500" y="388" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="12">&#9656; a body where every sentence is cited</text>
+                <text x="500" y="408" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="12">&#9656; a bibliography with a grade beside each source</text>
+                <line x1="920" y1="152" x2="700" y2="304" stroke="#3f6b3a" stroke-width="2" marker-end="url(#s04-arr)"/>
+
+                <text x="500" y="466" text-anchor="middle" fill="#9e2b25" font-family="Georgia,serif" font-size="13.5" font-style="italic">Because each helper is fed a clean, structured hand-off, the grade and verify gates can&#8217;t be bypassed.</text>
+                <text x="500" y="498" text-anchor="middle" fill="#84715a" font-family="'Spline Sans Mono',monospace" font-size="11">source: src/agents/scout.ts &#183; web-searcher.ts &#183; source-grader.ts &#183; synthesizer.ts &#183; fact-checker.ts &#183; citer.ts</text>
+                <text x="500" y="524" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">Tiers from each agent&#8217;s TIER field: five run on sonnet; web-searcher runs on the cheaper haiku tier.</text>
+              </svg>
+              <figcaption>The real pipeline, with the detail a README buries: six named agents in a fixed order; the strict hand-off contract (each only sees the previous agent&rsquo;s structured output, never the raw web); the two forced gates (grade, then verify); the model tier each agent runs on; and the exact shape of the dossier that comes out.</figcaption>
+            </figure>
+
+            <!-- FRIENDLY RASTER -->
+            <p class="fig-tier friendly">Friendly view &mdash; six little helpers passing the folder down the line</p>
+            <figure class="figure">
+              <img src="assets/img/g-pipeline.png" width="1376" height="768"
+                   alt="Six friendly little paper-character helpers in a line on a worktable, passing a manila folder hand to hand: a scout with a spyglass, a searcher with a net of papers, a grader with a stamp, a synthesizer with a pen, a fact-checker with a red reject stamp, and a citer attaching numbered tags." />
+              <figcaption>
+                Picture six little specialists at a worktable, passing one folder down the line. Each
+                only ever sees the folder the helper before them handed over &mdash; so by the time it
+                reaches you, it has been searched, graded, written, fact-checked, and tagged.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- ===================================================================
+             05 — WHAT A SOLVED STATE LOOKS LIKE (the dossier output)
+             ================================================================== -->
+        <details class="section" id="s05">
+          <summary>
+            <span class="num">05</span>
+            <span class="head-text">
+              <h2>What &ldquo;solved&rdquo; looks like &mdash; the dossier on your screen</h2>
+              <span class="q">The exact thing you can hand a skeptic.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              &ldquo;Done&rdquo; isn&rsquo;t a chat reply &mdash; it&rsquo;s a file. ruvn returns a
+              ready-to-paste Markdown dossier with three parts you can actually point at: a
+              <strong>TL;DR</strong> at the top, a <strong>cited body</strong> where every sentence
+              carries a numbered receipt, and a <strong>graded bibliography</strong> where every source
+              shows its A/B/C tag. The citer&rsquo;s own rule is blunt: <em>&ldquo;the dossier must NOT
+              contain any claim without a citation.&rdquo;</em>
+            </p>
+
+            <!-- TECHNICAL SVG: anatomy of the output dossier -->
+            <p class="fig-tier tech">Technical view &mdash; the anatomy of the dossier ruvn writes</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 540" width="100%" role="img" aria-labelledby="s05t-title s05t-desc">
+                <title id="s05t-title">Anatomy of a ruvn dossier: TL;DR, a cited body, and a graded bibliography</title>
+                <desc id="s05t-desc">A sample Markdown dossier showing a TL;DR block, a body where every sentence ends in a numbered citation, and a bibliography listing each source with its letter grade. Callouts point to the citation on each claim and the grade on each source.</desc>
+                <defs>
+                  <marker id="s05-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9e2b25"/></marker>
+                </defs>
+                <rect x="0" y="0" width="1000" height="540" rx="12" fill="#fbf6ea"/>
+                <text x="500" y="32" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="19" font-weight="700">What lands in your folder: a Markdown dossier</text>
+
+                <!-- the "document" -->
+                <rect x="250" y="58" width="500" height="436" rx="10" fill="#ffffff" stroke="#d8c9a8" stroke-width="1.5"/>
+                <rect x="250" y="58" width="500" height="34" rx="10" fill="#f0e7d4"/>
+                <text x="270" y="80" fill="#5a4a39" font-family="'Spline Sans Mono',monospace" font-size="12" font-weight="600">research-dossier.md</text>
+                <circle cx="726" cy="75" r="4" fill="#9e2b25"/><circle cx="712" cy="75" r="4" fill="#b07d35"/><circle cx="698" cy="75" r="4" fill="#3f6b3a"/>
+
+                <!-- TL;DR -->
+                <rect x="270" y="104" width="460" height="58" rx="7" fill="#eef3e7" stroke="#3f6b3a"/>
+                <text x="282" y="124" fill="#2f5230" font-family="'Spline Sans Mono',monospace" font-size="11" font-weight="700">## TL;DR</text>
+                <line x1="282" y1="134" x2="700" y2="134" stroke="#cdd9c4" stroke-width="6" stroke-linecap="round"/>
+                <line x1="282" y1="148" x2="620" y2="148" stroke="#cdd9c4" stroke-width="6" stroke-linecap="round"/>
+
+                <!-- body with citations -->
+                <text x="282" y="186" fill="#3a2f25" font-family="'Spline Sans Mono',monospace" font-size="11" font-weight="700">## Findings</text>
+                <line x1="282" y1="200" x2="640" y2="200" stroke="#e3d2ad" stroke-width="6" stroke-linecap="round"/>
+                <rect x="648" y="193" width="26" height="14" rx="3" fill="#eef3e7" stroke="#3f6b3a"/><text x="661" y="204" text-anchor="middle" fill="#2f5230" font-family="'Spline Sans Mono',monospace" font-size="9">[1]</text>
+                <line x1="282" y1="218" x2="600" y2="218" stroke="#e3d2ad" stroke-width="6" stroke-linecap="round"/>
+                <rect x="608" y="211" width="26" height="14" rx="3" fill="#eef3e7" stroke="#3f6b3a"/><text x="621" y="222" text-anchor="middle" fill="#2f5230" font-family="'Spline Sans Mono',monospace" font-size="9">[2]</text>
+                <line x1="282" y1="236" x2="660" y2="236" stroke="#e3d2ad" stroke-width="6" stroke-linecap="round"/>
+                <rect x="668" y="229" width="26" height="14" rx="3" fill="#eef3e7" stroke="#3f6b3a"/><text x="681" y="240" text-anchor="middle" fill="#2f5230" font-family="'Spline Sans Mono',monospace" font-size="9">[3]</text>
+                <line x1="282" y1="254" x2="560" y2="254" stroke="#e3d2ad" stroke-width="6" stroke-linecap="round"/>
+                <rect x="568" y="247" width="26" height="14" rx="3" fill="#eef3e7" stroke="#3f6b3a"/><text x="581" y="258" text-anchor="middle" fill="#2f5230" font-family="'Spline Sans Mono',monospace" font-size="9">[1]</text>
+
+                <!-- bibliography with grades -->
+                <text x="282" y="296" fill="#3a2f25" font-family="'Spline Sans Mono',monospace" font-size="11" font-weight="700">## Sources</text>
+                <g font-family="'Spline Sans Mono',monospace" font-size="10">
+                  <rect x="282" y="306" width="24" height="18" rx="3" fill="#eef3e7" stroke="#3f6b3a"/><text x="294" y="319" text-anchor="middle" fill="#2f5230" font-weight="700">A</text>
+                  <text x="316" y="319" fill="#5a4a39">[1] Nature, 2024 clinical trial &#8212; primary, on-topic</text>
+                  <rect x="282" y="330" width="24" height="18" rx="3" fill="#eef3e7" stroke="#3f6b3a"/><text x="294" y="343" text-anchor="middle" fill="#2f5230" font-weight="700">B</text>
+                  <text x="316" y="343" fill="#5a4a39">[2] Major outlet review &#8212; reputable secondary</text>
+                  <rect x="282" y="354" width="24" height="18" rx="3" fill="#eef3e7" stroke="#3f6b3a"/><text x="294" y="367" text-anchor="middle" fill="#2f5230" font-weight="700">A</text>
+                  <text x="316" y="367" fill="#5a4a39">[3] Official guideline doc &#8212; primary</text>
+                  <rect x="282" y="378" width="24" height="18" rx="3" fill="#f7e9e6" stroke="#9e2b25"/><text x="294" y="391" text-anchor="middle" fill="#9e2b25" font-weight="700">D</text>
+                  <text x="316" y="391" fill="#84715a">&#8212; forum post, discarded &#183; not cited in the body</text>
+                </g>
+
+                <!-- callouts -->
+                <line x1="694" y1="200" x2="800" y2="180" stroke="#9e2b25" stroke-width="1.5" marker-end="url(#s05-arr)"/>
+                <text x="870" y="176" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="12" font-weight="600">every claim</text>
+                <text x="870" y="192" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">ends in a receipt</text>
+
+                <line x1="306" y1="315" x2="200" y2="330" stroke="#3f6b3a" stroke-width="1.5" marker-end="url(#s05-arr)"/>
+                <text x="130" y="326" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="12" font-weight="600">every source</text>
+                <text x="130" y="342" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">shows its grade</text>
+
+                <line x1="306" y1="387" x2="200" y2="404" stroke="#9e2b25" stroke-width="1.5" marker-end="url(#s05-arr)"/>
+                <text x="130" y="406" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="11.5" font-weight="600">the D never made</text>
+                <text x="130" y="421" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">it into the answer</text>
+
+                <text x="500" y="520" text-anchor="middle" fill="#9e2b25" font-family="Georgia,serif" font-size="13" font-style="italic">A skeptic can re-check it line by line. That&#8217;s the difference between a vibe and a dossier.</text>
+              </svg>
+              <figcaption>The solved state, concretely: a TL;DR, a body where every sentence ends in a numbered citation, and a bibliography where every source wears its grade. The grade-D forum post is listed but was never allowed into the answer &mdash; you can see exactly what was used and what was thrown out.</figcaption>
+            </figure>
+
+            <!-- FRIENDLY RASTER (reuse hero dossier scene in solved-state context) -->
+            <p class="fig-tier friendly">Friendly view &mdash; the finished case file on the desk</p>
+            <figure class="figure">
+              <img src="assets/img/g-hero.png" width="1376" height="768"
+                   alt="An open evidence dossier on a warm desk with source clippings clipped in, each wearing a letter grade, and a magnifying glass on top, representing the finished, checkable research result." />
+              <figcaption>
+                This is what &ldquo;solved&rdquo; feels like: a tidy case file you can open, where the
+                strong sources are clipped in and graded, and the magnifying glass is right there if you
+                want to check any one of them yourself.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- ===================================================================
+             06 — WHY THIS vs WHAT YOU ALREADY HAVE (differentiation; D20 / D)
+             ================================================================== -->
+        <details class="section" id="s06">
+          <summary>
+            <span class="num">06</span>
+            <span class="head-text">
+              <h2>&ldquo;I already have Claude Code &mdash; why do I need ruvn too?&rdquo;</h2>
+              <span class="q">The discipline layer, not another brain.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              You almost certainly already have the AI host &mdash; Claude&nbsp;Code, Codex, Copilot.
+              So let&rsquo;s answer this head-on.
+            </p>
+            <p>
+              Claude&nbsp;Code is the brilliant <strong>generalist brain</strong>. Out of the box, when
+              you say &ldquo;research X,&rdquo; it gives you one confident blended answer &mdash; it does
+              <strong>not</strong>, by default, grade each source, refuse to use the weak ones,
+              adversarially fact-check itself, and attach a citation to every claim. ruvn is the
+              <strong>discipline layer</strong> that makes it do all of that, every time, in a fixed
+              order.
+            </p>
+            <p>
+              And it <strong>doesn&rsquo;t replace your AI &mdash; it rides inside it.</strong> ruvn ships
+              no model of its own; the kernel <em>&ldquo;makes no model calls &mdash; your host provides
+              the model.&rdquo;</em> You keep your same AI, your same login, your same bill. ruvn just
+              adds the six-agent research pipeline and the grading rubric on top.
+            </p>
+
+            <h3>Before &rarr; after on your own question</h3>
+            <table class="compare">
+              <thead>
+                <tr><th>&nbsp;</th><th>Plain AI chat</th><th>With ruvn</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Sources</td><td>Blended, unlabeled</td><td>Each graded A/B/C/D <code>source-grader</code></td></tr>
+                <tr><td>What the answer is built from</td><td>Whatever it found</td><td><strong>A &amp; B sources only</strong> <code>synthesizer</code></td></tr>
+                <tr><td>Self-checking</td><td>None by default</td><td>Adversarial fact-check; unsupported claims <strong>deleted</strong> <code>fact-checker</code></td></tr>
+                <tr><td>Citations</td><td>Sometimes, inconsistently</td><td><strong>Every</strong> claim cited or it doesn&rsquo;t ship <code>citer</code></td></tr>
+                <tr><td>What you can hand a skeptic</td><td>&ldquo;Trust me&rdquo;</td><td>An auditable dossier</td></tr>
+              </tbody>
+            </table>
+
+            <!-- TECHNICAL SVG: ruvn as a layer riding inside your host -->
+            <p class="fig-tier tech">Technical view &mdash; ruvn is a thin discipline layer on the host you already run</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 440" width="100%" role="img" aria-labelledby="s06t-title s06t-desc">
+                <title id="s06t-title">ruvn adds a research pipeline and grading rubric on top of your existing AI host, without replacing the model</title>
+                <desc id="s06t-desc">Your AI host provides the model and the web-search tool. ruvn sits on top as a configuration layer: six agent prompts and the A/B/C/D rubric. The kernel makes no model calls of its own. You keep the same login and bill; ruvn only adds the discipline.</desc>
+                <defs>
+                  <marker id="s06-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#84715a"/></marker>
+                </defs>
+                <rect x="0" y="0" width="1000" height="440" rx="12" fill="#fbf6ea"/>
+                <text x="500" y="32" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="19" font-weight="700">ruvn rides inside the AI you already have</text>
+
+                <!-- host layer -->
+                <rect x="60" y="58" width="880" height="120" rx="10" fill="#f0e7d4" stroke="#3a2f25" stroke-width="1.5"/>
+                <text x="80" y="82" fill="#3a2f25" font-family="'Spline Sans Mono',monospace" font-size="12" font-weight="700">YOUR AI HOST &#8212; Claude Code / Codex / Copilot &#8230;</text>
+                <rect x="80" y="96" width="260" height="64" rx="8" fill="#fbf6ea" stroke="#b07d35"/><text x="210" y="124" text-anchor="middle" fill="#3a2f25" font-family="'Source Sans 3',sans-serif" font-size="13" font-weight="600">the model (the brain)</text><text x="210" y="144" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">your login, your bill &#8212; unchanged</text>
+                <rect x="360" y="96" width="260" height="64" rx="8" fill="#fbf6ea" stroke="#b07d35"/><text x="490" y="124" text-anchor="middle" fill="#3a2f25" font-family="'Source Sans 3',sans-serif" font-size="13" font-weight="600">web-search tool</text><text x="490" y="144" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">WebFetch / WebSearch &#8212; the host&#8217;s</text>
+                <rect x="640" y="96" width="280" height="64" rx="8" fill="#fbf6ea" stroke="#b07d35"/><text x="780" y="124" text-anchor="middle" fill="#3a2f25" font-family="'Source Sans 3',sans-serif" font-size="13" font-weight="600">your files &amp; memory</text><text x="780" y="144" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">already on your machine</text>
+
+                <!-- ruvn layer on top -->
+                <rect x="160" y="214" width="680" height="120" rx="10" fill="#eef3e7" stroke="#3f6b3a" stroke-width="2"/>
+                <text x="500" y="238" text-anchor="middle" fill="#2f5230" font-family="'Spline Sans Mono',monospace" font-size="12" font-weight="700">+ ruvn &#8212; the discipline layer (config only, no model)</text>
+                <rect x="184" y="252" width="300" height="64" rx="8" fill="#fbf6ea" stroke="#3f6b3a"/><text x="334" y="278" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="13" font-weight="600">6 agent prompts, in order</text><text x="334" y="298" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="11">scout &#8594; &#8230; &#8594; citer</text>
+                <rect x="516" y="252" width="300" height="64" rx="8" fill="#fbf6ea" stroke="#3f6b3a"/><text x="666" y="278" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="13" font-weight="600">the A/B/C/D rubric</text><text x="666" y="298" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="11">grade gate + evidence threshold</text>
+
+                <!-- connecting arrows -->
+                <line x1="334" y1="252" x2="290" y2="180" stroke="#84715a" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#s06-arr)"/>
+                <line x1="666" y1="252" x2="640" y2="180" stroke="#84715a" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#s06-arr)"/>
+                <text x="500" y="362" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="12.5">ruvn calls down into the host for the brain and the search &#8212; it never brings its own model.</text>
+                <text x="500" y="392" text-anchor="middle" fill="#9e2b25" font-family="Georgia,serif" font-size="13.5" font-style="italic">Not another thing piled on. The same AI &#8212; now forced to grade, verify, and cite.</text>
+                <text x="500" y="420" text-anchor="middle" fill="#84715a" font-family="'Spline Sans Mono',monospace" font-size="11">&#8220;the kernel makes no model calls &#8212; your host provides the model.&#8221; (README)</text>
+              </svg>
+              <figcaption>Why it&rsquo;s not redundant with the AI you already pay for: ruvn ships <em>no model</em>. Your host still provides the brain, the web search, and your files. ruvn is a thin configuration layer &mdash; six agent prompts plus the grading rubric &mdash; that calls down into your host and forces the grade-verify-cite discipline every time.</figcaption>
+            </figure>
+
+            <!-- FRIENDLY RASTER -->
+            <p class="fig-tier friendly">Friendly view &mdash; same content, before and after the discipline</p>
+            <figure class="figure">
+              <img src="assets/img/g-before-after.png" width="1376" height="768"
+                   alt="A grey blurry trust-me paragraph on the left transforming via an arrow into a tidy verified case file with numbered citations and green grade stamps on the right." />
+              <figcaption>
+                The same AI, the same question &mdash; just run through ruvn&rsquo;s discipline. The left
+                is what you get for free; the right is what ruvn turns it into.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- ===================================================================
+             07 — USE-CASE GALLERY (>=5 collapsible, each its OWN visual; J/R)
+             ================================================================== -->
+        <details class="section" id="s07">
+          <summary>
+            <span class="num">07</span>
+            <span class="head-text">
+              <h2>Use-case gallery &mdash; six real ways people use it</h2>
+              <span class="q">Open each card for its own picture, command, and result.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              Every card below runs the <em>same</em> six-agent pipeline
+              (<code>scout &rarr; web-searcher &rarr; source-grader &rarr; synthesizer &rarr;
+              fact-checker &rarr; citer</code>). The variety is in the question and the audience &mdash;
+              not the machinery. Each opens to its own diagram.
+            </p>
+
+            <div class="gallery">
+
+              <!-- UC1 -->
+              <details class="uc">
+                <summary><span class="uc-num">1</span><span class="uc-title">Check a health or wellness claim before you repeat it</span><span class="uc-chev" aria-hidden="true">&rsaquo;</span></summary>
+                <div class="uc-body">
+                  <div class="uc-meta">
+                    <div class="row"><span class="k">Situation</span><span>A client or friend asks &ldquo;does 40&nbsp;Hz light-and-sound therapy help sleep or focus?&rdquo; and you don&rsquo;t want to parrot hype.</span></div>
+                    <div class="row"><span class="k">Command</span><span><code>ruvn init</code>, then in Claude&nbsp;Code ask it to run the ruvn dossier pipeline on the question.</span></div>
+                    <div class="row"><span class="k">What it does</span><span>Scouts sub-questions &rarr; finds sources &rarr; grades each A&ndash;D &rarr; writes only from A/B &rarr; fact-checks &rarr; cites.</span></div>
+                    <div class="row"><span class="k">You get</span><span>A TL;DR + cited body + graded bibliography you can stand behind &mdash; with the honest reminder that this is research, not medical advice.</span></div>
+                  </div>
+                  <figure class="figure diagram uc-diagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 200" width="100%" role="img" aria-label="Use case 1: a wellness question becomes a graded, cited dossier with a not-medical-advice note.">
+                      <rect width="900" height="200" rx="10" fill="#fbf6ea"/>
+                      <rect x="24" y="56" width="200" height="88" rx="8" fill="#f0e7d4" stroke="#d8c9a8"/><text x="124" y="92" text-anchor="middle" fill="#3a2f25" font-family="'Source Sans 3',sans-serif" font-size="13" font-weight="600">a wellness claim</text><text x="124" y="112" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11">&#8220;does 40&#160;Hz help sleep?&#8221;</text>
+                      <rect x="264" y="56" width="240" height="88" rx="8" fill="#fbf6ea" stroke="#9e2b25"/><text x="384" y="86" text-anchor="middle" fill="#9e2b25" font-family="'Spline Sans Mono',monospace" font-size="11" font-weight="600">ruvn pipeline</text><text x="384" y="108" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="11">grade &#8594; A/B only &#8594; fact-check &#8594; cite</text><text x="384" y="126" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10">hype is stripped, not hedged</text>
+                      <rect x="544" y="40" width="332" height="120" rx="8" fill="#eef3e7" stroke="#3f6b3a"/><text x="710" y="66" text-anchor="middle" fill="#2f5230" font-family="Georgia,serif" font-size="13" font-weight="700">graded, cited dossier</text><text x="710" y="88" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="11">strong claims rest on graded-A 2024 paper</text><text x="710" y="106" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="11">weak claims thrown out</text><rect x="600" y="118" width="220" height="26" rx="5" fill="#f7e9e6" stroke="#9e2b25"/><text x="710" y="135" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="10.5">note: research, not medical advice</text>
+                      <line x1="224" y1="100" x2="262" y2="100" stroke="#9e2b25" stroke-width="2" marker-end="url(#s04-arr)"/>
+                      <line x1="504" y1="100" x2="542" y2="100" stroke="#3f6b3a" stroke-width="2" marker-end="url(#s03-arrg)"/>
+                    </svg>
+                    <figcaption>A wellness claim in, a graded-and-cited dossier out &mdash; with the &ldquo;research, not medical advice&rdquo; line kept honestly on the page.</figcaption>
+                  </figure>
+                </div>
+              </details>
+
+              <!-- UC2 -->
+              <details class="uc">
+                <summary><span class="uc-num">2</span><span class="uc-title">Decide between two options with real evidence (compare A vs B)</span><span class="uc-chev" aria-hidden="true">&rsaquo;</span></summary>
+                <div class="uc-body">
+                  <div class="uc-meta">
+                    <div class="row"><span class="k">Situation</span><span>You&rsquo;re weighing option A vs option B &mdash; the &ldquo;compare modalities/dosing, responder profiles, safety evidence&rdquo; job ruvn was built for.</span></div>
+                    <div class="row"><span class="k">Command</span><span>Ask a comparative question: &ldquo;X vs Y for outcome Z, and what does the safety evidence say?&rdquo;</span></div>
+                    <div class="row"><span class="k">What it does</span><span>scout splits it into precise comparison sub-questions; grading keeps only trustworthy sources; the fact-checker flags contradictions and strips unsupported claims.</span></div>
+                    <div class="row"><span class="k">You get</span><span>A side-by-side, cited dossier where contradictions are flagged explicitly (the synthesizer is told to &ldquo;Flag contradictions explicitly&rdquo;).</span></div>
+                  </div>
+                  <figure class="figure diagram uc-diagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 210" width="100%" role="img" aria-label="Use case 2: a comparison question splits into per-option sub-questions and returns a side-by-side cited dossier with contradictions flagged.">
+                      <rect width="900" height="210" rx="10" fill="#fbf6ea"/>
+                      <rect x="24" y="76" width="170" height="60" rx="8" fill="#f0e7d4" stroke="#d8c9a8"/><text x="109" y="102" text-anchor="middle" fill="#3a2f25" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="600">X vs Y for Z?</text><text x="109" y="120" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10.5">+ safety evidence</text>
+                      <rect x="234" y="46" width="200" height="54" rx="8" fill="#fbf6ea" stroke="#3f6b3a"/><text x="334" y="68" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="11.5" font-weight="600">sub-q: option X</text><text x="334" y="86" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10">graded sources only</text>
+                      <rect x="234" y="112" width="200" height="54" rx="8" fill="#fbf6ea" stroke="#3f6b3a"/><text x="334" y="134" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="11.5" font-weight="600">sub-q: option Y</text><text x="334" y="152" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10">graded sources only</text>
+                      <rect x="474" y="60" width="180" height="92" rx="8" fill="#f7e9e6" stroke="#9e2b25"/><text x="564" y="92" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="12" font-weight="600">fact-checker</text><text x="564" y="112" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10.5">flags contradictions,</text><text x="564" y="128" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10.5">strips unsupported</text>
+                      <rect x="694" y="56" width="182" height="100" rx="8" fill="#eef3e7" stroke="#3f6b3a"/><text x="785" y="84" text-anchor="middle" fill="#2f5230" font-family="Georgia,serif" font-size="12.5" font-weight="700">side-by-side</text><text x="785" y="104" text-anchor="middle" fill="#2f5230" font-family="Georgia,serif" font-size="12.5" font-weight="700">cited dossier</text><text x="785" y="126" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="10.5">contradictions shown,</text><text x="785" y="140" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="10.5">not papered over</text>
+                      <line x1="194" y1="98" x2="232" y2="74" stroke="#9e2b25" stroke-width="1.8" marker-end="url(#s04-arr)"/>
+                      <line x1="194" y1="114" x2="232" y2="138" stroke="#9e2b25" stroke-width="1.8" marker-end="url(#s04-arr)"/>
+                      <line x1="434" y1="106" x2="472" y2="106" stroke="#9e2b25" stroke-width="2" marker-end="url(#s04-arr)"/>
+                      <line x1="654" y1="106" x2="692" y2="106" stroke="#3f6b3a" stroke-width="2" marker-end="url(#s03-arrg)"/>
+                    </svg>
+                    <figcaption>The scout splits the comparison into per-option sub-questions; the fact-checker flags where the evidence disagrees instead of hiding it. You get an honest side-by-side, not a false tidy verdict.</figcaption>
+                  </figure>
+                </div>
+              </details>
+
+              <!-- UC3 -->
+              <details class="uc">
+                <summary><span class="uc-num">3</span><span class="uc-title">Sanity-check a viral or scary claim (&ldquo;does X cure Y?&rdquo;)</span><span class="uc-chev" aria-hidden="true">&rsaquo;</span></summary>
+                <div class="uc-body">
+                  <div class="uc-meta">
+                    <div class="row"><span class="k">Situation</span><span>A sensational headline is going around and you want the honest status.</span></div>
+                    <div class="row"><span class="k">Command</span><span>Feed ruvn the claim verbatim: &ldquo;Claim: &lsquo;&lt;the headline&gt;.&rsquo; Verify it against current evidence.&rdquo;</span></div>
+                    <div class="row"><span class="k">What it does</span><span>The fact-checker is adversarial by design &mdash; it marks each claim CONFIRMED / DISPUTED / UNSUPPORTED and <strong>strips the UNSUPPORTED ones</strong>. (The repo&rsquo;s own validation even runs this on &ldquo;40&nbsp;Hz light flicker cures Alzheimer&rsquo;s.&rdquo;)</span></div>
+                    <div class="row"><span class="k">You get</span><span>A verdict backed by graded sources, with the hype removed &mdash; not a polite hedge.</span></div>
+                  </div>
+                  <figure class="figure diagram uc-diagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 200" width="100%" role="img" aria-label="Use case 3: a viral claim is marked confirmed, disputed or unsupported, and the unsupported parts are stripped.">
+                      <rect width="900" height="200" rx="10" fill="#fbf6ea"/>
+                      <rect x="24" y="66" width="190" height="68" rx="8" fill="#f7e9e6" stroke="#9e2b25"/><text x="119" y="94" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="600">a scary headline</text><text x="119" y="114" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10.5">&#8220;X cures Y!&#8221;</text>
+                      <rect x="254" y="44" width="220" height="112" rx="8" fill="#fbf6ea" stroke="#9e2b25"/><text x="364" y="70" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="12" font-weight="600">adversarial fact-check</text>
+                      <rect x="270" y="82" width="188" height="20" rx="4" fill="#eef3e7" stroke="#3f6b3a"/><text x="364" y="97" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="10.5">CONFIRMED &#8594; kept</text>
+                      <rect x="270" y="106" width="188" height="20" rx="4" fill="#f0e7d4" stroke="#b07d35"/><text x="364" y="121" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10.5">DISPUTED &#8594; flagged</text>
+                      <rect x="270" y="130" width="188" height="20" rx="4" fill="#f7e9e6" stroke="#9e2b25"/><text x="364" y="145" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="10.5">UNSUPPORTED &#8594; stripped</text>
+                      <rect x="514" y="58" width="362" height="84" rx="8" fill="#eef3e7" stroke="#3f6b3a"/><text x="695" y="86" text-anchor="middle" fill="#2f5230" font-family="Georgia,serif" font-size="13" font-weight="700">an honest verdict</text><text x="695" y="108" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="11">backed by graded sources, hype removed</text><text x="695" y="126" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10.5">not a polite hedge</text>
+                      <line x1="214" y1="100" x2="252" y2="100" stroke="#9e2b25" stroke-width="2" marker-end="url(#s04-arr)"/>
+                      <line x1="474" y1="100" x2="512" y2="100" stroke="#3f6b3a" stroke-width="2" marker-end="url(#s03-arrg)"/>
+                    </svg>
+                    <figcaption>The fact-checker labels each claim CONFIRMED, DISPUTED or UNSUPPORTED and deletes the unsupported ones &mdash; so the hype is removed rather than softened into a hedge.</figcaption>
+                  </figure>
+                </div>
+              </details>
+
+              <!-- UC4 -->
+              <details class="uc">
+                <summary><span class="uc-num">4</span><span class="uc-title">Build a cited brief for a report, post, or decision</span><span class="uc-chev" aria-hidden="true">&rsaquo;</span></summary>
+                <div class="uc-body">
+                  <div class="uc-meta">
+                    <div class="row"><span class="k">Situation</span><span>You need a short, defensible write-up that a manager or audience can trust.</span></div>
+                    <div class="row"><span class="k">Command</span><span>Run the dossier pipeline on your topic.</span></div>
+                    <div class="row"><span class="k">What it does</span><span>The citer&rsquo;s job is literally &ldquo;every claim must cite a graded source&hellip; the dossier must NOT contain any claim without a citation.&rdquo;</span></div>
+                    <div class="row"><span class="k">You get</span><span>A ready-to-paste Markdown dossier &mdash; TL;DR, fully-cited body, bibliography with [A]/[B]/[C] tags.</span></div>
+                  </div>
+                  <figure class="figure diagram uc-diagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 190" width="100%" role="img" aria-label="Use case 4: a topic becomes a ready-to-paste Markdown brief where every claim is cited.">
+                      <rect width="900" height="190" rx="10" fill="#fbf6ea"/>
+                      <rect x="24" y="62" width="170" height="64" rx="8" fill="#f0e7d4" stroke="#d8c9a8"/><text x="109" y="98" text-anchor="middle" fill="#3a2f25" font-family="'Source Sans 3',sans-serif" font-size="13" font-weight="600">your topic</text>
+                      <rect x="234" y="50" width="220" height="88" rx="8" fill="#fbf6ea" stroke="#3f6b3a"/><text x="344" y="78" text-anchor="middle" fill="#2f5230" font-family="'Source Sans 3',sans-serif" font-size="12" font-weight="600">citer&#8217;s rule</text><text x="344" y="100" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10.5">no claim without a citation</text><text x="344" y="118" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10.5">grades shown in the bibliography</text>
+                      <rect x="494" y="42" width="382" height="106" rx="8" fill="#eef3e7" stroke="#3f6b3a"/><text x="685" y="68" text-anchor="middle" fill="#2f5230" font-family="Georgia,serif" font-size="13" font-weight="700">ready-to-paste Markdown brief</text>
+                      <line x1="520" y1="86" x2="700" y2="86" stroke="#cdd9c4" stroke-width="5" stroke-linecap="round"/><rect x="710" y="80" width="24" height="13" rx="3" fill="#fbf6ea" stroke="#3f6b3a"/><text x="722" y="90" text-anchor="middle" fill="#2f5230" font-family="'Spline Sans Mono',monospace" font-size="8">[1]</text>
+                      <line x1="520" y1="104" x2="670" y2="104" stroke="#cdd9c4" stroke-width="5" stroke-linecap="round"/><rect x="680" y="98" width="24" height="13" rx="3" fill="#fbf6ea" stroke="#3f6b3a"/><text x="692" y="108" text-anchor="middle" fill="#2f5230" font-family="'Spline Sans Mono',monospace" font-size="8">[2]</text>
+                      <text x="685" y="134" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="10.5">paste it straight into your doc, post, or deck</text>
+                      <line x1="194" y1="94" x2="232" y2="94" stroke="#9e2b25" stroke-width="2" marker-end="url(#s04-arr)"/>
+                      <line x1="454" y1="94" x2="492" y2="94" stroke="#3f6b3a" stroke-width="2" marker-end="url(#s03-arrg)"/>
+                    </svg>
+                    <figcaption>The citer guarantees a paste-ready brief: every sentence carries a numbered receipt and the bibliography shows each source&rsquo;s grade &mdash; defensible the moment a manager opens it.</figcaption>
+                  </figure>
+                </div>
+              </details>
+
+              <!-- UC5 -->
+              <details class="uc">
+                <summary><span class="uc-num">5</span><span class="uc-title">Wire research into your existing tools &mdash; whichever AI you use</span><span class="uc-chev" aria-hidden="true">&rsaquo;</span></summary>
+                <div class="uc-body">
+                  <div class="uc-meta">
+                    <div class="row"><span class="k">Situation</span><span>Your team isn&rsquo;t all on Claude&nbsp;Code; some use Codex, Copilot, OpenCode, or CI.</span></div>
+                    <div class="row"><span class="k">Command</span><span>Point the host at the shipped config &mdash; ruvn ships adapters for <strong>9 hosts</strong> (Claude&nbsp;Code, Codex, GitHub&nbsp;Copilot, OpenCode, GitHub&nbsp;Actions, pi-dev, Hermes, OpenClaw, RVM).</span></div>
+                    <div class="row"><span class="k">What it does</span><span>The same six-agent pipeline drops into each host via its own config file (e.g. <code>.claude/settings.json</code>, <code>.codex/config.toml</code>, <code>.vscode/mcp.json</code>).</span></div>
+                    <div class="row"><span class="k">You get</span><span>The identical graded-and-cited research discipline, no matter which AI a teammate happens to use.</span></div>
+                  </div>
+                  <figure class="figure diagram uc-diagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 210" width="100%" role="img" aria-label="Use case 5: one pipeline drops into nine different AI hosts via their own config files.">
+                      <rect width="900" height="210" rx="10" fill="#fbf6ea"/>
+                      <rect x="330" y="22" width="240" height="56" rx="8" fill="#fbf6ea" stroke="#9e2b25"/><text x="450" y="46" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="600">one ruvn pipeline</text><text x="450" y="64" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10.5">six agents + the rubric</text>
+                      <g font-family="'Source Sans 3',sans-serif" font-size="10.5">
+                        <rect x="24" y="116" width="120" height="42" rx="7" fill="#eef3e7" stroke="#3f6b3a"/><text x="84" y="135" text-anchor="middle" fill="#2f5230" font-weight="600">Claude Code</text><text x="84" y="150" text-anchor="middle" fill="#84715a" font-size="9">.claude/settings.json</text>
+                        <rect x="152" y="116" width="120" height="42" rx="7" fill="#eef3e7" stroke="#3f6b3a"/><text x="212" y="135" text-anchor="middle" fill="#2f5230" font-weight="600">Codex</text><text x="212" y="150" text-anchor="middle" fill="#84715a" font-size="9">.codex/config.toml</text>
+                        <rect x="280" y="116" width="120" height="42" rx="7" fill="#eef3e7" stroke="#3f6b3a"/><text x="340" y="135" text-anchor="middle" fill="#2f5230" font-weight="600">Copilot</text><text x="340" y="150" text-anchor="middle" fill="#84715a" font-size="9">.vscode/mcp.json</text>
+                        <rect x="408" y="116" width="120" height="42" rx="7" fill="#eef3e7" stroke="#3f6b3a"/><text x="468" y="135" text-anchor="middle" fill="#2f5230" font-weight="600">OpenCode</text><text x="468" y="150" text-anchor="middle" fill="#84715a" font-size="9">.opencode/</text>
+                        <rect x="536" y="116" width="120" height="42" rx="7" fill="#eef3e7" stroke="#3f6b3a"/><text x="596" y="135" text-anchor="middle" fill="#2f5230" font-weight="600">GitHub Actions</text><text x="596" y="150" text-anchor="middle" fill="#84715a" font-size="9">.github/</text>
+                        <rect x="664" y="116" width="120" height="42" rx="7" fill="#eef3e7" stroke="#3f6b3a"/><text x="724" y="135" text-anchor="middle" fill="#2f5230" font-weight="600">pi-dev / Hermes</text><text x="724" y="150" text-anchor="middle" fill="#84715a" font-size="9">SYSTEM.md / trust.json</text>
+                        <rect x="792" y="116" width="84" height="42" rx="7" fill="#eef3e7" stroke="#3f6b3a"/><text x="834" y="135" text-anchor="middle" fill="#2f5230" font-weight="600">OpenClaw</text><text x="834" y="150" text-anchor="middle" fill="#84715a" font-size="9">+ RVM</text>
+                      </g>
+                      <text x="450" y="188" text-anchor="middle" fill="#3a2f25" font-family="'Source Sans 3',sans-serif" font-size="12">Nine adapters, one discipline &#8212; every teammate gets the same graded, cited research.</text>
+                      <line x1="450" y1="78" x2="450" y2="112" stroke="#9e2b25" stroke-width="2" marker-end="url(#s04-arr)"/>
+                    </svg>
+                    <figcaption>The same pipeline ships with config for nine hosts, so a teammate on Codex or Copilot gets exactly the same grade-verify-cite discipline as the one on Claude&nbsp;Code.</figcaption>
+                  </figure>
+                </div>
+              </details>
+
+              <!-- UC6 -->
+              <details class="uc">
+                <summary><span class="uc-num">6</span><span class="uc-title">Automate research in CI (a dossier on every issue or comment)</span><span class="uc-chev" aria-hidden="true">&rsaquo;</span></summary>
+                <div class="uc-body">
+                  <div class="uc-meta">
+                    <div class="row"><span class="k">Situation</span><span>You want a dossier generated automatically when someone files an issue or comments.</span></div>
+                    <div class="row"><span class="k">Command</span><span>The shipped GitHub&nbsp;Actions host fires on <code>workflow_dispatch</code> or an issue comment and runs the harness non-interactively.</span></div>
+                    <div class="row"><span class="k">What it does</span><span>Runs the harness against the comment/event as the task, with a default-deny <code>contents: read</code> permission posture.</span></div>
+                    <div class="row"><span class="k">You get</span><span>Hands-free, repeatable research wired into your repo&rsquo;s workflow.</span></div>
+                  </div>
+                  <figure class="figure diagram uc-diagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 190" width="100%" role="img" aria-label="Use case 6: an issue comment triggers a GitHub Action that runs the pipeline under default-deny permissions and posts a dossier.">
+                      <rect width="900" height="190" rx="10" fill="#fbf6ea"/>
+                      <rect x="24" y="62" width="180" height="64" rx="8" fill="#f0e7d4" stroke="#d8c9a8"/><text x="114" y="90" text-anchor="middle" fill="#3a2f25" font-family="'Source Sans 3',sans-serif" font-size="12.5" font-weight="600">issue / comment</text><text x="114" y="110" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10.5">filed on your repo</text>
+                      <rect x="244" y="50" width="230" height="88" rx="8" fill="#fbf6ea" stroke="#9e2b25"/><text x="359" y="76" text-anchor="middle" fill="#9e2b25" font-family="'Spline Sans Mono',monospace" font-size="11" font-weight="600">GitHub Action</text><text x="359" y="98" text-anchor="middle" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="11">runs the harness on the event</text><rect x="266" y="108" width="186" height="22" rx="5" fill="#f7e9e6" stroke="#9e2b25"/><text x="359" y="123" text-anchor="middle" fill="#9e2b25" font-family="'Source Sans 3',sans-serif" font-size="10">default-deny &#183; contents: read</text>
+                      <rect x="514" y="58" width="362" height="84" rx="8" fill="#eef3e7" stroke="#3f6b3a"/><text x="695" y="86" text-anchor="middle" fill="#2f5230" font-family="Georgia,serif" font-size="13" font-weight="700">a dossier, hands-free</text><text x="695" y="108" text-anchor="middle" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="11">graded + cited, posted back automatically</text><text x="695" y="126" text-anchor="middle" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="10.5">repeatable, no human in the loop</text>
+                      <line x1="204" y1="94" x2="242" y2="94" stroke="#9e2b25" stroke-width="2" marker-end="url(#s04-arr)"/>
+                      <line x1="474" y1="94" x2="512" y2="94" stroke="#3f6b3a" stroke-width="2" marker-end="url(#s03-arrg)"/>
+                    </svg>
+                    <figcaption>The shipped GitHub&nbsp;Action runs the same pipeline non-interactively under a locked-down <code>contents: read</code> posture &mdash; so research happens automatically on each issue, with safe defaults.</figcaption>
+                  </figure>
+                </div>
+              </details>
+
+            </div>
+          </div>
+        </details>
+
+        <!-- ===================================================================
+             08 — HOW TO IMPLEMENT (the on-ramp; AFTER the gallery per R)
+             ================================================================== -->
+        <details class="section" id="s08">
+          <summary>
+            <span class="num">08</span>
+            <span class="head-text">
+              <h2>How to implement it &mdash; three commands</h2>
+              <span class="q">Now that you know why, here&rsquo;s how.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>Straight from the repo. Install once, wire it into your host, confirm it loaded:</p>
+            <div class="cmd"><span class="c"># installs the `ruvn` command</span>
+npm i -g <span class="k">@ruvnet/ruvn</span>
+<span class="c"># wires the harness into Claude Code (.claude/ settings + plugin)</span>
+ruvn <span class="k">init</span>
+<span class="c"># health check — confirms the kernel + host adapter load</span>
+ruvn <span class="k">doctor</span>
+<span class="c"># or one-off, no install:</span>
+npx <span class="k">@ruvnet/ruvn</span> init</div>
+            <p>
+              Then, in Claude&nbsp;Code, ask it to run the research pipeline on your question &mdash; the
+              agents and the grading rubric in <code>CLAUDE.md</code> are now available to it.
+            </p>
+
+            <h3>Want to prove it against a live model first?</h3>
+            <p>
+              Set an OpenRouter key and run the validation &mdash; it exercises all 6 agents on a real
+              sample question, and each must return a sensible, on-task answer.
+            </p>
+            <div class="cmd">export OPENROUTER_API_KEY=sk-or-...
+npm run <span class="k">validate:openrouter</span></div>
+
+            <h3>What&rsquo;s actually inside (the pieces you get)</h3>
+            <ul>
+              <li><strong>6 agent definitions</strong> &mdash; each a plain prompt + model tier you can read
+                and tweak (<code>src/agents/*.ts</code>). scout / grader / synth / fact-check / citer run on
+                the <strong>sonnet</strong> tier; web-searcher runs on the cheaper <strong>haiku</strong> tier.</li>
+              <li><strong>A tiny CLI</strong> &mdash; <code>init</code>, <code>doctor</code>, <code>--version</code>
+                (<code>bin/cli.js</code>).</li>
+              <li><strong>Host config for 9 hosts</strong> &mdash; the <code>.claude/</code>, <code>.codex/</code>,
+                <code>.vscode/</code>, <code>.opencode/</code>, <code>.openclaw/</code>, <code>.github/</code>,
+                plus <code>AGENTS.md</code> / <code>SYSTEM.md</code> / <code>trust.json</code> /
+                <code>cli-config.yaml</code> / <code>rvm.manifest.toml</code>.</li>
+              <li><strong>A real smoke test</strong> &mdash; boots the kernel + host adapter so a broken
+                install fails loudly (<code>__tests__/smoke.test.ts</code>).</li>
+            </ul>
+
+            <!-- TECHNICAL SVG: install/boot sequence -->
+            <p class="fig-tier tech">Technical view &mdash; what each command does to your project</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 320" width="100%" role="img" aria-labelledby="s08t-title s08t-desc">
+                <title id="s08t-title">The install and boot sequence: install the CLI, init wires host config, doctor verifies the adapter loads</title>
+                <desc id="s08t-desc">Step one installs the ruvn command globally. Step two, ruvn init, writes host configuration files such as .claude settings and the CLAUDE.md gate into your project. Step three, ruvn doctor, loads the kernel and host adapter to confirm everything is wired before you run it.</desc>
+                <rect x="0" y="0" width="1000" height="320" rx="12" fill="#fbf6ea"/>
+                <text x="500" y="32" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="18" font-weight="700">Three commands, three concrete effects</text>
+
+                <rect x="40" y="64" width="280" height="180" rx="9" fill="#fbf6ea" stroke="#9e2b25" stroke-width="1.5"/>
+                <text x="60" y="90" fill="#9e2b25" font-family="'Spline Sans Mono',monospace" font-size="12" font-weight="700">1 &#183; npm i -g @ruvnet/ruvn</text>
+                <text x="60" y="118" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="12.5">Adds the global <tspan font-family="'Spline Sans Mono',monospace">ruvn</tspan></text>
+                <text x="60" y="138" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="12.5">command to your machine.</text>
+                <text x="60" y="170" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11.5">Nothing touched in your repo yet &#8212;</text>
+                <text x="60" y="188" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11.5">just the tool itself.</text>
+
+                <rect x="360" y="64" width="280" height="180" rx="9" fill="#fbf6ea" stroke="#9e2b25" stroke-width="1.5"/>
+                <text x="380" y="90" fill="#9e2b25" font-family="'Spline Sans Mono',monospace" font-size="12" font-weight="700">2 &#183; ruvn init</text>
+                <text x="380" y="118" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="12.5">Writes host config into</text>
+                <text x="380" y="138" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="12.5">your project:</text>
+                <text x="380" y="166" fill="#2f5230" font-family="'Spline Sans Mono',monospace" font-size="11">.claude/settings.json</text>
+                <text x="380" y="186" fill="#2f5230" font-family="'Spline Sans Mono',monospace" font-size="11">CLAUDE.md (the gate)</text>
+                <text x="380" y="206" fill="#2f5230" font-family="'Spline Sans Mono',monospace" font-size="11">+ the agents &amp; rubric</text>
+
+                <rect x="680" y="64" width="280" height="180" rx="9" fill="#fbf6ea" stroke="#3f6b3a" stroke-width="1.5"/>
+                <text x="700" y="90" fill="#3f6b3a" font-family="'Spline Sans Mono',monospace" font-size="12" font-weight="700">3 &#183; ruvn doctor</text>
+                <text x="700" y="118" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="12.5">Loads the kernel + host</text>
+                <text x="700" y="138" fill="#5a4a39" font-family="'Source Sans 3',sans-serif" font-size="12.5">adapter and checks it.</text>
+                <text x="700" y="170" fill="#3f6b3a" font-family="'Source Sans 3',sans-serif" font-size="12" font-weight="600">&#10003; green &#8594; ready to run</text>
+                <text x="700" y="190" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11.5">a broken install fails loudly,</text>
+                <text x="700" y="208" fill="#84715a" font-family="'Source Sans 3',sans-serif" font-size="11.5">not silently.</text>
+
+                <line x1="320" y1="154" x2="358" y2="154" stroke="#9e2b25" stroke-width="2" marker-end="url(#s04-arr)"/>
+                <line x1="640" y1="154" x2="678" y2="154" stroke="#3f6b3a" stroke-width="2" marker-end="url(#s03-arrg)"/>
+                <text x="500" y="282" text-anchor="middle" fill="#3a2f25" font-family="Georgia,serif" font-size="13" font-weight="700">After step&nbsp;3: ask Claude&nbsp;Code to run the ruvn pipeline on your question &#8212; the rubric is already loaded.</text>
+                <text x="500" y="306" text-anchor="middle" fill="#84715a" font-family="'Spline Sans Mono',monospace" font-size="11">source: README.md install steps &#183; bin/cli.js</text>
+              </svg>
+              <figcaption>Each command, demystified: install adds the CLI; <code>ruvn init</code> writes the host config and the <code>CLAUDE.md</code> gate into your project; <code>ruvn doctor</code> boots the adapter to confirm it loaded. Then you just ask your AI to run the pipeline.</figcaption>
+            </figure>
+
+            <!-- FRIENDLY RASTER -->
+            <p class="fig-tier friendly">Friendly view &mdash; the six helpers are now on call</p>
+            <figure class="figure">
+              <img src="assets/img/g-pipeline.png" width="1376" height="768"
+                   alt="Six friendly paper-character helpers ready at a worktable, representing the ruvn pipeline now installed and available inside your AI host." />
+              <figcaption>
+                After three commands, the six little helpers are on call inside the AI you already use.
+                Ask for research, and they line up &mdash; scout, search, grade, write, fact-check, cite.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- ===================================================================
+             09 — DROP-IN SMART ZIP (annotated file-tree, Cognitum-style; D13)
+             ================================================================== -->
+        <details class="section" id="s09">
+          <summary>
+            <span class="num">09</span>
+            <span class="head-text">
+              <h2>The drop-in &mdash; one download, two halves</h2>
+              <span class="q">What&rsquo;s actually inside the zip.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              Beyond installing the tool, there&rsquo;s a <strong>drop-in knowledge bundle</strong>: one
+              <code>kb/</code> folder with two halves &mdash; one for <em>you</em> to read, one for
+              <em>your AI</em> to query against the real source. Here&rsquo;s the actual file tree, every
+              file with a plain-English note on what it is:
+            </p>
+
+            <!-- ANNOTATED FILE TREE -->
+            <div class="filetree" role="img" aria-label="Annotated file tree of the ruvn drop-in zip: a kb folder with for-humans and for-ai halves, plus README and manifest.">
+              <div class="ft-row"><span class="ft-tree ft-name">ruvn-kb/</span><span class="ft-desc">one download &mdash; the whole drop-in, two halves inside</span></div>
+
+              <div class="ft-row"><span class="ft-tree ft-head first">&#9492;&#9472; for-humans/ &nbsp;&#8212; the half you read</span><span class="ft-desc"></span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name human">ruvn-primer.md</span></span><span class="ft-desc">the whole tool explained in plain English &mdash; what it is, why, how to use it</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9492;&#9472; <span class="ft-name human">studio/</span> <span style="color:var(--muted)">(optional)</span></span><span class="ft-desc">short video + audio overview, if generated (a nice-to-have, not required)</span></div>
+
+              <div class="ft-row"><span class="ft-tree ft-head">&#9492;&#9472; for-ai/ &nbsp;&#8212; the half your AI queries</span><span class="ft-desc"></span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">ruvn-kb.big.rvf</span></span><span class="ft-desc">the &ldquo;brain&rdquo; &mdash; sharp recall (768-dim), best for Mac/PC</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">ruvn-kb.small.rvf</span></span><span class="ft-desc">the &ldquo;brain&rdquo; &mdash; light (384-dim), fast everywhere</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">ruvn.passages.jsonl</span></span><span class="ft-desc">every doc + all the source, as plain searchable text</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">ask-kb.mjs</span></span><span class="ft-desc">ask the brain a question straight from the command line</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">kb-mcp-server.mjs</span></span><span class="ft-desc">wire the brain into Claude&nbsp;Code / Cursor as a tool</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9492;&#9472; <span class="ft-name">summary.md</span></span><span class="ft-desc">a one-screen orientation for the AI to load first</span></div>
+
+              <div class="ft-row"><span class="ft-tree ft-head">&#9492;&#9472; (top level)</span><span class="ft-desc"></span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">README.md</span></span><span class="ft-desc">what it is + the 3-step setup below</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9492;&#9472; <span class="ft-name">manifest.json</span></span><span class="ft-desc">provenance &mdash; source repo, SHA, build date, so you can tell it&rsquo;s current</span></div>
+            </div>
+
+            <h3>The 3-step drop-in</h3>
+            <ol class="steps">
+              <li>Unzip it into your project as <code>kb/</code> &mdash; you now have <code>for-humans/</code> and <code>for-ai/</code> side by side.</li>
+              <li>Add the 2-line <code>.mcp.json</code> so your AI host can see the <code>kb-mcp-server.mjs</code> tool.</li>
+              <li>Paste the <code>CLAUDE.md</code> gate &mdash; now your AI answers from the <em>real</em> ruvn source, not from guesses.</li>
+            </ol>
+
+            <div class="note">
+              <span class="note-k">Confirm it works</span>
+              After wiring it in, ask: <em>&ldquo;Using the kb tool, how does ruvn&rsquo;s source-grader
+              decide an A vs a B?&rdquo;</em> &mdash; a correct, grounded answer that quotes the rubric
+              means the drop-in is live.
+            </div>
+
+            <!-- FRIENDLY RASTER -->
+            <p class="fig-tier friendly">Friendly view &mdash; the bundle dropping into your laptop</p>
+            <figure class="figure">
+              <img src="assets/img/g-dropin.png" width="1376" height="768"
+                   alt="A small kb folder being dropped into an open laptop, splitting into two labeled halves: a printed primer booklet for humans on the left, and a glowing brain-file for your AI on the right." />
+              <figcaption>
+                One small folder, two halves: a primer booklet <em>you</em> read, and a queryable
+                &ldquo;brain&rdquo; <em>your AI</em> answers from. Drop it in, wire two lines, and the AI
+                stops guessing about ruvn and starts quoting the real source.
+              </figcaption>
+            </figure>
+
+            <!-- dropzone -->
+            <div class="dz" id="dropzone" role="button" tabindex="0" aria-label="Get the drop-in Smart Zip">
+              <p class="dz-title">Get the drop-in Smart Zip</p>
+              <p class="dz-sub">Click, press Enter, or drag here. Publishes to the GitHub Release.</p>
+              <p class="dz-status" id="dzStatus" aria-live="polite"></p>
+            </div>
+          </div>
+        </details>
+
+        <!-- ===================================================================
+             10 — HONEST LIMITS
+             ================================================================== -->
+        <details class="section" id="s10">
+          <summary>
+            <span class="num">10</span>
+            <span class="head-text">
+              <h2>Honest limits &mdash; what ruvn is <em>not</em></h2>
+              <span class="q">Stated plainly, not hidden.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <ul>
+              <li><strong>Early beta &mdash; v0.1.1.</strong> This is a young, small package.</li>
+              <li><strong>It&rsquo;s a <em>research</em> tool, not an oracle.</strong> It grades and cites
+                evidence; it does <strong>not</strong> give medical advice or make efficacy claims. Its
+                output is <em>&ldquo;a starting dossier to verify, not a conclusion.&rdquo;</em></li>
+              <li><strong>It needs a host with web access.</strong> ruvn ships <strong>no model of its own</strong>
+                &mdash; the kernel makes no model calls; your AI host provides the brain and the web-search
+                tool. No host, no run.</li>
+              <li><strong>Quality is bounded by what&rsquo;s findable and by the grader&rsquo;s judgment.</strong>
+                Grades are assigned by an AI applying the A/B/C/D rubric &mdash; solid, but not a human
+                peer-reviewer. Treat the dossier as a strong first pass to verify.</li>
+              <li><strong>Domain DNA.</strong> It was built for the gamma-entrainment / ruv-neural project,
+                so its built-in examples and validation tasks are 40&nbsp;Hz-flavored. The <em>pipeline</em>
+                is general; the examples just smell of its origin.</li>
+              <li><strong>&ldquo;Signed session bundles&rdquo; is the sibling tool&rsquo;s job.</strong> That
+                phrase in the one-liner belongs to <strong>ruv-neural</strong> (the closed-loop OS that
+                runs / measures / signs protocols); ruvn is the <em>research front-end</em>. Don&rsquo;t
+                oversell ruvn as the protocol-signer.</li>
+            </ul>
+            <div class="note warn">
+              <span class="note-k">In one line</span>
+              ruvn makes research <em>auditable</em> &mdash; it does not make it infallible. It hands you a
+              strong, checkable first pass; the checking is still yours to do.
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="foot">
+    <div class="wrap">
+      <p class="credit">
+        <b>ruvn</b> is created by <b>Reuven Cohen (@ruvnet)</b>. Source &amp; license:
+        <a href="https://github.com/ruvnet/ruvn" target="_blank" rel="noopener">github.com/ruvnet/ruvn</a>
+        &mdash; package <a href="https://www.npmjs.com/package/@ruvnet/ruvn" target="_blank" rel="noopener">@ruvnet/ruvn</a>.
+        This explainer is an independent, plain-language guide to ruv&rsquo;s work &mdash; it is not the
+        tool itself, and every claim on it is grounded in the real repository.
+      </p>
+      <p class="fine">
+        Updated 2026-06-19 &middot; source @ruvnet/ruvn v0.1.1 @ 5b5dd72 &middot;
+        explainer built to the Repo-Primer recipe (ADR-0001).
+      </p>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>

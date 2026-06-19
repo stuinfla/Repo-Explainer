@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" role="img" aria-labelledby="dropin-t dropin-d" style="max-width:1000px;height:auto;font-family:'Inter','IBM Plex Sans',system-ui,sans-serif;">
+  <title id="dropin-t">What is actually inside the ruqu drop-in kit</title>
+  <desc id="dropin-d">An annotated file tree of the ruqu-kb download, one folder with two halves. for-humans holds the plain-English primer and optional studio media. for-ai holds the big and small RVF brains, a passages JSONL of every doc and all source, an ask-kb command-line tool, and a kb-mcp-server to wire it into Claude Code or Cursor, plus a README and manifest. Each file is labeled with a plain-English what-this-is.</desc>
+  <defs>
+    <linearGradient id="dropin-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#181233"/><stop offset="1" stop-color="#120e26"/></linearGradient>
+    <linearGradient id="dropin-mag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3df0"/><stop offset="1" stop-color="#8b5cff"/></linearGradient>
+  </defs>
+  <rect width="1000" height="600" rx="16" fill="url(#dropin-bg)"/>
+  <text x="500" y="40" text-anchor="middle" fill="#f3eefb" font-size="21" font-weight="700">What&#8217;s actually inside the download</text>
+  <text x="500" y="63" text-anchor="middle" fill="#b9aee0" font-size="13"><tspan font-family="'IBM Plex Mono',ui-monospace,monospace" fill="#7df0ff">ruqu-kb/</tspan> &#8212; one folder, two halves: one for you, one for your AI</text>
+
+  <!-- root -->
+  <text x="60" y="104" fill="#ff8cf2" font-size="15" font-weight="700" font-family="'IBM Plex Mono',ui-monospace,monospace">ruqu-kb/</text>
+  <text x="180" y="104" fill="#a99fce" font-size="12">the one download &#183; unzip into your project as <tspan fill="#cdc2ee" font-family="monospace">kb/</tspan></text>
+
+  <!-- for-humans half -->
+  <rect x="44" y="120" width="912" height="150" rx="12" fill="#1c2444" stroke="#39e8ff" stroke-width="1.3"/>
+  <text x="68" y="146" fill="#bff3ff" font-size="14" font-weight="700" font-family="'IBM Plex Mono',ui-monospace,monospace">&#9500;&#9472; for-humans/</text>
+  <text x="300" y="146" fill="#a9c8e0" font-size="12">read this to understand the tool</text>
+  <g font-family="'IBM Plex Mono',ui-monospace,monospace" font-size="12.5">
+    <text x="96" y="178" fill="#cdc2ee">&#9500;&#9472; ruqu-primer.md</text>
+    <text x="96" y="208" fill="#cdc2ee">&#9492;&#9472; studio/  <tspan fill="#7d739e">(optional)</tspan></text>
+  </g>
+  <g font-size="12">
+    <text x="360" y="178" fill="#d8cff0">&#8212; the whole tool, in plain English (the comprehension arc)</text>
+    <text x="360" y="208" fill="#d8cff0">&#8212; short explainer video + audio overview (NotebookLM)</text>
+  </g>
+  <text x="68" y="250" fill="#7d739e" font-size="11.5">No quantum background needed &#8212; this half is the orientation: what it is, why it exists, what to do with it.</text>
+
+  <!-- for-ai half -->
+  <rect x="44" y="284" width="912" height="232" rx="12" fill="#1d1640" stroke="#ff3df0" stroke-width="1.4"/>
+  <text x="68" y="310" fill="#ff5cf2" font-size="14" font-weight="700" font-family="'IBM Plex Mono',ui-monospace,monospace">&#9500;&#9472; for-ai/</text>
+  <text x="260" y="310" fill="#d8cff0" font-size="12">point your assistant here so it answers from the real source, not guesses</text>
+  <g font-family="'IBM Plex Mono',ui-monospace,monospace" font-size="12.5">
+    <text x="96" y="342" fill="#ff8cf2">&#9500;&#9472; ruqu-kb.big.rvf</text>
+    <text x="96" y="372" fill="#ff8cf2">&#9500;&#9472; ruqu-kb.small.rvf</text>
+    <text x="96" y="402" fill="#cdc2ee">&#9500;&#9472; ruqu.passages.jsonl</text>
+    <text x="96" y="432" fill="#cdc2ee">&#9500;&#9472; ask-kb.mjs</text>
+    <text x="96" y="462" fill="#cdc2ee">&#9492;&#9472; kb-mcp-server.mjs</text>
+  </g>
+  <g font-size="12">
+    <text x="380" y="342" fill="#d8cff0">&#8212; the &#8220;brain,&#8221; sharp version (768-dim) &#8212; best recall, Mac/PC</text>
+    <text x="380" y="372" fill="#d8cff0">&#8212; the &#8220;brain,&#8221; light version (384-dim) &#8212; fast, evergreen, edge</text>
+    <text x="380" y="402" fill="#d8cff0">&#8212; every doc + all source, searchable as plain text</text>
+    <text x="380" y="432" fill="#d8cff0">&#8212; ask it a question from the command line</text>
+    <text x="380" y="462" fill="#d8cff0">&#8212; wire it straight into Claude Code / Cursor (one MCP server)</text>
+  </g>
+  <text x="68" y="498" fill="#7d739e" font-size="11.5">Both RVF &#8220;brains&#8221; ship together [F]: the small one stays auto-refreshed; the big one trails it for higher-recall queries.</text>
+
+  <!-- README -->
+  <rect x="44" y="530" width="912" height="50" rx="12" fill="#231a44" stroke="#5a4d88" stroke-width="1.2"/>
+  <text x="68" y="560" fill="#cdc2ee" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,monospace">&#9492;&#9472; README + manifest</text>
+  <text x="360" y="560" fill="#d8cff0" font-size="12">&#8212; what it is + the 3-step setup, plus the build&#8217;s provenance (date &#183; source SHA &#183; versions)</text>
+</svg>

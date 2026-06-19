@@ -1,0 +1,13 @@
+g6.png — SOCIAL CARD (16:9, used at 1200x630).
+PROMPT:
+Minimal, premium social-share hero. A single elegant, glowing violet-and-magenta
+waveform — a smooth flowing sine ribbon with concentric field-ripples — sweeps
+gracefully across a deep slate-charcoal canvas (cool blue-grey #0e1018 to #14161f),
+NOT warm, NOT amber, NOT copper. The waveform feels alive and calm, like a heartbeat
+of a quiet room. Generous negative space, cinematic, high-end, restrained. Faint
+indigo depth, soft bloom on the wave crest. The overall impression evokes
+"the answer a camera would give you — without anyone ever being watched":
+quiet, trustworthy, sophisticated. Leave clear open space for an overlaid title.
+Strictly signal-violet (#a855f7) + magenta (#e84ef0) on slate. No camera. No text.
+RATIONALE (gate-E): distinct premium identity (waveform, not foundry coin), locks
+the slate+violet brand for link previews; deliberately unlike any amber/charcoal site.

@@ -1,0 +1,23 @@
+{
+  "name": "ruv-explainer-ruqu",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plain-language ExplainerSite for ruqu (ruvnet/ruqu): a faithful quantum-computer simulator in pure Rust → WebAssembly, with a real-time coherence engine. Static, no build, no deps.",
+  "license": "MIT",
+  "homepage": "https://ruv-explainer-ruqu.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stuinfla/ruv-explainer-ruqu"
+  },
+  "keywords": [
+    "ruqu",
+    "ruvnet",
+    "quantum-simulator",
+    "state-vector",
+    "webassembly",
+    "coherence-engine",
+    "explainer",
+    "static-site"
+  ],
+  "scripts": {}
+}

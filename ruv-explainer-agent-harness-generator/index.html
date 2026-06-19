@@ -10,16 +10,17 @@
 
   <!-- Open Graph — G6 social share card (1200x630) -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="MetaHarness — the harness is the product" />
-  <meta property="og:description" content="Mint your own branded AI agent harness from any repo — its own command, its own skills, its own safety net. Nothing leaves your machine." />
-  <meta property="og:image" content="assets/img/g6.png" />
+  <meta property="og:title" content="Learning and using MetaHarness" />
+  <meta property="og:description" content="A plain-language walkthrough of MetaHarness — the open-source factory that mints your own branded AI agent from any repo. Nothing leaves your machine." />
+  <meta property="og:url" content="https://metaharness-explainer.vercel.app" />
+  <meta property="og:image" content="https://metaharness-explainer.vercel.app/assets/img/g6.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="A freshly minted copper-and-brass coin stamped with the letters MH, glowing molten amber, beside the words MetaHarness — a factory for agent frameworks." />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="MetaHarness — the harness is the product" />
-  <meta name="twitter:description" content="Mint your own branded AI agent harness from any repo. Nothing leaves your machine." />
-  <meta name="twitter:image" content="assets/img/g6.png" />
+  <meta name="twitter:title" content="Learning and using MetaHarness" />
+  <meta name="twitter:description" content="A plain-language walkthrough of MetaHarness — the open-source factory that mints your own branded AI agent from any repo." />
+  <meta name="twitter:image" content="https://metaharness-explainer.vercel.app/assets/img/g6.png" />
 
   <link rel="stylesheet" href="styles.css" />
 
@@ -50,7 +51,7 @@
       </p>
       <p class="prov-live">
         <span class="prov-dot" aria-hidden="true">&#9679;</span>
-        Updated 2026-06-19 &middot; source <code>@ db65fab</code> &middot; v0.1.3
+        Updated 2026-06-19 &middot; source <code>@ db65fab</code> &middot; v0.1.3 (latest release tag; the tool self-describes as v0.1.x&nbsp;beta)
       </p>
     </div>
   </div>
@@ -75,23 +76,37 @@
   <!-- ===================== HERO ===================== -->
   <main id="top">
     <section class="hero">
-      <div class="wrap">
-        <p class="eyebrow">ruvnet · agent-harness-generator</p>
-        <h1>The harness is<br /><span class="molten">the product.</span></h1>
-        <p class="lede">
-          MetaHarness is a free tool that turns any GitHub repo &mdash; or a blank
-          page &mdash; into <em>your own</em> AI assistant: its own name, its own
-          <code>npx your-name</code> command, the skills it needs, a memory of your
-          project, and a built-in safety net. It runs on your machine. It never
-          runs your code. The AI model underneath stays the same &mdash; what you
-          build and own is the wrapper around it.
-        </p>
-        <div class="meta-row" aria-hidden="true">
-          <span>CLI&nbsp;<b>npx metaharness</b></span>
-          <span>LIBRARY&nbsp;<b>@ruvnet/agent-harness-generator</b></span>
-          <span>STATUS&nbsp;<b>v0.1.x beta</b></span>
+      <div class="wrap hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow">ruvnet · agent-harness-generator</p>
+          <h1>The harness is<br /><span class="molten">the product.</span></h1>
+          <p class="lede">
+            MetaHarness is a free tool that turns any GitHub repo &mdash; or a blank
+            page &mdash; into <em>your own</em> AI assistant: its own name, its own
+            <code>npx your-name</code> command, the skills it needs, a memory of your
+            project, and a built-in safety net. It runs on your machine. It never
+            runs your code. The AI model underneath stays the same &mdash; what you
+            build and own is the wrapper around it.
+          </p>
+          <div class="meta-row" aria-hidden="true">
+            <span>CLI&nbsp;<b>npx metaharness</b></span>
+            <span>LIBRARY&nbsp;<b>@ruvnet/agent-harness-generator</b></span>
+            <span>STATUS&nbsp;<b>v0.1.3 (v0.1.x beta)</b></span>
+          </div>
+          <a class="cta" href="#s09">Get the drop-in &rarr;</a>
         </div>
-        <a class="cta" href="#s09">Get the drop-in &rarr;</a>
+        <div class="hero-visual" aria-hidden="true">
+          <figure class="hero-figure">
+            <img
+              src="assets/img/g1.png"
+              width="1376"
+              height="768"
+              alt="A dull grey metal plate labelled Your GitHub Repo on the left, a glowing mint press labelled Mint It in the centre, and a warm amber coin labelled Your Custom Agent on the right — the repo goes in, gets stamped, and comes out as a finished branded agent you own."
+              loading="eager"
+              decoding="async"
+            />
+          </figure>
+        </div>
       </div>
     </section>
 
@@ -110,37 +125,6 @@
             <span class="chev" aria-hidden="true">&rsaquo;</span>
           </summary>
           <div class="body">
-            <p>
-              First, the short version of <em>what</em> it is, so the rest makes
-              sense. A <strong>harness</strong> is the wrapper <em>around</em> an AI
-              model &mdash; not the model itself. Underneath you are still talking to
-              Claude, GPT, or whatever model you use. The harness is the bit that
-              gives your assistant a name, knows your project, carries a set of
-              skills, and keeps a safety net around what it is allowed to do.
-              MetaHarness is a <strong>factory that builds those wrappers</strong>.
-              As the project puts it: <em>&ldquo;It is not another agent framework.
-              It is a factory for agent frameworks. The model is replaceable. The
-              harness is the product.&rdquo;</em>
-            </p>
-            <p>
-              So why build a <em>factory</em> instead of just one more assistant?
-              Because of a trap the makers hit themselves. Their earlier product,
-              <strong>ruflo</strong>, came as one big bundle &mdash; a small core
-              engine welded to 60+ pre-made agents, 30+ skills, and 33 plugins, all
-              fused together. People loved the engine but wanted their <em>own</em>
-              brand, their own agents, and their own listing. The only way to get
-              that was to copy (&ldquo;fork&rdquo;) the whole bundle &mdash; and the
-              moment you did, you were cut off from every future update to the
-              engine. That is a <strong>one-way door</strong>: rebrand once, and you
-              are frozen in time.
-            </p>
-            <p>
-              MetaHarness was built to take the hinges off that door. It
-              <strong>separates the reusable engine from the opinionated content</strong>,
-              so you can take just the engine and generate just the pieces you
-              actually want &mdash; owned and branded by you, and still able to pull
-              future engine updates.
-            </p>
 <figure class="figure diagram">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" width="100%" role="img" aria-labelledby="s01-title s01-desc" style="max-width:1000px;height:auto;font-family:'IBM Plex Sans',sans-serif;">
   <title id="s01-title">The one-way door: forking ruflo versus generating with MetaHarness</title>
@@ -247,7 +231,7 @@
 </svg>
               <figcaption>The one-way door, drawn out: forking the whole ruflo bundle freezes you and cuts off engine updates (left); MetaHarness generates only the pieces you want, branded by you, and stays connected to the kernel for future updates (right).</figcaption>
             </figure>
-            <figure class="figure">
+<figure class="figure">
               <img src="assets/img/g1.png" width="1376" height="768"
                    alt="A dull grey metal plate labelled Your GitHub Repo on the left, a glowing mint press labelled Mint It in the centre, and a warm amber coin labelled Your Custom Agent on the right, connected by an arrow." />
               <figcaption>
@@ -255,6 +239,38 @@
                 and comes out as a finished, branded agent you own.
               </figcaption>
             </figure>
+            <p>
+              First, the short version of <em>what</em> it is, so the rest makes
+              sense. A <strong>harness</strong> is the wrapper <em>around</em> an AI
+              model &mdash; not the model itself. Underneath you are still talking to
+              Claude, GPT, or whatever model you use. The harness is the bit that
+              gives your assistant a name, knows your project, carries a set of
+              skills, and keeps a safety net around what it is allowed to do.
+              MetaHarness is a <strong>factory that builds those wrappers</strong>.
+              As the project puts it: <em>&ldquo;It is not another agent framework.
+              It is a factory for agent frameworks. The model is replaceable. The
+              harness is the product.&rdquo;</em>
+            </p>
+            <p>
+              So why build a <em>factory</em> instead of just one more assistant?
+              Because of a trap the makers hit themselves. Their earlier product,
+              <strong>ruflo</strong>, came as one big bundle &mdash; a small core
+              engine welded to 60+ pre-made agents, 30+ skills, and 33 plugins, all
+              fused together. People loved the engine but wanted their <em>own</em>
+              brand, their own agents, and their own listing. The only way to get
+              that was to copy (&ldquo;fork&rdquo;) the whole bundle &mdash; and the
+              moment you did, you were cut off from every future update to the
+              engine. That is a <strong>one-way door</strong>: rebrand once, and you
+              are frozen in time.
+            </p>
+            <p>
+              MetaHarness was built to take the hinges off that door. It
+              <strong>separates the reusable engine from the opinionated content</strong>,
+              so you can take just the engine and generate just the pieces you
+              actually want &mdash; owned and branded by you, and still able to pull
+              future engine updates.
+            </p>
+
           </div>
         </details>
 
@@ -269,38 +285,7 @@
             <span class="chev" aria-hidden="true">&rsaquo;</span>
           </summary>
           <div class="body">
-            <p>
-              There are three everyday headaches it removes:
-            </p>
-            <ol>
-              <li>
-                <strong>Lock-in.</strong> As above &mdash; copying a bundled product
-                just to rebrand it means you give up every future update to the part
-                you actually relied on. You get stuck.
-              </li>
-              <li>
-                <strong>Too many places to run an assistant.</strong> Claude Code
-                used to be the obvious home for AI agents. Now there are several
-                &mdash; Codex, Hermes, pi.dev and more &mdash; and each one wants its
-                config files set up <em>its</em> way. (Config = the small settings
-                files that tell a tool how to behave.) Setting the same assistant up
-                by hand for each place is tedious and easy to get wrong. MetaHarness
-                writes the right files for whichever places you pick.
-              </li>
-              <li>
-                <strong>Rebuilding the same plumbing every time.</strong> Roughly
-                80% of any new agent project is the same unglamorous wiring done over
-                again: a local tool server, a place to keep memory, the rules for
-                what is allowed, and a way to sign your release so people can trust
-                it. MetaHarness generates all of that for you, correctly, in one go.
-              </li>
-            </ol>
-            <p>
-              In plain terms: instead of spending your first week rebuilding
-              scaffolding, you answer a few questions and get a clean, safe starting
-              point that is already yours.
-            </p>
-            <figure class="figure diagram">
+<figure class="figure diagram">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" role="img" aria-labelledby="s02-title s02-desc" style="max-width:1000px;height:auto;font-family:'IBM Plex Sans',sans-serif;">
   <title id="s02-title">The problem MetaHarness solves: lock-in, host fragmentation, and rebuilt plumbing</title>
   <desc id="s02-desc">A generic AI agent guesses at your repo. Three concrete problems follow: lock-in when you fork a bundle to rebrand it, host fragmentation across different agent runtimes, and reinventing about 80 percent of the same infrastructure on every new project.</desc>
@@ -404,6 +389,38 @@
 </svg>
               <figcaption>The three pains, side by side: a generic agent guesses at your repo, then lock-in, host fragmentation, and rebuilding ~80% of the same plumbing follow.</figcaption>
             </figure>
+            <p>
+              There are three everyday headaches it removes:
+            </p>
+            <ol>
+              <li>
+                <strong>Lock-in.</strong> As above &mdash; copying a bundled product
+                just to rebrand it means you give up every future update to the part
+                you actually relied on. You get stuck.
+              </li>
+              <li>
+                <strong>Too many places to run an assistant.</strong> Claude Code
+                used to be the obvious home for AI agents. Now there are several
+                &mdash; Codex, Hermes, pi.dev and more &mdash; and each one wants its
+                config files set up <em>its</em> way. (Config = the small settings
+                files that tell a tool how to behave.) Setting the same assistant up
+                by hand for each place is tedious and easy to get wrong. MetaHarness
+                writes the right files for whichever places you pick.
+              </li>
+              <li>
+                <strong>Rebuilding the same plumbing every time.</strong> Roughly
+                80% of any new agent project is the same unglamorous wiring done over
+                again: a local tool server, a place to keep memory, the rules for
+                what is allowed, and a way to sign your release so people can trust
+                it. MetaHarness generates all of that for you, correctly, in one go.
+              </li>
+            </ol>
+            <p>
+              In plain terms: instead of spending your first week rebuilding
+              scaffolding, you answer a few questions and get a clean, safe starting
+              point that is already yours.
+            </p>
+            
           </div>
         </details>
 
@@ -418,27 +435,6 @@
             <span class="chev" aria-hidden="true">&rsaquo;</span>
           </summary>
           <div class="body">
-            <p>
-              A factory only pays off once there is enough variety for it to
-              produce. Two things just crossed that line.
-            </p>
-            <p>
-              <strong>The homes for AI agents multiplied.</strong> A year or two ago
-              you mostly ran assistants in one place. Now Codex, Hermes, pi.dev and
-              others each have their own way of running agents. A factory that can
-              target any of them &mdash; without you rewriting anything &mdash; is
-              suddenly worth having.
-            </p>
-            <p>
-              <strong>The plugin marketplace woke up.</strong> A
-              &ldquo;plugin&rdquo; is just an add-on capability you can drop into your
-              assistant. There is now a shared, open registry of these (hosted on
-              IPFS, a decentralised file network), so a harness you build can both
-              <em>pull in</em> ready-made plugins and, if you want,
-              <em>publish</em> its own. Building becomes assembling from parts rather
-              than carving everything from scratch &mdash; which is exactly when an
-              assembly line earns its keep.
-            </p>
 <figure class="figure diagram">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" role="img" aria-labelledby="s03-title s03-desc" style="max-width:1000px;height:auto;font-family:'IBM Plex Sans',sans-serif;">
   <title id="s03-title">Why now: hosts have multiplied and the plugin marketplace woke up</title>
@@ -544,7 +540,7 @@
 </svg>
               <figcaption>Why now: the hosts multiplied (Claude Code, Codex, pi.dev, Hermes, OpenClaw, RVM) and the plugin marketplace woke up &mdash; a generated harness both consumes plugins from the IPFS registry and can publish its own back.</figcaption>
             </figure>
-            <figure class="figure">
+<figure class="figure">
               <img src="assets/img/g2.png" width="1376" height="768"
                    alt="A friendly foundry assembly line: a box labelled Your Repo enters a glowing machine and a finished toolkit rolls out holding four labelled parts — CLI, Memory, Skills, and Guardrails." />
               <figcaption>
@@ -553,6 +549,28 @@
                 other.
               </figcaption>
             </figure>
+            <p>
+              A factory only pays off once there is enough variety for it to
+              produce. Two things just crossed that line.
+            </p>
+            <p>
+              <strong>The homes for AI agents multiplied.</strong> A year or two ago
+              you mostly ran assistants in one place. Now Codex, Hermes, pi.dev and
+              others each have their own way of running agents. A factory that can
+              target any of them &mdash; without you rewriting anything &mdash; is
+              suddenly worth having.
+            </p>
+            <p>
+              <strong>The plugin marketplace woke up.</strong> A
+              &ldquo;plugin&rdquo; is just an add-on capability you can drop into your
+              assistant. There is now a shared, open registry of these (hosted on
+              IPFS, a decentralised file network), so a harness you build can both
+              <em>pull in</em> ready-made plugins and, if you want,
+              <em>publish</em> its own. Building becomes assembling from parts rather
+              than carving everything from scratch &mdash; which is exactly when an
+              assembly line earns its keep.
+            </p>
+
           </div>
         </details>
 
@@ -567,37 +585,7 @@
             <span class="chev" aria-hidden="true">&rsaquo;</span>
           </summary>
           <div class="body">
-            <p>
-              It walks you through a short series of choices &mdash; call it the
-              <strong>composer</strong> &mdash; and then assembles a complete,
-              self-contained package from your answers. You can answer the questions
-              in a friendly picker (a &ldquo;wizard&rdquo;) or, if you prefer, pass
-              the same answers as command-line options. Either way you end up at the
-              same place. The steps, in order, are:
-            </p>
-            <ol>
-              <li><strong>Identity</strong> &mdash; the name, the package scope, a
-                description, a licence, and who the author is.</li>
-              <li><strong>Hosts</strong> &mdash; tick which places you want it to run
-                (Claude Code, Codex, and so on). Pick at least one.</li>
-              <li><strong>Primitives</strong> &mdash; switch the engine&rsquo;s
-                building blocks on or off: the tool server (always on), automations,
-                memory, smart routing, the marketplace hook, and signed provenance.
-                All on by default.</li>
-              <li><strong>Agents</strong> &mdash; choose helpers from a curated list
-                (it suggests a coder, a reviewer, and a tester to start).</li>
-              <li><strong>Skills</strong> &mdash; reusable abilities you can bolt on.</li>
-              <li><strong>Plugins</strong> &mdash; optional add-ons from the shared
-                registry (none by default).</li>
-              <li><strong>Features</strong> &mdash; opt-in extras like teamwork
-                between agents or self-improvement.</li>
-              <li><strong>Branding</strong> &mdash; &ldquo;powered-by&rdquo; mode or
-                fully independent, plus your brand wording.</li>
-              <li><strong>Confirm</strong> &mdash; a clear summary: every file it will
-                create, the exact engine version it pins to, and a size estimate,
-                before anything is written.</li>
-            </ol>
-            <figure class="figure diagram">
+<figure class="figure diagram">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 1340" width="100%" role="img"
      aria-labelledby="s04-title s04-desc" preserveAspectRatio="xMidYMid meet"
      style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
@@ -767,6 +755,37 @@
               <figcaption>The composer pipeline: a repo or blank slate enters and flows top-to-bottom through the nine ADR-003 stages &mdash; Identity, Hosts, Primitives, Agents, Skills, Plugins, Features, Branding, Confirm &mdash; emerging as a branded, npm-publishable harness. It never runs your code.</figcaption>
             </figure>
             <p>
+              It walks you through a short series of choices &mdash; call it the
+              <strong>composer</strong> &mdash; and then assembles a complete,
+              self-contained package from your answers. You can answer the questions
+              in a friendly picker (a &ldquo;wizard&rdquo;) or, if you prefer, pass
+              the same answers as command-line options. Either way you end up at the
+              same place. The steps, in order, are:
+            </p>
+            <ol>
+              <li><strong>Identity</strong> &mdash; the name, the package scope, a
+                description, a licence, and who the author is.</li>
+              <li><strong>Hosts</strong> &mdash; tick which places you want it to run
+                (Claude Code, Codex, and so on). Pick at least one.</li>
+              <li><strong>Primitives</strong> &mdash; switch the engine&rsquo;s
+                building blocks on or off: the tool server (always on), automations,
+                memory, smart routing, the marketplace hook, and signed provenance.
+                All on by default.</li>
+              <li><strong>Agents</strong> &mdash; choose helpers from a curated list
+                (it suggests a coder, a reviewer, and a tester to start).</li>
+              <li><strong>Skills</strong> &mdash; reusable abilities you can bolt on.</li>
+              <li><strong>Plugins</strong> &mdash; optional add-ons from the shared
+                registry (none by default).</li>
+              <li><strong>Features</strong> &mdash; opt-in extras like teamwork
+                between agents or self-improvement.</li>
+              <li><strong>Branding</strong> &mdash; &ldquo;powered-by&rdquo; mode or
+                fully independent, plus your brand wording.</li>
+              <li><strong>Confirm</strong> &mdash; a clear summary: every file it will
+                create, the exact engine version it pins to, and a size estimate,
+                before anything is written.</li>
+            </ol>
+            
+            <p>
               Two things make this safe and predictable. <strong>It never runs your
               code</strong> &mdash; when it looks at a repo it only reads the file
               list and a few text files to make suggestions; it does not execute
@@ -799,33 +818,6 @@
             <span class="chev" aria-hidden="true">&rsaquo;</span>
           </summary>
           <div class="body">
-            <p>
-              When it has done its job, you have a single, self-contained package
-              &mdash; say you called it <code>my-bot</code> &mdash; that includes:
-            </p>
-            <ul>
-              <li>Its own <code>npx my-bot</code> command, branded as yours, not as
-                someone else&rsquo;s tool.</li>
-              <li>Its own local tool server, locked down by default.</li>
-              <li>Its own private memory space, kept separate from everything else.</li>
-              <li>The agents, skills, plugins, and per-place config files you chose.</li>
-              <li>A <strong>signed receipt</strong> of exactly what is inside it
-                (a cryptographic signature called an Ed25519 witness manifest), so
-                anyone who installs it can confirm they got precisely what you
-                shipped &mdash; nothing swapped or added.</li>
-            </ul>
-            <p>
-              You can publish it (<code>npm publish</code>) and your users run
-              <code>npx my-bot init</code>. They never see the factory underneath
-              &mdash; only your brand.
-            </p>
-            <p>
-              And it does not have to stand still. A finished harness can be set to
-              quietly <strong>improve its own settings over time</strong>: it tries a
-              small tweak, tests it safely in a sandbox, and keeps the change only if
-              it measurably helped. The AI model never changes &mdash; only the
-              wrapper gets a little better. (More on this in the use cases below.)
-            </p>
 <figure class="figure diagram">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 980" width="100%" role="img"
      aria-labelledby="s05-title s05-desc" preserveAspectRatio="xMidYMid meet"
@@ -980,7 +972,7 @@
 </svg>
               <figcaption>Anatomy of a generated harness: the wrapper you own &mdash; repo-aware CLI, local MCP tool server, project-scoped memory, skills inferred from your file layout, default-deny governance, Ed25519 witness-signed releases &mdash; wrapping a replaceable model and pointed at your repo. The model is replaceable; the harness is the product.</figcaption>
             </figure>
-            <figure class="figure">
+<figure class="figure">
               <img src="assets/img/g4.png" width="1376" height="768"
                    alt="A warm circular loop of molten metal with three steps around it — try a small tweak, test it safely, keep what helps — and a glowing checkmark in the centre." />
               <figcaption>
@@ -988,6 +980,34 @@
                 only what helps. It can keep going on its own.
               </figcaption>
             </figure>
+            <p>
+              When it has done its job, you have a single, self-contained package
+              &mdash; say you called it <code>my-bot</code> &mdash; that includes:
+            </p>
+            <ul>
+              <li>Its own <code>npx my-bot</code> command, branded as yours, not as
+                someone else&rsquo;s tool.</li>
+              <li>Its own local tool server, locked down by default.</li>
+              <li>Its own private memory space, kept separate from everything else.</li>
+              <li>The agents, skills, plugins, and per-place config files you chose.</li>
+              <li>A <strong>signed receipt</strong> of exactly what is inside it
+                (a cryptographic signature called an Ed25519 witness manifest), so
+                anyone who installs it can confirm they got precisely what you
+                shipped &mdash; nothing swapped or added.</li>
+            </ul>
+            <p>
+              You can publish it (<code>npm publish</code>) and your users run
+              <code>npx my-bot init</code>. They never see the factory underneath
+              &mdash; only your brand.
+            </p>
+            <p>
+              And it does not have to stand still. A finished harness can be set to
+              quietly <strong>improve its own settings over time</strong>: it tries a
+              small tweak, tests it safely in a sandbox, and keeps the change only if
+              it measurably helped. The AI model never changes &mdash; only the
+              wrapper gets a little better. (More on this in the use cases below.)
+            </p>
+
             <p class="footnote-note">
               <small>
                 Honest maturity note: this is <strong>v0.1.x beta</strong> &mdash;
@@ -1011,49 +1031,7 @@
             <span class="chev" aria-hidden="true">&rsaquo;</span>
           </summary>
           <div class="body">
-            <p>
-              There are two ways in, and they give the same result &mdash; a
-              <code>.zip</code> (or scaffolded folder) that is yours to keep.
-            </p>
-            <p>
-              <strong>1. In your browser, with nothing to install.</strong> Open the
-              Studio at
-              <a href="https://ruvnet.github.io/agent-harness-generator/">ruvnet.github.io/agent-harness-generator</a>,
-              pick a tab (turn a repo into a harness, create one from scratch, add a
-              skill or agent, or verify a harness), make your choices, and click
-              <strong>Download .zip</strong>. Then on your own machine:
-            </p>
-            <pre class="code-block"><code>unzip my-bot.zip
-cd my-bot
-npm install</code></pre>
-            <p>
-              The Studio runs entirely in your browser. For analysis it only reads a
-              repo&rsquo;s public file <em>list</em> through GitHub&rsquo;s
-              API &mdash; it never reads your file contents on a server, and there is
-              no account, no sign-in, and no tracking.
-            </p>
-            <p>
-              <strong>2. In your terminal, if you live there.</strong> The same
-              behaviour, from the command line:
-            </p>
-            <pre class="code-block"><code>npx metaharness my-bot --template vertical:coding --host claude-code
-# or be asked the questions instead:
-npx metaharness --wizard</code></pre>
-            <p>
-              After scaffolding, the files are yours: open them, delete what you
-              don&rsquo;t need, adjust the wording and the routing, and when
-              you&rsquo;re happy, ship it with <code>npm publish --provenance</code>
-              (the <code>--provenance</code> part attaches that signed receipt so
-              installers can trust it).
-            </p>
-            <p>
-              One naming note so nothing trips you up: the published command is
-              <code>npx metaharness</code>. In some older docs you may see
-              <code>npx create-agent-harness</code> &mdash; that is the
-              <em>same tool</em> under its internal package name, not a second
-              product. Lead with <code>metaharness</code>.
-            </p>
-            <figure class="figure diagram">
+<figure class="figure diagram">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" width="900" height="540" role="img" aria-labelledby="s06-title s06-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
   <title id="s06-title">Two ways in, one result</title>
   <desc id="s06-desc">Two implementation paths — the browser Studio and the terminal (npx metaharness) — both produce the same branded harness package that is yours to keep.</desc>
@@ -1152,6 +1130,49 @@ npx metaharness --wizard</code></pre>
 </svg>
               <figcaption>Two ways in, one result: the in-browser Studio (Download .zip) and the terminal (npx metaharness) both produce the same harness folder that is yours to keep.</figcaption>
             </figure>
+            <p>
+              There are two ways in, and they give the same result &mdash; a
+              <code>.zip</code> (or scaffolded folder) that is yours to keep.
+            </p>
+            <p>
+              <strong>1. In your browser, with nothing to install.</strong> Open the
+              Studio at
+              <a href="https://ruvnet.github.io/agent-harness-generator/">ruvnet.github.io/agent-harness-generator</a>,
+              pick a tab (turn a repo into a harness, create one from scratch, add a
+              skill or agent, or verify a harness), make your choices, and click
+              <strong>Download .zip</strong>. Then on your own machine:
+            </p>
+            <pre class="code-block"><code>unzip my-bot.zip
+cd my-bot
+npm install</code></pre>
+            <p>
+              The Studio runs entirely in your browser. For analysis it only reads a
+              repo&rsquo;s public file <em>list</em> through GitHub&rsquo;s
+              API &mdash; it never reads your file contents on a server, and there is
+              no account, no sign-in, and no tracking.
+            </p>
+            <p>
+              <strong>2. In your terminal, if you live there.</strong> The same
+              behaviour, from the command line:
+            </p>
+            <pre class="code-block"><code>npx metaharness my-bot --template vertical:coding --host claude-code
+# or be asked the questions instead:
+npx metaharness --wizard</code></pre>
+            <p>
+              After scaffolding, the files are yours: open them, delete what you
+              don&rsquo;t need, adjust the wording and the routing, and when
+              you&rsquo;re happy, ship it with <code>npm publish --provenance</code>
+              (the <code>--provenance</code> part attaches that signed receipt so
+              installers can trust it).
+            </p>
+            <p>
+              One naming note so nothing trips you up: the published command is
+              <code>npx metaharness</code>. In some older docs you may see
+              <code>npx create-agent-harness</code> &mdash; that is the
+              <em>same tool</em> under its internal package name, not a second
+              product. Lead with <code>metaharness</code>.
+            </p>
+            
           </div>
         </details>
 
@@ -1166,30 +1187,7 @@ npx metaharness --wizard</code></pre>
             <span class="chev" aria-hidden="true">&rsaquo;</span>
           </summary>
           <div class="body">
-            <p>
-              If you&rsquo;re not sure what to pick, <strong>run the wizard</strong>.
-              It asks just four things &mdash; a name, a template, where it will run,
-              and a one-line description &mdash; and then prints the exact
-              <code>npx metaharness …</code> command it would have run, so you can
-              skip the questions next time:
-            </p>
-            <pre class="code-block"><code>npx metaharness --wizard</code></pre>
-            <p>
-              Already know what you want? Jump straight in:
-            </p>
-            <pre class="code-block"><code>npx metaharness my-bot --template vertical:coding --host claude-code
-cd my-bot &amp;&amp; npm install &amp;&amp; npx . --help</code></pre>
-            <p>
-              Want to see what&rsquo;s on the menu first? <code>npx metaharness
-              --list</code> shows every template. And once your harness exists, run
-              <code>harness doctor</code> &mdash; a quick health check that confirms
-              the scaffold is set up correctly before you go further.
-            </p>
-            <p>
-              That&rsquo;s the whole on-ramp: one command, four questions, a working
-              package. The use cases below show where to take it next.
-            </p>
-            <figure class="figure diagram">
+<figure class="figure diagram">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" width="900" height="420" role="img" aria-labelledby="s07-title s07-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
   <title id="s07-title">The fastest start: one command, four questions, your own tool</title>
   <desc id="s07-desc">A three-step flow. Run npx metaharness --wizard, answer a few plain questions (name, template, host, description), and you get your own npx your-name command. The wizard also prints the exact command so you can skip the questions next time.</desc>
@@ -1260,6 +1258,48 @@ cd my-bot &amp;&amp; npm install &amp;&amp; npx . --help</code></pre>
 </svg>
               <figcaption>The fastest start: one command (npx metaharness --wizard), four questions (name, template, host, one-line description), and a working package &mdash; with the exact non-interactive command printed so you can skip the questions next time.</figcaption>
             </figure>
+            <div class="browser-onramp" role="complementary" aria-label="Zero-install browser option">
+              <div class="browser-onramp-label">Recommended for beginners &mdash; no install needed</div>
+              <p class="browser-onramp-intro">
+                The fastest way to try MetaHarness is the <strong>Browser Studio</strong>:
+                open a page, make your picks, download a <code>.zip</code>. Nothing to
+                install, no terminal required.
+              </p>
+              <a class="browser-onramp-cta" href="https://ruvnet.github.io/agent-harness-generator/" target="_blank" rel="noopener">
+                Try it in your browser &mdash; zero install
+                <span class="browser-onramp-url" aria-hidden="true">ruvnet.github.io/agent-harness-generator</span>
+              </a>
+              <p class="browser-onramp-note">
+                Then <code>unzip my-bot.zip &amp;&amp; cd my-bot &amp;&amp; npm install</code>
+                on your machine &mdash; that&rsquo;s it.
+              </p>
+            </div>
+
+            <p>
+              <strong>Prefer the terminal?</strong> If you&rsquo;re not sure what to
+              pick, <strong>run the wizard</strong>. It asks just four things &mdash;
+              a name, a template, where it will run, and a one-line description &mdash;
+              and then prints the exact <code>npx metaharness …</code> command it would
+              have run, so you can skip the questions next time:
+            </p>
+            <pre class="code-block"><code>npx metaharness --wizard</code></pre>
+            <p>
+              Already know what you want? Jump straight in:
+            </p>
+            <pre class="code-block"><code>npx metaharness my-bot --template vertical:coding --host claude-code
+cd my-bot &amp;&amp; npm install &amp;&amp; npx . --help</code></pre>
+            <p>
+              Want to see what&rsquo;s on the menu first? <code>npx metaharness
+              --list</code> shows every template. And once your harness exists, run
+              <code>harness doctor</code> &mdash; a quick health check that confirms
+              the scaffold is set up correctly before you go further.
+            </p>
+            <p>
+              That&rsquo;s the whole on-ramp: browser Studio or one terminal command,
+              four questions, a working package. The use cases below show where to take
+              it next.
+            </p>
+            
           </div>
         </details>
 
@@ -1274,6 +1314,38 @@ cd my-bot &amp;&amp; npm install &amp;&amp; npx . --help</code></pre>
             <span class="chev" aria-hidden="true">&rsaquo;</span>
           </summary>
           <div class="body">
+<figure class="figure diagram uc-diagram">
+                  <img src="assets/diagrams/uc1.svg" loading="lazy" alt="Flow: your repo enters analyze-repo (reads file list only, never runs code), out comes a fitted set of agents, skills, and tools as a ready harness or .zip." />
+                  <figcaption>Scenario 1 &mdash; repo in, an assistant that actually understands it out (it reads, it never runs).</figcaption>
+                </figure>
+<figure class="figure diagram uc-diagram">
+                  <img src="assets/diagrams/uc2.svg" loading="lazy" alt="Flow: a repo enters score/genome (read-only), out comes a one-screen report card with fit, build-likelihood, tool safety, cost-per-run, and a ready / needs-work / blocked verdict." />
+                  <figcaption>Scenario 2 &mdash; a go / no-go report card before you build, backed by evidence.</figcaption>
+                </figure>
+<figure class="figure diagram uc-diagram">
+                  <img src="assets/diagrams/uc3.svg" loading="lazy" alt="Flow: pick a vertical template (support, trading, legal), out comes a domain team of purpose-built agents with matching skills and per-host config, locked down by default." />
+                  <figcaption>Scenario 3 &mdash; a ready-made domain team from a single template, locked down by default.</figcaption>
+                </figure>
+<figure class="figure diagram uc-diagram">
+                  <img src="assets/diagrams/uc4.svg" loading="lazy" alt="Flow: a colleague's .zip enters mcp-scan / threat-model / verify (nothing executed), out comes a clean / medium / high verdict, a shareable report, and a confirmed signed receipt." />
+                  <figcaption>Scenario 4 &mdash; vet a colleague's harness statically: clean / medium / high, nothing executed.</figcaption>
+                </figure>
+<figure class="figure diagram uc-diagram">
+                  <img src="assets/diagrams/uc5.svg" loading="lazy" alt="Flow: each request enters the router, which sends it to the cheapest model predicted to clear your quality bar, so you get the same answer quality for a far smaller bill." />
+                  <figcaption>Scenario 5 &mdash; route each task to the cheapest model that still clears your quality bar.</figcaption>
+                </figure>
+<figure class="figure">
+                  <img src="assets/img/g3.png" width="1376" height="768"
+                       alt="A simple bar chart on a light cream background: a tall BEFORE bar marked with three dollar signs next to a much shorter AFTER bar marked with a cent sign, each topped by an identical green checkmark to show the quality is the same." />
+                  <figcaption>
+                    Same result, far smaller bill: route each task to the cheapest
+                    model that is still good enough.
+                  </figcaption>
+                </figure>
+<figure class="figure diagram uc-diagram">
+                  <img src="assets/diagrams/uc6.svg" loading="lazy" alt="Flow (Darwin Mode): the harness changes one of its own settings, tests it safely in a sandbox, and keeps it only if it measurably helped. The model stays frozen; only the wrapper evolves." />
+                  <figcaption>Scenario 6 &mdash; Darwin Mode: try a tweak, test it safely, keep only what measurably helps.</figcaption>
+                </figure>
             <p>
               Every command below is taken straight from the project&rsquo;s own
               docs &mdash; nothing here is made up. Pick the one that sounds like you.
@@ -1284,10 +1356,7 @@ cd my-bot &amp;&amp; npm install &amp;&amp; npx . --help</code></pre>
               <div class="card case">
                 <span class="tag">Scenario 1</span>
                 <h3>&ldquo;I have a repo and want an assistant that actually understands it&rdquo;</h3>
-                <figure class="figure diagram uc-diagram">
-                  <img src="assets/diagrams/uc1.svg" loading="lazy" alt="Flow: your repo enters analyze-repo (reads file list only, never runs code), out comes a fitted set of agents, skills, and tools as a ready harness or .zip." />
-                  <figcaption>Scenario 1 &mdash; repo in, an assistant that actually understands it out (it reads, it never runs).</figcaption>
-                </figure>
+                
                 <dl>
                   <dt>The situation</dt>
                   <dd>You maintain a codebase and want a coding helper tuned to
@@ -1319,10 +1388,7 @@ harness analyze-repo . --scaffold my-bot  # build the suggested harness</code></
               <div class="card case">
                 <span class="tag">Scenario 2</span>
                 <h3>&ldquo;Is this repo even worth building an assistant for &mdash; and what will it cost?&rdquo;</h3>
-                <figure class="figure diagram uc-diagram">
-                  <img src="assets/diagrams/uc2.svg" loading="lazy" alt="Flow: a repo enters score/genome (read-only), out comes a one-screen report card with fit, build-likelihood, tool safety, cost-per-run, and a ready / needs-work / blocked verdict." />
-                  <figcaption>Scenario 2 &mdash; a go / no-go report card before you build, backed by evidence.</figcaption>
-                </figure>
+                
                 <dl>
                   <dt>The situation</dt>
                   <dd>Before you commit any time, you want a quick read on whether a
@@ -1348,10 +1414,7 @@ harness genome &lt;repo&gt;          # a fuller pre-build readiness report</code
               <div class="card case">
                 <span class="tag">Scenario 3</span>
                 <h3>&ldquo;Give me a ready-made team for my industry &mdash; support, trading, legal&hellip;&rdquo;</h3>
-                <figure class="figure diagram uc-diagram">
-                  <img src="assets/diagrams/uc3.svg" loading="lazy" alt="Flow: pick a vertical template (support, trading, legal), out comes a domain team of purpose-built agents with matching skills and per-host config, locked down by default." />
-                  <figcaption>Scenario 3 &mdash; a ready-made domain team from a single template, locked down by default.</figcaption>
-                </figure>
+                
                 <dl>
                   <dt>The situation</dt>
                   <dd>You want a pre-built set of agents for a known area and
@@ -1380,10 +1443,7 @@ npx @metaharness/support my-bot              # same thing, zero options to remem
               <div class="card case">
                 <span class="tag">Scenario 4</span>
                 <h3>&ldquo;A colleague sent me a harness &mdash; is it safe to run?&rdquo;</h3>
-                <figure class="figure diagram uc-diagram">
-                  <img src="assets/diagrams/uc4.svg" loading="lazy" alt="Flow: a colleague's .zip enters mcp-scan / threat-model / verify (nothing executed), out comes a clean / medium / high verdict, a shareable report, and a confirmed signed receipt." />
-                  <figcaption>Scenario 4 &mdash; vet a colleague's harness statically: clean / medium / high, nothing executed.</figcaption>
-                </figure>
+                
                 <dl>
                   <dt>The situation</dt>
                   <dd>Someone hands you a generated <code>.zip</code> and you want to
@@ -1413,10 +1473,7 @@ harness verify               # confirm the signed receipt is intact</code></pre>
               <div class="card case">
                 <span class="tag">Scenario 5</span>
                 <h3>&ldquo;Cut my model bill without losing quality&rdquo;</h3>
-                <figure class="figure diagram uc-diagram">
-                  <img src="assets/diagrams/uc5.svg" loading="lazy" alt="Flow: each request enters the router, which sends it to the cheapest model predicted to clear your quality bar, so you get the same answer quality for a far smaller bill." />
-                  <figcaption>Scenario 5 &mdash; route each task to the cheapest model that still clears your quality bar.</figcaption>
-                </figure>
+                
                 <dl>
                   <dt>The situation</dt>
                   <dd>You&rsquo;re paying top-tier prices for work a cheaper model
@@ -1440,24 +1497,14 @@ harness verify               # confirm the signed receipt is intact</code></pre>
                     as &ldquo;a diagnostic signal, not a proven early warning &mdash;
                     test it on your own workload before relying on it.&rdquo;</dd>
                 </dl>
-                <figure class="figure">
-                  <img src="assets/img/g3.png" width="1376" height="768"
-                       alt="A simple bar chart on a light cream background: a tall BEFORE bar marked with three dollar signs next to a much shorter AFTER bar marked with a cent sign, each topped by an identical green checkmark to show the quality is the same." />
-                  <figcaption>
-                    Same result, far smaller bill: route each task to the cheapest
-                    model that is still good enough.
-                  </figcaption>
-                </figure>
+                
               </div>
 
               <!-- Scenario 6 -->
               <div class="card case">
                 <span class="tag">Scenario 6</span>
                 <h3>&ldquo;Let the harness quietly improve itself (Darwin Mode)&rdquo;</h3>
-                <figure class="figure diagram uc-diagram">
-                  <img src="assets/diagrams/uc6.svg" loading="lazy" alt="Flow (Darwin Mode): the harness changes one of its own settings, tests it safely in a sandbox, and keeps it only if it measurably helped. The model stays frozen; only the wrapper evolves." />
-                  <figcaption>Scenario 6 &mdash; Darwin Mode: try a tweak, test it safely, keep only what measurably helps.</figcaption>
-                </figure>
+                
                 <dl>
                   <dt>The situation</dt>
                   <dd>You want your harness to tune its own settings over time
@@ -1495,14 +1542,6 @@ harness verify               # confirm the signed receipt is intact</code></pre>
             <span class="chev" aria-hidden="true">&rsaquo;</span>
           </summary>
           <div class="body">
-            <p>
-              Everything on this page also comes as <strong>one download with two
-              halves</strong>. One half is <em>for you</em> &mdash; a short written
-              primer. The other half is <em>for your AI</em> &mdash; a small,
-              searchable knowledge pack your assistant can read so it can answer
-              questions about MetaHarness accurately, with sources, instead of
-              guessing.
-            </p>
 <figure class="figure diagram">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="900" height="600" role="img" aria-labelledby="s09-title s09-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
   <title id="s09-title">The drop-in: one zip, two halves, three steps to wire it in</title>
@@ -1610,7 +1649,7 @@ harness verify               # confirm the signed receipt is intact</code></pre>
 </svg>
               <figcaption>The drop-in, step by step: one zip splits into for-humans/ (the primer you read) and for-ai/ (the knowledge pack your assistant searches), wired into Claude Code in three small steps &mdash; unzip, register a .mcp.json tool, add a CLAUDE.md gate.</figcaption>
             </figure>
-            <figure class="figure">
+<figure class="figure">
               <img src="assets/img/g5.png" width="1376" height="768"
                    alt="One zip file at the top splits into two equal panels: a left panel labelled For you showing a person reading and watching, and a right panel labelled For your AI showing a warm, searchable glowing brain with a magnifying glass." />
               <figcaption>
@@ -1618,6 +1657,14 @@ harness verify               # confirm the signed receipt is intact</code></pre>
                 and <code>for-ai/</code> (the knowledge pack your assistant searches).
               </figcaption>
             </figure>
+            <p>
+              Everything on this page also comes as <strong>one download with two
+              halves</strong>. One half is <em>for you</em> &mdash; a short written
+              primer. The other half is <em>for your AI</em> &mdash; a small,
+              searchable knowledge pack your assistant can read so it can answer
+              questions about MetaHarness accurately, with sources, instead of
+              guessing.
+            </p>
 
             <p>
               Wiring the AI half into Claude Code takes three small steps:
@@ -1670,24 +1717,20 @@ If the pack has no answer, say so plainly — do not invent one.</code></pre>
               line above.
             </p>
 
-            <!-- Drag-in dropzone STUB. Real wiring (download href, file handling)
-                 lands when downloads/metaharness-dropin.zip is built (P7/P9).
-                 main.js provides click + keyboard fallback now. -->
-            <div
+            <a
               class="dropzone"
               id="dropzone"
-              role="button"
-              tabindex="0"
-              aria-label="Get the MetaHarness drop-in: activate, or drag a folder here"
+              href="downloads/metaharness-dropin.zip"
+              download="metaharness-dropin.zip"
+              aria-label="Download the MetaHarness drop-in zip"
             >
-              <div class="dz-icon" aria-hidden="true">&#9881;</div>
-              <div><strong>Get the drop-in</strong></div>
+              <div class="dz-icon" aria-hidden="true">&#8659;</div>
+              <div><strong>Download the drop-in</strong></div>
               <div class="dz-hint">
-                Click / press Enter to download &mdash; or drag a repo folder here
-                (preview stub). Real <code>.zip</code> wires up in P7/P9.
+                metaharness-dropin.zip &mdash; 3 MB &mdash; Gate A: 99.9&thinsp;/&thinsp;100 &mdash; ready now
               </div>
-              <p class="dz-status" id="dzStatus" role="status" aria-live="polite"></p>
-            </div>
+              <p class="dz-status" id="dzStatus" role="status" aria-live="polite">Ready</p>
+            </a>
           </div>
         </details>
 

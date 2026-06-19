@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" width="100%" role="img" aria-labelledby="s05-t s05-d" style="max-width:1000px;height:auto;font-family:'Inter','IBM Plex Sans',system-ui,sans-serif;">
+  <title id="s05-t">What a solved state looks like</title>
+  <desc id="s05-d">When ruqu is working for you, quantum stops being theoretical. A terminal prints a real Bell-state distribution, every student's browser runs the same circuit, a Rust program returns a ground-state energy, and a health gauge flags trouble a median of four cycles before failure. Quantum ideas you could only read about become things you run.</desc>
+  <defs>
+    <linearGradient id="s05-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#181233"/><stop offset="1" stop-color="#120e26"/></linearGradient>
+    <linearGradient id="s05-mag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3df0"/><stop offset="1" stop-color="#8b5cff"/></linearGradient>
+  </defs>
+  <rect width="1000" height="500" rx="16" fill="url(#s05-bg)"/>
+  <text x="500" y="42" text-anchor="middle" fill="#f3eefb" font-size="22" font-weight="700">What &#8220;solved&#8221; looks like &#8212; quantum you can actually run</text>
+  <text x="500" y="65" text-anchor="middle" fill="#b9aee0" font-size="13">From &#8220;I&#8217;ve read about this&#8221; to &#8220;I just ran it&#8221;</text>
+
+  <!-- 4 solved-state tiles -->
+  <!-- terminal -->
+  <rect x="40" y="92" width="455" height="180" rx="12" fill="#1d1640" stroke="#5a4d88" stroke-width="1.3"/>
+  <text x="62" y="118" fill="#ff8cf2" font-size="14" font-weight="700">A terminal prints a real distribution</text>
+  <rect x="62" y="132" width="411" height="120" rx="8" fill="#0e0a1f" stroke="#3a2f66"/>
+  <g font-family="'IBM Plex Mono',ui-monospace,monospace" font-size="12">
+    <text x="78" y="156" fill="#7df0ff">$ npx @ruvector/ruqu simulate --qubits 2</text>
+    <text x="78" y="180" fill="#cdc2ee">00 &#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;  0.498</text>
+    <text x="78" y="200" fill="#cdc2ee">01 &#9617;                0.001</text>
+    <text x="78" y="220" fill="#cdc2ee">10 &#9617;                0.000</text>
+    <text x="78" y="240" fill="#ff8cf2">11 &#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;  0.501</text>
+  </g>
+
+  <!-- browser -->
+  <rect x="515" y="92" width="445" height="180" rx="12" fill="#1c2444" stroke="#39e8ff" stroke-width="1.3"/>
+  <text x="537" y="118" fill="#bff3ff" font-size="14" font-weight="700">Every browser runs the same circuit</text>
+  <rect x="537" y="132" width="401" height="120" rx="8" fill="#0e0a1f" stroke="#2a4a66"/>
+  <circle cx="557" cy="150" r="4" fill="#ff5c7a"/><circle cx="571" cy="150" r="4" fill="#ffc83d"/><circle cx="585" cy="150" r="4" fill="#3ddc84"/>
+  <line x1="537" y1="162" x2="938" y2="162" stroke="#2a4a66"/>
+  <g>
+    <rect x="567" y="184" width="60" height="44" rx="8" fill="#231a44" stroke="#39e8ff"/><text x="597" y="210" text-anchor="middle" fill="#7df0ff" font-size="13" font-weight="700">00</text>
+    <rect x="657" y="184" width="60" height="44" rx="8" fill="#231a44" stroke="#39e8ff"/><text x="687" y="210" text-anchor="middle" fill="#7df0ff" font-size="13" font-weight="700">11</text>
+    <text x="790" y="200" fill="#cdc2ee" font-size="12">50 / 50</text>
+    <text x="790" y="220" fill="#a9c8e0" font-size="11">no server, no install</text>
+  </g>
+
+  <!-- rust energy -->
+  <rect x="40" y="288" width="455" height="172" rx="12" fill="#1d1640" stroke="#5a4d88" stroke-width="1.3"/>
+  <text x="62" y="314" fill="#9fb6ff" font-size="14" font-weight="700">A Rust program returns a ground-state energy</text>
+  <rect x="62" y="328" width="411" height="56" rx="8" fill="#0e0a1f" stroke="#3a2f66"/>
+  <text x="78" y="350" fill="#cdc2ee" font-size="12" font-family="'IBM Plex Mono',ui-monospace,monospace">let result = VQE::new(...).optimize();</text>
+  <text x="78" y="372" fill="#7df0ff" font-size="12" font-family="'IBM Plex Mono',ui-monospace,monospace">result.energy &#8594; -1.137 Hartree</text>
+  <text x="62" y="408" fill="#d8cff0" font-size="12">A working chemistry prototype &#8212; with zero hardware.</text>
+  <text x="62" y="432" fill="#a99fce" font-size="11.5">The core question behind drug &#38; materials design,</text>
+  <text x="62" y="450" fill="#a99fce" font-size="11.5">answered on your laptop.</text>
+
+  <!-- coherence early warning -->
+  <rect x="515" y="288" width="445" height="172" rx="12" fill="#1d1640" stroke="#ff3df0" stroke-width="1.5"/>
+  <text x="537" y="314" fill="#ff5cf2" font-size="14" font-weight="700">A health gauge warns before things break</text>
+  <!-- sparkline -->
+  <polyline points="537,372 567,366 597,374 627,360 657,378 687,352 717,388 747,344" fill="none" stroke="#39e8ff" stroke-width="2"/>
+  <circle cx="747" cy="344" r="4" fill="#ff5c7a"/>
+  <g font-family="'IBM Plex Mono',ui-monospace,monospace" font-size="11" font-weight="700">
+    <rect x="537" y="392" width="74" height="26" rx="6" fill="#13351f" stroke="#3ddc84"/><text x="574" y="409" text-anchor="middle" fill="#5cffaa">PERMIT</text>
+    <rect x="619" y="392" width="74" height="26" rx="6" fill="#3a3210" stroke="#ffc83d"/><text x="656" y="409" text-anchor="middle" fill="#ffd96b">DEFER</text>
+    <rect x="701" y="392" width="74" height="26" rx="6" fill="#3a1422" stroke="#ff5c7a"/><text x="738" y="409" text-anchor="middle" fill="#ff8fa3">DENY</text>
+  </g>
+  <text x="537" y="442" fill="#d8cff0" font-size="11.5">In tests: flagged trouble a median of <tspan fill="#ff8cf2" font-weight="700">4 cycles</tspan></text>
+  <text x="537" y="456" fill="#d8cff0" font-size="11.5">before failure (85.7% recall) &#8212; vendor-measured.</text>
+</svg>

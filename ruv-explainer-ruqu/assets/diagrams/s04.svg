@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" role="img" aria-labelledby="s04-t s04-d" style="max-width:1000px;height:auto;font-family:'Inter','IBM Plex Sans',system-ui,sans-serif;">
+  <title id="s04-t">How ruqu runs a quantum circuit: from gates to a measured outcome</title>
+  <desc id="s04-d">You describe a circuit as qubits and gates. ruqu builds a state vector that holds every possible state at once, applies each gate as a matrix operation, optionally checks the coherence engine for PERMIT or DEFER or DENY, then measures to collapse the state into a real bitstring with the right probabilities. A SHA-256 witness log records each step so the run is reproducible.</desc>
+  <defs>
+    <linearGradient id="s04-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#181233"/><stop offset="1" stop-color="#120e26"/></linearGradient>
+    <linearGradient id="s04-mag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3df0"/><stop offset="1" stop-color="#8b5cff"/></linearGradient>
+    <marker id="s04-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff3df0"/></marker>
+  </defs>
+  <rect width="1000" height="600" rx="16" fill="url(#s04-bg)"/>
+  <text x="500" y="40" text-anchor="middle" fill="#f3eefb" font-size="22" font-weight="700">How a circuit actually runs inside ruqu</text>
+  <text x="500" y="63" text-anchor="middle" fill="#b9aee0" font-size="13">Using the Bell-state circuit as the worked example</text>
+
+  <!-- STEP 1: the circuit (gate-level, accurate H + CNOT) -->
+  <rect x="40" y="88" width="380" height="180" rx="12" fill="#1d1640" stroke="#5a4d88" stroke-width="1.3"/>
+  <text x="60" y="114" fill="#9fb6ff" font-size="13" font-weight="700">1 &#183; You describe a circuit</text>
+  <text x="60" y="134" fill="#a99fce" font-size="11.5" font-family="'IBM Plex Mono',ui-monospace,monospace">qubits + gates</text>
+  <!-- wires -->
+  <line x1="80" y1="172" x2="396" y2="172" stroke="#6b6390" stroke-width="1.6"/>
+  <line x1="80" y1="222" x2="396" y2="222" stroke="#6b6390" stroke-width="1.6"/>
+  <text x="64" y="176" fill="#cdc2ee" font-size="12" font-family="monospace">q0</text>
+  <text x="64" y="226" fill="#cdc2ee" font-size="12" font-family="monospace">q1</text>
+  <!-- H gate on q0 -->
+  <rect x="140" y="156" width="32" height="32" rx="5" fill="#231a44" stroke="#ff3df0" stroke-width="1.6"/>
+  <text x="156" y="178" text-anchor="middle" fill="#ff8cf2" font-size="15" font-weight="700">H</text>
+  <!-- CNOT control q0 -> target q1 -->
+  <circle cx="260" cy="172" r="6" fill="#39e8ff"/>
+  <line x1="260" y1="172" x2="260" y2="222" stroke="#39e8ff" stroke-width="1.8"/>
+  <circle cx="260" cy="222" r="12" fill="none" stroke="#39e8ff" stroke-width="1.8"/>
+  <line x1="260" y1="212" x2="260" y2="232" stroke="#39e8ff" stroke-width="1.8"/><line x1="250" y1="222" x2="270" y2="222" stroke="#39e8ff" stroke-width="1.8"/>
+  <text x="156" y="252" text-anchor="middle" fill="#a99fce" font-size="10.5">superpose</text>
+  <text x="260" y="252" text-anchor="middle" fill="#a99fce" font-size="10.5">entangle (CNOT)</text>
+
+  <!-- STEP 2: state vector -->
+  <rect x="40" y="288" width="380" height="262" rx="12" fill="#1d1640" stroke="#5a4d88" stroke-width="1.3"/>
+  <text x="60" y="314" fill="#9fb6ff" font-size="13" font-weight="700">2 &#183; ruqu builds a state vector</text>
+  <text x="60" y="334" fill="#a99fce" font-size="11.5">one complex number (amplitude) per</text>
+  <text x="60" y="350" fill="#a99fce" font-size="11.5">possible outcome &#8212; every state, at once</text>
+  <g font-family="'IBM Plex Mono',ui-monospace,monospace" font-size="12.5">
+    <rect x="60" y="364" width="340" height="26" rx="5" fill="#140f2b" stroke="#3a2f66"/><text x="74" y="382" fill="#7df0ff">|00&#10217;  amplitude 0.707</text><rect x="300" y="370" width="68" height="14" rx="3" fill="url(#s04-mag)"/>
+    <rect x="60" y="394" width="340" height="26" rx="5" fill="#140f2b" stroke="#3a2f66"/><text x="74" y="412" fill="#9a8fc4">|01&#10217;  amplitude 0.000</text>
+    <rect x="60" y="424" width="340" height="26" rx="5" fill="#140f2b" stroke="#3a2f66"/><text x="74" y="442" fill="#9a8fc4">|10&#10217;  amplitude 0.000</text>
+    <rect x="60" y="454" width="340" height="26" rx="5" fill="#140f2b" stroke="#3a2f66"/><text x="74" y="472" fill="#7df0ff">|11&#10217;  amplitude 0.707</text><rect x="300" y="460" width="68" height="14" rx="3" fill="url(#s04-mag)"/>
+  </g>
+  <text x="60" y="502" fill="#cdc2ee" font-size="11.5">2 qubits &#8594; 4 amplitudes. Add a qubit,</text>
+  <text x="60" y="520" fill="#cdc2ee" font-size="11.5">the list <tspan fill="#ff8cf2" font-weight="700">doubles</tspan> &#8212; that&#8217;s the 25/32-qubit wall.</text>
+
+  <!-- arrows from 1 to 2 -->
+  <line x1="230" y1="268" x2="230" y2="286" stroke="#ff3df0" stroke-width="2" marker-end="url(#s04-ar)"/>
+
+  <!-- STEP 3: apply gates as matrices -->
+  <rect x="460" y="88" width="500" height="120" rx="12" fill="#1d1640" stroke="#5a4d88" stroke-width="1.3"/>
+  <text x="480" y="114" fill="#9fb6ff" font-size="13" font-weight="700">3 &#183; Each gate = a matrix applied to the vector</text>
+  <text x="480" y="138" fill="#d8cff0" font-size="12">H spreads one qubit into a 50/50 blend; CNOT flips</text>
+  <text x="480" y="156" fill="#d8cff0" font-size="12">the target when the control is 1 &#8212; that links them.</text>
+  <text x="480" y="182" fill="#a99fce" font-size="11.5">Pure linear algebra. No randomness yet &#8212; the math is exact.</text>
+
+  <!-- STEP 4: coherence gate (optional) -->
+  <rect x="460" y="222" width="500" height="120" rx="12" fill="#1d1640" stroke="#ff3df0" stroke-width="1.5"/>
+  <text x="480" y="248" fill="#ff5cf2" font-size="13" font-weight="700">4 &#183; (optional) coherence engine checks: safe to act?</text>
+  <g font-family="'IBM Plex Mono',ui-monospace,monospace" font-size="12" font-weight="700">
+    <rect x="480" y="262" width="92" height="30" rx="6" fill="#13351f" stroke="#3ddc84"/><text x="526" y="282" text-anchor="middle" fill="#5cffaa">PERMIT</text>
+    <rect x="584" y="262" width="92" height="30" rx="6" fill="#3a3210" stroke="#ffc83d"/><text x="630" y="282" text-anchor="middle" fill="#ffd96b">DEFER</text>
+    <rect x="688" y="262" width="92" height="30" rx="6" fill="#3a1422" stroke="#ff5c7a"/><text x="734" y="282" text-anchor="middle" fill="#ff8fa3">DENY</text>
+  </g>
+  <text x="480" y="318" fill="#d8cff0" font-size="11.5">A real-time min-cut on the error pattern decides whether to</text>
+  <text x="480" y="334" fill="#d8cff0" font-size="11.5">proceed, wait, or quarantine &#8212; before the operation runs.</text>
+
+  <!-- STEP 5: measure -->
+  <rect x="460" y="356" width="500" height="120" rx="12" fill="#1c2444" stroke="#39e8ff" stroke-width="1.4"/>
+  <text x="480" y="382" fill="#bff3ff" font-size="13" font-weight="700">5 &#183; Measure &#8594; the state collapses to a real bitstring</text>
+  <text x="480" y="406" fill="#d8cff0" font-size="12">Now randomness enters: amplitudes become probabilities</text>
+  <text x="480" y="424" fill="#d8cff0" font-size="12">(amplitude squared). You get one concrete answer:</text>
+  <g font-family="'IBM Plex Mono',ui-monospace,monospace" font-size="12.5" font-weight="700">
+    <rect x="480" y="436" width="200" height="28" rx="6" fill="#140f2b" stroke="#39e8ff"/><text x="580" y="455" text-anchor="middle" fill="#7df0ff">&#8220;00&#8221; ~50%  &#183;  &#8220;11&#8221; ~50%</text>
+  </g>
+
+  <!-- STEP 6: witness log -->
+  <rect x="460" y="490" width="500" height="60" rx="12" fill="#231a44" stroke="#5a4d88" stroke-width="1.2"/>
+  <text x="480" y="514" fill="#9fb6ff" font-size="12.5" font-weight="700">6 &#183; SHA-256 witness log records every step</text>
+  <text x="480" y="534" fill="#a99fce" font-size="11.5">a hash chain &#8594; the run is reproducible and auditable, not hallucinated.</text>
+
+  <!-- vertical flow arrows on right column -->
+  <line x1="710" y1="208" x2="710" y2="220" stroke="#ff3df0" stroke-width="2" marker-end="url(#s04-ar)"/>
+  <line x1="710" y1="342" x2="710" y2="354" stroke="#ff3df0" stroke-width="2" marker-end="url(#s04-ar)"/>
+  <line x1="710" y1="476" x2="710" y2="488" stroke="#ff3df0" stroke-width="2" marker-end="url(#s04-ar)"/>
+  <!-- link left column to right column -->
+  <line x1="420" y1="148" x2="458" y2="148" stroke="#ff3df0" stroke-width="2" marker-end="url(#s04-ar)"/>
+</svg>

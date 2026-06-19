@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ruqu — a pretend quantum computer that runs on your laptop</title>
+  <meta name="description" content="A plain-language explainer for ruqu (ruvnet/ruqu): a faithful quantum-computer simulator, written in pure Rust and compiled to WebAssembly, that runs in your browser or one npx command — plus a real-time coherence engine that decides whether it's safe to act." />
+  <meta name="color-scheme" content="dark" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="ruqu — touch quantum without owning a quantum computer" />
+  <meta property="og:description" content="A faithful quantum simulator in pure Rust → WebAssembly. Runs in a browser tab or one npx command. No Python, no install. Plus a real-time 'is it safe to act?' coherence engine." />
+  <meta property="og:image" content="assets/img/g7.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="A glowing bloch-sphere quantum orb with radiating circuit lines, electric magenta on deep indigo — the ruqu mark." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ruqu — a pretend quantum computer on your laptop" />
+  <meta name="twitter:description" content="Faithful quantum simulation in a browser tab or one npx command. Pure Rust, no Python." />
+  <meta name="twitter:image" content="assets/img/g7.png" />
+
+  <!-- Google Fonts: Space Grotesk + Inter + JetBrains Mono (graceful: falls back to system) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <!--
+    ============================================================================
+    ruqu ExplainerSite. Quantum / Bloch aesthetic [Constraint K]: deep indigo +
+    electric-magenta/violet + cyan phosphor. DISTINCT from the amber/charcoal
+    MetaHarness foundry look. Copy authored from content/ruqu.canon.md (source of
+    truth). Plain-language, human-problem-first, terms defined in-line [O].
+    Learning arc [R]: hero + one-plain-sentence -> grounding example (§01) ->
+    collapsible use-case gallery (§08, each its OWN visual) -> how to implement
+    (§06/07) -> drop-in (§09). EVERY section carries BOTH a technical SVG (tier-2)
+    AND a friendly illustration (tier-1) [D12/E].
+    Section IA (7 questions, learning order):
+      01 grounding example (what it's for) · 02 what it actually is ·
+      03 why this matters now · 04 how it works · 05 what solved looks like ·
+      06 how to implement · 07 how to start · 08 use-case gallery ·
+      diff = why-this-vs-what-you-have · 09 drop-in kit.
+    ============================================================================
+  -->
+</head>
+<body>
+
+  <!-- ===================== PROVENANCE / ATTRIBUTION [Q] ===================== -->
+  <div class="prov-banner" role="note" aria-label="Source and provenance">
+    <div class="wrap prov-banner-inner">
+      <p class="prov-attr">
+        A plain-language explainer for
+        <a href="https://github.com/ruvnet/ruqu"><strong>ruvnet/ruqu</strong></a>
+        by <strong>Reuven Cohen</strong> (<a href="https://github.com/ruvnet">@ruvnet</a>),
+        part of the <a href="https://github.com/ruvnet/ruvector">ruvector</a> ecosystem.
+        Not affiliated &mdash; an independent walkthrough of the open-source project.
+      </p>
+      <p class="prov-live">
+        <span class="prov-dot" aria-hidden="true">&#9679;</span>
+        Updated 2026-06-19 &middot; source <code>@ 026d63e</code> &middot; workspace v2.2.3
+      </p>
+    </div>
+  </div>
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="#top">
+        <svg class="orb" viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <radialGradient id="hb-orb" cx="36%" cy="30%" r="75%">
+              <stop offset="0" stop-color="#ff7bf6"/><stop offset="55%" stop-color="#ff3df0"/><stop offset="100%" stop-color="#8b5cff"/>
+            </radialGradient>
+          </defs>
+          <circle cx="32" cy="32" r="18" fill="url(#hb-orb)"/>
+          <ellipse cx="32" cy="32" rx="18" ry="6.5" fill="none" stroke="#39e8ff" stroke-width="1.4"/>
+          <line x1="32" y1="32" x2="44" y2="19" stroke="#fff" stroke-width="2.2"/><circle cx="44" cy="19" r="2.6" fill="#fff"/>
+        </svg>
+        ruqu
+      </a>
+      <nav class="nav-links" aria-label="Section navigation">
+        <a href="#s01">Example</a>
+        <a href="#s02">What it is</a>
+        <a href="#s04">How</a>
+        <a href="#s07">Start</a>
+        <a href="#s08">Use cases</a>
+        <a href="#s09">Drop-in</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===================== HERO ===================== -->
+  <main id="top">
+    <section class="hero">
+      <div class="wrap">
+        <div class="hero-grid">
+          <div>
+            <p class="eyebrow">ruvnet &middot; ruqu &middot; quantum execution engine</p>
+            <h1>A quantum computer<br /><span class="grad">on your normal laptop.</span></h1>
+            <p class="lede">
+              <strong>ruqu</strong> is a tiny, fast program that <em>acts exactly like</em> a
+              real quantum machine &mdash; so you can build and test quantum ideas before the
+              expensive hardware exists, right in your browser or your terminal. Written in pure
+              Rust, it runs as <code>npx @ruvector/ruqu</code> or drops straight into a web page.
+              No Python. No install.
+            </p>
+            <div class="meta-row" aria-hidden="true">
+              <span>CLI&nbsp;<b>npx @ruvector/ruqu</b></span>
+              <span>WEB&nbsp;<b>@ruvector/ruqu-wasm</b></span>
+              <span>LANG&nbsp;<b>pure Rust &rarr; WASM</b></span>
+            </div>
+            <div class="cta-row">
+              <a class="cta" href="#s07">Start in 60 seconds &rarr;</a>
+              <a class="cta ghost" href="#s09">Get the drop-in kit</a>
+            </div>
+          </div>
+          <figure class="hero-art">
+            <img src="assets/img/g1.png" width="1344" height="756"
+                 alt="A glowing translucent bloch-sphere quantum orb floating above an open laptop on a desk, with quantum-circuit ribbons trailing from the screen — magenta and violet on deep indigo." />
+          </figure>
+        </div>
+
+        <!-- The one plain sentence [P] -->
+        <div class="plainband">
+          <p>
+            In one sentence: <span class="q">ruqu is a pretend quantum computer that runs on your
+            normal laptop</span> &mdash; a faithful imitation of a real quantum machine, so you can
+            learn, prototype, and check your quantum ideas today, for free, without owning (or
+            renting) million-dollar hardware.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SECTIONS ===================== -->
+    <div class="sections">
+      <div class="wrap">
+
+        <!-- 01 — THE GROUNDING EXAMPLE (open first; learning arc [R]) -->
+        <details class="section" id="s01" open>
+          <summary>
+            <span class="num">01</span>
+            <span class="head-text">
+              <h2>&ldquo;Oh &mdash; <em>that&rsquo;s</em> what it&rsquo;s for.&rdquo;</h2>
+              <span class="q">Start here &mdash; one concrete, relatable example before anything else</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              Meet <strong>Aisha</strong>. She teaches an undergrad &ldquo;intro to quantum
+              computing&rdquo; class and is <em>not</em> a quantum physicist herself. She uses
+              Claude Code to prepare her demos. Today she wants to show the famous
+              <strong>Bell state</strong>: two qubits that become &ldquo;spookily&rdquo; linked, so
+              measuring one instantly tells you the other.
+            </p>
+            <p>
+              <em>First, what&rsquo;s a &ldquo;qubit&rdquo;?</em> A normal bit is either 0 or 1. A
+              <strong>qubit</strong> (a quantum bit) can be a <em>blend</em> of both at once &mdash;
+              until you look. That blend is what gives quantum its power, and what makes it so fragile:
+            </p>
+
+            <div class="dual">
+              <figure class="figure">
+                <span class="tier tech">Technical &middot; precise SVG</span>
+                <img src="assets/diagrams/qubit.svg" alt="A diagram contrasting a normal bit (0 or 1) with a qubit drawn as an arrow on a Bloch sphere, pointing anywhere between the 0 pole at top and the 1 pole at bottom." />
+                <figcaption><b>The mechanics.</b> A qubit&rsquo;s state is an arrow on a Bloch sphere &mdash; not just 0 or 1, but any blend, until measured.</figcaption>
+              </figure>
+              <figure class="figure">
+                <span class="tier friendly">Friendly &middot; the on-ramp</span>
+                <img src="assets/img/g2.png" alt="A warm illustration: inside a browser window, a teacher gestures to two glowing orbs linked by a magenta thread — a Bell pair — while delighted students watch. Labels 00 and 11 float nearby." />
+                <figcaption><b>The feeling.</b> Aisha shows her class two glowing qubits that are linked &mdash; a &ldquo;Bell pair&rdquo; &mdash; running live in the browser.</figcaption>
+              </figure>
+            </div>
+
+            <p><strong>Before ruqu:</strong> to demo a Bell state live, Aisha would normally have to
+              install a heavy Python quantum toolkit, fight dependency errors on the classroom laptops,
+              or sign her class up for cloud quantum credits that run out. Half the lab period is gone
+              before anything quantum happens &mdash; and nothing runs in the students&rsquo; own browsers.</p>
+
+            <p><strong>After ruqu:</strong> she types one command &mdash; no install &mdash; and a real
+              state-vector simulation runs, printing the outcome (roughly 50% &ldquo;00&rdquo; and 50%
+              &ldquo;11&rdquo;, the Bell-state signature). For the web lab she drops the
+              <code>@ruvector/ruqu-wasm</code> package into a page; in about ten lines, every student
+              watches the <em>same</em> circuit run <strong>in their own browser tab</strong>. The
+              whole class is doing quantum in the first five minutes.</p>
+
+            <pre class="code-block"><code><span class="c"># In a terminal — nothing to install:</span>
+npx @ruvector/ruqu simulate --qubits 2
+<span class="c"># → prints ~50% "00" and ~50% "11" (the Bell signature)</span>
+
+<span class="c"># In a web page — every student runs it themselves:</span>
+const circuit = new Circuit(2);
+circuit.h(0);          <span class="c">// put qubit 0 into a 50/50 blend</span>
+circuit.cnot(0, 1);    <span class="c">// link (entangle) the two qubits</span>
+sim.run(circuit);      state.measureAll();  <span class="c">// → "00" or "11"</span></code></pre>
+
+            <figure class="figure wide">
+              <span class="tier tech">Technical &middot; before &rarr; after</span>
+              <img src="assets/diagrams/s01.svg" alt="A before-and-after diagram. Before ruqu: heavy Python installs, dependency errors, cloud credits, and half the lab period gone. After ruqu: one npx command runs a real Bell-state simulation, and every student runs the same circuit in their own browser, getting 00 or 11 with 50/50 odds." />
+              <figcaption><b>The whole arc on one canvas.</b> Heavy setup and lost lab time on the left; one command, a real distribution, and every student&rsquo;s browser on the right.</figcaption>
+            </figure>
+
+            <div class="oh"><strong>The &ldquo;oh, that&rsquo;s what it&rsquo;s for&rdquo; line:</strong>
+              it&rsquo;s a real quantum computer&rsquo;s behavior, in a browser tab or one terminal
+              command &mdash; so you can actually <em>touch</em> quantum without owning a quantum computer.</div>
+          </div>
+        </details>
+
+        <!-- 02 — WHAT IT ACTUALLY IS -->
+        <details class="section" id="s02">
+          <summary>
+            <span class="num">02</span>
+            <span class="head-text">
+              <h2>What ruqu actually is</h2>
+              <span class="q">Past the &ldquo;quantum execution intelligence engine&rdquo; pitch &mdash; in plain terms</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>The repo&rsquo;s own headline calls ruqu <em>&ldquo;a quantum execution intelligence
+              engine &hellip; a layered operating stack that decides how, where, and whether to run
+              quantum workloads.&rdquo;</em> True &mdash; but it means nothing to a normal person.
+              Here&rsquo;s the down-to-earth version:</p>
+            <ul>
+              <li><strong>A &ldquo;quantum computer&rdquo;</strong> is a radically different kind of
+                computer that, for certain problems (designing a drug molecule, finding the best route,
+                cracking a search), can try a huge number of possibilities <em>at once</em>. The catch:
+                real ones are rare, cost millions, live in fridges colder than space, and make mistakes
+                constantly.</li>
+              <li><strong>The problem:</strong> almost nobody can get hands-on time on one. So how do
+                you learn quantum, prototype an idea, or check your math? You <em>simulate</em> &mdash;
+                run a faithful imitation on an ordinary computer.</li>
+              <li><strong>ruqu is that faithful imitation</strong>, written from scratch in
+                <strong>Rust</strong> (a fast, safe language) with <em>&ldquo;no Python, no C++, no
+                heavyweight dependencies.&rdquo;</em> Because it&rsquo;s also compiled to
+                <strong>WebAssembly</strong>, the <em>same</em> simulator runs in three places with zero
+                install: in a web page, from your terminal with one <code>npx</code> command, or inside
+                a Rust program.</li>
+            </ul>
+
+            <p>It gives you <strong>three</strong> things:</p>
+
+            <div class="dual">
+              <figure class="figure">
+                <span class="tier tech">Technical &middot; the architecture</span>
+                <img src="assets/diagrams/s02.svg" alt="A diagram: one pure-Rust engine compiles to native and WebAssembly, running in a web page, via npx, or inside Rust. It gives three things: a state-vector simulator (about 25 qubits in browser, 32 in native Rust), ready-made algorithms (VQE, Grover, QAOA, surface-code error correction), and a coherence engine returning PERMIT, DEFER, or DENY." />
+                <figcaption><b>One engine, three surfaces, three gifts:</b> the simulator, the ready-made algorithms, and the coherence engine.</figcaption>
+              </figure>
+              <figure class="figure">
+                <span class="tier friendly">Friendly &middot; the on-ramp</span>
+                <img src="assets/img/g1.png" alt="A friendly illustration of a glowing quantum orb floating above an open laptop with circuit ribbons — a quantum computer's behavior on a normal machine." />
+                <figcaption><b>The picture to hold onto:</b> a real quantum machine&rsquo;s behavior, living inside your ordinary laptop.</figcaption>
+              </figure>
+            </div>
+
+            <ol>
+              <li><strong>A state-vector simulator</strong> &mdash; the imitation quantum computer itself
+                (up to ~25 qubits in a browser/terminal, up to 32 in native Rust).</li>
+              <li><strong>Ready-made quantum algorithms</strong> you can just call &mdash; <strong>VQE</strong>
+                (chemistry / find a molecule&rsquo;s lowest energy), <strong>Grover</strong> (fast search),
+                <strong>QAOA</strong> (optimization), and <strong>surface-code error correction</strong>.</li>
+              <li><strong>A novel &ldquo;coherence engine&rdquo;</strong> &mdash; a classical <em>nervous
+                system</em> that watches a quantum machine&rsquo;s error pattern in real time and says
+                <strong>PERMIT / DEFER / DENY</strong> before each operation: &ldquo;is it still safe to
+                act, or is this thing about to fall apart?&rdquo;</li>
+            </ol>
+          </div>
+        </details>
+
+        <!-- 03 — WHY THIS MATTERS NOW -->
+        <details class="section" id="s03">
+          <summary>
+            <span class="num">03</span>
+            <span class="head-text">
+              <h2>Why this matters &mdash; and why now</h2>
+              <span class="q">The stakes: what it does, why you care, why you need it</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p><strong>What does it actually do?</strong> It pretends to be a quantum computer on your
+              normal machine, accurately &mdash; so you can run quantum programs, test quantum algorithms,
+              and study quantum error correction without owning (or renting) real quantum hardware.</p>
+            <p><strong>Why do you care?</strong> Because real quantum machines are scarce, costly, and
+              noisy. A faithful free simulator lets you learn, prototype, and validate today &mdash; and
+              catch your bugs <em>before</em> you burn money on actual hardware time.</p>
+            <p><strong>Why do you need it?</strong> The popular alternatives are heavy Python stacks
+              (Qiskit, Cirq) that pull in big dependency trees and don&rsquo;t run cleanly in a browser
+              or as a one-line terminal command. ruqu is pure Rust &rarr; WebAssembly: tiny, fast,
+              embeddable, and runnable with no Python install and no setup.</p>
+            <p><strong>Why is it important?</strong> It also ships ruv&rsquo;s <em>original</em> idea &mdash;
+              the <strong>coherence engine</strong> &mdash; a real-time &ldquo;is it safe to act?&rdquo;
+              monitor that turns a quantum computer <em>&ldquo;from a fragile experiment into a self-aware
+              machine,&rdquo;</em> the missing piece for running long, trustworthy quantum jobs.</p>
+
+            <div class="dual">
+              <figure class="figure">
+                <span class="tier tech">Technical &middot; the gap &amp; the fix</span>
+                <img src="assets/diagrams/s03.svg" alt="A diagram: real quantum computers are rare, cost millions, live colder than space, and make mistakes constantly — so almost nobody gets hands-on time. The fix: run a faithful imitation on an ordinary computer, which lets you learn, prototype, validate, and catch bugs before paying. ruqu is that imitation." />
+                <figcaption><b>Why simulation, not hardware.</b> Four reasons real machines are out of reach &mdash; and why a faithful imitation is the practical answer today.</figcaption>
+              </figure>
+              <figure class="figure">
+                <span class="tier friendly">Friendly &middot; the on-ramp</span>
+                <img src="assets/img/g8.png" alt="A playful comparison: a heavy crate with a tangled python snake (heavy Python stack) versus a tiny glowing Rust gear spinning happily in a browser tab (lightweight Rust-in-browser)." />
+                <figcaption><b>The trade in one glance:</b> a heavy Python stack versus a tiny Rust engine that runs right in a browser tab.</figcaption>
+              </figure>
+            </div>
+          </div>
+        </details>
+
+        <!-- 04 — HOW IT SOLVES IT -->
+        <details class="section" id="s04">
+          <summary>
+            <span class="num">04</span>
+            <span class="head-text">
+              <h2>How it works</h2>
+              <span class="q">From the gates you write to a measured outcome &mdash; the real pipeline</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>You describe a circuit as <strong>qubits and gates</strong>. ruqu builds a
+              <strong>state vector</strong> &mdash; one number (an &ldquo;amplitude&rdquo;) for every
+              possible outcome, so it tracks every state <em>at once</em>. Each gate is applied as a
+              matrix operation (pure linear algebra, exact). Then you <strong>measure</strong>, which
+              collapses that vector into one real bitstring with the right probabilities. A SHA-256
+              <strong>witness log</strong> records each step, so the run is reproducible &mdash; not
+              hallucinated.</p>
+            <p>This is also where the <strong>25/32-qubit ceiling</strong> comes from: every qubit you
+              add <em>doubles</em> the size of the state vector. Two qubits need 4 amplitudes; ten need
+              1,024; twenty-five need over 33 million. That doubling is the real, honest limit.</p>
+
+            <div class="dual stack">
+              <figure class="figure">
+                <span class="tier tech">Technical &middot; the real process</span>
+                <img src="assets/diagrams/s04.svg" alt="A six-step diagram of how a circuit runs inside ruqu, using the Bell-state circuit: (1) you describe a circuit with an H gate on qubit 0 and a CNOT from 0 to 1; (2) ruqu builds a state vector with amplitudes on the 00 and 11 outcomes; (3) each gate is applied as a matrix; (4) optionally the coherence engine checks PERMIT, DEFER, or DENY; (5) measurement collapses the state to a real bitstring, 00 or 11 at about 50/50; (6) a SHA-256 witness log records every step." />
+                <figcaption><b>Accurate to the engine.</b> The exact path a Bell-state circuit takes &mdash; superpose, entangle, build the state vector, (optionally) gate-check, measure, and witness-log.</figcaption>
+              </figure>
+              <figure class="figure">
+                <span class="tier friendly">Friendly &middot; the on-ramp</span>
+                <img src="assets/img/g5.png" alt="A friendly illustration of a traffic-light-style health gauge (green, amber, red) acting as a guardian over a glowing quantum chip with a bloch-sphere orb, with a small heartbeat line." />
+                <figcaption><b>Step 4, made friendly:</b> a little guardian watching the machine&rsquo;s health and giving it a green, amber, or red light before each move.</figcaption>
+              </figure>
+            </div>
+          </div>
+        </details>
+
+        <!-- 05 — WHAT SOLVED LOOKS LIKE -->
+        <details class="section" id="s05">
+          <summary>
+            <span class="num">05</span>
+            <span class="head-text">
+              <h2>What a &ldquo;solved&rdquo; state looks like</h2>
+              <span class="q">From &ldquo;I&rsquo;ve read about this&rdquo; to &ldquo;I just ran it&rdquo;</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>When ruqu is working for you, quantum stops being theoretical. A terminal prints a real
+              Bell-state distribution. Every student&rsquo;s browser runs the same circuit. A Rust
+              program hands you a molecule&rsquo;s ground-state energy. And a health gauge flags trouble
+              a median of <strong>four cycles before failure</strong>. Quantum ideas you could only read
+              about become things you <em>run</em>.</p>
+
+            <div class="dual">
+              <figure class="figure">
+                <span class="tier tech">Technical &middot; the real outputs</span>
+                <img src="assets/diagrams/s05.svg" alt="Four solved-state tiles: a terminal printing a real Bell distribution (00 about 0.498, 11 about 0.501); a browser running the same circuit and getting 00 or 11 at 50/50 with no server; a Rust program returning result.energy of about -1.137 Hartree; and a health gauge with a sparkline and PERMIT/DEFER/DENY flagging trouble a median of four cycles before failure at 85.7 percent recall." />
+                <figcaption><b>Real artifacts, not promises:</b> a printed distribution, a browser result, a returned energy, and an early-warning signal.</figcaption>
+              </figure>
+              <figure class="figure">
+                <span class="tier friendly">Friendly &middot; the on-ramp</span>
+                <img src="assets/img/g4.png" alt="A friendly illustration of a small molecule made of glowing orbs above a cyan energy curve that dips to a starred lowest point labeled ground state." />
+                <figcaption><b>One result, made friendly:</b> a molecule settling into its lowest-energy &ldquo;ground state&rdquo; &mdash; the core question behind drug and materials design.</figcaption>
+              </figure>
+            </div>
+
+            <div class="note"><strong>Honest note on the numbers:</strong> the coherence-engine figures
+              (median 4-cycle early warning, 85.7% recall, 468&nbsp;ns P99, 3.8M decisions/sec) are
+              <em>vendor-measured</em> on an Apple&nbsp;M2 under specified conditions &mdash; indicative,
+              not independently audited.</div>
+          </div>
+        </details>
+
+        <!-- 06 — HOW TO IMPLEMENT -->
+        <details class="section" id="s06">
+          <summary>
+            <span class="num">06</span>
+            <span class="head-text">
+              <h2>How you&rsquo;d implement it</h2>
+              <span class="q">Three doors into the same engine &mdash; pick the one that fits your job</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>There&rsquo;s no &ldquo;setup&rdquo; ceremony. Pick the surface that fits what you&rsquo;re
+              doing &mdash; all three drive the <em>same</em> pure-Rust state-vector engine.</p>
+
+            <div class="dual stack">
+              <figure class="figure">
+                <span class="tier tech">Technical &middot; the three surfaces</span>
+                <img src="assets/diagrams/s06.svg" alt="A diagram of three ways to use ruqu, all converging on the same pure-Rust state-vector engine. Terminal CLI: npx @ruvector/ruqu with simulate, grover, or qaoa subcommands (v0.2.0). Web page WASM: npm install @ruvector/ruqu-wasm, build a Circuit, run it, measureAll (v2.0.5, 180KB gzip). Rust crate: build a Hamiltonian, pick an ansatz, call VQE optimize, or use SurfaceCode, process_cycle, plan_execution (workspace v2.2.3)." />
+                <figcaption><b>Real code paths.</b> The actual commands and calls for each surface &mdash; CLI, in-browser WASM, and the Rust crate &mdash; all hitting one engine.</figcaption>
+              </figure>
+              <figure class="figure">
+                <span class="tier friendly">Friendly &middot; the on-ramp</span>
+                <img src="assets/img/g3.png" alt="A friendly illustration of a glowing magnifying glass over a haystack with one spotlighted glowing needle — quantum search." />
+                <figcaption><b>What &ldquo;just call it&rdquo; feels like:</b> one command (<code>grover</code>) finds the needle &mdash; you don&rsquo;t build the algorithm, you call it.</figcaption>
+              </figure>
+            </div>
+
+            <pre class="code-block"><code><span class="c"># Terminal — fastest, nothing installed:</span>
+npx @ruvector/ruqu grover --qubits 3 --target 5
+
+<span class="c"># Web page — an in-browser widget, no server:</span>
+npm i @ruvector/ruqu-wasm
+const c = new Circuit(3); /* … */ sim.run(c); state.measureAll();
+
+<span class="c"># Rust — full power (chemistry, error correction, coherence):</span>
+let h = Hamiltonian::from_pauli_strings([/* … */]);
+let result = VQE::new(h, Ansatz::uccsd(/* … */)).optimize();</code></pre>
+          </div>
+        </details>
+
+        <!-- 07 — HOW TO START -->
+        <details class="section" id="s07">
+          <summary>
+            <span class="num">07</span>
+            <span class="head-text">
+              <h2>How to start &mdash; in 60 seconds</h2>
+              <span class="q">No install. One command. You&rsquo;re doing quantum in the first minute.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <figure class="figure wide">
+              <span class="tier tech">Technical &middot; the 3 steps</span>
+              <img src="assets/diagrams/s07.svg" alt="A three-step start diagram. Step 1: open a terminal and run npx @ruvector/ruqu simulate --qubits 2 — npx fetches it on the fly, no install. Step 2: watch the Bell-state distribution print, about 50 percent 00 and 50 percent 11. Step 3: to put it in a web page, npm install @ruvector/ruqu-wasm and drop in an in-browser widget." />
+              <figcaption><b>The literal path.</b> Open a terminal, run one command, watch quantum happen &mdash; then optionally drop it into a web page.</figcaption>
+            </figure>
+
+            <div class="steps">
+              <div class="step">
+                <div class="n">1</div>
+                <h4>Run one command</h4>
+                <p>Open a terminal: <code>npx @ruvector/ruqu simulate --qubits 2</code>. <code>npx</code> fetches it on the fly &mdash; nothing to install first.</p>
+              </div>
+              <div class="step">
+                <div class="n">2</div>
+                <h4>Watch quantum happen</h4>
+                <p>It prints the Bell-state distribution &mdash; roughly 50% &ldquo;00&rdquo; and 50% &ldquo;11&rdquo;. That&rsquo;s a real simulation, for real.</p>
+              </div>
+              <div class="step">
+                <div class="n">3</div>
+                <h4>Put it in a page</h4>
+                <p>Want it in a website or teaching app? <code>npm i @ruvector/ruqu-wasm</code> and drop in an in-browser widget your visitors run.</p>
+              </div>
+            </div>
+
+            <p>From here, explore the use-case gallery below &mdash; search (Grover), optimization
+              (QAOA), chemistry (VQE), error correction, and the coherence engine &mdash; each with its
+              own command and its own picture.</p>
+          </div>
+        </details>
+
+        <!-- 08 — USE-CASE GALLERY [J/R] — each its OWN collapsible with its OWN visual -->
+        <details class="section" id="s08" open>
+          <summary>
+            <span class="num">08</span>
+            <span class="head-text">
+              <h2>Use-case gallery</h2>
+              <span class="q">Seven real things you can do &mdash; each opens to its own visual, concept, and command</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>Each card is a full scenario: the <em>situation</em>, the exact <em>command</em>, what it
+              <em>does</em>, and what you <em>get</em> &mdash; with its own diagram. Open any of them.</p>
+
+            <!-- UC1 Grover -->
+            <details class="case" open>
+              <summary>
+                <span class="uc-num">1</span>
+                <span class="uc-title">Quantum search in the terminal</span>
+                <span class="uc-kind">CLI &middot; Grover</span>
+                <span class="chev" aria-hidden="true">&rsaquo;</span>
+              </summary>
+              <div class="uc-body">
+                <dl>
+                  <dt>Situation</dt><dd>You want to show how a quantum computer finds a &ldquo;needle in a haystack&rdquo; faster than checking items one by one.</dd>
+                  <dt>Command</dt><dd><code>npx @ruvector/ruqu grover --qubits 3 --target 5</code></dd>
+                  <dt>What it does</dt><dd>Runs <strong>Grover&rsquo;s algorithm</strong> (amplitude amplification) on the WASM state-vector simulator to home in on the target in about &radic;N steps instead of N.</dd>
+                  <dt>What you get</dt><dd>The found bitstring and the probability it landed on the right answer &mdash; Grover&rsquo;s quadratic speedup, made visible.</dd>
+                </dl>
+                <figure class="figure">
+                  <span class="tier tech">Technical &middot; how the amplification works</span>
+                  <img src="assets/diagrams/uc1.svg" alt="A diagram of Grover's algorithm: a flat list of equal items goes through amplify rounds that raise the target item's probability, until measurement spikes on the target after about the square root of N rounds." />
+                  <figcaption>Flat list &rarr; &ldquo;amplify the answer&rdquo; rounds &rarr; a probability spike on the target.</figcaption>
+                </figure>
+              </div>
+            </details>
+
+            <!-- UC2 QAOA -->
+            <details class="case">
+              <summary>
+                <span class="uc-num">2</span>
+                <span class="uc-title">Optimization toy problem (MaxCut), no math PhD</span>
+                <span class="uc-kind">CLI &middot; QAOA</span>
+                <span class="chev" aria-hidden="true">&rsaquo;</span>
+              </summary>
+              <div class="uc-body">
+                <dl>
+                  <dt>Situation</dt><dd>You have a network and want the best way to split it into two groups &mdash; a classic NP-hard problem.</dd>
+                  <dt>Command</dt><dd><code>npx @ruvector/ruqu qaoa --nodes 4</code></dd>
+                  <dt>What it does</dt><dd>Runs <strong>QAOA</strong> (a quantum approximate optimizer) on a 4-node ring to find a good split.</dd>
+                  <dt>What you get</dt><dd>A partition and its cut value &mdash; a hands-on feel for &ldquo;quantum approximate advantage&rdquo; on combinatorial problems.</dd>
+                </dl>
+                <figure class="figure">
+                  <span class="tier tech">Technical &middot; QAOA layers</span>
+                  <img src="assets/diagrams/uc2.svg" alt="A diagram: a 4-node ring graph goes through QAOA cost and mixer layers and returns a two-group coloring (magenta vs cyan) with the cut edges highlighted, plus the cut value." />
+                  <figcaption>Ring graph &rarr; QAOA cost/mixer layers &rarr; a colored two-group split.</figcaption>
+                </figure>
+              </div>
+            </details>
+
+            <!-- UC3 VQE -->
+            <details class="case">
+              <summary>
+                <span class="uc-num">3</span>
+                <span class="uc-title">A quantum chemistry prototype in Rust</span>
+                <span class="uc-kind">Rust &middot; VQE</span>
+                <span class="chev" aria-hidden="true">&rsaquo;</span>
+              </summary>
+              <div class="uc-body">
+                <dl>
+                  <dt>Situation</dt><dd>You want a molecule&rsquo;s lowest-energy (&ldquo;ground&rdquo;) state &mdash; the core question behind drug and materials design &mdash; but have no quantum hardware.</dd>
+                  <dt>Command (Rust)</dt><dd>Build a <code>Hamiltonian::from_pauli_strings([…])</code>, pick the <code>Ansatz::uccsd(…)</code>, then <code>VQE::new(…).optimize()</code>.</dd>
+                  <dt>What it does</dt><dd>Runs the <strong>Variational Quantum Eigensolver</strong>, the standard near-term quantum-chemistry algorithm, entirely on the simulator.</dd>
+                  <dt>What you get</dt><dd>An estimated ground-state energy in Hartrees (<code>result.energy</code>) &mdash; a working chemistry prototype with zero hardware.</dd>
+                </dl>
+                <figure class="figure">
+                  <span class="tier tech">Technical &middot; how VQE settles</span>
+                  <img src="assets/diagrams/uc3.svg" alt="A diagram: a molecule is encoded as a Hamiltonian, fed into a parameterized circuit (ansatz) with tunable angles, and an optimizer lowers the energy step by step until it settles to a minimum — returning result.energy in Hartrees." />
+                  <figcaption>Molecule &rarr; parameterized circuit &rarr; energy curve settling to its minimum.</figcaption>
+                </figure>
+              </div>
+            </details>
+
+            <!-- UC4 Surface code -->
+            <details class="case">
+              <summary>
+                <span class="uc-num">4</span>
+                <span class="uc-title">How quantum survives its own mistakes</span>
+                <span class="uc-kind">Rust &middot; error correction</span>
+                <span class="chev" aria-hidden="true">&rsaquo;</span>
+              </summary>
+              <div class="uc-body">
+                <dl>
+                  <dt>Situation</dt><dd>You&rsquo;re learning <em>why</em> quantum machines need error correction and how a &ldquo;surface code&rdquo; fixes errors.</dd>
+                  <dt>Command (Rust)</dt><dd><code>SurfaceCode::new(distance: 3)</code>, inject noise with <code>apply_noise(…, error_rate: 0.01)</code>, then <code>Decoder::mwpm().correct(…)</code>.</dd>
+                  <dt>What it does</dt><dd>Encodes a logical qubit, scatters realistic errors, measures the tell-tale &ldquo;syndromes,&rdquo; and corrects them with minimum-weight perfect matching.</dd>
+                  <dt>What you get</dt><dd>A before/after you can inspect &mdash; corrupted state &rarr; detected syndromes &rarr; recovered state.</dd>
+                </dl>
+                <figure class="figure">
+                  <span class="tier tech">Technical &middot; encode, detect, correct</span>
+                  <img src="assets/diagrams/uc4.svg" alt="A diagram of surface-code error correction: a clean distance-3 lattice, then noise injects red error dots and amber syndrome flags, then minimum-weight perfect matching pairs the syndromes and corrects them, recovering a clean lattice." />
+                  <figcaption>Clean lattice &rarr; red error dots + syndromes &rarr; matched-and-corrected lattice.</figcaption>
+                </figure>
+              </div>
+            </details>
+
+            <!-- UC5 Coherence engine -->
+            <details class="case">
+              <summary>
+                <span class="uc-num">5</span>
+                <span class="uc-title">A real-time &ldquo;is it safe to act?&rdquo; health monitor</span>
+                <span class="uc-kind">Rust &middot; coherence engine</span>
+                <span class="chev" aria-hidden="true">&rsaquo;</span>
+              </summary>
+              <div class="uc-body">
+                <dl>
+                  <dt>Situation</dt><dd>You&rsquo;re running a long quantum job and want to catch a structural breakdown <em>before</em> it wipes out your progress.</dd>
+                  <dt>Command (Rust)</dt><dd>Feed each cycle&rsquo;s <code>syndrome_data</code> into <code>fabric.process_cycle(…)</code>; read back <code>Permit</code> / <code>Defer</code> / <code>Deny</code>.</dd>
+                  <dt>What it does</dt><dd>ruv&rsquo;s original <strong>coherence engine</strong> runs a real-time min-cut on the error pattern and decides whether the machine is healthy, borderline, or collapsing.</dd>
+                  <dt>What you get</dt><dd>An early-warning signal &mdash; in tests it flagged trouble a <em>median of 4 cycles before failure</em> with 85.7% recall &mdash; so healthy regions keep running while a bad region is quarantined.</dd>
+                </dl>
+                <figure class="figure">
+                  <span class="tier tech">Technical &middot; the decision pipeline</span>
+                  <img src="assets/diagrams/uc5.svg" alt="A diagram of the coherence engine: each cycle's syndrome stream is fed into a real-time min-cut over the error pattern, which returns PERMIT (healthy, keep running), DEFER (borderline, wait), or DENY (collapsing, quarantine) before the next operation. Measured stats: median 4 cycles early warning, 85.7 percent recall, 468 nanosecond P99 latency, 3.8 million decisions per second." />
+                  <figcaption>Syndrome stream &rarr; real-time min-cut &rarr; PERMIT / DEFER / DENY, with the vendor-measured numbers.</figcaption>
+                </figure>
+                <div class="note warm"><strong>Why this is the headline.</strong> No mainstream toolkit ships a real-time safety gate like this &mdash; it&rsquo;s ruv&rsquo;s original contribution and the piece that makes ruqu more than &ldquo;just another simulator.&rdquo;</div>
+              </div>
+            </details>
+
+            <!-- UC6 Planner -->
+            <details class="case">
+              <summary>
+                <span class="uc-num">6</span>
+                <span class="uc-title">Pick the right engine automatically for a bigger circuit</span>
+                <span class="uc-kind">Rust &middot; planner</span>
+                <span class="chev" aria-hidden="true">&rsaquo;</span>
+              </summary>
+              <div class="uc-body">
+                <dl>
+                  <dt>Situation</dt><dd>Your circuit is too big for the obvious &ldquo;track every possibility&rdquo; method, but you don&rsquo;t know which technique to use.</dd>
+                  <dt>Command (Rust)</dt><dd><code>plan_execution(&amp;circuit, &amp;PlannerConfig::default())</code> &mdash; or <code>decompose(&amp;circ, 25)</code> to split it.</dd>
+                  <dt>What it does</dt><dd>A <strong>cost-model planner</strong> predicts memory/runtime/fidelity and routes the circuit to the best of five backends (StateVector, <strong>Stabilizer</strong> for Clifford-only circuits with <em>millions</em> of qubits, TensorNetwork, Clifford+T, or hardware profiles).</dd>
+                  <dt>What you get</dt><dd>A feasible run where a naive simulator would have run out of memory.</dd>
+                </dl>
+                <figure class="figure">
+                  <span class="tier tech">Technical &middot; the routing decision</span>
+                  <img src="assets/diagrams/uc6.svg" alt="A diagram: a circuit too big for the naive method is handed to a cost-model planner that predicts memory, runtime, and fidelity, then routes to the cheapest of five backends — StateVector (chosen for small exact jobs), Stabilizer (Clifford-only, millions of qubits), TensorNetwork, Clifford+T, or a hardware profile. Honest note: Clifford+T is not in the auto-router yet." />
+                  <figcaption>One circuit &rarr; planner predicts cost &rarr; the cheapest viable backend is chosen.</figcaption>
+                </figure>
+              </div>
+            </details>
+
+            <!-- UC7 In-page WASM -->
+            <details class="case">
+              <summary>
+                <span class="uc-num">7</span>
+                <span class="uc-title">In-page quantum for a website or teaching app</span>
+                <span class="uc-kind">JS &middot; WASM widget</span>
+                <span class="chev" aria-hidden="true">&rsaquo;</span>
+              </summary>
+              <div class="uc-body">
+                <dl>
+                  <dt>Situation</dt><dd>You want a live quantum demo embedded in a web page with no backend server.</dd>
+                  <dt>Command (JS)</dt><dd><code>npm install @ruvector/ruqu-wasm</code>, then <code>new Circuit(3)</code> &hellip; <code>sim.run(circuit)</code> &hellip; <code>state.measureAll()</code>.</dd>
+                  <dt>What it does</dt><dd>Runs genuine state-vector simulation client-side via WebAssembly (up to ~25 qubits; ~1&nbsp;GB browser memory at 25).</dd>
+                  <dt>What you get</dt><dd>An interactive quantum widget your visitors run themselves, zero server cost.</dd>
+                </dl>
+                <figure class="figure">
+                  <span class="tier tech">Technical &middot; the in-browser path</span>
+                  <img src="assets/diagrams/uc7.svg" alt="A diagram: a browser tab loads the @ruvector/ruqu-wasm WebAssembly module — the pure-Rust state-vector engine compiled to wasm32 — which runs genuine simulation client-side up to about 25 qubits and returns a live measurement readout, with zero server cost." />
+                  <figcaption>Browser tab &rarr; WASM module &rarr; a live measurement readout, no server.</figcaption>
+                </figure>
+              </div>
+            </details>
+          </div>
+        </details>
+
+        <!-- DIFF — WHY THIS VS WHAT YOU ALREADY HAVE [D20] -->
+        <details class="section" id="sdiff">
+          <summary>
+            <span class="num">&#9883;</span>
+            <span class="head-text">
+              <h2>&ldquo;I already have X &mdash; why ruqu too?&rdquo;</h2>
+              <span class="q">Qiskit/Cirq? Claude Code? Another simulator? Here&rsquo;s the honest difference.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <ul>
+              <li><strong>vs Python quantum stacks (Qiskit / Cirq):</strong> powerful but heavy &mdash; a
+                Python runtime plus a large dependency tree, awkward to embed and impossible to drop
+                straight into a browser. ruqu is <strong>pure Rust with no FFI</strong> that compiles to
+                native <em>and</em> <code>wasm32</code>: a 180&nbsp;KB-gzip WASM bundle that runs in a web
+                page or as <code>npx @ruvector/ruqu</code>. Same physics, far less weight, runs
+                <em>where Python can&rsquo;t</em>.</li>
+              <li><strong>vs &ldquo;just use Claude Code&rdquo;:</strong> Claude Code is a brilliant
+                generalist, but it can&rsquo;t <em>run</em> a quantum circuit or check whether your VQE
+                energy is right &mdash; it would guess. ruqu is the actual engine it can call: real
+                state-vector math, real algorithms, and a cryptographic <strong>witness log</strong>
+                (SHA-256 hash chain) so results are reproducible and auditable, not hallucinated. The repo
+                even ships ruqu <em>as</em> a Claude-Code agent harness so your assistant can drive it
+                directly.</li>
+              <li><strong>vs other simulators generally:</strong> the differentiator is the
+                <strong>coherence engine</strong> &mdash; <em>&ldquo;ruQu is not a simulator&hellip; it
+                decides how, where, and whether to run quantum workloads.&rdquo;</em> The real-time
+                PERMIT/DEFER/DENY safety gate (468&nbsp;ns P99, 3.8M decisions/sec &mdash; measured) is
+                ruv&rsquo;s original contribution and exists in no mainstream toolkit.</li>
+            </ul>
+
+            <figure class="figure wide">
+              <span class="tier tech">Technical &middot; side-by-side &amp; before&rarr;after on your own work</span>
+              <img src="assets/diagrams/diff.svg" alt="A comparison table of Qiskit/Cirq, Claude Code, other simulators, and ruqu across weight and portability, whether they can actually run the math, and the unique piece. ruqu is pure Rust, native and wasm32, 180KB gzip, with a SHA-256 witness log and the coherence engine. Footer: before ruqu, quantum ideas stay theoretical; after, you prototype, test, and even monitor quantum workloads from a terminal, browser, or Rust app, today, free." />
+              <figcaption><b>The head-to-head, plus your own before&rarr;after.</b> What changes when ruqu is in your toolbox &mdash; lighter, runnable everywhere, reproducible, and uniquely able to monitor a quantum machine&rsquo;s health.</figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- 09 — DROP-IN KIT [D13/constraint-e] -->
+        <details class="section" id="s09" open>
+          <summary>
+            <span class="num">09</span>
+            <span class="head-text">
+              <h2>The drop-in kit</h2>
+              <span class="q">One download, two halves &mdash; one for you, one for your AI assistant</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>Want your AI assistant (in Claude Code or Cursor) to answer questions about ruqu from the
+              <em>real source</em> instead of guessing? Grab the drop-in kit. It&rsquo;s one folder with
+              two clearly-labeled halves: a plain-English primer <strong>for you</strong>, and a
+              queryable knowledge base <strong>for your AI</strong>.</p>
+
+            <div class="dual">
+              <figure class="figure">
+                <span class="tier tech">Technical &middot; the ACTUAL file tree</span>
+                <img src="assets/diagrams/dropin.svg" alt="An annotated file tree of the ruqu-kb download. Root: ruqu-kb, unzip into your project as kb. for-humans half: ruqu-primer.md (the whole tool in plain English) and an optional studio folder (video and audio overview). for-ai half: ruqu-kb.big.rvf (the sharp brain, 768-dim), ruqu-kb.small.rvf (the light brain, 384-dim), ruqu.passages.jsonl (every doc and all source, searchable), ask-kb.mjs (ask it from the command line), kb-mcp-server.mjs (wire it into Claude Code or Cursor). Plus a README and manifest with the build's provenance." />
+                <figcaption><b>Exactly what&rsquo;s inside.</b> Every file, with a plain-English &ldquo;what this is&rdquo; &mdash; the real contents, not an abstract picture.</figcaption>
+              </figure>
+              <figure class="figure">
+                <span class="tier friendly">Friendly &middot; the on-ramp</span>
+                <img src="assets/img/g6.png" alt="A friendly illustration of a glowing download box splitting into two halves: a 'for you' half with a person icon and a 'for your AI' half with a robot icon." />
+                <figcaption><b>The idea in one picture:</b> one tidy download that opens into a half for you and a half for your AI.</figcaption>
+              </figure>
+            </div>
+
+            <div class="steps">
+              <div class="step">
+                <div class="n">1</div>
+                <h4>Unzip into your project</h4>
+                <p>Drop the folder in as <code>kb/</code>. You now have <code>for-humans/</code> and <code>for-ai/</code> side by side.</p>
+              </div>
+              <div class="step">
+                <div class="n">2</div>
+                <h4>Add the 2-line <code>.mcp.json</code></h4>
+                <p>Point the bundled <code>kb-mcp-server.mjs</code> at the <code>.rvf</code> brain so your assistant can query it.</p>
+              </div>
+              <div class="step">
+                <div class="n">3</div>
+                <h4>Paste the <code>CLAUDE.md</code> gate</h4>
+                <p>Tell your AI to answer ruqu questions from the KB. Confirm it works with a real query &mdash; e.g. <em>&ldquo;How does the coherence engine decide PERMIT vs DENY?&rdquo;</em></p>
+              </div>
+            </div>
+
+            <div class="note"><strong>Status &amp; honest note.</strong> The drop-in kit is the second
+              hero artifact in this primer&rsquo;s pipeline; this page is the explainer half. Where the
+              packaged <code>.rvf</code> bundle isn&rsquo;t attached yet, the file tree above is the exact
+              contract it ships to &mdash; both 768-dim and 384-dim brains, the passages, the CLI, and the
+              MCP server.</div>
+          </div>
+        </details>
+
+        <!-- HONEST LIMITS -->
+        <details class="section" id="slimits">
+          <summary>
+            <span class="num">&#9888;</span>
+            <span class="head-text">
+              <h2>Honest limits</h2>
+              <span class="q">What ruqu does <em>not</em> do, stated plainly</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <ul>
+              <li><strong>It is a <em>simulator</em>, not a quantum computer.</strong> Validation is
+                simulation-only; <em>&ldquo;hardware behavior may differ.&rdquo;</em> The hardware adapters
+                (IBM/IonQ/Rigetti/Braket) are profiles with local-simulation fallback, not a finished
+                end-to-end pipeline (roadmap v0.5, &ldquo;Planned&rdquo;).</li>
+              <li><strong>Qubit ceilings are real.</strong> Exact state-vector simulation tops out around
+                <strong>25 qubits</strong> in browser/Node (&asymp;1&nbsp;GB memory at 25) and
+                <strong>32</strong> in native Rust &mdash; cost doubles with every qubit. The Stabilizer
+                backend reaches &ldquo;millions&rdquo; of qubits <em>only</em> for restricted
+                (Clifford-only) circuits.</li>
+              <li><strong>Versions are early / mixed.</strong> The coherence engine is at roadmap
+                v0.3&ndash;0.4 (&ldquo;v1.0 production-ready with hardware validation&rdquo; still Planned);
+                the CLI is <code>@ruvector/ruqu</code> v0.2.0; <code>@ruvector/ruqu-wasm</code> is v2.0.5;
+                the Rust workspace is v2.2.3 &mdash; read the version that matches what you install.</li>
+              <li><strong>Some pieces aren&rsquo;t wired together yet.</strong> The repo openly lists gaps:
+                &ldquo;no end-to-end pipeline&rdquo; (modules run independently), Clifford+T not yet in the
+                auto-router, greedy (not optimal) min-cut partitioning, and no fidelity-aware stitching at
+                partition boundaries.</li>
+              <li><strong><code>ruqu-exotic</code> is explicitly experimental.</strong> Its
+                quantum-<em>inspired</em> AI hybrids (memory decay, interference search, reasoning error
+                correction) are research, not production guarantees.</li>
+              <li><strong>The benchmark numbers are vendor-measured</strong> (Apple M2 / specified
+                conditions), not independently audited &mdash; treat them as indicative.</li>
+            </ul>
+            <div class="oh">Bottom line: ruqu is a genuinely useful, faithful simulator with a unique
+              real-time safety engine &mdash; <strong>and</strong> an early-stage, partly-unwired project.
+              Both are true. Use it for learning, prototyping, and validation today; don&rsquo;t mistake
+              it for finished hardware tooling.</div>
+          </div>
+        </details>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer>
+    <div class="wrap">
+      <div class="stack-links">
+        <span class="stack-lead">ruvector ecosystem &middot;</span>
+        <a href="https://github.com/ruvnet/ruqu">ruqu</a>
+        <a href="https://github.com/ruvnet/ruvector">ruvector</a>
+        <a href="https://github.com/ruvnet/agent-harness-generator">agent-harness-generator</a>
+        <a href="https://github.com/ruvnet">@ruvnet</a>
+      </div>
+      <p>
+        An independent, plain-language explainer for <a href="https://github.com/ruvnet/ruqu">ruvnet/ruqu</a>,
+        created by <strong>Reuven Cohen</strong> (<a href="https://github.com/ruvnet">@ruvnet</a>).
+        Built as part of the Repo-Primer Pipeline. Not affiliated with or endorsed by the author.
+      </p>
+      <p class="prov">
+        Updated 2026-06-19 &middot; source <code>@ 026d63e</code> &middot; workspace v2.2.3
+        (<code>@ruvector/ruqu</code> v0.2.0 &middot; <code>@ruvector/ruqu-wasm</code> v2.0.5).
+        Content grounded in the repo&rsquo;s own READMEs at HEAD &mdash; no invented features.
+      </p>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>

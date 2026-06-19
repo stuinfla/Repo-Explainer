@@ -1,0 +1,15 @@
+g3.png — FUSION: common sense from many clues (16:9).
+PROMPT:
+Friendly, approachable flat-with-depth illustration of "three weak guesses becoming
+one confident answer." Three small, charming sensor characters stand together like
+gentle teammates, each whispering a soft uncertain guess shown as a thin wavy
+thread: (1) a little WiFi-wave character emitting concentric ripples, (2) a tiny
+rounded radar chip with a soft sonar arc, (3) a small warm thermal dot glowing
+gently. Their three soft violet-and-magenta wave-threads flow inward and merge into
+ONE bright, confident glowing answer bubble in the center reading "someone is here".
+The merge feels like friends nodding in agreement. Deep slate-charcoal background
+(cool blue-grey #14161f), NOT warm/amber. Strictly signal-violet (#a855f7) and
+magenta (#e84ef0) glows, faint indigo. Warm, simple, a touch playful, very
+approachable — like a kids'-book explanation of teamwork. Soft bloom, rounded forms.
+RATIONALE (gate-E): turns "sensor fusion / weighted Bayes" into the everyday idea
+of combining weak clues into one sure answer; friendly, not technical.

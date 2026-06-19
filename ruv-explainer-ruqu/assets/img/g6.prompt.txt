@@ -1,0 +1,1 @@
+g6 — §drop-in kit (4:3). Tidy open glowing download box splitting into two halves: left = friendly person icon ('for you'), right = friendly robot/AI icon ('for your AI'); magenta seam; magenta/violet glow, cyan rim; deep indigo (#1b1640); clean, organized, approachable.

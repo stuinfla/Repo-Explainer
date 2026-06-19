@@ -1,0 +1,11 @@
+{
+  "name": "ruv-explainer-photonlayer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Explainer site for PhotonLayer by Reuven Cohen (@ruvnet) — deterministic optical-AI front end.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "python3 -m http.server 4321",
+    "start": "python3 -m http.server 4321"
+  }
+}

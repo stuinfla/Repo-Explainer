@@ -1,0 +1,21 @@
+{
+  "name": "ruv-explainer-ruvn",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dossier / warm-paper ExplainerSite for ruvn (ruvnet/ruvn) — an AI research assistant that grades sources and builds cited evidence dossiers. Static, no build, no deps.",
+  "license": "MIT",
+  "homepage": "https://ruv-explainer-ruvn.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stuinfla/ruv-explainer-ruvn"
+  },
+  "keywords": [
+    "ruvn",
+    "ruvnet",
+    "research-agent",
+    "evidence-grading",
+    "explainer",
+    "static-site"
+  ],
+  "scripts": {}
+}

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" width="100%" role="img" aria-labelledby="uc1-t uc1-d" style="max-width:1000px;height:auto;font-family:'Inter','IBM Plex Sans',system-ui,sans-serif;">
+  <title id="uc1-t">Grover's algorithm: amplify the target answer</title>
+  <desc id="uc1-d">A flat list of equally-likely items goes through a few quantum amplify rounds. Each round nudges probability toward the target item until it spikes far above the rest. Grover finds the needle in about the square root of N steps instead of N.</desc>
+  <defs>
+    <linearGradient id="uc1-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#181233"/><stop offset="1" stop-color="#120e26"/></linearGradient>
+    <linearGradient id="uc1-mag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3df0"/><stop offset="1" stop-color="#8b5cff"/></linearGradient>
+    <marker id="uc1-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff3df0"/></marker>
+  </defs>
+  <rect width="1000" height="360" rx="16" fill="url(#uc1-bg)"/>
+  <text x="500" y="38" text-anchor="middle" fill="#f3eefb" font-size="19" font-weight="700">Quantum search &#8212; amplify the answer until it spikes</text>
+  <text x="500" y="60" text-anchor="middle" fill="#7df0ff" font-size="12" font-family="'IBM Plex Mono',ui-monospace,monospace">npx @ruvector/ruqu grover --qubits 3 --target 5</text>
+
+  <!-- start: flat -->
+  <text x="160" y="92" text-anchor="middle" fill="#9a8fc4" font-size="12" font-weight="700">START &#183; all equal</text>
+  <g>
+    <rect x="80" y="240" width="20" height="30" fill="#4a3f70"/><rect x="106" y="240" width="20" height="30" fill="#4a3f70"/>
+    <rect x="132" y="240" width="20" height="30" fill="#4a3f70"/><rect x="158" y="240" width="20" height="30" fill="#4a3f70"/>
+    <rect x="184" y="240" width="20" height="30" fill="#4a3f70"/><rect x="210" y="240" width="20" height="30" fill="#4a3f70"/>
+    <rect x="158" y="240" width="20" height="30" fill="#8b5cff"/>
+  </g>
+  <line x1="76" y1="272" x2="240" y2="272" stroke="#6b6390"/>
+  <text x="168" y="290" text-anchor="middle" fill="#a99fce" font-size="10">item #5 (target) = same as the rest</text>
+
+  <line x1="252" y1="200" x2="300" y2="200" stroke="#ff3df0" stroke-width="2.2" marker-end="url(#uc1-ar)"/>
+  <text x="276" y="188" text-anchor="middle" fill="#ff8cf2" font-size="10">round 1</text>
+
+  <!-- mid: rising -->
+  <text x="420" y="92" text-anchor="middle" fill="#9a8fc4" font-size="12" font-weight="700">AMPLIFY &#183; target rises</text>
+  <g>
+    <rect x="340" y="248" width="20" height="22" fill="#4a3f70"/><rect x="366" y="248" width="20" height="22" fill="#4a3f70"/>
+    <rect x="392" y="248" width="20" height="22" fill="#4a3f70"/><rect x="418" y="200" width="20" height="70" fill="url(#uc1-mag)"/>
+    <rect x="444" y="248" width="20" height="22" fill="#4a3f70"/><rect x="470" y="248" width="20" height="22" fill="#4a3f70"/>
+  </g>
+  <line x1="336" y1="272" x2="500" y2="272" stroke="#6b6390"/>
+  <text x="428" y="290" text-anchor="middle" fill="#a99fce" font-size="10">each round nudges probability up</text>
+
+  <line x1="512" y1="200" x2="560" y2="200" stroke="#ff3df0" stroke-width="2.2" marker-end="url(#uc1-ar)"/>
+  <text x="536" y="188" text-anchor="middle" fill="#ff8cf2" font-size="10">~&#8730;N rounds</text>
+
+  <!-- end: spike -->
+  <text x="700" y="92" text-anchor="middle" fill="#ff5cf2" font-size="12" font-weight="700">RESULT &#183; spike on target</text>
+  <g>
+    <rect x="620" y="262" width="20" height="8" fill="#4a3f70"/><rect x="646" y="262" width="20" height="8" fill="#4a3f70"/>
+    <rect x="672" y="262" width="20" height="8" fill="#4a3f70"/><rect x="698" y="120" width="20" height="150" fill="url(#uc1-mag)"/>
+    <rect x="724" y="262" width="20" height="8" fill="#4a3f70"/><rect x="750" y="262" width="20" height="8" fill="#4a3f70"/>
+  </g>
+  <line x1="616" y1="272" x2="780" y2="272" stroke="#6b6390"/>
+  <text x="708" y="290" text-anchor="middle" fill="#a99fce" font-size="10">measure &#8594; lands on #5 with high probability</text>
+
+  <!-- payoff -->
+  <rect x="812" y="110" width="160" height="170" rx="10" fill="#231a44" stroke="url(#uc1-mag)" stroke-width="1.5"/>
+  <text x="892" y="140" text-anchor="middle" fill="#f3eefb" font-size="13" font-weight="700">You get</text>
+  <text x="892" y="166" text-anchor="middle" fill="#7df0ff" font-size="12">the found bitstring</text>
+  <text x="892" y="186" text-anchor="middle" fill="#7df0ff" font-size="12">+ its probability</text>
+  <text x="892" y="216" text-anchor="middle" fill="#d8cff0" font-size="11">Grover&#8217;s quadratic</text>
+  <text x="892" y="232" text-anchor="middle" fill="#d8cff0" font-size="11">speedup &#8212; &#8730;N vs N</text>
+  <text x="892" y="262" text-anchor="middle" fill="#a99fce" font-size="10">made visible</text>
+</svg>

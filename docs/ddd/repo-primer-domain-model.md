@@ -1,7 +1,7 @@
 # Repo-Primer Pipeline — Domain Model
 
 > **Related ADR:** [`0001` — Repo-Primer Pipeline · Part I (architecture) + Part II (Explainer Site + Self-Evaluating Quality Gate)](../adr/0001-repo-primer-pipeline.md) — *one ADR ⇄ one DDD*
-> **Status:** Living document. **Last updated:** 2026-06-19 (ADR-0001 §II: website is a co-hero; QualityGate replaces a bare Guard; "done = proven-good").
+> **Version:** 1.1.1 · **Status:** Living document. **Last updated:** 2026-06-19 (aligned to ADR-0001 v1.1.1: added **image-first ordering** [W/D22] — every section/use-case/process starts with its visual FIRST, then the words; added **INV-19** + the `ImageFirstOrdering` term + §6 table row + ExplainerSite invariant (13). Prior v1.1.0: captivating Hero [D21], dual-level visuals every section [D22], differentiation [D20], scoring relaxation ≥95 under time pressure [D15]; added INV-16/17/18, Hero/DualLevelVisual/Differentiation terms, gate-D/E + felt-question events; website is a co-hero; QualityGate replaces a bare Guard; "done = proven-good").
 
 ## Implementation Status Legend
 
@@ -60,7 +60,7 @@ Both halves derive independently from the same TargetRepo (a repo embedded insid
 | **DropInSmartZip** | **[ADR-0001 §II]** HERO artifact #2: the self-contained KB bundle (both RVF variants + passages + `ask-kb.mjs` + `kb-mcp-server.mjs` + primer + README) that makes the user's *AI* instantly expert. |
 | **NonTechnicalClaudeCodeUser** | **[ADR-0001 §II]** The single target persona: someone who uses Claude Code but is *not* a deep engineer. If they can't understand and use the tool from the site, the primer failed. |
 | **UseCaseGallery** | **[ADR-0001 §II]** ≥5 *full* concrete scenarios on the site, each = situation → exact command(s) → what the tool does → what you get, with a visual. The cure for "what can it do?" → "anything you like." |
-| **QualityGate** | **[ADR-0001 §II]** Expanded Guard. Three checks that must pass (with recorded evidence) before done: (A) KB AnswerQualityGrade, (B) site ComprehensionAudit, (C) consistency/completeness. "Done = proven-good." |
+| **QualityGate** | **[ADR-0001 §II]** Expanded Guard. **Five checks** that must pass (with recorded evidence) before done: (A) KB AnswerQualityGrade, (B) site ComprehensionAudit (incl. the three felt questions), (C) consistency/completeness, (D) StudioOutputGraded, (E) VisualAssetGraded — plus score ≥98 (≥95 under time pressure). "Done = proven-good." |
 | **AnswerQualityGrade** | **[ADR-0001 §II]** Dual-metric grade (retrieval relevance + answer correctness/completeness vs source) of the actual `.rvf`, on tuned **and** held-out questions. Below threshold → diagnose → rebuild → re-grade. The cure for the un-graded-KB / 4–5-regeneration failure. |
 | **ComprehensionAudit** | **[ADR-0001 §II]** An independent reviewer agent role-played as the NonTechnicalClaudeCodeUser reads the *rendered* site and must state what it is, name 3 concrete uses, recite the first command, and confirm every hard concept has a visual; scores clarity/compelling/ease 1–5. |
 | **ClarityRubric** | **[ADR-0001 §II]** The scored bar the ComprehensionAudit applies; also the Definition-of-Done checklist in ADR-0001 §II. |
@@ -70,6 +70,11 @@ Both halves derive independently from the same TargetRepo (a repo embedded insid
 | **VisualAsset** | **[ADR-0001 §II]** A generated image/graphic (hero, concept diagram, infographic). Produced by an optimized, saved image prompt; must communicate a specific concept, not decorate. |
 | **GateE / ImageGrade** | **[ADR-0001 §II]** The vision-check grade of each VisualAsset for clarity, communicative effectiveness, friendliness, and approachability + concept match. Below bar → refine prompt → regenerate → re-grade. |
 | **ApproachabilityBar** | **[ADR-0001 §II]** Constraint O: copy + imagery together must read friendly/plain-language to a non-technical person — human-problem-first, terms defined in-line. Jargon walls and cold/decorative visuals fail it. |
+| **HeroVisual** | **[ADR-0001 §II D21 / constraint S]** The captivating opening visual on the first screen of an ExplainerSite — the tier-1 on-ramp metaphor paired with the resonance lead sentence. Its job: grab a non-technical newcomer at a glance and make them want to read on. A text-only or generically-decorated hero is a defect. |
+| **DualLevelVisual** | **[ADR-0001 §II D22 / constraint T]** The required pairing in *every* section: (1) a precise **technical SVG** diagram (true-to-source architecture, graded for clarity + belief) **and** (2) a simple approachable illustration (tier-1 raster on-ramp). The two-register pairing is the README-beating advantage; a single register, or a text-only section, is a defect. |
+| **ImageFirstOrdering** | **[ADR-0001 §II D22 / constraint W]** The section-layout rule: every section, use-case, and process MUST start with its image/visual **first**, then the words — the visual leads, the prose follows (more approachable for a non-technical newcomer). A section that opens with text before its visual is a defect. |
+| **Differentiation** | **[ADR-0001 §II D20 / constraint U]** The on-page answer to "I already use the host (Claude Code/Codex) or a big harness (e.g. Ruflo) — why this too?", paired with a before→after-on-your-own-codebase comparison. Leaving it unanswered is a defect. |
+| **ResonanceLead** | **[ADR-0001 §II D20 / constraint P]** The plain, visceral opening that translates the abstraction to everyday terms and answers what-it-does / why-care / why-need / why-important, anchored by ONE named before→after persona (canonical for #1: **Maya**, `content/agent-harness-generator.resonance.md`). If the reader can still ask "but what does it DO and why would I want it?", it failed. |
 
 ---
 
@@ -162,9 +167,9 @@ Invariants: (1) Multi-kind ForceWalk must complete before embedding. **[ENFORCED
 Invariants: (1) Both variants must be in every bundle. **[ENFORCED]** (2) ProvenanceMarker read from SOURCE.json — never hard-coded. **[ENFORCED]** (3) RollingReleaseAsset replaced atomically (new upload complete before old deleted). **[ENFORCED]**
 
 ### 5.6 ExplainerSite  **[ADR-0001 §II — MODELED, target]**
-**Root.** Hero artifact #1; one per TargetRepo. Contains: `ArcSectionSet` entity (the 7 ordered sections — why-built / what-problem / why-now / how-it-solves / solved-state / how-to-implement / how-to-start); `UseCaseGallery` entity (≥5 full concrete scenarios, each with a figure); `FigureSet` entity (a generated graphic per hard concept); `AestheticTheme` value object (per-repo visual identity — distinct, not cloned); `DropInSection` value object (download + exact 3-step setup + confirm-it-works query); `AuditResult` value object `{ clarity, compelling, ease (1–5 each), arcStagesCovered, reviewerVerdict }`.
+**Root.** Hero artifact #1; one per TargetRepo. Contains: `HeroVisual` value object (the captivating opening visual + resonance lead — D21); `ResonanceLead` value object (plain-language stakes + named before→after persona — D20); `ArcSectionSet` entity (the 7 ordered sections — why-built / what-problem / why-now / how-it-solves / solved-state / how-to-implement / how-to-start); `SectionFigurePair` value object per section (the **DualLevelVisual**: one technical SVG diagram + one approachable illustration — D22); `UseCaseGallery` entity (≥5 full concrete scenarios, each a collapsible item with its own figure); `DifferentiationBlock` value object (the "why this vs what I already have?" answer + before→after-on-your-own-codebase comparison — D20); `FigureSet` entity (every generated graphic, each carrying its tier — tier-1 raster on-ramp or tier-2 explanatory SVG); `AestheticTheme` value object (per-repo visual identity — distinct, not cloned); `ProvenanceAttributionBlock` value object (author Reuven Cohen/@ruvnet + source-repo link + live date+version+sha — D12/constraint Q); `DropInSection` value object (annotated file-tree of the real zip contents + exact 3-step setup + confirm-it-works query — D13); `AuditResult` value object `{ clarity, compelling, ease (1–5 each), arcStagesCovered, feltImpress, feltInvite, feltWant, reviewerVerdict }`.
 
-Invariants: (1) All 7 ArcSections present before publish. (2) UseCaseGallery ≥5 full scenarios — a capability list does not satisfy it. (3) Every hard concept has a Figure. (4) AestheticTheme is distinct from every prior ExplainerSite. (5) ComprehensionAudit (AuditResult) must pass the ClarityRubric before publish. (6) Built for exactly one persona: NonTechnicalClaudeCodeUser.
+Invariants: (1) HeroVisual present and captivating — a text-only/generic hero fails (INV-16). (2) All 7 ArcSections present before publish. (3) Every section carries a DualLevelVisual (technical SVG + approachable illustration) — no text-only or single-register section (INV-17). (4) UseCaseGallery ≥5 full scenarios, each with its own visual — a capability list does not satisfy it. (5) Educational sequencing: grounding example → gallery → implement (R). (6) ResonanceLead present (INV-18). (7) DifferentiationBlock present when an adjacent tool plausibly overlaps (INV-18). (8) AestheticTheme is distinct from every prior ExplainerSite. (9) ProvenanceAttributionBlock present (INV-06 extends to the site). (10) DropInSection visual shows the real file-tree, not an abstract picture (D13). (11) ComprehensionAudit (AuditResult) must pass the ClarityRubric — including all three FELT questions = "yes" — before publish (INV-10). (12) Built for exactly one persona: NonTechnicalClaudeCodeUser. (13) Every section, use-case, and process is laid out **image-first** — its visual comes before its prose (INV-19); a section that opens with text before its visual is a defect.
 
 ---
 
@@ -198,6 +203,19 @@ Invariants: (1) All 7 ArcSections present before publish. (2) UseCaseGallery ≥
 | ProvenanceMarker | Value Object | `{ builtAt, targetRepoSha, smallVariantSha, bigVariantSha, primerSha }` |
 | TriggerSource | Value Object | Enum |
 | Outcome | Value Object | Set once; immutable |
+| ExplainerSite | Aggregate Root [MODELED] | Identity = TargetRepo slug; hero artifact #1 |
+| ArcSectionSet | Entity [MODELED] | The 7 ordered sections |
+| UseCaseGallery | Entity [MODELED] | ≥5 full collapsible scenarios |
+| FigureSet | Entity [MODELED] | Each figure tagged tier-1 raster / tier-2 SVG |
+| HeroVisual | Value Object [MODELED] | Captivating opening visual + resonance lead [D21] |
+| DualLevelVisual / SectionFigurePair | Value Object [MODELED] | Technical SVG + approachable illustration per section [D22] |
+| ImageFirstOrdering | Value Object [MODELED] | Section-layout rule: visual first, then prose [W/D22] |
+| ResonanceLead | Value Object [MODELED] | Plain stakes + named before→after [D20] |
+| DifferentiationBlock | Value Object [MODELED] | "Why this vs what I have?" + before→after-on-your-codebase [D20] |
+| ProvenanceAttributionBlock | Value Object [MODELED] | Author/@ruvnet + repo link + live date+version+sha [Q] |
+| DropInSection | Value Object [MODELED] | Real file-tree + 3-step setup + confirm query [D13] |
+| AestheticTheme | Value Object [MODELED] | Distinct per repo [K] |
+| AuditResult | Value Object [MODELED] | `{ clarity, compelling, ease, arcStagesCovered, feltImpress, feltInvite, feltWant, reviewerVerdict }` |
 
 ---
 
@@ -216,9 +234,11 @@ Invariants: (1) All 7 ArcSections present before publish. (2) UseCaseGallery ≥
 | `ProvenanceUpdated` | [ENFORCED] | SOURCE.json live in bundle | On-Ramp re-renders provenance |
 | `SurfaceRefreshed` | [ENFORCED] | On-Ramp reloads SOURCE.json | RefreshRun.Outcome → success |
 | `KbAnswerGraded` | [ADR-0001 §II — target] | QualityGate (A) grades the `.rvf` on tuned + held-out Qs | Below threshold → diagnose → rebuild → re-grade; at/above → gate (A) green |
-| `SiteComprehensionAudited` | [ADR-0001 §II — target] | Reviewer agent (NonTechnicalClaudeCodeUser) audits the rendered site | Below ClarityRubric bar → revise → re-audit; pass → gate (B) green |
-| `QualityGatePassed` | [ADR-0001 §II — target] | (A)+(B)+(C) all green, evidence recorded in manifest | Publish permitted; primer is "done" |
-| `QualityGateFailed` | [ADR-0001 §II — target] | Any of (A)/(B)/(C) fails | Publish blocked; loop on the failing check; prior live artifact stays up |
+| `SiteComprehensionAudited` | [ADR-0001 §II — target] | Reviewer agent (NonTechnicalClaudeCodeUser) **renders & walks** the site; scores ClarityRubric **+ the three FELT questions** (impress/invite/want) | Below bar or any felt-"no" → enhance → re-audit; all pass → gate (B) green |
+| `StudioOutputGraded` | [ADR-0001 §II — target] | QualityGate (D) reads/transcribes each studio artifact | Below bar → refine OptimizedStudioPrompt → regenerate → re-grade; pass → gate (D) green |
+| `VisualAssetGraded` | [ADR-0001 §II — target] | QualityGate (E) vision-checks each image incl. hero + the per-section dual-level pair | Below bar → refine image prompt → regenerate → re-grade; pass → gate (E) green |
+| `QualityGatePassed` | [ADR-0001 §II — target] | (A)+(B)+(C)+(D)+(E) all green; score ≥98 (≥95 under time pressure); evidence recorded in manifest | Publish permitted; primer is "done" |
+| `QualityGateFailed` | [ADR-0001 §II — target] | Any of (A)/(B)/(C)/(D)/(E) below bar | Publish blocked; loop on the failing check; prior live artifact stays up |
 
 ---
 
@@ -261,13 +281,25 @@ Every ExplainerSite ships ≥5 *full* UseCaseGallery scenarios (situation → co
 Every ExplainerSite has its own AestheticTheme. Cloning a prior site's visual identity is a defect.
 
 **INV-13 — Done = Proven-Good [ADR-0001 §II]**
-`QualityGatePassed` requires (A)+(B)+(C)+(D)+(E) all green **with evidence recorded in the manifest**. "Files exist" is not "done." Extends INV-06 (provenance is verified truth) from existence to quality.
+`QualityGatePassed` requires (A)+(B)+(C)+(D)+(E) all green, **score ≥98 (≥95 acceptable under genuine time pressure)**, **with evidence recorded in the manifest**. Scoring is honest (global Rule 9): the real score and every deduction are reported; the relaxation never excuses a hard defect (missing hero visual, text-only section, un-graded KB, invented API). "Files exist" is not "done." Extends INV-06 (provenance is verified truth) from existence to quality.
 
 **INV-14 — Studio Outputs Optimized & Graded [ADR-0001 §II]**
 Each repo has its own NotebookLM notebook and a full studio buildout (audio overview, report, and video/slides where tooling allows). Each studio artifact is produced by an **OptimizedStudioPrompt** (tuned for clarity/understanding/intention/education/comfort/confidence) and graded by **reading/transcribing the real output** (gate D) for completeness and effectiveness — does it actually teach a beginner? Generic prompts or un-checked outputs are defects, not done.
 
 **INV-15 — Visual Assets Graded & Approachable [ADR-0001 §II]**
 Every generated image (hero, concept diagrams, infographics) is produced by an optimized image-generation prompt (saved per repo) and graded by **gate (E)** — a vision check for clarity, communicative effectiveness (does it explain its concept?), friendliness, and approachability. Combined with constraint **O**: copy AND imagery must read approachable to a non-technical person — no jargon walls, no decorative-only or cold/tech-speak visuals. Weak image → refine prompt → regenerate → re-grade. Decorative-but-uninformative images or jargon-wall text are defects.
+
+**INV-16 — Captivating Hero [ADR-0001 §II D21 / constraint S]**
+Every ExplainerSite opens with a **HeroVisual** that grabs a non-technical newcomer at a glance and makes them want to read on, paired with the ResonanceLead sentence. A text-only hero, or a generic stock decoration that explains nothing, is a defect; the hero is graded by gate (E) like every other visual. (The first screen is the difference between "I'll keep reading" and "I'll close the tab.")
+
+**INV-17 — Dual-Level Visuals in Every Section [ADR-0001 §II D22 / constraint T]**
+Every section — and every named process — carries a **DualLevelVisual**: (1) a precise **technical SVG** diagram (true-to-source, graded for clarity *and* belief/conviction) **and** (2) a simple approachable illustration (tier-1 raster on-ramp). The two-register pairing is the README-beating advantage. A text-only section is a defect; a single-register section (friendly-but-not-explanatory, or explanatory-but-cold) is also a defect — it fails gate (E) or constraint O respectively.
+
+**INV-18 — Resonance & Differentiation [ADR-0001 §II D20 / constraints P, U]**
+Every ExplainerSite carries a **ResonanceLead** (abstraction translated to plain stakes — what-it-does / why-care / why-need / why-important — anchored by ONE named before→after persona) and, when an adjacent tool plausibly overlaps (the host Claude Code/Codex, or a big harness like Ruflo), a **DifferentiationBlock** answering "why this *too*?" with a before→after-on-your-own-codebase comparison. A primer that leaves the reader asking "but what does it DO and why do I need it on top of what I have?" has failed, however polished.
+
+**INV-19 — Image-First Section Ordering [ADR-0001 §II D22 / constraint W]**
+Every section — and every use-case and every named process (e.g. the composer's 9 stages) — MUST present its image/visual **first**, then the words (**ImageFirstOrdering**): the visual leads, the prose follows it. This is the more-approachable layout for a NonTechnicalClaudeCodeUser — they meet the inviting picture before any text. A section that opens with a wall of text *before* its visual is a defect. Complements INV-16 (the Hero opens with a visual) and INV-17 (every section carries a DualLevelVisual); INV-19 fixes the *order* within each section.
 
 ---
 

@@ -1,5 +1,6 @@
 # ADR-0001: Repo-Primer Pipeline Architecture
 
+**Version:** 1.1.1 · **Updated:** 2026-06-19 · **Created:** 2026-06-19  
 **Status:** Accepted — pattern proven on RuView + ruvector and live in production. Delta-highlighting, full ≥5-strategy force-walk, comprehension-arc coverage check, and the generalized multi-repo repo are committed follow-ups NOT yet implemented.  
 **Date:** 2026-06-19  
 **Working name:** "Repo-Primer Pipeline" (subject to rename — note that this name is not yet canonical)  
@@ -309,6 +310,8 @@ What was NOT tested: the 768-dim rebuild on a fresh runner with no npm cache (on
 # Part II — Explainer Website & Self-Evaluating Quality Gate
 
 > *Added 2026-06-19 (briefly drafted as ADR-0002, then merged here so there is exactly one ADR ⇄ one DDD). Part I is the engine; Part II is the experience + the proof-of-quality. Both are binding. Applies to ruv's **brand-new** repos only — established concepts live in a separate explainer.*
+>
+> **Changelog — v1.1.1 (2026-06-19):** Added the **image-first ordering** rule — every section, use-case, and process must START with its image/visual FIRST, then the words (more approachable; a section that opens with text before its visual is a defect). Encoded inside **D22** (section-layout bullet), as new constraint **W**, and as a Definition-of-Done checklist item. Paired with DDD **INV-19** + the `ImageFirstOrdering` term. No prior decision changed; surgical addition only.
 
 ## Context (Part II)
 
@@ -323,12 +326,15 @@ Two hero artifacts per repo: **(1) ExplainerSite**, **(2) Drop-in Smart Zip** (t
 **D11 — Two hero artifacts, both gated.** Every primer ships an ExplainerSite AND a Drop-in Smart Zip; neither optional; both must pass the Quality Gate (D15).
 
 **D12 — ExplainerSite design contract.** Built for one persona — the **NonTechnicalClaudeCodeUser**. Must:
+- **Open with a captivating HERO visual** — see **D21**. A text-only hero is a defect.
 - Answer the **seven questions, in order**, each as its own section: (1) Why was it built? (2) What problem does it solve? (3) Why is that a problem *now*? (4) How does it solve it? (5) What does a *solved state* look like? (6) How would you implement it? (7) How do you start?
-- Ship a **Use-Case Gallery of ≥5 *full* concrete scenarios**, and **each scenario MUST be shown VISUALLY** (a problem → command → what-it-looks-like → result diagram) — *examples rendered as dense prose are a defect ("garbage"), not coverage.* The lead example must be **relatable to a non-technical person** (a named, ordinary persona with a real before→after), not an engineer-only abstraction. The gallery is a **series of collapsible items — each opens to its OWN visual + concept + what-it-does.** **Sequence the education deliberately:** one concrete grounding example that makes the reader *"oh, that's what it's for"* → the collapsible gallery of varied real-world uses → *then* how to implement. **Understanding before implementation** — never implementation steps before the reader even grasps why they'd want it.
-- Be **collapsible & visual**: numbered sections (orienting open, deep collapsed). **EVERY section — and every named *process* (e.g. a multi-stage pipeline like the composer's 9 stages) — carries an explanatory visual** that shows the mechanics, not decoration. **A text-only section is a defect: it is "a glorified pretty README," the exact failure we exist to prevent.**
-- **On-page provenance & attribution (Cognitum pattern, mandatory):** credit the original author (e.g. **Reuven Cohen / @ruvnet**), link to the **source repo**, and show a **live provenance line** — last-updated date + the source repo's latest version + HEAD sha — so a visitor can tell whether it's current. (Modeled on cognitum-sensor-primer; omitting it is a defect.)
-- Have a **distinct aesthetic per repo** (cloning a prior site = defect).
-- Surface the **Smart Zip** with exact drop-in steps (unzip → `.mcp.json` → `CLAUDE.md` gate) + a confirm-it-works query.
+- Carry **dual-level visuals in EVERY section** — see **D22**. A text-only section is a defect ("a glorified pretty README," the exact failure we exist to prevent).
+- Ship a **Use-Case Gallery of ≥5 *full* concrete scenarios**, and **each scenario MUST be shown VISUALLY** (a problem → command → what-it-looks-like → result diagram) — *examples rendered as dense prose are a defect ("garbage"), not coverage.* The lead example must be **relatable to a non-technical person** (a named, ordinary persona with a real before→after), not an engineer-only abstraction. The gallery is a **series of collapsible items — each opens to its OWN visual + concept + what-it-does.** **Sequence the education deliberately** per **D20/constraint R**: one concrete grounding example that makes the reader *"oh, that's what it's for"* → the collapsible gallery of varied real-world uses → *then* how to implement. **Understanding before implementation** — never implementation steps before the reader even grasps why they'd want it.
+- Be **collapsible**: numbered sections (orienting open, deep collapsed), so the page orients fast yet rewards depth.
+- **On-page provenance & attribution (Cognitum pattern, mandatory):** credit the original author (e.g. **Reuven Cohen / @ruvnet**), link to the **source repo**, and show a **live provenance line** — last-updated date + the source repo's latest version + HEAD sha — so a visitor can tell whether it's current. (Modeled on cognitum-sensor-primer; omitting it is a defect — see constraint Q.)
+- **Differentiate from what the visitor already has** — see **D20** (final bullet): answer "I already use Claude Code / a big harness like Ruflo — why this too?" head-on, with a before→after-on-your-own-codebase comparison.
+- Have a **distinct aesthetic per repo** (cloning a prior site = defect — see constraint K).
+- Surface the **Smart Zip** with exact drop-in steps (unzip → `.mcp.json` → `CLAUDE.md` gate) + a confirm-it-works query — see **D13**.
 - State **honest limits**; **end in action** (usable in Claude Code/Codex immediately).
 
 **D13 — Drop-in Smart Zip contract.** One `kb/` folder, two halves: `for-ai/` (`*.big.rvf` 768-dim + `*.small.rvf` 384-dim + `*.passages.jsonl` + `ask-kb.mjs` + `kb-mcp-server.mjs` + summary) and `for-humans/` (`<repo>-primer.md` + optional NotebookLM media), plus README + manifest. Self-contained, runnable. **The Drop-in section's visual must SHOW what is actually inside the zip — an annotated *file-tree* of each half (every file + a plain-English "what this is"), modeled on the Cognitum "one download, two halves" contents diagram — NOT an abstract/pretty two-halves picture. A visual that doesn't reveal the real contents is a defect.**
@@ -341,10 +347,10 @@ Two hero artifacts per repo: **(1) ExplainerSite**, **(2) Drop-in Smart Zip** (t
 - **(C) Consistency & completeness** — claims grounded in source (no invented APIs); all 7 stages present; ≥5 full use cases; links resolve; drop-in dry-run (load `.mcp.json`, run a real query, get a grounded answer).
 - **(D) NotebookLM studio-output quality grading** — every studio artifact produced for the human half (audio overview; report; and video/slides/infographics where the tooling/UI allows) is graded by **reading/transcribing the actual output** (never assuming it ran) for: clarity, understanding, intention, education, comfort, confidence, completeness, and effectiveness. Below bar → **refine the optimized studio-creation prompt** → regenerate → re-grade. (See D18.)
 - **(E) Visual-asset quality grading** — every generated image/graphic is graded with a **vision check** for: **clarity, communicative effectiveness, friendliness, and approachability** — never decorative-only, never cold tech-speak. Below bar → refine → regenerate → re-grade; prompts saved per repo. **Visuals MUST span two tiers:** **(1)** a friendly raster *on-ramp* (approachable first impression — the metaphor that makes a newcomer comfortable), AND **(2)** accurate, labeled **ARCHITECTURAL / explanatory diagrams — authored as crisp SVG, not AI raster** — that reveal the real mechanics under the covers: *what is actually happening, why it matters, and what it does for you.* Tier 2 must be **true to the source** (no invented architecture) and is graded not just for clarity but for **belief/conviction** — does a technical-but-new viewer come away trusting *how it works*? **A site that is friendly-but-not-explanatory FAILS (E):** it meets the newcomer at the surface but never earns their trust. (See D19.)
-- **Scoring:** each primer is graded **0–100**; **≥98 required** to be "done" and to move to the next repo.
-- **Done = (A)+(B)+(C)+(D)+(E) green + score ≥98 + evidence shown.** Extends Part I's "PROVE, don't assert" from *existence* to *quality*.
+- **Scoring:** each primer is graded **0–100** across the five gates. **≥98 is the standard bar** to be "done" and move to the next repo. **Under genuine time pressure ≥95 is an acceptable pass**; ≥98 remains the target to restore when time allows. Scoring is honest (global Rule 9): report the *real* score and list every deduction with evidence — never inflate to clear the bar. A loop may apply **multiple fixes at once** (don't single-step). The relaxation applies to every gate A–E; it never excuses a hard defect (a missing hero visual, a text-only section, an un-graded KB, an invented API).
+- **Done = (A)+(B)+(C)+(D)+(E) green + score ≥98 (≥95 under time pressure) + evidence shown.** Extends Part I's "PROVE, don't assert" from *existence* to *quality*.
 
-**D16 — Scope & cadence.** Brand-new repos only; **one at a time**; nail #1 (≥98) + owner sign-off before scaling; top-5 of the new batch; #1 = `agent-harness-generator`. **This ADR + the DDD are the COMPLETE, run-once RECIPE:** once #1 passes all gates (A–E) and is signed off, repos 2–5 **replay the identical pipeline** — only the per-repo config, the canonical content, and the aesthetic theme change. Nothing about the *process* should need re-deciding; if it does, fix the recipe here first.
+**D16 — Scope & cadence.** Brand-new repos only; **one at a time**; nail #1 (≥98 standard, ≥95 acceptable under time pressure — D15) + owner sign-off before scaling; top-5 of the new batch; #1 = `agent-harness-generator`. **This ADR + the DDD are the COMPLETE, run-once RECIPE:** once #1 passes all gates (A–E) and is signed off, repos 2–5 **replay the identical pipeline** — only the per-repo config, the canonical content, and the aesthetic theme change. Nothing about the *process* should need re-deciding; if it does, fix the recipe here first.
 
 **D17 — Deployment.** Each primer gets **its own GitHub repo** and **its own Vercel site** named `ruv-explainer-<repo>.vercel.app` — one page per repo.
 
@@ -358,31 +364,52 @@ The optimized prompts are saved per repo (so they're reusable and auditable). St
 **D20 — Resonant comprehension: make a non-technical person GET it and CARE.** The single biggest failure mode is describing the tool in an *ethereal, abstract* way ("a factory for agent frameworks") so the reader nods but never grasps what it DOES or why they'd want it. This is forbidden. Every primer must, early and in plain, visceral language:
 - **Translate the abstraction down to earth.** "Meta"/abstract tools especially must be re-stated in concrete everyday terms a non-technical person *feels* — what it literally does for *you*.
 - **Answer the stakes explicitly:** *What does it actually do? Why do I care? Why do I need this? Why is it important?* If a reader can still ask "…but what does it actually do and why would I want it?", the primer **FAILED**.
-- **Anchor with ONE concrete, RELATABLE example** — a named, ordinary persona with a real *before → after* (the pain without the tool → the exact thing they run → how their day is better). An abstract or engineer-only scenario does not satisfy this; the example must make a non-technical reader go "oh — *that's* what it's for."
+- **Anchor with ONE concrete, RELATABLE example** — a named, ordinary persona with a real *before → after* (the pain without the tool → the exact thing they run → how their day is better). An abstract or engineer-only scenario does not satisfy this; the example must make a non-technical reader go "oh — *that's* what it's for." *(Worked example for #1 `agent-harness-generator`: **Maya**, who runs a small online shop on her own codebase — see [`content/agent-harness-generator.resonance.md`](../../content/agent-harness-generator.resonance.md), the canonical resonance standard for this primer.)*
 The job: carry the reader from non-technical zero → conceptual grasp → architectural understanding → genuine *confidence and "I want this."* A nice-but-ethereal intro that doesn't land is a defect.
 - **Differentiate from what they already have.** If the audience plausibly already uses an adjacent tool — the host (Claude Code / Codex) or a big existing harness (e.g. Ruflo) — the page MUST answer head-on: *"I already have X — why do I need this too?"* Name the real difference and why it is **not** "just another thing piled on." Pair it with a **before → after on *your own codebase*** comparison (a side-by-side table or diagram) showing what changes when you run it. Failing to answer "why this on top of what I already have?" is a defect.
 
+**D21 — Captivating HERO visual (a text-only hero is a defect).** The first screen must *grab a newcomer immediately* and make them want to read on. It MUST lead with a **captivating visual** — the friendly tier-1 on-ramp metaphor of **D22** — paired with the one plain-language sentence that says what the tool does (the resonance lead, D20). The hero's single job: in one glance, a non-technical visitor *feels* "this looks interesting and I get the gist," before reading any prose. A hero that is text/headline only — or a generic stock decoration that explains nothing — **fails** and is graded by gate (E) like every other visual. The hero is what separates "I'll keep reading" from "I'll close the tab."
+
+**D22 — DUAL-LEVEL visuals in EVERY section (the advantage over a README).** Every section — and every named *process* (e.g. a multi-stage pipeline like the composer's stages) — carries **two complementary visuals, not one**:
+- **(1) A precise TECHNICAL SVG diagram** that explains the concept/architecture accurately and is *true to the source* (no invented architecture) — authored as crisp **SVG, not AI raster**. This is the tier-2 explanatory diagram graded by gate (E) for clarity **and belief/conviction** (does a technical-but-new viewer trust *how it works*?).
+- **(2) A simple, approachable illustration** — the friendly tier-1 raster on-ramp: an interesting, compelling metaphor that makes the concept feel inviting and human. Graded by gate (E) for clarity, friendliness, and approachability.
+
+**This dual-level pairing is THE reason the primer beats a plain README:** the README has one register; the primer meets a newcomer with the *approachable* illustration AND earns a technical reader's trust with the *precise* diagram, in the same section. A section with neither, or with only a friendly picture and no explanatory diagram (or vice-versa), is a **defect** — friendly-but-not-explanatory fails (E), and explanatory-but-cold fails constraint O. *(Tiers 1 and 2 are the same two tiers gate (E) enforces; D22 makes "both, in every section" the binding rule.)*
+
+**Image-first ordering (section layout — binding):** every section MUST **start with its image/visual FIRST, then the words.** The visual leads; the prose follows it. This is more approachable — a non-technical newcomer sees the inviting picture before any text. A section that opens with a wall of text *before* its visual is a **defect** (see constraint **W**). This applies to every section, every use-case scenario, and every named *process* (e.g. the composer's 9 stages), on #1 (`agent-harness-generator`) and all fan-out repos 2–5.
+
 ## Definition of Done — the checklist the build runs on itself
-- [ ] All 7 questions answered as sections.
-- [ ] ≥5 full use-case scenarios, each with a visual.
-- [ ] Every hard concept has a figure; sections collapse; distinct aesthetic.
-- [ ] Smart Zip runnable (`npm i` + a real query → grounded answer).
-- [ ] KB graded (A) ✓ on tuned + held-out; Site audited (B) ✓; Consistent (C) ✓ — evidence recorded.
+- [ ] **Hero opens with a captivating visual** (D21) — not headline-only, not generic decoration; graded by (E).
+- [ ] All 7 questions answered as ordered sections.
+- [ ] **Every section carries DUAL-LEVEL visuals** (D22): a precise technical SVG diagram **and** a simple approachable illustration. No text-only section.
+- [ ] **Image-first ordering** (W/D22): every section, use-case, and process opens with its visual FIRST, then the words. A section that opens with text before its visual is a defect.
+- [ ] ≥5 full use-case scenarios, each with its own visual; lead example is a relatable named persona.
+- [ ] **Educational sequencing** (R): grounding example → collapsible gallery → then implement. Sections collapse; distinct aesthetic (K).
+- [ ] **Resonance** (D20): abstraction translated to plain stakes (what-does-it-do / why-care / why-need / why-important) + one named before→after.
+- [ ] **Differentiation** (D20): "why this vs the host / a big harness I already use?" answered, with a before→after-on-your-own-codebase comparison.
+- [ ] **Drop-in visual is an annotated file-tree** of the real zip contents (D13), Cognitum-style — not an abstract two-halves picture. Smart Zip runnable (`npm i` + a real query → grounded answer).
+- [ ] KB graded (A) ✓ on tuned + held-out; Site audited (B) ✓ incl. the three FELT questions; Consistent (C) ✓ — evidence recorded.
 - [ ] NotebookLM studio built per repo (own notebook + sources); studio-creation prompts optimized & saved; outputs graded (D) for clarity/comfort/confidence/completeness/effectiveness.
 - [ ] Every generated image graded (E) ✓ — vision-checked for clarity/effectiveness/friendliness/approachability and that it matches its concept; image prompts optimized & saved.
 - [ ] Voice is plain-language & approachable throughout (no jargon walls / tech-speak); text + imagery share one warm, confident tone [O].
-- [ ] Score ≥ 98/100.
-- [ ] Honest limits + real provenance shown; secrets gitignored.
+- [ ] **On-page provenance & attribution** (Q): author Reuven Cohen / @ruvnet credited, source repo linked, live date + version + sha shown.
+- [ ] **Score ≥ 98/100** (≥ 95 acceptable under genuine time pressure; real score + deductions reported honestly).
+- [ ] Honest limits shown; secrets gitignored.
 - [ ] Owner sign-off on #1 before scaling.
 
 ## Operating Constraints (Part II — additive to A–H)
 - **I — Done = proven-good.** Never declare a KB/site done without running the gate (D15) and showing evidence. (Exists because un-graded RVFs cost 4–5 regen cycles.)
 - **J — Concrete use cases.** ≥5 full scenarios; "anything you like" is a defect.
 - **K — Distinct aesthetic per repo.** Reusing a prior look is a defect.
-- **L — One-at-a-time until proven.** No batching until #1 scores ≥98 + sign-off.
+- **L — One-at-a-time until proven.** No batching until #1 passes (≥98 standard; ≥95 acceptable under time pressure) + owner sign-off.
 - **M — Audience = non-technical Claude-Code user.** If a true beginner can't understand and use it, the primer failed.
 - **N — Studio outputs are optimized & graded, not assumed.** Each repo gets its own NotebookLM notebook and a full, *checked* studio buildout. Generic studio prompts, or shipping studio media without verifying the outcome teaches, are defects.
 - **O — Approachable, never tech-speak.** Copy AND imagery must meet a non-technical person where they live — plain language, human-problem-first, terms defined in-line; every graphic *communicates* (graded by E), not decorates. Jargon walls and cold/decorative visuals are defects.
 - **P — Resonance over abstraction.** A primer that leaves a non-technical reader still asking "but what does it DO and why do I care?" has failed, however polished. Translate every abstraction into plain stakes + a relatable, named before→after example [D20].
 - **Q — Provenance & attribution on the page.** Credit the original author (Reuven Cohen / @ruvnet), link the source repo, and show a live updated-date + version + sha. Omitting attribution/provenance is a defect [D12].
 - **R — Educational sequencing.** Order the page as a learning arc: grounding example → collapsible gallery of varied real-world uses (each with its own visual) → how to implement. Never put implementation steps before the reader understands *why they'd want it* [D20].
+- **S — Captivating hero.** The first screen leads with a visual that grabs a non-technical newcomer at a glance and makes them want to read on. A text-only or generically-decorated hero is a defect [D21].
+- **T — Dual-level visuals everywhere.** Every section pairs a precise technical SVG diagram with a simple approachable illustration. One register only — or a text-only section — is a defect; the dual register is the README-beating advantage [D22].
+- **U — Differentiate, don't pile on.** Answer "I already use the host / a big harness — why this too?" with a real difference and a before→after-on-your-own-codebase comparison. Leaving "why on top of what I have?" unanswered is a defect [D20].
+- **V — Drop-in shows real contents.** The Drop-in visual is an annotated file-tree of the actual zip (every file + plain-English "what this is"), not an abstract two-halves picture [D13].
+- **W — Image-first ordering.** Every section, use-case, and process starts with its image/visual FIRST, then the words. The visual leads; the prose follows. A section that opens with text before its visual is a defect [D21/D22].

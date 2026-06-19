@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 460" width="100%" role="img" aria-labelledby="diff-t diff-d" style="max-width:1000px;height:auto;font-family:'Inter','IBM Plex Sans',system-ui,sans-serif;">
+  <title id="diff-t">Why ruqu, not the tools you already have</title>
+  <desc id="diff-d">A side-by-side comparison. Python quantum stacks like Qiskit and Cirq are powerful but heavy and cannot drop into a browser. Claude Code is a brilliant generalist but cannot actually run a quantum circuit or check whether your VQE energy is right. ruqu is pure Rust compiled to native and WebAssembly, a 180 KB gzip bundle that runs in a web page or as one npx command, with a SHA-256 witness log and a unique coherence engine.</desc>
+  <defs>
+    <linearGradient id="diff-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#181233"/><stop offset="1" stop-color="#120e26"/></linearGradient>
+    <linearGradient id="diff-mag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3df0"/><stop offset="1" stop-color="#8b5cff"/></linearGradient>
+  </defs>
+  <rect width="1000" height="460" rx="16" fill="url(#diff-bg)"/>
+  <text x="500" y="40" text-anchor="middle" fill="#f3eefb" font-size="21" font-weight="700">&#8220;I already have X &#8212; why ruqu too?&#8221;</text>
+
+  <!-- column headers -->
+  <g font-size="13" font-weight="700">
+    <rect x="34" y="64" width="220" height="34" rx="8" fill="#211a40" stroke="#4a3f70"/><text x="144" y="86" text-anchor="middle" fill="#9a8fc4">Qiskit / Cirq (Python)</text>
+    <rect x="266" y="64" width="220" height="34" rx="8" fill="#211a40" stroke="#4a3f70"/><text x="376" y="86" text-anchor="middle" fill="#9a8fc4">&#8220;just use Claude Code&#8221;</text>
+    <rect x="498" y="64" width="220" height="34" rx="8" fill="#211a40" stroke="#4a3f70"/><text x="608" y="86" text-anchor="middle" fill="#9a8fc4">other simulators</text>
+    <rect x="746" y="64" width="220" height="34" rx="8" fill="#231a44" stroke="url(#diff-mag)" stroke-width="1.6"/><text x="856" y="86" text-anchor="middle" fill="#ff8cf2">ruqu</text>
+  </g>
+
+  <!-- row: weight -->
+  <text x="40" y="128" fill="#7d739e" font-size="11" letter-spacing="1">WEIGHT &#38; PORTABILITY</text>
+  <g font-size="11.5">
+    <rect x="34" y="136" width="220" height="74" rx="8" fill="#1d1640" stroke="#5a4d88"/>
+    <text x="48" y="158" fill="#ff8fa3">&#10007; Python runtime + big</text><text x="48" y="174" fill="#cdc2ee">   dependency tree</text>
+    <text x="48" y="194" fill="#ff8fa3">&#10007; can&#8217;t drop into a browser</text>
+    <rect x="266" y="136" width="220" height="74" rx="8" fill="#1d1640" stroke="#5a4d88"/>
+    <text x="280" y="158" fill="#cdc2ee">&#8212; not a quantum tool;</text><text x="280" y="174" fill="#cdc2ee">   it would <tspan fill="#ff8fa3">guess</tspan></text>
+    <text x="280" y="194" fill="#cdc2ee">   the physics</text>
+    <rect x="498" y="136" width="220" height="74" rx="8" fill="#1d1640" stroke="#5a4d88"/>
+    <text x="512" y="158" fill="#cdc2ee">&#8212; vary; most are also</text><text x="512" y="174" fill="#cdc2ee">   Python-based or</text>
+    <text x="512" y="194" fill="#cdc2ee">   server-bound</text>
+    <rect x="746" y="136" width="220" height="74" rx="8" fill="#231a44" stroke="#ff3df0" stroke-width="1.4"/>
+    <text x="760" y="158" fill="#5cffaa">&#10003; pure Rust, no FFI</text>
+    <text x="760" y="174" fill="#5cffaa">&#10003; native <tspan fill="#cdc2ee">and</tspan> wasm32</text>
+    <text x="760" y="194" fill="#7df0ff">&#10003; 180 KB gz &#8594; in a page</text>
+  </g>
+
+  <!-- row: correctness -->
+  <text x="40" y="234" fill="#7d739e" font-size="11" letter-spacing="1">CAN IT ACTUALLY RUN THE MATH?</text>
+  <g font-size="11.5">
+    <rect x="34" y="242" width="220" height="74" rx="8" fill="#1d1640" stroke="#5a4d88"/>
+    <text x="48" y="264" fill="#5cffaa">&#10003; yes, real simulation</text>
+    <text x="48" y="284" fill="#cdc2ee">   (but heavy to set up</text><text x="48" y="300" fill="#cdc2ee">   and embed)</text>
+    <rect x="266" y="242" width="220" height="74" rx="8" fill="#1d1640" stroke="#5a4d88"/>
+    <text x="280" y="264" fill="#ff8fa3">&#10007; can&#8217;t run a circuit</text>
+    <text x="280" y="284" fill="#ff8fa3">&#10007; can&#8217;t check your VQE</text>
+    <text x="280" y="300" fill="#cdc2ee">   energy is right</text>
+    <rect x="498" y="242" width="220" height="74" rx="8" fill="#1d1640" stroke="#5a4d88"/>
+    <text x="512" y="264" fill="#5cffaa">&#10003; usually yes</text>
+    <text x="512" y="284" fill="#cdc2ee">   but no real-time</text>
+    <text x="512" y="300" fill="#cdc2ee">   safety gate</text>
+    <rect x="746" y="242" width="220" height="74" rx="8" fill="#231a44" stroke="#ff3df0" stroke-width="1.4"/>
+    <text x="760" y="264" fill="#5cffaa">&#10003; real state-vector math</text>
+    <text x="760" y="284" fill="#5cffaa">&#10003; SHA-256 witness log</text>
+    <text x="760" y="300" fill="#cdc2ee">   reproducible, auditable</text>
+  </g>
+
+  <!-- row: differentiator -->
+  <text x="40" y="340" fill="#7d739e" font-size="11" letter-spacing="1">THE UNIQUE PIECE</text>
+  <g font-size="11.5">
+    <rect x="34" y="348" width="684" height="52" rx="8" fill="#1d1640" stroke="#5a4d88"/>
+    <text x="48" y="372" fill="#cdc2ee">None of these ship a real-time &#8220;is it safe to act?&#8221; monitor for a quantum machine.</text>
+    <text x="48" y="390" fill="#a99fce">The coherence engine&#8217;s PERMIT / DEFER / DENY gate is ruv&#8217;s original contribution.</text>
+    <rect x="746" y="348" width="220" height="52" rx="8" fill="#231a44" stroke="#ff3df0" stroke-width="1.4"/>
+    <text x="760" y="372" fill="#ff8cf2" font-weight="700">&#10003; the coherence engine</text>
+    <text x="760" y="390" fill="#cdc2ee">exists in no mainstream toolkit</text>
+  </g>
+
+  <!-- before/after on your own work -->
+  <rect x="34" y="416" width="932" height="34" rx="8" fill="#1a1338" stroke="#5a4d88"/>
+  <text x="50" y="438" fill="#ffd9f6" font-size="12" font-weight="700">On your own work:</text>
+  <text x="178" y="438" fill="#cdc2ee" font-size="12"><tspan fill="#ff8fa3">Before</tspan> &#8212; quantum ideas stay theoretical (tooling too heavy / hardware out of reach).  <tspan fill="#5cffaa">After</tspan> &#8212; you prototype, test, even monitor quantum workloads from a terminal, browser, or Rust app, today, free.</text>
+</svg>

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" width="100%" role="img" aria-labelledby="s07-t s07-d" style="max-width:1000px;height:auto;font-family:'Inter','IBM Plex Sans',system-ui,sans-serif;">
+  <title id="s07-t">How to start in 60 seconds</title>
+  <desc id="s07-d">Step one: open a terminal and run npx @ruvector/ruqu simulate --qubits 2, no install. Step two: see the Bell-state distribution print. Step three: drop @ruvector/ruqu-wasm into a web page for an in-browser widget. You are doing quantum in the first minute.</desc>
+  <defs>
+    <linearGradient id="s07-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#181233"/><stop offset="1" stop-color="#120e26"/></linearGradient>
+    <linearGradient id="s07-mag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3df0"/><stop offset="1" stop-color="#8b5cff"/></linearGradient>
+    <marker id="s07-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff3df0"/></marker>
+  </defs>
+  <rect width="1000" height="360" rx="16" fill="url(#s07-bg)"/>
+  <text x="500" y="42" text-anchor="middle" fill="#f3eefb" font-size="22" font-weight="700">Start in 60 seconds &#8212; no install</text>
+
+  <!-- step 1 -->
+  <circle cx="92" cy="118" r="22" fill="url(#s07-mag)"/><text x="92" y="126" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">1</text>
+  <rect x="128" y="84" width="240" height="180" rx="12" fill="#1d1640" stroke="#5a4d88" stroke-width="1.3"/>
+  <text x="148" y="112" fill="#ff8cf2" font-size="13.5" font-weight="700">Open a terminal, run:</text>
+  <rect x="148" y="124" width="200" height="64" rx="8" fill="#0e0a1f" stroke="#3a2f66"/>
+  <text x="160" y="148" fill="#7df0ff" font-size="10.5" font-family="'IBM Plex Mono',ui-monospace,monospace">npx @ruvector/ruqu \</text>
+  <text x="172" y="166" fill="#cdc2ee" font-size="10.5" font-family="'IBM Plex Mono',ui-monospace,monospace">  simulate --qubits 2</text>
+  <text x="148" y="212" fill="#d8cff0" font-size="11.5">npx fetches it on the fly &#8212;</text>
+  <text x="148" y="230" fill="#d8cff0" font-size="11.5">nothing to install first.</text>
+  <text x="148" y="252" fill="#a99fce" font-size="11">No Python. No setup.</text>
+
+  <line x1="376" y1="174" x2="408" y2="174" stroke="#ff3df0" stroke-width="2.2" marker-end="url(#s07-ar)"/>
+
+  <!-- step 2 -->
+  <circle cx="438" cy="118" r="22" fill="url(#s07-mag)"/><text x="438" y="126" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">2</text>
+  <rect x="474" y="84" width="240" height="180" rx="12" fill="#1d1640" stroke="#5a4d88" stroke-width="1.3"/>
+  <text x="494" y="112" fill="#bff3ff" font-size="13.5" font-weight="700">Watch quantum happen:</text>
+  <rect x="494" y="124" width="200" height="100" rx="8" fill="#0e0a1f" stroke="#3a2f66"/>
+  <g font-family="'IBM Plex Mono',ui-monospace,monospace" font-size="11">
+    <text x="508" y="146" fill="#cdc2ee">00 &#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;  .50</text>
+    <text x="508" y="168" fill="#9a8fc4">01 &#9617;          .00</text>
+    <text x="508" y="190" fill="#9a8fc4">10 &#9617;          .00</text>
+    <text x="508" y="212" fill="#ff8cf2">11 &#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;  .50</text>
+  </g>
+  <text x="494" y="248" fill="#d8cff0" font-size="11.5">The Bell-state signature,</text>
+  <text x="494" y="262" fill="#d8cff0" font-size="11">printed for real.</text>
+
+  <line x1="722" y1="174" x2="754" y2="174" stroke="#ff3df0" stroke-width="2.2" marker-end="url(#s07-ar)"/>
+
+  <!-- step 3 -->
+  <circle cx="784" cy="118" r="22" fill="url(#s07-mag)"/><text x="784" y="126" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">3</text>
+  <rect x="820" y="84" width="160" height="180" rx="12" fill="#1c2444" stroke="#39e8ff" stroke-width="1.3"/>
+  <text x="840" y="112" fill="#bff3ff" font-size="13" font-weight="700">Want it in a</text>
+  <text x="840" y="130" fill="#bff3ff" font-size="13" font-weight="700">web page?</text>
+  <rect x="840" y="142" width="120" height="46" rx="8" fill="#0e0a1f" stroke="#2a4a66"/>
+  <text x="848" y="162" fill="#5cffaa" font-size="9.5" font-family="'IBM Plex Mono',ui-monospace,monospace">npm i @ruvector/</text>
+  <text x="848" y="178" fill="#5cffaa" font-size="9.5" font-family="'IBM Plex Mono',ui-monospace,monospace">  ruqu-wasm</text>
+  <text x="840" y="210" fill="#d8cff0" font-size="11">Drop it in &#8212; an</text>
+  <text x="840" y="226" fill="#d8cff0" font-size="11">in-browser widget</text>
+  <text x="840" y="242" fill="#d8cff0" font-size="11">your visitors run.</text>
+
+  <text x="500" y="318" text-anchor="middle" fill="#ffd9f6" font-size="15" font-weight="700">You&#8217;re doing quantum in the first minute &#8212; in a terminal or a browser tab.</text>
+  <text x="500" y="342" text-anchor="middle" fill="#a99fce" font-size="11.5">Then explore the gallery above for search (Grover), optimization (QAOA), chemistry (VQE), and the coherence engine.</text>
+</svg>

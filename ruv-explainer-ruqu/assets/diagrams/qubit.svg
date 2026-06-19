@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 320" width="100%" role="img" aria-labelledby="qubit-t qubit-d" style="max-width:1000px;height:auto;font-family:'Inter','IBM Plex Sans',system-ui,sans-serif;">
+  <title id="qubit-t">A bit versus a qubit, shown on a Bloch sphere</title>
+  <desc id="qubit-d">A normal bit is either 0 or 1. A qubit is a blend of both until you look, drawn as an arrow that can point anywhere on a Bloch sphere with 0 at the top pole and 1 at the bottom. That blend is what gives quantum its power and what makes it fragile.</desc>
+  <defs>
+    <linearGradient id="qb-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#181233"/><stop offset="1" stop-color="#120e26"/></linearGradient>
+    <radialGradient id="qb-orb" cx="36%" cy="30%" r="75%"><stop offset="0" stop-color="#ff7bf6" stop-opacity="0.5"/><stop offset="60%" stop-color="#ff3df0" stop-opacity="0.22"/><stop offset="100%" stop-color="#8b5cff" stop-opacity="0.12"/></radialGradient>
+    <marker id="qb-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#fff"/></marker>
+  </defs>
+  <rect width="1000" height="320" rx="16" fill="url(#qb-bg)"/>
+  <text x="500" y="40" text-anchor="middle" fill="#f3eefb" font-size="20" font-weight="700">A &#8220;qubit,&#8221; in one picture</text>
+
+  <!-- normal bit -->
+  <text x="200" y="86" text-anchor="middle" fill="#9a8fc4" font-size="13" font-weight="700">A NORMAL BIT</text>
+  <rect x="120" y="110" width="70" height="70" rx="12" fill="#231a44" stroke="#5a4d88" stroke-width="1.4"/>
+  <text x="155" y="156" text-anchor="middle" fill="#cdc2ee" font-size="30" font-weight="700" font-family="monospace">0</text>
+  <text x="225" y="140" fill="#a99fce" font-size="16">or</text>
+  <rect x="210" y="110" width="70" height="70" rx="12" fill="#231a44" stroke="#5a4d88" stroke-width="1.4"/>
+  <text x="245" y="156" text-anchor="middle" fill="#cdc2ee" font-size="30" font-weight="700" font-family="monospace">1</text>
+  <text x="200" y="222" text-anchor="middle" fill="#d8cff0" font-size="12">one or the other &#8212; always definite</text>
+
+  <!-- qubit bloch sphere -->
+  <text x="640" y="86" text-anchor="middle" fill="#ff8cf2" font-size="13" font-weight="700">A QUBIT (on a Bloch sphere)</text>
+  <circle cx="640" cy="180" r="76" fill="url(#qb-orb)" stroke="#8b5cff" stroke-width="1.2"/>
+  <ellipse cx="640" cy="180" rx="76" ry="24" fill="none" stroke="#39e8ff" stroke-width="1.2" opacity="0.7"/>
+  <ellipse cx="640" cy="180" rx="24" ry="76" fill="none" stroke="#ff3df0" stroke-width="1" opacity="0.5"/>
+  <!-- poles -->
+  <circle cx="640" cy="104" r="3.5" fill="#fff"/><text x="640" y="98" text-anchor="middle" fill="#bff3ff" font-size="12" font-family="monospace">|0&#10217;</text>
+  <circle cx="640" cy="256" r="3.5" fill="#fff"/><text x="640" y="278" text-anchor="middle" fill="#ff8cf2" font-size="12" font-family="monospace">|1&#10217;</text>
+  <!-- state arrow -->
+  <line x1="640" y1="180" x2="694" y2="138" stroke="#fff" stroke-width="2.4" marker-end="url(#qb-ar)"/>
+  <circle cx="640" cy="180" r="3" fill="#fff"/>
+  <text x="730" y="160" fill="#d8cff0" font-size="12">the arrow can point</text>
+  <text x="730" y="178" fill="#d8cff0" font-size="12">anywhere &#8212; a blend of</text>
+  <text x="730" y="196" fill="#d8cff0" font-size="12">0 and 1 until you look</text>
+
+  <text x="500" y="306" text-anchor="middle" fill="#cdc2ee" font-size="12.5">That blend is what gives quantum its power &#8212; and what makes it so fragile.</text>
+</svg>

@@ -40,6 +40,7 @@ export const targets = {
       whatis:       'PRIMER#1-what-is-metaharness',
       capabilities: 'PRIMER#2-what-can-the-tool-do-to-a-repo',
       crates:       'PRIMER#3-what-packages-make-up-metaharness',
+      composer:     'PRIMER#4-how-does-the-composer-scaffold-a-harness',
       maturity:     'PRIMER#5-is-this-production-ready-maturity-and-honest-limits',
       docs:         'PRIMER#6-where-do-i-read-about-the-architecture',
       adr:          'PRIMER#6-where-do-i-read-about-the-architecture',

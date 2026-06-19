@@ -273,7 +273,13 @@ const COMMON_TITLE_WORDS = new Set(['how','what','when','where','why','which','w
   'ready','overview','introduction','getting','started','start','guide','setup','install','use','using',
   'core','capabilities','capability','feature','features','concept','concepts','docs','documentation',
   'tutorial','tutorials','example','examples','crate','crates','inventory','about','it','this','that',
-  'ruvector','ruview','playbook','quickstart','end','reference']);
+  'ruvector','ruview','playbook','quickstart','end','reference',
+  // Product feature names / host names that appear capitalized in orientation queries but do NOT
+  // indicate a specific-entity deep-dive (MetaHarness orientation queries often say "Darwin Mode",
+  // "Claude Code", "Rust Core", "Mode", "Claude", "Code", "Layer" etc. — treat as orientation terms).
+  'darwin','mode','claude','code','harness','metaharness','layer','layers','surface','rust','rust core',
+  'host','hosts','adapter','adapters','kernel','wizard','composer','scaffold','stage','stages','genome',
+  'router','factory','framework','model','wrapper','account','server','threat','scan','posture']);
 
 // Does the query name a SPECIFIC entity? Returns the matched hyphen-crate token(s) (lowercased)
 // plus a boolean. Used to (a) suppress generic orientation lift, (b) demote primer-orientation,
@@ -485,23 +491,43 @@ function productRe(store) {
 // query. Patterns mirror the spec's intent buckets. `adr` is folded into `docs` but additionally
 // flips the docs target to the ADR-index slug when the query is specifically about ADRs.
 const ARCHETYPE_RES = [
-  // maturity / production-readiness / "how good/solid/reliable" / works-today-vs-experiment
-  { name: 'maturity', re: /\b(mature|maturity|production[- ]?ready|production\b|how (good|solid|reliable|complete)|how complete|is it (ready|done|complete)|works?\b.*\b(experiment|stub|today|yet)|ready for production|battle[- ]?tested|graded honestly)\b/i },
-  // capabilities / features / "what can it do"
-  { name: 'capabilities', re: /\b(capabilit(y|ies)|what can it do|what can ruv\w+ do|features?\b|what does it (do|offer)|what does ruv\w+ (do|offer)|big (capabilities|features))\b/i },
-  // docs / tutorials / examples / ADRs / "where do I find …"
-  { name: 'docs', re: /\b(where (are|is|can i find|do i find).*(doc|documentation|tutorial|example|adr|guide|find|live)|documentation\b|tutorials?\b|list of adrs?|adr index|where everything lives|where.*\b(docs?|guides?)\b)\b/i },
+  // maturity / production-readiness / "how good/solid/reliable" / works-today-vs-experiment /
+  // host counts / release status / should-I / which-are-newer / what-is-NOT.
+  // NOTE: "not a" is intentionally NARROW — only specific maturity-context negations to avoid
+  // catching "why is it called a factory and NOT a framework" (a whatis query).
+  // The \bNOT[?!]?\s*$ tail catches "What is metaharness NOT?" (query ends in NOT + punctuation).
+  { name: 'maturity', re: /(\b(mature|maturity|production[- ]?ready|production\b|how (good|solid|reliable|complete)|how complete|is it (ready|done|complete)|works?\b.*\b(experiment|stub|today|yet)|ready for production|battle[- ]?tested|graded honestly|how many\b.*(stable|newer|addition|host)|which\b.*(stable|newer|addition)|release status|release pipeline|what release|not a (?:chatbot|no[- ]code|hosted service|fine[- ]?tune)|should i assert|fixed test count|honest limits|posture\b|default[- ]deny)\b|\bNOT[?!]?\s*$)/i },
+  // capabilities / features / "what can it do" / tool actions / sub-commands / specific tools
+  // (score, genome, mcp-scan, threat-model, Darwin Mode, router, execute, cost, npm audit).
+  // Capabilities BEFORE composer/crates so "What does Darwin Mode do" / "What does genome report"
+  // / "What is the npm audit for agent tools command" routes here, not to whatis or composer.
+  { name: 'capabilities', re: /\b(capabilit(y|ies)|what can (it|the tool) do|what can ruv\w+ do|features?\b|what does it (do|offer)|what does ruv\w+ (do|offer)|big (capabilities|features)|does\b.*\bexecute\b|ever execute|how does\b.*\bcut\b|how (do i |to )?score\b|genome\b.*\breport|what does\b.*(genome|darwin|threat[- ]?model|mcp[- ]scan|router|mode) (do|report|produce)|what artifact\b|what can the\b|\bgenome\b|\bdarwin mode\b|mcp[- ]scan\b|threat[- ]model\b|npm audit\b|audit for agent\b)\b/i },
+  // docs / tutorials / examples / ADRs / "where do I find/read" / "which doc covers/gives/lives" /
+  // "where is X described/documented". BEFORE composer and crates so "where is the composer 9-stage
+  // flow documented" / "where is the three-layer model described" route to docs (PRIMER#6), not
+  // composer (PRIMER#4) or crates (PRIMER#3).
+  { name: 'docs', re: /\b(where (are|is|can i find|do i find|do i read).*(doc|documentation|tutorial|example|adr|guide|find|live|architecture|exist|why|described|documented)|documentation\b|tutorials?\b|list of adrs?|adr index|where everything lives|where.*\b(docs?|guides?)\b|which doc\b|where is.*\b(documented|described)\b|where does.*live\b|read[- ]in[- ]order\b|adr (series|index)\b|plain[- ]language usage\b)\b/i },
+  // composer / scaffold stages / overlays / HarnessChoice / template selection — PRIMER#4.
+  // "scaffold" only matches when NOT preceded by "one-liner" or "show" (those are playbook).
+  // "composer" without "where" context to avoid catching "where is the composer flow documented".
+  { name: 'composer', re: /\b(how does\b.*\b(composer\b.*scaffold|scaffold\b.*\bharness)\b|how many stages\b|template overlays?\b|overlay\b.*merge|merge\b.*overlay|default agents?\b|default skills?\b|harnesschoice\b|which (composer )?stage\b|toggles? kernel\b|7[- ]arc\b|teaching outline\b|last\b.*\bstage\b|stage\b.*\bgeneration\b|primitives\b.*\btoggle\b|9 stages?\b|what object drives\b|drives template\b)\b/i },
   // hardware / boards / devices — enumeration of supported physical hardware
   { name: 'hardware', re: /\b(hardware|boards?|devices?|which (chip|board|sensor)|supported (hardware|board|device))\b/i },
   // component inventory — enumeration of the components that make up the workspace / a domain.
   // NOTE: this static entry only covers the literal "crate" word; the store-aware
   // componentInventoryRe(store) (injected with the componentWord synonym group: crate|package|
   // module|component) is checked FIRST in classifyArchetype so an npm-package repo fires too.
-  { name: 'crates', re: /\b(which crates|crate inventory|what crates|crates (that |which )?(make up|in|for|comprise)|list of crates|\w+ domain crates)\b/i },
-  // playbook / setup / onboarding / end-to-end usage
-  { name: 'playbook', re: /\b(how (do i |to )?(use|set ?up|onboard|get started|getting started|start|deploy|build|run)|end[- ]to[- ]end|end to end|quick ?start|playbook|walkthrough|step[- ]by[- ]step|get up and running)\b/i },
-  // what-is / overview / introduce
-  { name: 'whatis', re: /\b(what is|what'?s |overview of|introduce|introduction to|tell me about|difference between|role of)\b/i },
+  // Broadened to also catch: "what are the layers", "which host adapter packages", subsystems,
+  // kernel boundary, which packages (surface/layer), model router package, kernel subsystems.
+  // "three-layer" is excluded here (handled by docs) for "where is the three-layer model described".
+  { name: 'crates', re: /\b(which crates|crate inventory|what crates|crates (that |which )?(make up|in|for|comprise)|list of crates|\w+ domain crates|what are the (layers?|three layers?|subsystems?|adapters?)\b|which (host |adapter )?(packages?|adapters?)\b|kernel (boundary|subsystems?)\b|what is (in |the )?the kernel\b|what is the kernel\b|subsystems? (bundled|in)\b|surface layer\b|user[- ]facing (surface|layer|packages?)\b|model router (package|component)\b)\b/i },
+  // playbook / setup / onboarding / end-to-end usage / wizard / publish / scaffold health /
+  // fastest-path / one-liner / after-scaffolding / own-files / release-gate.
+  { name: 'playbook', re: /\b(how (do i |to )?(use|set ?up|onboard|get started|getting started|start|deploy|build|run|publish|check|generate)|end[- ]to[- ]end|end to end|quick ?start|playbook|walkthrough|step[- ]by[- ]step|get up and running|wizard\b|what does the wizard\b|fastest path\b|one[- ]liner\b|after scaffolding\b|own the files\b|what command\b.*\brelease\b|release gate\b|scaffold is healthy\b|harness doctor\b|harness validate\b|publish my harness\b|what do my users run\b|users run\b)\b/i },
+  // what-is / overview / introduce / what-does-produce / is-X-a-Y / why-called / do-I-need.
+  // "not another" catches "not another agent framework" (product identity). "why.*factory|framework"
+  // catches "why is it called a factory and not a framework" without matching generic maturity.
+  { name: 'whatis', re: /\b(what is|what'?s |overview of|introduce|introduction to|tell me about|difference between|role of|what does\b.*\b(produce|turn|make into|forbid|mean)\b|is\b.*\b(model|wrapper|framework|factory|account|server)\b|why (is it|called|a factory)\b|do i need\b|in one line\b|called a factory\b|not another\b|why.*\bfactory\b|why.*\bframework\b)\b/i },
 ];
 
 // Strong playbook verbs — when present, the playbook force-route fires EVEN for a long query
@@ -555,6 +581,13 @@ function componentInventoryRe(store) {
   return re;
 }
 
+// Patterns in the whatis archetype that are ALWAYS a product-overview (force PRIMER#1), regardless
+// of whether other concept nouns appear. These paraphrased forms ("what does X produce", "is it a
+// wrapper", "why called a factory", "do I need an account", "in one line") are orientation queries
+// about the product as a whole, not about a sub-concept. They bypass the isProductOverviewQuery
+// concept-noun strip so they force-route to PRIMER#1 rather than falling to whatis-concept.
+const WHATIS_FORCE_RE = /\b(what does\b.*\b(produce|turn into|make into|forbid)\b|is\b.*\b(model|wrapper|framework|factory|account|server)\b|why (is it |a )?called\b|do i need\b|in one line\b|not another\b|called a factory\b|why a factory\b|published cli\b|cli name\b.*versus|versus\b.*cli name|what.*\bversus\b.*\balias\b)\b/i;
+
 // Classify the orientation archetype (most-specific-first). Returns archetype name or null.
 // `store` lets the what-is split distinguish a product-overview query from a concept query, and
 // drives the componentWord synonym injection for the component-inventory archetype.
@@ -569,7 +602,11 @@ function classifyArchetype(query, store) {
       if (a.name === 'docs' && /\b(adr|decision record)\b/i.test(query)) return 'adr';
       // The what-is archetype splits: product-overview -> PRIMER#1; concept query -> no force-route
       // (let vector+rerank find the DEFINING doc; a mild concept boost is applied downstream).
-      if (a.name === 'whatis' && !isProductOverviewQuery(query, store)) return 'whatis-concept';
+      // WHATIS_FORCE_RE patterns are always product-overview (bypass the concept-noun strip).
+      if (a.name === 'whatis') {
+        if (WHATIS_FORCE_RE.test(query) || isProductOverviewQuery(query, store)) return 'whatis';
+        return 'whatis-concept';
+      }
       return a.name;
     }
   }
@@ -1048,9 +1085,12 @@ export async function searchKb({ query, k = 6, store, n, variant }) {
   const crateTokens = crateTokenSet(byPath, store);
   const entity = specificEntity(query, crateTokens);
   let archetype = classifyArchetype(query, store);            // 'maturity'|'capabilities'|…|'whatis-concept'|null
-  // Suppress force-routing archetypes when a specific entity is named — EXCEPT the crate inventory
-  // archetype ('crates'), which is a legitimate enumeration request even with a hyphen token nearby.
-  if (entity.named && archetype && archetype !== 'crates' && archetype !== 'whatis-concept') {
+  // Suppress force-routing archetypes when a specific entity is named — EXCEPT:
+  //   (a) the crate inventory archetype ('crates') — a legitimate enumeration even with a hyphen token.
+  //   (b) a product-overview 'whatis' query that names a product alias (e.g. "CLI name versus
+  //       create-agent-harness") — the alias IS the product, so the orientation PRIMER should still win.
+  const isProductWhatis = archetype === 'whatis' && WHATIS_FORCE_RE.test(query);
+  if (entity.named && archetype && archetype !== 'crates' && archetype !== 'whatis-concept' && !isProductWhatis) {
     archetype = null;
   }
   // 'whatis-concept' is a NON-routing archetype: no force-route to a PRIMER, instead a mild concept

@@ -199,6 +199,71 @@ pre.code-block code {
 }
 .footnote-note small { color: var(--muted); line-height: 1.55; }
 
+/* Browser Studio on-ramp block — §07 "recommended for beginners" callout */
+.browser-onramp {
+  margin: 28px 0 32px;
+  padding: 20px 24px;
+  border: 2px solid var(--amber);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--fill-amber) 0%, var(--panel) 100%);
+  box-shadow: var(--glow-amber), var(--emboss);
+}
+.browser-onramp-label {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 3px 12px;
+  background: linear-gradient(96deg, var(--amber-hot), var(--copper));
+  color: var(--on-amber);
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 20px;
+}
+.browser-onramp-intro {
+  margin: 0 0 16px;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+.browser-onramp-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px 22px;
+  background: linear-gradient(96deg, var(--amber-hot), var(--copper));
+  color: var(--on-amber);
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border-radius: 10px;
+  box-shadow: var(--glow-amber), var(--emboss);
+  transition: transform 0.16s var(--ease), filter 0.16s var(--ease);
+  width: fit-content;
+  max-width: 100%;
+}
+.browser-onramp-cta:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.07);
+  color: var(--on-amber);
+}
+.browser-onramp-url {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 0.85;
+}
+.browser-onramp-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
 /* Inline command chip — looks struck into metal */
 code, .cmd {
   font-family: var(--mono);
@@ -310,6 +375,45 @@ code, .cmd {
   transition: transform 0.16s var(--ease), filter 0.16s var(--ease);
 }
 .cta:hover { transform: translateY(-2px); filter: brightness(1.06); color: var(--on-amber); }
+
+/* Hero two-column layout: copy left, visual right */
+.hero-inner {
+  display: flex;
+  align-items: center;
+  gap: clamp(32px, 5vw, 72px);
+  flex-wrap: wrap;
+}
+.hero-copy {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+.hero-visual {
+  flex: 0 1 480px;
+  min-width: 0;
+}
+.hero-figure {
+  margin: 0;
+  border: 1px solid var(--ridge);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  padding: 10px;
+  box-shadow:
+    var(--shadow),
+    0 0 0 1px rgba(255,158,44,0.10),
+    0 20px 60px -20px rgba(255,158,44,0.18);
+  overflow: hidden;
+}
+.hero-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: calc(var(--radius) - 4px);
+}
+/* On narrow viewports, visual drops below copy and goes full-width */
+@media (max-width: 700px) {
+  .hero-inner { flex-direction: column; }
+  .hero-visual { flex-basis: auto; width: 100%; }
+}
 
 /* ---- Sections (native <details>) ----------------------------------------- */
 .sections { padding: clamp(32px, 6vw, 64px) 0 clamp(64px, 10vw, 110px); }

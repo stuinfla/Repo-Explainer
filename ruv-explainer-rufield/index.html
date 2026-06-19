@@ -1,0 +1,1519 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RuField MFS — the answer a camera would give you, without anyone being watched</title>
+  <meta name="description" content="A plain-language explainer for RuField MFS (ruvnet/rufield): an open standard plus a working Rust reference build for camera-free field sensing — turning invisible WiFi, radar, and heat signals into privacy-labelled, tamper-proof room-state facts. No camera. No microphone." />
+  <meta name="color-scheme" content="dark" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+
+  <!-- Open Graph — social share card (1200x630) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="RuField MFS — camera-free room sensing, with privacy and proof built in" />
+  <meta property="og:description" content="The invisible WiFi/radar/heat signals already in your room, turned into plain facts like 'someone got out of bed' — with no camera, a privacy label on every reading, and a tamper-proof signature you can verify." />
+  <meta property="og:image" content="assets/img/g6.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="An elegant glowing violet and magenta waveform sweeping across a deep slate-charcoal field — the RuField signal." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="RuField MFS — the answer a camera would give you, without anyone being watched" />
+  <meta name="twitter:description" content="Open standard + working Rust reference for camera-free field sensing. Privacy-labelled, provenance-signed, fusion-ready." />
+  <meta name="twitter:image" content="assets/img/g6.png" />
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <!--
+    ============================================================================
+    SITE CONTENT. FIELD/SIGNAL aesthetic [Constraint K]: deep slate-charcoal +
+    signal-violet/magenta + waveform motifs. Zero amber, zero cyan.
+    Copy authored from content/rufield.canon.md (single source of truth), grounded
+    in ruvnet/rufield README + ADR-260 + crate source. Plain-language,
+    human-problem-first, terms defined in-line [Constraint O].
+    Learning arc [Constraint R]: grounding example early -> collapsible use-case
+    gallery (each its own visual) -> then how to implement.
+    Section map:
+      01 What it is (+ grounding example: Margaret)  02 What problem / why now
+      03 How it works (the pipeline)                 04 What a solved state looks like
+      05 Why this vs what you already have           06 Use-case gallery (6 collapsible)
+      07 How to implement & start                    08 Drop-in (the AI-half pack)
+    Every section carries BOTH a precise technical SVG AND a friendly raster [D15-E].
+    ============================================================================
+  -->
+</head>
+<body>
+
+  <!-- ===================== PROVENANCE / ATTRIBUTION (Cognitum-style) [Q] ===================== -->
+  <div class="prov-banner" role="note" aria-label="Source and provenance">
+    <div class="wrap prov-banner-inner">
+      <p class="prov-attr">
+        A plain-language explainer for
+        <a href="https://github.com/ruvnet/rufield"><strong>ruvnet/rufield</strong></a>
+        by <strong>Reuven Cohen</strong>
+        (<a href="https://github.com/ruvnet">@ruvnet</a>).
+        Not affiliated &mdash; an independent walkthrough of the open-source project (MIT).
+      </p>
+      <p class="prov-live">
+        <span class="prov-dot" aria-hidden="true">&#9679;</span>
+        Updated 2026-06-19 &middot; source <code>@ 509d8ae</code> &middot; rufield.mfs.v0.1
+      </p>
+    </div>
+  </div>
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="#top">
+        <span class="mark" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+            <defs>
+              <linearGradient id="hb-wave" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#7c5cff"/><stop offset="50%" stop-color="#a855f7"/><stop offset="100%" stop-color="#e84ef0"/>
+              </linearGradient>
+            </defs>
+            <path d="M3 16 C 8 5, 12 27, 16 16 S 24 5, 29 16" fill="none" stroke="url(#hb-wave)" stroke-width="2.4" stroke-linecap="round"/>
+          </svg>
+        </span>
+        RuField
+      </a>
+      <nav class="nav-links" aria-label="Section navigation">
+        <a href="#s01">What it is</a>
+        <a href="#s03">How</a>
+        <a href="#s05">Why this</a>
+        <a href="#s06">Use cases</a>
+        <a href="#s08">Drop-in</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===================== HERO ===================== -->
+  <main id="top">
+    <section class="hero">
+      <div class="wrap">
+        <p class="eyebrow">ruvnet &middot; rufield &middot; multimodal field sensing</p>
+        <h1>The answer a camera<br />would give you &mdash;<br /><span class="signal">without being watched.</span></h1>
+        <p class="lede">
+          RuField is a free, open standard &mdash; plus a working Rust build &mdash;
+          for <strong>camera-free room sensing</strong>. It takes the invisible
+          signals already bouncing around a room (your WiFi, a tiny radar chip, a
+          cheap heat sensor) and turns them into one plain-English stream of facts:
+          <em>someone is present &middot; they sat down &middot; they got out of bed &middot;
+          they left the room.</em> No camera. No microphone. A privacy label and a
+          tamper-proof signature on every single reading.
+        </p>
+        <div class="meta-row" aria-hidden="true">
+          <span>SPEC&nbsp;<b>rufield.mfs.v0.1</b></span>
+          <span>BUILD&nbsp;<b>Rust reference, 7 crates</b></span>
+          <span>STATUS&nbsp;<b>v0.1 reference stack</b></span>
+        </div>
+        <div>
+          <a class="cta" href="#s01">Show me what it does &rarr;</a>
+          <a class="cta ghost" href="#s08">Get the drop-in</a>
+        </div>
+        <figure class="hero-figure">
+          <img src="assets/img/g1.png" width="1376" height="768"
+               alt="A cozy living room at night. Soft glowing violet and magenta waveforms ripple gently through the air and wrap around a person reading calmly in an armchair. There is no camera anywhere — the invisible signals in the room are simply made visible as warm light." />
+        </figure>
+      </div>
+    </section>
+
+    <!-- ===================== SECTIONS ===================== -->
+    <div class="sections">
+      <div class="wrap">
+
+        <!-- 01 — WHAT IT IS + THE GROUNDING EXAMPLE (resonance, arc Q1) [D20/R] -->
+        <details class="section" id="s01" open>
+          <summary>
+            <span class="num">01</span>
+            <span class="head-text">
+              <h2>What it is &mdash; and who it&rsquo;s for</h2>
+              <span class="q">Start here &mdash; the plain-English version, anchored to one real person.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              Two words in the name do all the work. Let&rsquo;s demystify both, then
+              meet someone it actually helps.
+            </p>
+            <p>
+              <strong>&ldquo;Field&rdquo;</strong> = the invisible signals all around
+              you <em>right now</em>. Your WiFi is constantly bouncing radio waves off
+              everything in the room. A $10 radar chip sees motion through the air. A
+              cheap thermal sensor sees body heat. When a person moves &mdash; even
+              slightly &mdash; all of these change. That changing pattern <em>is</em>
+              the &ldquo;field.&rdquo;
+            </p>
+            <p>
+              <strong>&ldquo;MFS&rdquo; (Multimodal Field Sensing Specification)</strong>
+              = an agreed-upon <em>format</em> so every one of those different sensors
+              speaks the <strong>same language</strong>. Today WiFi, radar, and thermal
+              each spit out their own incompatible gibberish. RuField is the translator
+              that turns all of them into one tidy event anyone can read and combine.
+            </p>
+            <p>
+              Think of it as <strong>&ldquo;USB for room-sensing.&rdquo;</strong> Before
+              USB, every device had its own weird plug; USB was just an <em>agreement</em>
+              on the shape of the plug, and suddenly anything worked with anything.
+              RuField is one agreed-upon shape so any sensor&rsquo;s reading drops into
+              any app. It is <strong>not a new gadget and not a new radio</strong> &mdash;
+              it sits <em>above</em> the standards you may have heard of (WiFi sensing /
+              802.11bf, radar, UWB) and makes their outputs fit together.
+            </p>
+
+            <h3>Meet Margaret &mdash; the &ldquo;oh, <em>that&rsquo;s</em> what it&rsquo;s for&rdquo; moment</h3>
+            <p>
+              <strong>Margaret is 78 and lives alone. Her daughter Priya worries about
+              night-time falls and bathroom trips &mdash; but Margaret flatly refuses
+              cameras in her home, and she&rsquo;s right to.</strong>
+            </p>
+
+            <!-- TECHNICAL VISUAL: the before->after as the real signal/event flow -->
+            <p class="tier tech">Technical view &mdash; the before &rarr; after, as the real data flow</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" width="100%" role="img" aria-labelledby="s01t-title s01t-desc" style="max-width:1000px;height:auto;font-family:'JetBrains Mono','Inter',sans-serif;">
+                <title id="s01t-title">Before and after RuField, shown as the real pipeline</title>
+                <desc id="s01t-desc">Before RuField, the only ways to know if Margaret is okay are a camera (vetoed) or a panic button she must reach. After RuField, three camera-free sensors feed invisible signals into a fusion engine that emits plain room-state facts; raw signals stay on-device as privacy class P0, breathing is gated as P4 requiring consent, and every fact carries a signed ed25519 receipt before it reaches Priya's app.</desc>
+                <rect x="0" y="0" width="1000" height="560" rx="14" fill="#0a0c13"/>
+                <line x1="500" y1="64" x2="500" y2="528" stroke="#2a3047" stroke-width="1.5" stroke-dasharray="4 6"/>
+
+                <text x="500" y="36" text-anchor="middle" fill="#eef1fb" font-size="20" font-weight="700" font-family="'Space Grotesk',sans-serif">The answer, without the image</text>
+
+                <!-- BEFORE (left) -->
+                <text x="250" y="86" text-anchor="middle" fill="#ff8a8a" font-size="14" font-weight="700">BEFORE — no dignified way to know</text>
+                <rect x="60" y="108" width="380" height="64" rx="10" fill="#161927" stroke="#ff8a8a" stroke-width="1.2"/>
+                <text x="80" y="136" fill="#eef1fb" font-size="14">Option A &mdash; a camera</text>
+                <text x="80" y="158" fill="#8b92b4" font-size="12">Margaret vetoes it · nobody wants one in a bedroom</text>
+                <rect x="60" y="186" width="380" height="64" rx="10" fill="#161927" stroke="#ff8a8a" stroke-width="1.2"/>
+                <text x="80" y="214" fill="#eef1fb" font-size="14">Option B &mdash; a panic button</text>
+                <text x="80" y="236" fill="#8b92b4" font-size="12">Useless if she&rsquo;s fallen and can&rsquo;t reach it</text>
+                <rect x="60" y="300" width="380" height="80" rx="10" fill="#13101a" stroke="#5b6184" stroke-width="1.2" stroke-dasharray="5 4"/>
+                <text x="250" y="332" text-anchor="middle" fill="#c4cae2" font-size="14" font-weight="600">So Priya just worries.</text>
+                <text x="250" y="356" text-anchor="middle" fill="#8b92b4" font-size="12">No way to ask &ldquo;is Mum up and moving normally tonight?&rdquo;</text>
+
+                <!-- AFTER (right) -->
+                <text x="750" y="86" text-anchor="middle" fill="#56d4a0" font-size="14" font-weight="700">AFTER — the field, fused into facts</text>
+                <!-- 3 sensors -->
+                <rect x="540" y="104" width="120" height="40" rx="8" fill="#161927" stroke="#a855f7" stroke-width="1"/>
+                <text x="600" y="129" text-anchor="middle" fill="#c4a0ff" font-size="11.5">WiFi CSI</text>
+                <rect x="668" y="104" width="120" height="40" rx="8" fill="#161927" stroke="#a855f7" stroke-width="1"/>
+                <text x="728" y="129" text-anchor="middle" fill="#c4a0ff" font-size="11.5">mmWave radar</text>
+                <rect x="796" y="104" width="120" height="40" rx="8" fill="#161927" stroke="#a855f7" stroke-width="1"/>
+                <text x="856" y="129" text-anchor="middle" fill="#c4a0ff" font-size="11.5">thermal IR</text>
+                <!-- arrows into fusion -->
+                <defs>
+                  <marker id="s01t-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                    <path d="M0,0 L10,5 L0,10 z" fill="#a855f7"/>
+                  </marker>
+                </defs>
+                <line x1="600" y1="144" x2="700" y2="182" stroke="#a855f7" stroke-width="1.8" marker-end="url(#s01t-arr)"/>
+                <line x1="728" y1="144" x2="728" y2="182" stroke="#a855f7" stroke-width="1.8" marker-end="url(#s01t-arr)"/>
+                <line x1="856" y1="144" x2="756" y2="182" stroke="#a855f7" stroke-width="1.8" marker-end="url(#s01t-arr)"/>
+                <!-- fusion -->
+                <rect x="600" y="186" width="256" height="48" rx="10" fill="#1b1f30" stroke="#e84ef0" stroke-width="1.5"/>
+                <text x="728" y="208" text-anchor="middle" fill="#eef1fb" font-size="13" font-weight="600">RuField fusion engine</text>
+                <text x="728" y="225" text-anchor="middle" fill="#8b92b4" font-size="11">weighted Bayes · temporal windows</text>
+                <!-- room-state facts -->
+                <line x1="728" y1="234" x2="728" y2="262" stroke="#a855f7" stroke-width="1.8" marker-end="url(#s01t-arr)"/>
+                <rect x="560" y="266" width="336" height="86" rx="10" fill="#161927" stroke="#2a3047" stroke-width="1.2"/>
+                <text x="728" y="288" text-anchor="middle" fill="#eef1fb" font-size="13" font-weight="600">Plain room-state facts</text>
+                <text x="728" y="310" text-anchor="middle" fill="#c4cae2" font-size="11.5">present · sitting · breathing · in bed · got out of bed · left</text>
+                <text x="728" y="334" text-anchor="middle" fill="#8b92b4" font-size="11">each fact: a privacy class + a signed ed25519 receipt</text>
+
+                <!-- guard row -->
+                <rect x="540" y="368" width="116" height="56" rx="9" fill="#13101a" stroke="#ff9fb0" stroke-width="1.2"/>
+                <text x="598" y="392" text-anchor="middle" fill="#ff9fb0" font-size="12" font-weight="600">P0 raw</text>
+                <text x="598" y="410" text-anchor="middle" fill="#8b92b4" font-size="10.5">stays on-device</text>
+                <rect x="668" y="368" width="116" height="56" rx="9" fill="#181410" stroke="#ffc48a" stroke-width="1.2"/>
+                <text x="726" y="392" text-anchor="middle" fill="#ffc48a" font-size="12" font-weight="600">P4 breathing</text>
+                <text x="726" y="410" text-anchor="middle" fill="#8b92b4" font-size="10.5">needs consent</text>
+                <rect x="796" y="368" width="116" height="56" rx="9" fill="#101813" stroke="#56d4a0" stroke-width="1.2"/>
+                <text x="854" y="392" text-anchor="middle" fill="#56d4a0" font-size="12" font-weight="600">P2 facts</text>
+                <text x="854" y="410" text-anchor="middle" fill="#8b92b4" font-size="10.5">verified &rarr; app</text>
+
+                <!-- Priya app -->
+                <line x1="728" y1="424" x2="728" y2="452" stroke="#56d4a0" stroke-width="1.8" marker-end="url(#s01t-arr)"/>
+                <rect x="600" y="456" width="256" height="60" rx="10" fill="#101813" stroke="#56d4a0" stroke-width="1.4"/>
+                <text x="728" y="480" text-anchor="middle" fill="#56d4a0" font-size="13" font-weight="600">Priya&rsquo;s app</text>
+                <text x="728" y="500" text-anchor="middle" fill="#c4cae2" font-size="11.5">&ldquo;Mum is moving normally tonight.&rdquo;</text>
+              </svg>
+              <figcaption>
+                Technical view: three camera-free sensors &rarr; the RuField fusion
+                engine &rarr; plain facts. Raw signals (<span class="pchip p0">P0</span>)
+                never leave the house; breathing (<span class="pchip p4">P4</span>) is
+                consent-gated; occupancy facts (<span class="pchip p2">P2</span>) are
+                signed, verified, and only then shown to Priya. (Source: ADR-260 §19;
+                <code>room_state.toml</code>; <code>rufield-privacy</code>.)
+              </figcaption>
+            </figure>
+
+            <!-- SIMPLE VISUAL: the friendly Margaret/Priya illustration -->
+            <p class="tier simple">Friendly view &mdash; the same story, in a picture</p>
+            <figure class="figure art">
+              <img src="assets/img/g2.png" width="1376" height="768" loading="lazy"
+                   alt="Left: Margaret, peaceful and dignified, getting up from her bed at night in her own softly-lit room, completely unwatched. Right: in another home, her daughter Priya smiles with relief at her phone, which shows a calm status line reading 'Mum is moving normally tonight' with a small green dot. A soft violet signal-wave links the two rooms, carrying a single reassuring fact — not a picture. There is no camera anywhere." />
+              <figcaption>
+                The same thing in plain feeling: Margaret is never watched &mdash; there
+                is no image, ever &mdash; yet Priya finally knows her mother is moving
+                normally tonight.
+              </figcaption>
+            </figure>
+
+            <p>
+              <strong>Before RuField,</strong> Priya&rsquo;s only real options were a
+              camera (vetoed) or a panic button Margaret has to remember to wear and
+              press &mdash; useless if she&rsquo;s fallen and can&rsquo;t reach it. So
+              Priya just <em>worried</em>.
+            </p>
+            <p>
+              <strong>After RuField,</strong> a few cheap, camera-free sensors sit in
+              the corners. RuField fuses their invisible signals into plain facts.
+              The raw signals never leave Margaret&rsquo;s house (they&rsquo;re privacy
+              class <span class="pchip p0">P0</span>, which the system refuses to
+              transmit by default). A sensitive health reading like <em>breathing</em>
+              is <span class="pchip p4">P4</span> and stays off unless Margaret
+              explicitly consents. Every fact carries a signed receipt, so a tampered
+              &ldquo;she&rsquo;s fine&rdquo; can&rsquo;t be faked.
+            </p>
+            <p>
+              <strong>The line that makes it land:</strong> <em>it&rsquo;s how you get
+              the answer a camera would give you &mdash; &ldquo;is everything okay in
+              there?&rdquo; &mdash; without anyone ever being watched.</em>
+            </p>
+
+            <div class="footnote-note">
+              <small>
+                <strong>Honest note on this example.</strong> v0.1&rsquo;s room-state
+                demo runs on a <strong>synthetic simulator</strong>, and the one
+                real-signal path (<code>CsiReplayAdapter</code>) is <strong>recorded
+                WiFi replayed from a file</strong> &mdash; a physically-grounded proxy,
+                <strong>not validated accuracy</strong>. The architecture, privacy
+                enforcement, and provenance are real and working today; the
+                field-accuracy numbers that would let you trust this with a real
+                Margaret need the hardware adapters v0.1 deliberately does not yet ship.
+                (Source: README L13&ndash;25; ADR-260 &ldquo;Honest statement.&rdquo;)
+              </small>
+            </div>
+          </div>
+        </details>
+
+        <!-- 02 — WHAT PROBLEM / WHY NOW (arc Q2+Q3) -->
+        <details class="section" id="s02">
+          <summary>
+            <span class="num">02</span>
+            <span class="head-text">
+              <h2>The problem it solves &mdash; and why now</h2>
+              <span class="q">Why does this need to exist, and why does it matter today?</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              The useful information &mdash; <em>&ldquo;Grandma got out of bed at 3am and
+              hasn&rsquo;t come back&rdquo;</em> &mdash; usually requires a <strong>camera</strong>,
+              and a camera in a bedroom or bathroom is a non-starter. RuField gives you
+              the <em>answer</em> without the <em>image</em>: nobody is ever watched; the
+              system only knows &ldquo;a person is here,&rdquo; never &ldquo;here is a
+              picture of them.&rdquo;
+            </p>
+            <p>
+              There&rsquo;s a second, quieter problem. Every kind of sensor talks a
+              <strong>different language</strong>, and every team that wants to combine
+              them reinvents the same plumbing &mdash; calibration, fusion, privacy
+              rules, anti-spoofing &mdash; by hand, badly. WiFi sensing, radar, and
+              thermal are each &ldquo;locked into modality-specific silos&rdquo; with no
+              common format, which <em>prevents reliable fusion and makes governance
+              weak</em>. (Source: ADR-260 §4.)
+            </p>
+            <p>
+              <strong>Why now?</strong> Because WiFi sensing is about to be everywhere
+              &mdash; in homes, hospitals, offices. If that&rsquo;s coming, it needs a
+              common, privacy-first, provable format the way the early web needed HTTP.
+              RuField is a bid to be that shared layer, with <strong>privacy and
+              provenance built in from day one</strong> rather than bolted on after the
+              scandal. (Source: ADR-260 §21 decision matrix; §25.)
+            </p>
+
+            <!-- TECHNICAL VISUAL: silos vs one common event format -->
+            <p class="tier tech">Technical view &mdash; three silos vs one common event format</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" width="100%" role="img" aria-labelledby="s02t-title s02t-desc" style="max-width:1000px;height:auto;font-family:'JetBrains Mono','Inter',sans-serif;">
+                <title id="s02t-title">Modality silos versus one shared RuField event model</title>
+                <desc id="s02t-desc">Today WiFi, radar and thermal each emit their own incompatible format, so they cannot be fused and governance is weak. RuField defines one common FieldEvent — typed feature, privacy class, and a signed provenance receipt — that every sensor maps into, enabling reliable fusion and consistent privacy and provenance.</desc>
+                <rect x="0" y="0" width="1000" height="470" rx="14" fill="#0a0c13"/>
+                <defs>
+                  <marker id="s02t-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                    <path d="M0,0 L10,5 L0,10 z" fill="#a855f7"/>
+                  </marker>
+                </defs>
+                <text x="500" y="34" text-anchor="middle" fill="#eef1fb" font-size="19" font-weight="700" font-family="'Space Grotesk',sans-serif">From incompatible silos to one shared event</text>
+
+                <!-- LEFT: silos -->
+                <text x="200" y="74" text-anchor="middle" fill="#ff8a8a" font-size="13" font-weight="700">TODAY — three silos, no common shape</text>
+                <rect x="40" y="92" width="100" height="58" rx="9" fill="#161927" stroke="#5b6184" stroke-width="1.1"/>
+                <text x="90" y="116" text-anchor="middle" fill="#c4cae2" font-size="11.5">WiFi</text>
+                <text x="90" y="134" text-anchor="middle" fill="#8b92b4" font-size="9.5">its own format</text>
+                <rect x="150" y="92" width="100" height="58" rx="9" fill="#161927" stroke="#5b6184" stroke-width="1.1"/>
+                <text x="200" y="116" text-anchor="middle" fill="#c4cae2" font-size="11.5">radar</text>
+                <text x="200" y="134" text-anchor="middle" fill="#8b92b4" font-size="9.5">its own format</text>
+                <rect x="260" y="92" width="100" height="58" rx="9" fill="#161927" stroke="#5b6184" stroke-width="1.1"/>
+                <text x="310" y="116" text-anchor="middle" fill="#c4cae2" font-size="11.5">thermal</text>
+                <text x="310" y="134" text-anchor="middle" fill="#8b92b4" font-size="9.5">its own format</text>
+                <!-- broken fusion -->
+                <rect x="80" y="196" width="240" height="60" rx="9" fill="#13101a" stroke="#ff8a8a" stroke-width="1.2" stroke-dasharray="5 4"/>
+                <text x="200" y="222" text-anchor="middle" fill="#ff8a8a" font-size="12.5" font-weight="600">can&rsquo;t fuse reliably</text>
+                <text x="200" y="242" text-anchor="middle" fill="#8b92b4" font-size="10.5">weak governance · everyone rebuilds the glue</text>
+                <line x1="200" y1="150" x2="200" y2="194" stroke="#ff8a8a" stroke-width="1.4" stroke-dasharray="4 4"/>
+                <text x="345" y="178" text-anchor="middle" fill="#ff8a8a" font-size="20">&#10007;</text>
+
+                <!-- arrow across -->
+                <line x1="380" y1="222" x2="470" y2="222" stroke="#a855f7" stroke-width="2.2" marker-end="url(#s02t-arr)"/>
+                <text x="425" y="210" text-anchor="middle" fill="#8b92b4" font-size="10.5">RuField</text>
+
+                <!-- RIGHT: one common event -->
+                <text x="740" y="74" text-anchor="middle" fill="#56d4a0" font-size="13" font-weight="700">RUFIELD — one common FieldEvent</text>
+                <rect x="500" y="92" width="100" height="58" rx="9" fill="#161927" stroke="#a855f7" stroke-width="1.1"/>
+                <text x="550" y="124" text-anchor="middle" fill="#c4a0ff" font-size="11.5">WiFi</text>
+                <rect x="610" y="92" width="100" height="58" rx="9" fill="#161927" stroke="#a855f7" stroke-width="1.1"/>
+                <text x="660" y="124" text-anchor="middle" fill="#c4a0ff" font-size="11.5">radar</text>
+                <rect x="720" y="92" width="100" height="58" rx="9" fill="#161927" stroke="#a855f7" stroke-width="1.1"/>
+                <text x="770" y="124" text-anchor="middle" fill="#c4a0ff" font-size="11.5">thermal</text>
+                <rect x="830" y="92" width="120" height="58" rx="9" fill="#161927" stroke="#a855f7" stroke-width="1.1"/>
+                <text x="890" y="118" text-anchor="middle" fill="#c4a0ff" font-size="11">UWB · IR ·</text>
+                <text x="890" y="134" text-anchor="middle" fill="#c4a0ff" font-size="11">future</text>
+                <line x1="550" y1="150" x2="660" y2="192" stroke="#a855f7" stroke-width="1.6" marker-end="url(#s02t-arr)"/>
+                <line x1="660" y1="150" x2="700" y2="192" stroke="#a855f7" stroke-width="1.6" marker-end="url(#s02t-arr)"/>
+                <line x1="770" y1="150" x2="720" y2="192" stroke="#a855f7" stroke-width="1.6" marker-end="url(#s02t-arr)"/>
+                <line x1="890" y1="150" x2="740" y2="192" stroke="#a855f7" stroke-width="1.6" marker-end="url(#s02t-arr)"/>
+                <!-- the common event -->
+                <rect x="540" y="196" width="360" height="92" rx="10" fill="#1b1f30" stroke="#e84ef0" stroke-width="1.5"/>
+                <text x="720" y="220" text-anchor="middle" fill="#eef1fb" font-size="13.5" font-weight="600">one FieldEvent (the &ldquo;USB plug&rdquo; shape)</text>
+                <rect x="558" y="232" width="104" height="42" rx="7" fill="#161927" stroke="#2a3047"/>
+                <text x="610" y="252" text-anchor="middle" fill="#c4cae2" font-size="10.5">typed feature</text>
+                <text x="610" y="266" text-anchor="middle" fill="#8b92b4" font-size="9">presence, range&hellip;</text>
+                <rect x="668" y="232" width="104" height="42" rx="7" fill="#161927" stroke="#2a3047"/>
+                <text x="720" y="252" text-anchor="middle" fill="#c4cae2" font-size="10.5">privacy class</text>
+                <text x="720" y="266" text-anchor="middle" fill="#8b92b4" font-size="9">P0 &hellip; P5</text>
+                <rect x="778" y="232" width="104" height="42" rx="7" fill="#161927" stroke="#2a3047"/>
+                <text x="830" y="252" text-anchor="middle" fill="#c4cae2" font-size="10.5">signed receipt</text>
+                <text x="830" y="266" text-anchor="middle" fill="#8b92b4" font-size="9">ed25519</text>
+                <!-- enables -->
+                <line x1="720" y1="288" x2="720" y2="316" stroke="#56d4a0" stroke-width="2" marker-end="url(#s02t-arr)"/>
+                <rect x="540" y="320" width="360" height="44" rx="9" fill="#101813" stroke="#56d4a0" stroke-width="1.3"/>
+                <text x="720" y="347" text-anchor="middle" fill="#56d4a0" font-size="12.5" font-weight="600">reliable fusion · consistent privacy &amp; provenance</text>
+
+                <!-- footer note -->
+                <text x="500" y="408" text-anchor="middle" fill="#8b92b4" font-size="11">RuField sits ABOVE existing radio standards (802.11bf, UWB, radar) — it makes their outputs fit, it does not replace them.</text>
+                <text x="500" y="438" text-anchor="middle" fill="#5b6184" font-size="10.5" font-family="'JetBrains Mono',monospace">Source: ADR-260 §1-2, §4-5; README L51-54</text>
+              </svg>
+              <figcaption>
+                The core idea, precisely: RuField doesn&rsquo;t build a new sensor &mdash;
+                it defines one common <code>FieldEvent</code> (a typed feature + a
+                privacy class + a signed receipt) that every modality maps into, which
+                is what finally makes fusion, privacy, and provenance consistent across
+                all of them.
+              </figcaption>
+            </figure>
+
+            <!-- SIMPLE VISUAL: the 'USB plug' metaphor, friendly inline illustration -->
+            <p class="tier simple">Friendly view &mdash; it&rsquo;s &ldquo;USB for room-sensing&rdquo;</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 340" width="100%" role="img" aria-labelledby="s02s-title s02s-desc" style="max-width:1000px;height:auto;font-family:'Inter',sans-serif;">
+                <title id="s02s-title">USB-style metaphor: many odd plugs become one shared shape</title>
+                <desc id="s02s-desc">A friendly illustration. On the left, three sensors each have their own odd-shaped plug that fits nothing. On the right, RuField gives them all one shared rounded plug shape, so any sensor drops neatly into any app — just like USB did for devices.</desc>
+                <rect x="0" y="0" width="1000" height="340" rx="14" fill="#11131c"/>
+                <text x="500" y="40" text-anchor="middle" fill="#eef1fb" font-size="19" font-weight="700" font-family="'Space Grotesk',sans-serif">Before USB, every plug was weird. Then everything just fit.</text>
+
+                <!-- left: weird plugs -->
+                <text x="250" y="84" text-anchor="middle" fill="#8b92b4" font-size="12.5">Before: incompatible plugs</text>
+                <!-- sensor 1 triangle plug -->
+                <circle cx="140" cy="150" r="26" fill="#1b1f30" stroke="#5b6184" stroke-width="1.4"/>
+                <text x="140" y="155" text-anchor="middle" fill="#c4cae2" font-size="11">WiFi</text>
+                <polygon points="166,144 196,150 166,156" fill="#7c5cff"/>
+                <circle cx="250" cy="150" r="26" fill="#1b1f30" stroke="#5b6184" stroke-width="1.4"/>
+                <text x="250" y="155" text-anchor="middle" fill="#c4cae2" font-size="11">radar</text>
+                <rect x="276" y="142" width="20" height="16" rx="3" fill="#a855f7"/>
+                <circle cx="360" cy="150" r="26" fill="#1b1f30" stroke="#5b6184" stroke-width="1.4"/>
+                <text x="360" y="155" text-anchor="middle" fill="#c4cae2" font-size="11">heat</text>
+                <circle cx="392" cy="150" r="8" fill="#e84ef0"/>
+                <text x="250" y="235" text-anchor="middle" fill="#ff8a8a" font-size="12">None of them fit the same socket &#10007;</text>
+
+                <!-- arrow -->
+                <path d="M430 150 H 520" fill="none" stroke="#a855f7" stroke-width="2.4" marker-end="url(#s02t-arr)"/>
+
+                <!-- right: one shared plug -->
+                <text x="760" y="84" text-anchor="middle" fill="#8b92b4" font-size="12.5">After RuField: one shared plug</text>
+                <circle cx="640" cy="150" r="26" fill="#1b1f30" stroke="#a855f7" stroke-width="1.5"/>
+                <text x="640" y="155" text-anchor="middle" fill="#c4a0ff" font-size="11">WiFi</text>
+                <circle cx="730" cy="150" r="26" fill="#1b1f30" stroke="#a855f7" stroke-width="1.5"/>
+                <text x="730" y="155" text-anchor="middle" fill="#c4a0ff" font-size="11">radar</text>
+                <circle cx="820" cy="150" r="26" fill="#1b1f30" stroke="#a855f7" stroke-width="1.5"/>
+                <text x="820" y="155" text-anchor="middle" fill="#c4a0ff" font-size="11">heat</text>
+                <!-- shared rounded plug each -->
+                <rect x="666" y="143" width="16" height="14" rx="7" fill="#e84ef0"/>
+                <rect x="756" y="143" width="16" height="14" rx="7" fill="#e84ef0"/>
+                <rect x="846" y="143" width="16" height="14" rx="7" fill="#e84ef0"/>
+                <!-- one socket -->
+                <rect x="890" y="120" width="70" height="60" rx="10" fill="#161927" stroke="#e84ef0" stroke-width="1.5"/>
+                <rect x="898" y="143" width="16" height="14" rx="7" fill="#1b1f30" stroke="#e84ef0"/>
+                <text x="925" y="200" text-anchor="middle" fill="#56d4a0" font-size="11">any app</text>
+                <text x="760" y="235" text-anchor="middle" fill="#56d4a0" font-size="12">Every sensor drops into any app &#10003;</text>
+                <text x="500" y="300" text-anchor="middle" fill="#8b92b4" font-size="12">One agreed shape &mdash; that&rsquo;s the whole trick. RuField is the agreement, not a new device.</text>
+              </svg>
+              <figcaption>
+                The same point with no jargon: RuField is an <em>agreement on the shape
+                of the plug</em>. Once everyone agrees, any sensor&rsquo;s reading drops
+                into any app &mdash; exactly what USB did for gadgets.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- 03 — HOW IT WORKS (the pipeline) (arc Q4) -->
+        <details class="section" id="s03">
+          <summary>
+            <span class="num">03</span>
+            <span class="head-text">
+              <h2>How it works</h2>
+              <span class="q">From an invisible wobble in the air to a signed, plain-English fact.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              The heart of RuField is one idea you already use every day:
+              <strong>&ldquo;fusion&rdquo; just means common sense from many clues.</strong>
+              No single sensor is sure. WiFi <em>thinks</em> someone&rsquo;s there;
+              radar agrees; the thermal sensor sees warmth in the same spot. Combine
+              the three weak guesses and you get one confident answer &mdash; exactly
+              how you use sight, sound, and touch together. (Source:
+              <code>room_state.toml</code>; ADR-260 §12&ndash;13.)
+            </p>
+            <p>
+              Here&rsquo;s the whole journey, stage by stage, from a real signal to a
+              fact you can trust.
+            </p>
+
+            <!-- TECHNICAL VISUAL: the real 7-crate pipeline -->
+            <p class="tier tech">Technical view &mdash; the real reference pipeline (the 7 crates)</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640" width="100%" role="img" aria-labelledby="s03t-title s03t-desc" style="max-width:1000px;height:auto;font-family:'JetBrains Mono','Inter',sans-serif;">
+                <title id="s03t-title">The RuField reference pipeline across its seven crates</title>
+                <desc id="s03t-desc">Raw signal enters an adapter (rufield-adapters), which calibrates an empty-room baseline and emits a signed FieldEvent built on rufield-core's data model. A provenance gate (rufield-provenance, is_fusable) admits only events with a verifying ed25519 receipt or an explicit synthetic flag. Admitted events enter the fusion engine (rufield-fusion) which applies room_state.toml rules — weighted Bayes and temporal windows — to infer room-state. A privacy guard (rufield-privacy) caps each inference's privacy class and enforces P0-denied, P4-consent, P5-identity-bound rules before output. rufield-bench scores the whole pipeline against synthetic ground truth; rufield-viewer renders it live in the browser.</desc>
+                <rect x="0" y="0" width="1000" height="640" rx="14" fill="#0a0c13"/>
+                <defs>
+                  <marker id="s03t-arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+                    <path d="M0,0 L10,5 L0,10 z" fill="#a855f7"/>
+                  </marker>
+                  <marker id="s03t-arr-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+                    <path d="M0,0 L10,5 L0,10 z" fill="#56d4a0"/>
+                  </marker>
+                </defs>
+                <text x="500" y="36" text-anchor="middle" fill="#eef1fb" font-size="20" font-weight="700" font-family="'Space Grotesk',sans-serif">Signal &rarr; signed FieldEvent &rarr; fused, privacy-capped room-state</text>
+
+                <!-- Stage 1: signal -->
+                <rect x="40" y="70" width="180" height="92" rx="11" fill="#161927" stroke="#7c5cff" stroke-width="1.4"/>
+                <text x="130" y="98" text-anchor="middle" fill="#eef1fb" font-size="13" font-weight="600">1 · Raw signal</text>
+                <text x="130" y="120" text-anchor="middle" fill="#c4cae2" font-size="11">WiFi CSI · radar · thermal</text>
+                <text x="130" y="140" text-anchor="middle" fill="#8b92b4" font-size="10">a wobble in the air</text>
+
+                <!-- Stage 2: adapter -->
+                <rect x="270" y="70" width="200" height="92" rx="11" fill="#161927" stroke="#a855f7" stroke-width="1.4"/>
+                <text x="370" y="96" text-anchor="middle" fill="#eef1fb" font-size="13" font-weight="600">2 · Adapter + calibrate</text>
+                <text x="370" y="117" text-anchor="middle" fill="#c4cae2" font-size="10.5">learn empty-room baseline,</text>
+                <text x="370" y="133" text-anchor="middle" fill="#c4cae2" font-size="10.5">emit a SIGNED FieldEvent</text>
+                <text x="370" y="151" text-anchor="middle" fill="#6f7bd6" font-size="9.5" font-family="'JetBrains Mono',monospace">rufield-adapters · -core</text>
+
+                <!-- Stage 3: provenance gate -->
+                <rect x="520" y="70" width="200" height="92" rx="11" fill="#161927" stroke="#e84ef0" stroke-width="1.6"/>
+                <text x="620" y="96" text-anchor="middle" fill="#eef1fb" font-size="13" font-weight="600">3 · Provenance gate</text>
+                <text x="620" y="117" text-anchor="middle" fill="#c4cae2" font-size="10.5">is_fusable(): admit ONLY if</text>
+                <text x="620" y="133" text-anchor="middle" fill="#c4cae2" font-size="10.5">ed25519 verifies (or synthetic)</text>
+                <text x="620" y="151" text-anchor="middle" fill="#6f7bd6" font-size="9.5" font-family="'JetBrains Mono',monospace">rufield-provenance</text>
+
+                <!-- reject path -->
+                <rect x="770" y="70" width="190" height="92" rx="11" fill="#13101a" stroke="#ff8a8a" stroke-width="1.3" stroke-dasharray="5 4"/>
+                <text x="865" y="100" text-anchor="middle" fill="#ff8a8a" font-size="12.5" font-weight="600">forged / altered?</text>
+                <text x="865" y="122" text-anchor="middle" fill="#c4cae2" font-size="10.5">receipt fails &rarr;</text>
+                <text x="865" y="140" text-anchor="middle" fill="#ff8a8a" font-size="11">never fused &#10007;</text>
+
+                <line x1="220" y1="116" x2="266" y2="116" stroke="#a855f7" stroke-width="2" marker-end="url(#s03t-arr)"/>
+                <line x1="470" y1="116" x2="516" y2="116" stroke="#a855f7" stroke-width="2" marker-end="url(#s03t-arr)"/>
+                <line x1="720" y1="116" x2="766" y2="116" stroke="#ff8a8a" stroke-width="1.6" marker-end="url(#s03t-arr)"/>
+
+                <!-- down to fusion -->
+                <line x1="620" y1="162" x2="620" y2="206" stroke="#a855f7" stroke-width="2" marker-end="url(#s03t-arr)"/>
+                <text x="640" y="190" fill="#8b92b4" font-size="10">admitted events</text>
+
+                <!-- Stage 4: fusion engine + rules -->
+                <rect x="180" y="210" width="640" height="190" rx="12" fill="#13151f" stroke="#a855f7" stroke-width="1.4"/>
+                <text x="500" y="236" text-anchor="middle" fill="#eef1fb" font-size="14" font-weight="600">4 · Fusion engine &mdash; common sense from many clues</text>
+                <text x="500" y="256" text-anchor="middle" fill="#6f7bd6" font-size="10" font-family="'JetBrains Mono',monospace">rufield-fusion · rules/room_state.toml</text>
+                <!-- rule cards -->
+                <rect x="200" y="272" width="186" height="56" rx="8" fill="#161927" stroke="#2a3047"/>
+                <text x="293" y="293" text-anchor="middle" fill="#c4a0ff" font-size="11.5">weighted_bayes</text>
+                <text x="293" y="312" text-anchor="middle" fill="#8b92b4" font-size="10">presence · sitting · breathing</text>
+                <rect x="406" y="272" width="188" height="56" rx="8" fill="#161927" stroke="#2a3047"/>
+                <text x="500" y="293" text-anchor="middle" fill="#c4a0ff" font-size="11.5">temporal_window</text>
+                <text x="500" y="312" text-anchor="middle" fill="#8b92b4" font-size="10">bed_exit · room_transition</text>
+                <rect x="614" y="272" width="186" height="56" rx="8" fill="#161927" stroke="#2a3047"/>
+                <text x="707" y="293" text-anchor="middle" fill="#c4a0ff" font-size="11.5">per-rule threshold</text>
+                <text x="707" y="312" text-anchor="middle" fill="#8b92b4" font-size="10">+ privacy_max cap</text>
+                <!-- three weak inputs into one -->
+                <text x="300" y="356" text-anchor="middle" fill="#8b92b4" font-size="10.5">WiFi &ldquo;maybe&rdquo; + radar &ldquo;maybe&rdquo; + heat &ldquo;maybe&rdquo;</text>
+                <line x1="430" y1="350" x2="490" y2="372" stroke="#a855f7" stroke-width="1.6" marker-end="url(#s03t-arr)"/>
+                <rect x="500" y="350" width="280" height="36" rx="8" fill="#1b1f30" stroke="#e84ef0" stroke-width="1.2"/>
+                <text x="640" y="373" text-anchor="middle" fill="#eef1fb" font-size="12">&rarr; one confident inference + confidence score</text>
+
+                <!-- down to privacy -->
+                <line x1="500" y1="400" x2="500" y2="442" stroke="#a855f7" stroke-width="2" marker-end="url(#s03t-arr)"/>
+
+                <!-- Stage 5: privacy guard -->
+                <rect x="180" y="446" width="640" height="96" rx="12" fill="#13151f" stroke="#e84ef0" stroke-width="1.5"/>
+                <text x="500" y="470" text-anchor="middle" fill="#eef1fb" font-size="14" font-weight="600">5 · Privacy guard &mdash; caps + enforces before anything leaves</text>
+                <text x="500" y="488" text-anchor="middle" fill="#6f7bd6" font-size="10" font-family="'JetBrains Mono',monospace">rufield-privacy · authorize(class, destination, consent, identity)</text>
+                <rect x="200" y="500" width="186" height="30" rx="7" fill="#13101a" stroke="#ff9fb0"/>
+                <text x="293" y="520" text-anchor="middle" fill="#ff9fb0" font-size="11">P0 raw &rarr; network DENIED</text>
+                <rect x="406" y="500" width="188" height="30" rx="7" fill="#181410" stroke="#ffc48a"/>
+                <text x="500" y="520" text-anchor="middle" fill="#ffc48a" font-size="11">P4 health &rarr; needs consent</text>
+                <rect x="614" y="500" width="186" height="30" rx="7" fill="#13101a" stroke="#ff8a8a"/>
+                <text x="707" y="520" text-anchor="middle" fill="#ff8a8a" font-size="11">P5 identity &rarr; bound + logged</text>
+
+                <!-- out -->
+                <line x1="500" y1="542" x2="500" y2="572" stroke="#56d4a0" stroke-width="2.2" marker-end="url(#s03t-arr-g)"/>
+                <rect x="300" y="576" width="400" height="44" rx="10" fill="#101813" stroke="#56d4a0" stroke-width="1.4"/>
+                <text x="500" y="603" text-anchor="middle" fill="#56d4a0" font-size="13" font-weight="600">Room-state fact: signed · privacy-capped · ready to read</text>
+              </svg>
+              <figcaption>
+                The real journey: <code>rufield-adapters</code> + <code>-core</code> emit
+                a signed event &rarr; <code>rufield-provenance</code> admits only verified
+                ones &rarr; <code>rufield-fusion</code> applies the
+                <code>room_state.toml</code> rules (weighted Bayes + temporal windows)
+                &rarr; <code>rufield-privacy</code> caps and gates the result before it
+                leaves. (<code>rufield-bench</code> scores it; <code>rufield-viewer</code>
+                renders it.)
+              </figcaption>
+            </figure>
+
+            <!-- SIMPLE VISUAL: the friendly fusion art (g3) -->
+            <p class="tier simple">Friendly view &mdash; three weak guesses, one confident answer</p>
+            <figure class="figure art">
+              <img src="assets/img/g3.png" width="1376" height="768" loading="lazy"
+                   alt="Three small, friendly sensor characters — a WiFi-wave, a little radar chip, and a warm thermal dot — each whisper an uncertain guess ('maybe movement?', 'echo... something?', 'warm spot... person?'). Their three soft violet and magenta wave-threads flow inward and merge into one bright, confident glowing bubble that reads 'someone is here.'" />
+              <figcaption>
+                No single sensor is sure. Put their three weak &ldquo;maybe&rdquo;s
+                together &mdash; the way you&rsquo;d trust three friends who all saw the
+                same thing &mdash; and you get one confident answer. That&rsquo;s
+                fusion.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- 04 — WHAT A SOLVED STATE LOOKS LIKE (arc Q5) + before->after [req d] -->
+        <details class="section" id="s04">
+          <summary>
+            <span class="num">04</span>
+            <span class="head-text">
+              <h2>What a solved state looks like</h2>
+              <span class="q">When it&rsquo;s working, what do you actually see &mdash; and what changed?</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              A &ldquo;solved&rdquo; RuField looks like a calm dashboard you can read at
+              a glance. The reference build ships a <strong>live viewer</strong> you can
+              run today (<code>cargo run -p rufield-viewer</code>) that replays a room
+              waking up &mdash; <em>enter &rarr; sit &rarr; breathe &rarr; sleep &rarr;
+              scratch &rarr; bed-exit &rarr; leave</em> &mdash; tick by tick, in your
+              browser, with no build step.
+            </p>
+            <p>
+              Two things sit on top of every event, and they&rsquo;re the whole point:
+              a colour-coded <strong>privacy badge</strong> (<span class="pchip p0">P0</span>
+              &hellip; <span class="pchip p5">P5</span>) and a click-to-inspect
+              <strong>signed receipt</strong> (&#10003;/&#10007;). An honest
+              <code>SYNTHETIC</code> banner tells you the demo&rsquo;s sensors are
+              simulated, so you&rsquo;re never misled.
+            </p>
+
+            <!-- before -> after comparison table [requirement d] -->
+            <table class="cmp">
+              <caption>Before &rarr; after: the same night, with and without RuField</caption>
+              <thead>
+                <tr><th>The moment</th><th class="col-before">Before RuField</th><th class="col-after">After RuField</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Knowing if someone&rsquo;s up at 3am</td>
+                  <td class="col-before">A camera (vetoed) or a worried phone call</td>
+                  <td class="col-after"><strong>&ldquo;Got out of bed&rdquo;</strong> appears as a plain, signed fact</td>
+                </tr>
+                <tr>
+                  <td>What&rsquo;s actually captured</td>
+                  <td class="col-before">A literal image of a person in a bedroom</td>
+                  <td class="col-after"><strong>No image, ever</strong> &mdash; only &ldquo;a person is here&rdquo;</td>
+                </tr>
+                <tr>
+                  <td>Where the raw data goes</td>
+                  <td class="col-before">Often streamed to a cloud you don&rsquo;t control</td>
+                  <td class="col-after">Raw signal is <span class="pchip p0">P0</span> &mdash; <strong>refused off-device by default</strong></td>
+                </tr>
+                <tr>
+                  <td>Health-style readings (breathing)</td>
+                  <td class="col-before">On or off with no clear consent boundary</td>
+                  <td class="col-after"><span class="pchip p4">P4</span> &mdash; <strong>off unless explicitly consented</strong></td>
+                </tr>
+                <tr>
+                  <td>Trusting an &ldquo;all-clear&rdquo;</td>
+                  <td class="col-before">No way to tell a real reading from a faked one</td>
+                  <td class="col-after">Every fact carries a <strong>tamper-proof signature</strong> you can verify</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- TECHNICAL VISUAL: the viewer's panels -->
+            <p class="tier tech">Technical view &mdash; the live viewer&rsquo;s four panels</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" width="100%" role="img" aria-labelledby="s04t-title s04t-desc" style="max-width:1000px;height:auto;font-family:'JetBrains Mono','Inter',sans-serif;">
+                <title id="s04t-title">The rufield-viewer dashboard layout</title>
+                <desc id="s04t-desc">A browser dashboard with a SYNTHETIC banner. Top-left: a room-state panel showing live facts. Top-right: an event stream where each event has a colour-coded privacy badge P0 to P5. Bottom-left: a fusion graph showing which signals support each conclusion. Bottom-right: a provenance inspector showing a signed receipt with a checkmark for verified or a cross for unverified events, which are never fused.</desc>
+                <rect x="0" y="0" width="1000" height="500" rx="14" fill="#0a0c13"/>
+                <!-- browser chrome -->
+                <rect x="30" y="30" width="940" height="440" rx="12" fill="#11131c" stroke="#2a3047" stroke-width="1.2"/>
+                <circle cx="52" cy="52" r="5" fill="#ff8a8a"/><circle cx="70" cy="52" r="5" fill="#ffc48a"/><circle cx="88" cy="52" r="5" fill="#56d4a0"/>
+                <rect x="110" y="44" width="320" height="16" rx="8" fill="#161927"/>
+                <text x="124" y="56" fill="#6f7bd6" font-size="10" font-family="'JetBrains Mono',monospace">http://localhost:8088/</text>
+                <!-- synthetic banner -->
+                <rect x="46" y="74" width="908" height="26" rx="6" fill="rgba(240,168,90,0.10)" stroke="#f0a85a" stroke-width="1"/>
+                <circle cx="64" cy="87" r="4.5" fill="#f0a85a"/>
+                <text x="78" y="91" fill="#f6d9b3" font-size="11.5" font-family="'JetBrains Mono',monospace">SYNTHETIC — simulated sensors, no hardware</text>
+
+                <!-- panel 1: room state -->
+                <rect x="46" y="112" width="446" height="166" rx="10" fill="#161927" stroke="#a855f7" stroke-width="1.2"/>
+                <text x="64" y="136" fill="#eef1fb" font-size="13" font-weight="600">Room-state</text>
+                <text x="64" y="162" fill="#56d4a0" font-size="12">&#9679; person present</text>
+                <text x="64" y="184" fill="#56d4a0" font-size="12">&#9679; sitting</text>
+                <text x="64" y="206" fill="#c4a0ff" font-size="12">&#9679; in bed</text>
+                <text x="64" y="228" fill="#ffc48a" font-size="12">&#9679; breathing (consented)</text>
+                <text x="64" y="250" fill="#e84ef0" font-size="12">&#9679; got out of bed</text>
+                <text x="64" y="270" fill="#8b92b4" font-size="10.5">enter &rarr; sit &rarr; breathe &rarr; sleep &rarr; bed-exit &rarr; leave</text>
+
+                <!-- panel 2: event stream + privacy badges -->
+                <rect x="508" y="112" width="446" height="166" rx="10" fill="#161927" stroke="#a855f7" stroke-width="1.2"/>
+                <text x="526" y="136" fill="#eef1fb" font-size="13" font-weight="600">Event stream</text>
+                <g font-size="11" font-family="'JetBrains Mono',monospace">
+                  <rect x="526" y="148" width="34" height="18" rx="5" fill="rgba(196,160,255,0.12)" stroke="#c4a0ff"/><text x="543" y="161" text-anchor="middle" fill="#c4a0ff">P2</text>
+                  <text x="572" y="161" fill="#c4cae2">presence  ✓</text>
+                  <rect x="526" y="172" width="34" height="18" rx="5" fill="rgba(255,196,138,0.12)" stroke="#ffc48a"/><text x="543" y="185" text-anchor="middle" fill="#ffc48a">P4</text>
+                  <text x="572" y="185" fill="#c4cae2">breathing  ✓</text>
+                  <rect x="526" y="196" width="34" height="18" rx="5" fill="rgba(255,159,176,0.12)" stroke="#ff9fb0"/><text x="543" y="209" text-anchor="middle" fill="#ff9fb0">P0</text>
+                  <text x="572" y="209" fill="#8b92b4">raw frame  (kept on-device)</text>
+                  <rect x="526" y="220" width="34" height="18" rx="5" fill="rgba(196,160,255,0.12)" stroke="#c4a0ff"/><text x="543" y="233" text-anchor="middle" fill="#c4a0ff">P2</text>
+                  <text x="572" y="233" fill="#c4cae2">bed-exit  ✓</text>
+                  <rect x="526" y="244" width="34" height="18" rx="5" fill="rgba(255,138,138,0.12)" stroke="#ff8a8a"/><text x="543" y="257" text-anchor="middle" fill="#ff8a8a">!</text>
+                  <text x="572" y="257" fill="#ff8a8a">unverified event  ✗ never fused</text>
+                </g>
+
+                <!-- panel 3: fusion graph -->
+                <rect x="46" y="294" width="446" height="160" rx="10" fill="#161927" stroke="#a855f7" stroke-width="1.2"/>
+                <text x="64" y="318" fill="#eef1fb" font-size="13" font-weight="600">Fusion graph</text>
+                <circle cx="110" cy="358" r="16" fill="#1b1f30" stroke="#7c5cff"/><text x="110" y="362" text-anchor="middle" fill="#c4a0ff" font-size="9">WiFi</text>
+                <circle cx="110" cy="402" r="16" fill="#1b1f30" stroke="#7c5cff"/><text x="110" y="406" text-anchor="middle" fill="#c4a0ff" font-size="9">radar</text>
+                <circle cx="110" cy="332" r="16" fill="#1b1f30" stroke="#7c5cff"/><text x="110" y="336" text-anchor="middle" fill="#c4a0ff" font-size="9">heat</text>
+                <line x1="126" y1="332" x2="280" y2="368" stroke="#a855f7" stroke-width="1.4"/>
+                <line x1="126" y1="358" x2="280" y2="368" stroke="#a855f7" stroke-width="1.4"/>
+                <line x1="126" y1="402" x2="280" y2="368" stroke="#a855f7" stroke-width="1.4"/>
+                <rect x="280" y="350" width="180" height="38" rx="9" fill="#1b1f30" stroke="#e84ef0"/><text x="370" y="374" text-anchor="middle" fill="#eef1fb" font-size="11.5">&ldquo;person present&rdquo; 0.91</text>
+                <text x="64" y="442" fill="#8b92b4" font-size="10.5">which signals support each conclusion</text>
+
+                <!-- panel 4: provenance inspector -->
+                <rect x="508" y="294" width="446" height="160" rx="10" fill="#161927" stroke="#a855f7" stroke-width="1.2"/>
+                <text x="526" y="318" fill="#eef1fb" font-size="13" font-weight="600">Provenance inspector</text>
+                <rect x="526" y="330" width="410" height="48" rx="8" fill="#101813" stroke="#56d4a0"/>
+                <text x="540" y="350" fill="#56d4a0" font-size="11.5" font-weight="600">&#10003; verified</text>
+                <text x="540" y="368" fill="#8b92b4" font-size="9.5" font-family="'JetBrains Mono',monospace">sha256 ✓ · ed25519 sig ✓ · sensor key #03</text>
+                <rect x="526" y="386" width="410" height="48" rx="8" fill="#13101a" stroke="#ff8a8a" stroke-dasharray="5 4"/>
+                <text x="540" y="406" fill="#ff8a8a" font-size="11.5" font-weight="600">&#10007; tampered</text>
+                <text x="540" y="424" fill="#8b92b4" font-size="9.5" font-family="'JetBrains Mono',monospace">one byte changed after signing → rejected</text>
+              </svg>
+              <figcaption>
+                What &ldquo;solved&rdquo; looks like on screen: a calm room-state panel,
+                an event stream where <em>every</em> event wears a privacy badge, a
+                fusion graph showing which signals backed each conclusion, and a
+                provenance inspector where a tampered event fails the check and is never
+                fused. (Source: README L96&ndash;152.)
+              </figcaption>
+            </figure>
+
+            <!-- SIMPLE VISUAL: friendly privacy/provenance art (g4) -->
+            <p class="tier simple">Friendly view &mdash; the kindly gatekeeper and the seal</p>
+            <figure class="figure art">
+              <img src="assets/img/g4.png" width="1376" height="768" loading="lazy"
+                   alt="A cozy glowing house. Inside, several data-droplets each wear a small coloured privacy badge. A gentle gatekeeper at the door kindly keeps the most sensitive droplets inside, while letting only the safe, plain-fact droplets out — pressing a glowing violet wax seal 'verified' onto each one as it leaves. One droplet with a broken seal is gently turned away." />
+              <figcaption>
+                The same idea, kindly: the sensitive stuff stays home, and every fact
+                that <em>does</em> leave gets a wax-seal receipt &mdash; break the seal
+                and it&rsquo;s turned away. Privacy and proof, by construction.
+              </figcaption>
+            </figure>
+
+            <div class="footnote-note">
+              <small>
+                <strong>Honest note.</strong> The viewer is a <strong>read-only</strong>
+                demo &mdash; no device management, no fleet console, no controlling real
+                sensors &mdash; and its room-state runs on the synthetic simulator. The
+                architecture, privacy enforcement, and provenance shown are real; the
+                accuracy is not yet validated against live hardware. (Source: README
+                L69, L150&ndash;152.)
+              </small>
+            </div>
+          </div>
+        </details>
+
+        <!-- 05 — WHY THIS vs WHAT YOU ALREADY HAVE (differentiation) [req d / D20] -->
+        <details class="section" id="s05">
+          <summary>
+            <span class="num">05</span>
+            <span class="head-text">
+              <h2>Why this, vs. what you already have?</h2>
+              <span class="q">&ldquo;I&rsquo;ve got a camera / a motion sensor / a smart-home hub &mdash; why do I need this too?&rdquo;</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              You may already use a camera, a motion sensor, or a smart-home hub like
+              Matter. Here&rsquo;s the honest difference &mdash; and why RuField
+              isn&rsquo;t &ldquo;just another thing piled on.&rdquo;
+            </p>
+
+            <table class="cmp">
+              <caption>What you have vs. what RuField adds</caption>
+              <thead>
+                <tr><th>You might already use&hellip;</th><th class="col-before">What it gives you</th><th class="col-after">What RuField adds</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>A security camera</td>
+                  <td class="col-before">A literal image &mdash; and a privacy problem nobody wants in a bedroom</td>
+                  <td class="col-after">The <strong>answer</strong> (&ldquo;present, got out of bed&rdquo;) with <strong>no image at all</strong>, plus a privacy label per fact</td>
+                </tr>
+                <tr>
+                  <td>A PIR motion sensor</td>
+                  <td class="col-before">One bit: &ldquo;something moved&rdquo;</td>
+                  <td class="col-after"><strong>Rich room-state</strong> &mdash; sitting, sleeping, breathing, bed-exit, room-transition &mdash; fused with confidence scores</td>
+                </tr>
+                <tr>
+                  <td>Matter / a smart-home hub</td>
+                  <td class="col-before">A way for <em>devices to connect</em></td>
+                  <td class="col-after">Matter is a connectivity layer; it doesn&rsquo;t define a sensing-<em>event</em> format. RuField is the <strong>missing sensing layer</strong> that could feed a Matter bridge</td>
+                </tr>
+                <tr>
+                  <td>WiFi sensing / 802.11bf alone</td>
+                  <td class="col-before">WiFi-only readings, no privacy or provenance model</td>
+                  <td class="col-after">One grammar across <strong>WiFi + radar + ultrasound + IR</strong>, with privacy classes and signed receipts &mdash; RuField sits <em>above</em> 802.11bf, it doesn&rsquo;t compete with it</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p>
+              The one-line version: <strong>everything you already have either watches
+              you (cameras), tells you almost nothing (a motion blip), or just connects
+              devices (Matter). RuField is the privacy-first layer that turns invisible
+              signals into rich, provable facts &mdash; and it&rsquo;s an open standard,
+              so it&rsquo;s not one vendor&rsquo;s locked box.</strong>
+            </p>
+
+            <!-- TECHNICAL VISUAL: RuField's position in the stack -->
+            <p class="tier tech">Technical view &mdash; where RuField sits in the stack</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 430" width="100%" role="img" aria-labelledby="s05t-title s05t-desc" style="max-width:1000px;height:auto;font-family:'JetBrains Mono','Inter',sans-serif;">
+                <title id="s05t-title">RuField's layer position above radio standards and below applications</title>
+                <desc id="s05t-desc">A layer stack. At the bottom are the physical radio standards: 802.11bf WiFi sensing, Bluetooth channel sounding, UWB, and radar — RuField sits above these, not replacing them. In the middle, RuField defines the common event, privacy, and provenance layer. Above that, Matter and other connectivity hubs can bridge the events, and applications like an elder-care app consume the plain facts. A side note clarifies RuField is the sensing-event layer the others lack.</desc>
+                <rect x="0" y="0" width="1000" height="430" rx="14" fill="#0a0c13"/>
+                <text x="500" y="36" text-anchor="middle" fill="#eef1fb" font-size="19" font-weight="700" font-family="'Space Grotesk',sans-serif">RuField is a new LAYER, not a new device</text>
+
+                <!-- top: apps -->
+                <rect x="120" y="64" width="760" height="56" rx="10" fill="#161927" stroke="#56d4a0" stroke-width="1.3"/>
+                <text x="500" y="88" text-anchor="middle" fill="#56d4a0" font-size="13" font-weight="600">Your apps &mdash; elder-care, security, building analytics</text>
+                <text x="500" y="108" text-anchor="middle" fill="#8b92b4" font-size="11">read plain, signed facts &mdash; never raw signal, never images</text>
+
+                <!-- connectivity (Matter) -->
+                <rect x="120" y="134" width="760" height="46" rx="10" fill="#13151f" stroke="#6f7bd6" stroke-width="1.2"/>
+                <text x="500" y="162" text-anchor="middle" fill="#9fb4ff" font-size="12.5">Connectivity hubs (Matter) &mdash; move events between devices · do NOT define a sensing event</text>
+
+                <!-- RuField layer (highlighted) -->
+                <rect x="80" y="194" width="840" height="80" rx="12" fill="#1b1f30" stroke="#e84ef0" stroke-width="2"/>
+                <text x="500" y="220" text-anchor="middle" fill="#eef1fb" font-size="15" font-weight="700">RuField MFS &mdash; the common event, privacy &amp; provenance layer</text>
+                <rect x="120" y="234" width="220" height="30" rx="7" fill="#161927" stroke="#a855f7"/><text x="230" y="254" text-anchor="middle" fill="#c4a0ff" font-size="11">one FieldEvent format</text>
+                <rect x="392" y="234" width="216" height="30" rx="7" fill="#161927" stroke="#a855f7"/><text x="500" y="254" text-anchor="middle" fill="#c4a0ff" font-size="11">privacy classes P0–P5</text>
+                <rect x="660" y="234" width="220" height="30" rx="7" fill="#161927" stroke="#a855f7"/><text x="770" y="254" text-anchor="middle" fill="#c4a0ff" font-size="11">signed provenance</text>
+
+                <!-- bottom: radio standards -->
+                <text x="500" y="306" text-anchor="middle" fill="#8b92b4" font-size="12">RuField sits ABOVE these &mdash; it makes their outputs fit, it does not replace them:</text>
+                <rect x="120" y="320" width="170" height="56" rx="9" fill="#13101a" stroke="#5b6184"/><text x="205" y="344" text-anchor="middle" fill="#c4cae2" font-size="11.5">802.11bf</text><text x="205" y="362" text-anchor="middle" fill="#8b92b4" font-size="10">WiFi sensing</text>
+                <rect x="305" y="320" width="170" height="56" rx="9" fill="#13101a" stroke="#5b6184"/><text x="390" y="344" text-anchor="middle" fill="#c4cae2" font-size="11.5">BT channel</text><text x="390" y="362" text-anchor="middle" fill="#8b92b4" font-size="10">sounding</text>
+                <rect x="490" y="320" width="170" height="56" rx="9" fill="#13101a" stroke="#5b6184"/><text x="575" y="344" text-anchor="middle" fill="#c4cae2" font-size="11.5">UWB</text><text x="575" y="362" text-anchor="middle" fill="#8b92b4" font-size="10">ranging</text>
+                <rect x="675" y="320" width="170" height="56" rx="9" fill="#13101a" stroke="#5b6184"/><text x="760" y="344" text-anchor="middle" fill="#c4cae2" font-size="11.5">radar</text><text x="760" y="362" text-anchor="middle" fill="#8b92b4" font-size="10">mmWave</text>
+
+                <text x="500" y="408" text-anchor="middle" fill="#5b6184" font-size="10.5" font-family="'JetBrains Mono',monospace">Source: ADR-260 §1, §8, §14; README L51-54</text>
+              </svg>
+              <figcaption>
+                The positioning, precisely: RuField is a <em>layer</em> above the radio
+                standards (it makes their outputs fit) and below your apps. Matter moves
+                events; RuField <em>defines</em> the sensing event Matter lacks.
+              </figcaption>
+            </figure>
+
+            <!-- SIMPLE VISUAL: friendly 'watches you / tells you nothing / connects' contrast -->
+            <p class="tier simple">Friendly view &mdash; three things you have, and the gap RuField fills</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 300" width="100%" role="img" aria-labelledby="s05s-title s05s-desc" style="max-width:1000px;height:auto;font-family:'Inter',sans-serif;">
+                <title id="s05s-title">Camera watches you, motion sensor tells you almost nothing, hub just connects</title>
+                <desc id="s05s-desc">Three friendly cards. A camera card 'watches you'. A motion sensor card 'tells you almost nothing'. A hub card 'just connects devices'. A fourth bright card shows RuField giving rich, private, provable facts — the gap the others leave.</desc>
+                <rect x="0" y="0" width="1000" height="300" rx="14" fill="#11131c"/>
+                <text x="500" y="38" text-anchor="middle" fill="#eef1fb" font-size="18" font-weight="700" font-family="'Space Grotesk',sans-serif">Each thing you have solves only one piece</text>
+
+                <rect x="40" y="64" width="216" height="186" rx="12" fill="#161927" stroke="#5b6184" stroke-width="1.2"/>
+                <text x="148" y="104" text-anchor="middle" font-size="30">&#128247;</text>
+                <text x="148" y="142" text-anchor="middle" fill="#eef1fb" font-size="14" font-weight="600">Camera</text>
+                <text x="148" y="168" text-anchor="middle" fill="#ff8a8a" font-size="12">watches you</text>
+                <text x="148" y="196" text-anchor="middle" fill="#8b92b4" font-size="11">great answer,</text>
+                <text x="148" y="212" text-anchor="middle" fill="#8b92b4" font-size="11">unwanted in a bedroom</text>
+
+                <rect x="272" y="64" width="216" height="186" rx="12" fill="#161927" stroke="#5b6184" stroke-width="1.2"/>
+                <text x="380" y="104" text-anchor="middle" font-size="30">&#128261;</text>
+                <text x="380" y="142" text-anchor="middle" fill="#eef1fb" font-size="14" font-weight="600">Motion sensor</text>
+                <text x="380" y="168" text-anchor="middle" fill="#ffc48a" font-size="12">tells you almost nothing</text>
+                <text x="380" y="196" text-anchor="middle" fill="#8b92b4" font-size="11">just &ldquo;something</text>
+                <text x="380" y="212" text-anchor="middle" fill="#8b92b4" font-size="11">moved&rdquo;</text>
+
+                <rect x="504" y="64" width="216" height="186" rx="12" fill="#161927" stroke="#5b6184" stroke-width="1.2"/>
+                <text x="612" y="104" text-anchor="middle" font-size="30">&#128279;</text>
+                <text x="612" y="142" text-anchor="middle" fill="#eef1fb" font-size="14" font-weight="600">Smart-home hub</text>
+                <text x="612" y="168" text-anchor="middle" fill="#9fb4ff" font-size="12">just connects devices</text>
+                <text x="612" y="196" text-anchor="middle" fill="#8b92b4" font-size="11">no sensing event</text>
+                <text x="612" y="212" text-anchor="middle" fill="#8b92b4" font-size="11">of its own</text>
+
+                <rect x="736" y="64" width="224" height="186" rx="12" fill="#1b1f30" stroke="#e84ef0" stroke-width="2"/>
+                <text x="848" y="104" text-anchor="middle" font-size="28">&#10024;</text>
+                <text x="848" y="142" text-anchor="middle" fill="#eef1fb" font-size="14" font-weight="700">RuField</text>
+                <text x="848" y="168" text-anchor="middle" fill="#c4a0ff" font-size="12">rich · private · provable</text>
+                <text x="848" y="196" text-anchor="middle" fill="#c4cae2" font-size="11">the facts, no image,</text>
+                <text x="848" y="212" text-anchor="middle" fill="#c4cae2" font-size="11">signed &amp; labelled</text>
+              </svg>
+              <figcaption>
+                Put plainly: the camera watches you, the motion sensor barely tells you
+                anything, the hub only connects boxes. RuField fills the gap they all
+                leave &mdash; rich facts, no image, private and provable.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- 06 — USE-CASE GALLERY: 6 collapsible items, each its OWN visual [J / R / D12] -->
+        <details class="section" id="s06" open>
+          <summary>
+            <span class="num">06</span>
+            <span class="head-text">
+              <h2>Use-case gallery</h2>
+              <span class="q">Six real situations &mdash; situation &rarr; the exact command &rarr; what it does &rarr; what you get. Each opens to its own diagram.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              Every command below is taken straight from the project&rsquo;s own README
+              &mdash; nothing here is invented. Each scenario maps to something the v0.1
+              reference stack actually runs. Click one open to see how it flows.
+            </p>
+            <div class="grid cases">
+
+              <!-- UC1 — the benchmark -->
+              <details class="case" id="uc1">
+                <summary>
+                  <span class="uc-tag">Scenario 1</span>
+                  <h3>&ldquo;Just show me it works&rdquo; &mdash; the benchmark</h3>
+                  <span class="chev" aria-hidden="true">&rsaquo;</span>
+                </summary>
+                <div class="uc-body">
+                  <figure class="figure diagram uc-diagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 250" width="100%" role="img" aria-labelledby="uc1-t uc1-d" style="max-width:1000px;height:auto;font-family:'JetBrains Mono','Inter',sans-serif;">
+                      <title id="uc1-t">The benchmark flow</title>
+                      <desc id="uc1-d">Running cargo run -p rufield-bench runs synthetic sensors through fusion and room-state, scored deterministically against known ground truth, producing a report card of F1 per task, p95 latency, 100% provenance coverage and 0 privacy violations, every number labelled SYNTHETIC.</desc>
+                      <rect x="0" y="0" width="1000" height="250" rx="12" fill="#0a0c13"/>
+                      <defs><marker id="uc1arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a855f7"/></marker></defs>
+                      <rect x="30" y="96" width="150" height="58" rx="9" fill="#161927" stroke="#7c5cff"/><text x="105" y="120" text-anchor="middle" fill="#c4a0ff" font-size="11">synthetic sensors</text><text x="105" y="138" text-anchor="middle" fill="#8b92b4" font-size="9.5">known ground truth</text>
+                      <line x1="180" y1="125" x2="222" y2="125" stroke="#a855f7" stroke-width="2" marker-end="url(#uc1arr)"/>
+                      <rect x="226" y="96" width="130" height="58" rx="9" fill="#161927" stroke="#a855f7"/><text x="291" y="129" text-anchor="middle" fill="#c4cae2" font-size="11">fusion</text>
+                      <line x1="356" y1="125" x2="398" y2="125" stroke="#a855f7" stroke-width="2" marker-end="url(#uc1arr)"/>
+                      <rect x="402" y="96" width="130" height="58" rx="9" fill="#161927" stroke="#a855f7"/><text x="467" y="129" text-anchor="middle" fill="#c4cae2" font-size="11">room-state</text>
+                      <line x1="532" y1="125" x2="574" y2="125" stroke="#a855f7" stroke-width="2" marker-end="url(#uc1arr)"/>
+                      <rect x="578" y="60" width="392" height="130" rx="11" fill="#13151f" stroke="#56d4a0" stroke-width="1.4"/>
+                      <text x="774" y="84" text-anchor="middle" fill="#56d4a0" font-size="12.5" font-weight="600">deterministic report card</text>
+                      <text x="598" y="108" fill="#c4cae2" font-size="10.5">F1 per task: presence · breathing · bed-exit · room-transition</text>
+                      <text x="598" y="130" fill="#c4cae2" font-size="10.5">p95 latency · 100% provenance coverage</text>
+                      <text x="598" y="152" fill="#c4cae2" font-size="10.5">0 privacy violations</text>
+                      <text x="598" y="176" fill="#f0a85a" font-size="10.5" font-family="'JetBrains Mono',monospace">every number labelled SYNTHETIC</text>
+                      <text x="500" y="222" text-anchor="middle" fill="#8b92b4" font-size="11">scored against its own known truth — proves the pipeline is correct, not real-world accuracy</text>
+                    </svg>
+                    <figcaption>Scenario 1 &mdash; the whole pipeline scored against known truth, honestly labelled SYNTHETIC.</figcaption>
+                  </figure>
+                  <dl>
+                    <dt>The situation</dt>
+                    <dd>You&rsquo;ve heard the pitch and want proof the pipeline is real, not a slide deck.</dd>
+                    <dt>The exact command</dt>
+                    <dd><pre class="code-block"><code>cargo run -p rufield-bench -- 2026</code></pre></dd>
+                    <dt>What it does</dt>
+                    <dd>Runs the whole pipeline &mdash; synthetic sensors &rarr; fusion &rarr; room state &rarr; scoring &mdash; deterministically against known ground truth.</dd>
+                    <dt>What you get</dt>
+                    <dd>A one-screen report card: F1 per task, p95 latency, 100% provenance coverage, 0 privacy violations &mdash; every number <strong>labelled SYNTHETIC</strong>, honestly. (Source: README L76&ndash;82, L279&ndash;313.)</dd>
+                  </dl>
+                </div>
+              </details>
+
+              <!-- UC2 — the live dashboard -->
+              <details class="case" id="uc2">
+                <summary>
+                  <span class="uc-tag">Scenario 2</span>
+                  <h3>&ldquo;Let me watch a room light up&rdquo; &mdash; the live dashboard</h3>
+                  <span class="chev" aria-hidden="true">&rsaquo;</span>
+                </summary>
+                <div class="uc-body">
+                  <figure class="figure diagram uc-diagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 250" width="100%" role="img" aria-labelledby="uc2-t uc2-d" style="max-width:1000px;height:auto;font-family:'JetBrains Mono','Inter',sans-serif;">
+                      <title id="uc2-t">The live viewer flow</title>
+                      <desc id="uc2-d">Running cargo run -p rufield-viewer opens localhost:8088 and replays the enter, sit, breathe, sleep, scratch, bed-exit, leave sequence across WiFi, radar and thermal, showing a room-state panel, a privacy-badged event stream, a fusion graph and click-to-inspect signed receipts, under an amber SYNTHETIC banner.</desc>
+                      <rect x="0" y="0" width="1000" height="250" rx="12" fill="#0a0c13"/>
+                      <defs><marker id="uc2arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a855f7"/></marker></defs>
+                      <rect x="30" y="50" width="200" height="150" rx="10" fill="#161927" stroke="#7c5cff"/>
+                      <text x="130" y="74" text-anchor="middle" fill="#eef1fb" font-size="11.5" font-weight="600">replay sequence</text>
+                      <text x="130" y="98" text-anchor="middle" fill="#c4cae2" font-size="10">enter &rarr; sit &rarr; breathe</text>
+                      <text x="130" y="116" text-anchor="middle" fill="#c4cae2" font-size="10">&rarr; sleep &rarr; scratch</text>
+                      <text x="130" y="134" text-anchor="middle" fill="#c4cae2" font-size="10">&rarr; bed-exit &rarr; leave</text>
+                      <text x="130" y="166" text-anchor="middle" fill="#8b92b4" font-size="9.5">WiFi · radar · thermal,</text>
+                      <text x="130" y="182" text-anchor="middle" fill="#8b92b4" font-size="9.5">tick by tick, no build</text>
+                      <line x1="230" y1="125" x2="278" y2="125" stroke="#a855f7" stroke-width="2" marker-end="url(#uc2arr)"/>
+                      <rect x="282" y="40" width="688" height="170" rx="11" fill="#11131c" stroke="#a855f7" stroke-width="1.3"/>
+                      <rect x="296" y="52" width="660" height="22" rx="5" fill="rgba(240,168,90,0.10)" stroke="#f0a85a"/><text x="310" y="68" fill="#f6d9b3" font-size="10" font-family="'JetBrains Mono',monospace">SYNTHETIC — simulated sensors, no hardware</text>
+                      <rect x="296" y="84" width="316" height="56" rx="8" fill="#161927" stroke="#2a3047"/><text x="310" y="104" fill="#56d4a0" font-size="10.5">room-state: present · sitting · in bed</text><text x="310" y="124" fill="#e84ef0" font-size="10.5">&rarr; got out of bed</text>
+                      <rect x="624" y="84" width="316" height="56" rx="8" fill="#161927" stroke="#2a3047"/><text x="638" y="104" fill="#c4a0ff" font-size="10.5">event stream + privacy badge P0–P5</text><text x="638" y="124" fill="#c4cae2" font-size="10.5">click a receipt: ✓ verified / ✗ not</text>
+                      <rect x="296" y="150" width="644" height="48" rx="8" fill="#161927" stroke="#2a3047"/><text x="618" y="179" text-anchor="middle" fill="#c4cae2" font-size="10.5">fusion graph — which signals support each conclusion</text>
+                    </svg>
+                    <figcaption>Scenario 2 &mdash; a room waking up, live in the browser, every event privacy-badged and receipt-checkable.</figcaption>
+                  </figure>
+                  <dl>
+                    <dt>The situation</dt>
+                    <dd>You want to <em>see</em> camera-free room intelligence, not read a table.</dd>
+                    <dt>The exact command</dt>
+                    <dd><pre class="code-block"><code>cargo run -p rufield-viewer
+# then open http://localhost:8088/</code></pre></dd>
+                    <dt>What it does</dt>
+                    <dd>Replays the enter &rarr; sit &rarr; breathe &rarr; sleep &rarr; scratch &rarr; bed-exit &rarr; leave sequence tick by tick across WiFi/radar/thermal, in your browser, no build step.</dd>
+                    <dt>What you get</dt>
+                    <dd>A live room-state panel, a privacy-badged event stream, the fusion graph, and a click-to-inspect signed receipt per event &mdash; under an honest <code>SYNTHETIC</code> banner. (Source: README L84&ndash;152.)</dd>
+                  </dl>
+                </div>
+              </details>
+
+              <!-- UC3 — the real WiFi replay -->
+              <details class="case" id="uc3">
+                <summary>
+                  <span class="uc-tag">Scenario 3</span>
+                  <h3>&ldquo;Plug in a real WiFi recording&rdquo; &mdash; the one real-signal path</h3>
+                  <span class="chev" aria-hidden="true">&rsaquo;</span>
+                </summary>
+                <div class="uc-body">
+                  <figure class="figure diagram uc-diagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 250" width="100%" role="img" aria-labelledby="uc3-t uc3-d" style="max-width:1000px;height:auto;font-family:'JetBrains Mono','Inter',sans-serif;">
+                      <title id="uc3-t">The real-WiFi replay flow</title>
+                      <desc id="uc3-d">A real .csi.jsonl WiFi recording is read by CsiReplayAdapter, which calibrates an empty-room baseline and emits one signed FieldEvent per frame with a real sha256 and ed25519 signature, feeding the same fusion engine. The honest caveat: it is replay from an unlabeled file, a CSI-variance proxy, not validated accuracy.</desc>
+                      <rect x="0" y="0" width="1000" height="250" rx="12" fill="#0a0c13"/>
+                      <defs><marker id="uc3arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a855f7"/></marker></defs>
+                      <rect x="30" y="90" width="170" height="70" rx="9" fill="#161927" stroke="#7c5cff"/><text x="115" y="118" text-anchor="middle" fill="#c4a0ff" font-size="11">real .csi.jsonl</text><text x="115" y="138" text-anchor="middle" fill="#8b92b4" font-size="9.5">captured WiFi, from a file</text>
+                      <line x1="200" y1="125" x2="242" y2="125" stroke="#a855f7" stroke-width="2" marker-end="url(#uc3arr)"/>
+                      <rect x="246" y="80" width="220" height="90" rx="9" fill="#161927" stroke="#a855f7"/><text x="356" y="104" text-anchor="middle" fill="#eef1fb" font-size="11.5" font-weight="600">CsiReplayAdapter</text><text x="356" y="126" text-anchor="middle" fill="#c4cae2" font-size="10">calibrate empty-room baseline</text><text x="356" y="146" text-anchor="middle" fill="#c4cae2" font-size="10">sign each frame (sha256+ed25519)</text>
+                      <line x1="466" y1="125" x2="508" y2="125" stroke="#a855f7" stroke-width="2" marker-end="url(#uc3arr)"/>
+                      <rect x="512" y="90" width="180" height="70" rx="9" fill="#161927" stroke="#a855f7"/><text x="602" y="118" text-anchor="middle" fill="#c4cae2" font-size="11">same fusion engine</text><text x="602" y="138" text-anchor="middle" fill="#8b92b4" font-size="9.5">as the demo</text>
+                      <line x1="692" y1="125" x2="734" y2="125" stroke="#a855f7" stroke-width="2" marker-end="url(#uc3arr)"/>
+                      <rect x="738" y="80" width="232" height="90" rx="9" fill="#13151f" stroke="#56d4a0" stroke-width="1.3"/><text x="854" y="104" text-anchor="middle" fill="#56d4a0" font-size="11.5" font-weight="600">real inferences</text><text x="854" y="126" text-anchor="middle" fill="#c4cae2" font-size="10">person_present · breathing</text><text x="854" y="148" text-anchor="middle" fill="#c4cae2" font-size="10">from REAL WiFi signal</text>
+                      <text x="500" y="208" text-anchor="middle" fill="#f0a85a" font-size="11" font-family="'JetBrains Mono',monospace">caveat: replay from an unlabeled file → CSI-variance proxy, NOT validated accuracy</text>
+                    </svg>
+                    <figcaption>Scenario 3 &mdash; the one path that ingests <em>real</em> WiFi: signed per frame, fused like the demo, honestly framed as a proxy.</figcaption>
+                  </figure>
+                  <dl>
+                    <dt>The situation</dt>
+                    <dd>You want to feed RuField <em>real</em> captured WiFi, not a simulator.</dd>
+                    <dt>The exact command (Rust)</dt>
+                    <dd><pre class="code-block"><code>let mut adapter = CsiReplayAdapter::from_jsonl(&recording)?;
+adapter.calibrate("living_room")?;
+while let Some(event) = adapter.next_event()? {
+    fusion.ingest(event);   // RuFieldFusion
+}</code></pre></dd>
+                    <dt>What it does</dt>
+                    <dd>Reads a real <code>.csi.jsonl</code> recording, learns an empty-room baseline, and emits one <strong>signed</strong> field event per frame (real sha256 + ed25519) into the same fusion engine. (Source: README L212&ndash;244.)</dd>
+                    <dt>What you get</dt>
+                    <dd>Real <code>person_present</code> / <code>breathing</code> inferences from real WiFi. <strong>Honest caveat:</strong> it&rsquo;s replay from an unlabeled file, so it&rsquo;s a <strong>CSI-variance proxy, not validated accuracy</strong> &mdash; the win is &ldquo;RuField ingests real WiFi and fuses it.&rdquo; (Source: README L246&ndash;254.)</dd>
+                  </dl>
+                </div>
+              </details>
+
+              <!-- UC4 — provenance / anti-spoofing -->
+              <details class="case" id="uc4">
+                <summary>
+                  <span class="uc-tag">Scenario 4</span>
+                  <h3>&ldquo;Prove a reading wasn&rsquo;t faked&rdquo; &mdash; provenance / anti-spoofing</h3>
+                  <span class="chev" aria-hidden="true">&rsaquo;</span>
+                </summary>
+                <div class="uc-body">
+                  <figure class="figure diagram uc-diagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 250" width="100%" role="img" aria-labelledby="uc4-t uc4-d" style="max-width:1000px;height:auto;font-family:'JetBrains Mono','Inter',sans-serif;">
+                      <title id="uc4-t">The provenance gate</title>
+                      <desc id="uc4-d">is_fusable checks every event's signature. A genuine event with a verifying ed25519 receipt (or an explicit synthetic flag) is admitted to fusion. A forged or altered event fails the check and is never fused; the live viewer flags it with a cross.</desc>
+                      <rect x="0" y="0" width="1000" height="250" rx="12" fill="#0a0c13"/>
+                      <defs><marker id="uc4arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a855f7"/></marker><marker id="uc4arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#56d4a0"/></marker><marker id="uc4arrr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff8a8a"/></marker></defs>
+                      <rect x="30" y="96" width="170" height="58" rx="9" fill="#161927" stroke="#7c5cff"/><text x="115" y="120" text-anchor="middle" fill="#c4cae2" font-size="11">incoming event</text><text x="115" y="138" text-anchor="middle" fill="#8b92b4" font-size="9.5">carries a receipt</text>
+                      <line x1="200" y1="125" x2="244" y2="125" stroke="#a855f7" stroke-width="2" marker-end="url(#uc4arr)"/>
+                      <polygon points="248,125 330,90 412,125 330,160" fill="#1b1f30" stroke="#e84ef0" stroke-width="1.6"/><text x="330" y="121" text-anchor="middle" fill="#eef1fb" font-size="11" font-weight="600">is_fusable()</text><text x="330" y="137" text-anchor="middle" fill="#8b92b4" font-size="9">ed25519 verify?</text>
+                      <line x1="412" y1="110" x2="560" y2="80" stroke="#56d4a0" stroke-width="2" marker-end="url(#uc4arrg)"/><text x="486" y="84" text-anchor="middle" fill="#56d4a0" font-size="10">verifies (or synthetic)</text>
+                      <line x1="412" y1="140" x2="560" y2="172" stroke="#ff8a8a" stroke-width="2" marker-end="url(#uc4arrr)"/><text x="486" y="178" text-anchor="middle" fill="#ff8a8a" font-size="10">forged / altered</text>
+                      <rect x="564" y="56" width="406" height="52" rx="9" fill="#101813" stroke="#56d4a0" stroke-width="1.3"/><text x="767" y="80" text-anchor="middle" fill="#56d4a0" font-size="11.5" font-weight="600">&#10003; admitted to fusion</text><text x="767" y="98" text-anchor="middle" fill="#8b92b4" font-size="9.5">can drive a trusted conclusion</text>
+                      <rect x="564" y="150" width="406" height="52" rx="9" fill="#13101a" stroke="#ff8a8a" stroke-width="1.3" stroke-dasharray="5 4"/><text x="767" y="174" text-anchor="middle" fill="#ff8a8a" font-size="11.5" font-weight="600">&#10007; never fused</text><text x="767" y="192" text-anchor="middle" fill="#8b92b4" font-size="9.5">viewer flags it; a spoofed all-clear can&rsquo;t hide an emergency</text>
+                    </svg>
+                    <figcaption>Scenario 4 &mdash; only a verifying receipt gets into fusion. Tamper with one byte and the event is rejected, never trusted.</figcaption>
+                  </figure>
+                  <dl>
+                    <dt>The situation</dt>
+                    <dd>A safety system can&rsquo;t trust an event that might be forged &mdash; a spoofed &ldquo;all clear&rdquo; could hide a real emergency.</dd>
+                    <dt>The exact command (Rust)</dt>
+                    <dd><pre class="code-block"><code>rufield_provenance::is_fusable(&event)</code></pre></dd>
+                    <dt>What it does</dt>
+                    <dd>Checks every event&rsquo;s signature; an event enters fusion <strong>only</strong> if it carries a verifying ed25519 receipt or is explicitly flagged synthetic. Tamper with any field after signing and the check fails. (Source: README L363&ndash;371; ADR-260 §11, §22.)</dd>
+                    <dt>What you get</dt>
+                    <dd>A hard guarantee that <strong>no forged or altered event can drive a trusted conclusion</strong> &mdash; the viewer flags unverified events &#10007; and never fuses them. (Source: README L130&ndash;138.)</dd>
+                  </dl>
+                </div>
+              </details>
+
+              <!-- UC5 — the privacy guard -->
+              <details class="case" id="uc5">
+                <summary>
+                  <span class="uc-tag">Scenario 5</span>
+                  <h3>&ldquo;Keep the sensitive stuff on the device&rdquo; &mdash; the privacy guard</h3>
+                  <span class="chev" aria-hidden="true">&rsaquo;</span>
+                </summary>
+                <div class="uc-body">
+                  <figure class="figure diagram uc-diagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 270" width="100%" role="img" aria-labelledby="uc5-t uc5-d" style="max-width:1000px;height:auto;font-family:'JetBrains Mono','Inter',sans-serif;">
+                      <title id="uc5-t">The privacy guard's six classes</title>
+                      <desc id="uc5-d">The DefaultPrivacyGuard authorize call enforces policy by class. P0 raw frames and P1 derived features are the most sensitive; P0 is denied from the network by default. P2 occupancy and P3 aggregate facts pass. P4 health inferences like breathing require explicit consent. P5 identity-linked inferences require identity binding plus an audit log. The benchmark reports zero privacy violations.</desc>
+                      <rect x="0" y="0" width="1000" height="270" rx="12" fill="#0a0c13"/>
+                      <text x="500" y="32" text-anchor="middle" fill="#eef1fb" font-size="15" font-weight="700" font-family="'Space Grotesk',sans-serif">Six privacy classes — P0 rawest (most sensitive) to P5 (names a person)</text>
+                      <!-- six class cards -->
+                      <rect x="30" y="54" width="150" height="150" rx="10" fill="#13101a" stroke="#ff9fb0" stroke-width="1.3"/><text x="105" y="80" text-anchor="middle" fill="#ff9fb0" font-size="15" font-weight="700">P0</text><text x="105" y="104" text-anchor="middle" fill="#c4cae2" font-size="10">raw frame</text><text x="105" y="120" text-anchor="middle" fill="#c4cae2" font-size="10">(raw CSI/radar)</text><rect x="44" y="150" width="122" height="40" rx="7" fill="#0a0c13" stroke="#ff9fb0"/><text x="105" y="167" text-anchor="middle" fill="#ff9fb0" font-size="10">DENIED from</text><text x="105" y="181" text-anchor="middle" fill="#ff9fb0" font-size="10">network by default</text>
+                      <rect x="190" y="54" width="150" height="150" rx="10" fill="#161219" stroke="#f59fe0" stroke-width="1.1"/><text x="265" y="80" text-anchor="middle" fill="#f59fe0" font-size="15" font-weight="700">P1</text><text x="265" y="104" text-anchor="middle" fill="#c4cae2" font-size="10">derived feature</text><text x="265" y="120" text-anchor="middle" fill="#c4cae2" font-size="10">(Doppler, blob)</text><text x="265" y="170" text-anchor="middle" fill="#8b92b4" font-size="9.5">non-identity</text>
+                      <rect x="350" y="54" width="150" height="150" rx="10" fill="#15131f" stroke="#c4a0ff" stroke-width="1.1"/><text x="425" y="80" text-anchor="middle" fill="#c4a0ff" font-size="15" font-weight="700">P2</text><text x="425" y="104" text-anchor="middle" fill="#c4cae2" font-size="10">occupancy/motion</text><text x="425" y="120" text-anchor="middle" fill="#c4cae2" font-size="10">(present, bed-exit)</text><text x="425" y="170" text-anchor="middle" fill="#56d4a0" font-size="9.5">passes</text>
+                      <rect x="510" y="54" width="150" height="150" rx="10" fill="#131520" stroke="#9fb4ff" stroke-width="1.1"/><text x="585" y="80" text-anchor="middle" fill="#9fb4ff" font-size="15" font-weight="700">P3</text><text x="585" y="104" text-anchor="middle" fill="#c4cae2" font-size="10">anon aggregate</text><text x="585" y="120" text-anchor="middle" fill="#c4cae2" font-size="10">(room count)</text><text x="585" y="170" text-anchor="middle" fill="#56d4a0" font-size="9.5">passes</text>
+                      <rect x="670" y="54" width="150" height="150" rx="10" fill="#181410" stroke="#ffc48a" stroke-width="1.3"/><text x="745" y="80" text-anchor="middle" fill="#ffc48a" font-size="15" font-weight="700">P4</text><text x="745" y="104" text-anchor="middle" fill="#c4cae2" font-size="10">health inference</text><text x="745" y="120" text-anchor="middle" fill="#c4cae2" font-size="10">(breathing, sleep)</text><rect x="684" y="150" width="122" height="40" rx="7" fill="#0a0c13" stroke="#ffc48a"/><text x="745" y="167" text-anchor="middle" fill="#ffc48a" font-size="10">requires</text><text x="745" y="181" text-anchor="middle" fill="#ffc48a" font-size="10">explicit consent</text>
+                      <rect x="830" y="54" width="140" height="150" rx="10" fill="#13101a" stroke="#ff8a8a" stroke-width="1.3"/><text x="900" y="80" text-anchor="middle" fill="#ff8a8a" font-size="15" font-weight="700">P5</text><text x="900" y="104" text-anchor="middle" fill="#c4cae2" font-size="10">identity-linked</text><text x="900" y="120" text-anchor="middle" fill="#c4cae2" font-size="10">(named person)</text><rect x="842" y="150" width="116" height="40" rx="7" fill="#0a0c13" stroke="#ff8a8a"/><text x="900" y="167" text-anchor="middle" fill="#ff8a8a" font-size="10">bind identity</text><text x="900" y="181" text-anchor="middle" fill="#ff8a8a" font-size="10">+ audit log</text>
+                      <text x="500" y="240" text-anchor="middle" fill="#56d4a0" font-size="11.5">You literally can&rsquo;t ship the sensitive data without an explicit, logged decision — benchmark: 0 privacy violations</text>
+                    </svg>
+                    <figcaption>Scenario 5 &mdash; the real six-class ladder (from <code>privacy.rs</code>): P0 raw is denied off-device, P4 health needs consent, P5 identity needs binding + audit.</figcaption>
+                  </figure>
+                  <dl>
+                    <dt>The situation</dt>
+                    <dd>Raw signals and health inferences must not leak off the device by accident.</dd>
+                    <dt>The exact command (Rust)</dt>
+                    <dd><pre class="code-block"><code>DefaultPrivacyGuard::default()
+    .authorize(class, destination, consent, identity_bound)</code></pre></dd>
+                    <dt>What it does</dt>
+                    <dd>Enforces the policy automatically: <span class="pchip p0">P0</span> raw frames are denied from the network by default; <span class="pchip p4">P4</span> health inferences require explicit consent; <span class="pchip p5">P5</span> (names a person) requires identity binding + an audit log. (Source: README L200&ndash;209; <code>rufield-privacy/src/lib.rs</code>.)</dd>
+                    <dt>What you get</dt>
+                    <dd>Privacy by construction &mdash; you literally <em>can&rsquo;t</em> ship the sensitive data without an explicit, logged decision; the benchmark reports <strong>0 privacy violations</strong>. (Source: README L290, L355&ndash;361.)</dd>
+                  </dl>
+                </div>
+              </details>
+
+              <!-- UC6 — live upstream mode -->
+              <details class="case" id="uc6">
+                <summary>
+                  <span class="uc-tag">Scenario 6</span>
+                  <h3>&ldquo;Show real sensor data on the same dashboard&rdquo; &mdash; live upstream mode</h3>
+                  <span class="chev" aria-hidden="true">&rsaquo;</span>
+                </summary>
+                <div class="uc-body">
+                  <figure class="figure diagram uc-diagram">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 250" width="100%" role="img" aria-labelledby="uc6-t uc6-d" style="max-width:1000px;height:auto;font-family:'JetBrains Mono','Inter',sans-serif;">
+                      <title id="uc6-t">Live upstream mode</title>
+                      <desc id="uc6-d">Running the viewer with source live and an upstream URL subscribes to a real FieldEvent stream, verifies each receipt on ingest, and runs only verified events through the identical room-state, privacy and fusion display, with a green LIVE banner when connected or a red DISCONNECTED banner if unreachable. It never silently falls back to fake data under a LIVE banner.</desc>
+                      <rect x="0" y="0" width="1000" height="250" rx="12" fill="#0a0c13"/>
+                      <defs><marker id="uc6arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a855f7"/></marker></defs>
+                      <rect x="30" y="86" width="200" height="78" rx="9" fill="#161927" stroke="#7c5cff"/><text x="130" y="112" text-anchor="middle" fill="#eef1fb" font-size="11.5" font-weight="600">real upstream feed</text><text x="130" y="132" text-anchor="middle" fill="#c4cae2" font-size="10">e.g. RuView sensing server</text><text x="130" y="150" text-anchor="middle" fill="#8b92b4" font-size="9.5">:8080 · real FieldEvents</text>
+                      <line x1="230" y1="125" x2="274" y2="125" stroke="#a855f7" stroke-width="2" marker-end="url(#uc6arr)"/>
+                      <rect x="278" y="80" width="210" height="90" rx="9" fill="#161927" stroke="#e84ef0" stroke-width="1.4"/><text x="383" y="106" text-anchor="middle" fill="#eef1fb" font-size="11.5" font-weight="600">verify receipt on ingest</text><text x="383" y="128" text-anchor="middle" fill="#c4cae2" font-size="10">only verified events pass</text><text x="383" y="148" text-anchor="middle" fill="#8b92b4" font-size="9.5">no silent fake fallback</text>
+                      <line x1="488" y1="125" x2="532" y2="125" stroke="#a855f7" stroke-width="2" marker-end="url(#uc6arr)"/>
+                      <rect x="536" y="80" width="210" height="90" rx="9" fill="#161927" stroke="#a855f7"/><text x="641" y="112" text-anchor="middle" fill="#c4cae2" font-size="11">identical display</text><text x="641" y="132" text-anchor="middle" fill="#8b92b4" font-size="9.5">room-state · privacy · fusion</text>
+                      <rect x="770" y="80" width="200" height="42" rx="9" fill="#101813" stroke="#56d4a0" stroke-width="1.3"/><text x="870" y="106" text-anchor="middle" fill="#56d4a0" font-size="11.5" font-weight="600">&#9679; LIVE (connected)</text>
+                      <rect x="770" y="128" width="200" height="42" rx="9" fill="#13101a" stroke="#ff8a8a" stroke-width="1.3"/><text x="870" y="154" text-anchor="middle" fill="#ff8a8a" font-size="11.5" font-weight="600">&#9679; DISCONNECTED</text>
+                      <text x="500" y="212" text-anchor="middle" fill="#8b92b4" font-size="11">Same panels, now driven by real events — honest banners, never fake data under a LIVE label</text>
+                    </svg>
+                    <figcaption>Scenario 6 &mdash; the same dashboard, fed by a real upstream feed; verified-only, with honest LIVE / DISCONNECTED banners.</figcaption>
+                  </figure>
+                  <dl>
+                    <dt>The situation</dt>
+                    <dd>You have a real RuField feed (e.g. from RuView&rsquo;s sensing server) and want the same dashboard to display it instead of the simulator.</dd>
+                    <dt>The exact command</dt>
+                    <dd><pre class="code-block"><code>cargo run -p rufield-viewer -- \
+  --source live --upstream http://127.0.0.1:8080</code></pre></dd>
+                    <dt>What it does</dt>
+                    <dd>Subscribes to the upstream&rsquo;s real <code>FieldEvent</code> stream, <strong>verifies each receipt on ingest</strong>, and runs only verified events through the identical room-state / privacy / fusion display. (Source: README L113&ndash;152.)</dd>
+                    <dt>What you get</dt>
+                    <dd>The same panels, now driven by real events &mdash; with an honest <strong>green <code>LIVE</code></strong> banner when connected, or a <strong>red <code>DISCONNECTED</code></strong> banner if unreachable. It <strong>never</strong> silently falls back to fake data under a LIVE banner. (Source: README L140&ndash;152.)</dd>
+                  </dl>
+                </div>
+              </details>
+
+            </div>
+          </div>
+        </details>
+
+        <!-- 07 — HOW TO IMPLEMENT & START (arc Q6+Q7) -->
+        <details class="section" id="s07">
+          <summary>
+            <span class="num">07</span>
+            <span class="head-text">
+              <h2>How to implement &mdash; and start in five minutes</h2>
+              <span class="q">You&rsquo;ve seen what it does. Here&rsquo;s the shortest path to running it yourself.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              RuField&rsquo;s reference build is plain Rust &mdash; if you have
+              <code>cargo</code> (Rust&rsquo;s build tool), you can run the whole thing.
+              There are exactly two starting moves: <strong>watch a room light up</strong>,
+              then <strong>see the score</strong>.
+            </p>
+
+            <!-- TECHNICAL VISUAL: the start path -->
+            <p class="tier tech">Technical view &mdash; clone &rarr; run the viewer &rarr; run the bench</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 320" width="100%" role="img" aria-labelledby="s07t-title s07t-desc" style="max-width:1000px;height:auto;font-family:'JetBrains Mono','Inter',sans-serif;">
+                <title id="s07t-title">The three-step start path</title>
+                <desc id="s07t-desc">Step one: clone the rufield repo and have cargo ready. Step two: run cargo run -p rufield-viewer and open localhost:8088 to watch a room light up in the browser. Step three: run cargo run -p rufield-bench to see the deterministic, SYNTHETIC-labelled report card. Then optionally wire the drop-in knowledge pack into your AI.</desc>
+                <rect x="0" y="0" width="1000" height="320" rx="14" fill="#0a0c13"/>
+                <defs><marker id="s07arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a855f7"/></marker></defs>
+                <text x="500" y="36" text-anchor="middle" fill="#eef1fb" font-size="19" font-weight="700" font-family="'Space Grotesk',sans-serif">Two commands to your first camera-free room</text>
+
+                <!-- step 1 -->
+                <rect x="40" y="70" width="280" height="150" rx="12" fill="#161927" stroke="#7c5cff" stroke-width="1.4"/>
+                <circle cx="68" cy="98" r="13" fill="#1b1f30" stroke="#a855f7"/><text x="68" y="103" text-anchor="middle" fill="#c4a0ff" font-size="13" font-weight="700">1</text>
+                <text x="92" y="103" fill="#eef1fb" font-size="14" font-weight="600">Clone &amp; have cargo</text>
+                <rect x="60" y="124" width="240" height="58" rx="8" fill="#0a0c13" stroke="#2a3047"/>
+                <text x="74" y="146" fill="#c4a0ff" font-size="10.5" font-family="'JetBrains Mono',monospace">git clone github.com/</text>
+                <text x="74" y="162" fill="#c4a0ff" font-size="10.5" font-family="'JetBrains Mono',monospace">  ruvnet/rufield</text>
+                <text x="74" y="178" fill="#8b92b4" font-size="10" font-family="'JetBrains Mono',monospace">cd rufield</text>
+                <text x="180" y="206" text-anchor="middle" fill="#8b92b4" font-size="10.5">no extra services, no Docker</text>
+
+                <line x1="320" y1="145" x2="362" y2="145" stroke="#a855f7" stroke-width="2.2" marker-end="url(#s07arr)"/>
+
+                <!-- step 2 -->
+                <rect x="366" y="70" width="280" height="150" rx="12" fill="#161927" stroke="#a855f7" stroke-width="1.4"/>
+                <circle cx="394" cy="98" r="13" fill="#1b1f30" stroke="#a855f7"/><text x="394" y="103" text-anchor="middle" fill="#c4a0ff" font-size="13" font-weight="700">2</text>
+                <text x="418" y="103" fill="#eef1fb" font-size="14" font-weight="600">Watch a room</text>
+                <rect x="386" y="124" width="240" height="40" rx="8" fill="#0a0c13" stroke="#2a3047"/>
+                <text x="400" y="149" fill="#c4a0ff" font-size="10" font-family="'JetBrains Mono',monospace">cargo run -p rufield-viewer</text>
+                <rect x="386" y="172" width="240" height="30" rx="7" fill="#101813" stroke="#56d4a0"/>
+                <text x="506" y="192" text-anchor="middle" fill="#56d4a0" font-size="10.5">open localhost:8088 &rarr; it lights up</text>
+
+                <line x1="646" y1="145" x2="688" y2="145" stroke="#a855f7" stroke-width="2.2" marker-end="url(#s07arr)"/>
+
+                <!-- step 3 -->
+                <rect x="692" y="70" width="268" height="150" rx="12" fill="#161927" stroke="#e84ef0" stroke-width="1.6"/>
+                <circle cx="720" cy="98" r="13" fill="#1b1f30" stroke="#e84ef0"/><text x="720" y="103" text-anchor="middle" fill="#e84ef0" font-size="13" font-weight="700">3</text>
+                <text x="744" y="103" fill="#eef1fb" font-size="14" font-weight="600">See the score</text>
+                <rect x="712" y="124" width="228" height="40" rx="8" fill="#0a0c13" stroke="#2a3047"/>
+                <text x="726" y="149" fill="#c4a0ff" font-size="10" font-family="'JetBrains Mono',monospace">cargo run -p rufield-bench</text>
+                <rect x="712" y="172" width="228" height="30" rx="7" fill="#101813" stroke="#56d4a0"/>
+                <text x="826" y="192" text-anchor="middle" fill="#56d4a0" font-size="10.5">report card (SYNTHETIC-labelled)</text>
+
+                <!-- optional drop-in -->
+                <rect x="220" y="250" width="560" height="48" rx="10" fill="#13151f" stroke="#6f7bd6" stroke-width="1.2" stroke-dasharray="5 4"/>
+                <text x="500" y="279" text-anchor="middle" fill="#9fb4ff" font-size="12">Optional &rarr; wire the drop-in knowledge pack into your AI (Section 08) so it answers from the real source</text>
+              </svg>
+              <figcaption>
+                The whole start: <code>git clone</code>, then two <code>cargo run</code>
+                commands &mdash; one to watch a room light up, one to see the scored
+                report card. No Docker, no extra services. (Source: README L76&ndash;125.)
+              </figcaption>
+            </figure>
+
+            <p>Copy-paste, in order:</p>
+            <pre class="code-block"><code># 1. get the reference build
+git clone https://github.com/ruvnet/rufield
+cd rufield
+
+# 2. watch a room wake up, live in your browser
+cargo run -p rufield-viewer
+#    then open http://localhost:8088/
+
+# 3. see the pipeline scored against known truth
+cargo run -p rufield-bench -- 2026</code></pre>
+
+            <!-- SIMPLE VISUAL: friendly 'two commands' on-ramp -->
+            <p class="tier simple">Friendly view &mdash; it really is just two commands</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 230" width="100%" role="img" aria-labelledby="s07s-title s07s-desc" style="max-width:1000px;height:auto;font-family:'Inter',sans-serif;">
+                <title id="s07s-title">Two friendly steps: watch, then score</title>
+                <desc id="s07s-desc">A friendly two-step path. A play button labelled 'watch a room' leads to a smiling room icon lighting up. A chart button labelled 'see the score' leads to a friendly report card with a checkmark. The message: you are five minutes from your first camera-free room.</desc>
+                <rect x="0" y="0" width="1000" height="230" rx="14" fill="#11131c"/>
+                <text x="500" y="40" text-anchor="middle" fill="#eef1fb" font-size="18" font-weight="700" font-family="'Space Grotesk',sans-serif">Five minutes from here to your first camera-free room</text>
+                <defs><marker id="s07sarr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a855f7"/></marker></defs>
+                <!-- watch -->
+                <circle cx="200" cy="130" r="44" fill="#1b1f30" stroke="#a855f7" stroke-width="1.6"/>
+                <polygon points="186,110 186,150 222,130" fill="#c4a0ff"/>
+                <text x="200" y="200" text-anchor="middle" fill="#eef1fb" font-size="13" font-weight="600">watch a room</text>
+                <line x1="264" y1="130" x2="356" y2="130" stroke="#a855f7" stroke-width="2.2" marker-end="url(#s07sarr)"/>
+                <!-- room lights up -->
+                <rect x="372" y="92" width="120" height="78" rx="12" fill="#161927" stroke="#e84ef0" stroke-width="1.5"/>
+                <circle cx="432" cy="124" r="12" fill="#e84ef0" opacity="0.7"/>
+                <path d="M404 150 q28 -24 56 0" fill="none" stroke="#a855f7" stroke-width="2"/>
+                <text x="432" y="200" text-anchor="middle" fill="#56d4a0" font-size="12">it lights up &#10003;</text>
+                <line x1="500" y1="130" x2="592" y2="130" stroke="#a855f7" stroke-width="2.2" marker-end="url(#s07sarr)"/>
+                <!-- score -->
+                <circle cx="660" cy="130" r="44" fill="#1b1f30" stroke="#a855f7" stroke-width="1.6"/>
+                <rect x="644" y="118" width="9" height="24" fill="#c4a0ff"/><rect x="657" y="108" width="9" height="34" fill="#e84ef0"/><rect x="670" y="126" width="9" height="16" fill="#c4a0ff"/>
+                <text x="660" y="200" text-anchor="middle" fill="#eef1fb" font-size="13" font-weight="600">see the score</text>
+                <line x1="724" y1="130" x2="816" y2="130" stroke="#a855f7" stroke-width="2.2" marker-end="url(#s07sarr)"/>
+                <!-- report card -->
+                <rect x="832" y="96" width="120" height="70" rx="12" fill="#101813" stroke="#56d4a0" stroke-width="1.5"/>
+                <text x="892" y="126" text-anchor="middle" fill="#56d4a0" font-size="22">&#10003;</text>
+                <text x="892" y="150" text-anchor="middle" fill="#c4cae2" font-size="10">report card</text>
+                <text x="892" y="200" text-anchor="middle" fill="#8b92b4" font-size="11">honest numbers</text>
+              </svg>
+              <figcaption>
+                No jargon needed: press play to watch a room light up, then run the score
+                to see honest, labelled numbers. That&rsquo;s the start.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- 08 — DROP-IN (the AI-half pack). File-tree must show REAL contents [e / D13] -->
+        <details class="section" id="s08">
+          <summary>
+            <span class="num">08</span>
+            <span class="head-text">
+              <h2>The drop-in</h2>
+              <span class="q">One download, two halves &mdash; copy it in and your AI answers from the real source.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              Everything on this page also comes as <strong>one download with two
+              halves</strong>. One half is <em>for you</em> &mdash; a short written
+              primer. The other is <em>for your AI</em> &mdash; a small, searchable
+              knowledge pack your assistant can read, so it answers questions about
+              RuField <strong>accurately, with sources</strong>, instead of guessing.
+            </p>
+
+            <!-- TECHNICAL VISUAL: the ACTUAL annotated file-tree (Cognitum-style) [e] -->
+            <p class="tier tech">Technical view &mdash; what&rsquo;s <em>actually</em> inside the zip (every file, in plain English)</p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" role="img" aria-labelledby="s08t-title s08t-desc" style="max-width:1000px;height:auto;font-family:'JetBrains Mono',monospace;">
+                <title id="s08t-title">The drop-in zip's real file tree, annotated</title>
+                <desc id="s08t-desc">An annotated file tree of the rufield drop-in. The top level is rufield-kb, one download with two halves. The for-you (human) half contains rufield-primer.md, the whole tool in plain English, and an optional studio folder with a short video and audio overview. The for-your-AI half contains rufield-kb.big.rvf, the sharp brain for Mac or PC; rufield-kb.small.rvf, the light brain for edge; rufield.passages.jsonl, every doc and all source, searchable; ask-kb.mjs, to ask it from the command line; and kb-mcp-server.mjs, to wire it into Claude Code or Cursor. A README explains what it is and the three-step setup. Below the tree, three steps: unzip into your project as kb, add the two-line .mcp.json, and paste the CLAUDE.md gate.</desc>
+                <rect x="0" y="0" width="1000" height="600" rx="14" fill="#0a0c13"/>
+                <rect x="0.75" y="0.75" width="998.5" height="598.5" rx="13.25" fill="none" stroke="#2a3047" stroke-width="1.5"/>
+                <text x="40" y="44" fill="#eef1fb" font-size="20" font-weight="700" font-family="'Space Grotesk',sans-serif">rufield-kb/  — one download, two halves</text>
+
+                <!-- tree lines + annotations -->
+                <g font-size="13.5">
+                  <!-- for-you half -->
+                  <text x="40" y="84" fill="#c4a0ff">&#9500;&#9472; for-you  (human) &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</text>
+                  <text x="68" y="114" fill="#eef1fb">&#9492;&#9472; rufield-primer.md</text>
+                  <text x="380" y="114" fill="#8b92b4">&#8212; the whole tool, in plain English</text>
+                  <text x="68" y="142" fill="#eef1fb">&#9492;&#9472; studio/ (optional)</text>
+                  <text x="380" y="142" fill="#8b92b4">&#8212; short video + audio overview</text>
+
+                  <!-- for-your-AI half -->
+                  <text x="40" y="186" fill="#e84ef0">&#9500;&#9472; for-your-AI &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;</text>
+                  <text x="68" y="216" fill="#eef1fb">&#9500;&#9472; rufield-kb.big.rvf</text>
+                  <text x="380" y="216" fill="#8b92b4">&#8212; the &ldquo;brain&rdquo; (sharp; Mac/PC, 768-dim)</text>
+                  <text x="68" y="244" fill="#eef1fb">&#9500;&#9472; rufield-kb.small.rvf</text>
+                  <text x="380" y="244" fill="#8b92b4">&#8212; the &ldquo;brain&rdquo; (light; edge, 384-dim)</text>
+                  <text x="68" y="272" fill="#eef1fb">&#9500;&#9472; rufield.passages.jsonl</text>
+                  <text x="380" y="272" fill="#8b92b4">&#8212; every doc + all source, searchable</text>
+                  <text x="68" y="300" fill="#eef1fb">&#9500;&#9472; ask-kb.mjs</text>
+                  <text x="380" y="300" fill="#8b92b4">&#8212; ask it from the command line</text>
+                  <text x="68" y="328" fill="#eef1fb">&#9492;&#9472; kb-mcp-server.mjs</text>
+                  <text x="380" y="328" fill="#8b92b4">&#8212; wire it into Claude Code / Cursor</text>
+
+                  <text x="40" y="372" fill="#eef1fb">&#9492;&#9472; README.md</text>
+                  <text x="380" y="372" fill="#8b92b4">&#8212; what it is + the 3-step setup</text>
+                </g>
+
+                <!-- 3-step strip -->
+                <line x1="40" y1="404" x2="960" y2="404" stroke="#2a3047" stroke-width="1.2"/>
+                <text x="40" y="436" fill="#eef1fb" font-size="16" font-weight="600" font-family="'Space Grotesk',sans-serif">Three steps to wire it in</text>
+
+                <rect x="40" y="452" width="296" height="118" rx="12" fill="#161927" stroke="#a855f7" stroke-width="1.3"/>
+                <circle cx="66" cy="480" r="13" fill="#1b1f30" stroke="#a855f7"/><text x="66" y="485" text-anchor="middle" fill="#c4a0ff" font-size="13" font-weight="700">1</text>
+                <text x="90" y="485" fill="#eef1fb" font-size="13.5" font-weight="600" font-family="'Space Grotesk',sans-serif">Unzip into your project</text>
+                <rect x="60" y="502" width="256" height="28" rx="7" fill="#0a0c13" stroke="#2a3047"/><text x="74" y="521" fill="#c4a0ff" font-size="11">unzip &hellip; &rarr; a kb/ folder</text>
+                <text x="60" y="552" fill="#8b92b4" font-size="11" font-family="'Inter',sans-serif">Put kb/ beside your code.</text>
+
+                <rect x="352" y="452" width="296" height="118" rx="12" fill="#161927" stroke="#a855f7" stroke-width="1.3"/>
+                <circle cx="378" cy="480" r="13" fill="#1b1f30" stroke="#a855f7"/><text x="378" y="485" text-anchor="middle" fill="#c4a0ff" font-size="13" font-weight="700">2</text>
+                <text x="402" y="485" fill="#eef1fb" font-size="13.5" font-weight="600" font-family="'Space Grotesk',sans-serif">Add a .mcp.json</text>
+                <rect x="372" y="502" width="256" height="28" rx="7" fill="#0a0c13" stroke="#2a3047"/><text x="386" y="521" fill="#c4a0ff" font-size="11">&quot;rufield-kb&quot;: { &hellip; }</text>
+                <text x="372" y="552" fill="#8b92b4" font-size="11" font-family="'Inter',sans-serif">Registers the pack as a tool.</text>
+
+                <rect x="664" y="452" width="296" height="118" rx="12" fill="#161927" stroke="#e84ef0" stroke-width="1.6"/>
+                <circle cx="690" cy="480" r="13" fill="#1b1f30" stroke="#e84ef0"/><text x="690" y="485" text-anchor="middle" fill="#e84ef0" font-size="13" font-weight="700">3</text>
+                <text x="714" y="485" fill="#eef1fb" font-size="13.5" font-weight="600" font-family="'Space Grotesk',sans-serif">Paste the gate</text>
+                <rect x="684" y="502" width="256" height="28" rx="7" fill="#0a0c13" stroke="#e84ef0"/><text x="698" y="521" fill="#c4a0ff" font-size="11">into CLAUDE.md</text>
+                <text x="684" y="552" fill="#8b92b4" font-size="11" font-family="'Inter',sans-serif">Forces a source check first.</text>
+              </svg>
+              <figcaption>
+                Not an abstract picture &mdash; the <em>real</em> contents: two halves
+                (<code>for-you</code> + <code>for-your-AI</code>), the big and small
+                <code>.rvf</code> brains, the searchable <code>passages.jsonl</code>, a
+                CLI (<code>ask-kb.mjs</code>) and an MCP server
+                (<code>kb-mcp-server.mjs</code>), plus a README. Wired in three steps.
+              </figcaption>
+            </figure>
+
+            <!-- SIMPLE VISUAL: friendly drop-in art (g5) -->
+            <p class="tier simple">Friendly view &mdash; one parcel, two gifts</p>
+            <figure class="figure art">
+              <img src="assets/img/g5.png" width="1376" height="768" loading="lazy"
+                   alt="A single friendly parcel gently splits into two glowing halves. The left half, labelled 'FOR YOU', shows a person relaxing while reading a friendly illustrated guide. The right half, labelled 'FOR YOUR AI', shows a gentle glowing brain holding a magnifying glass and happily searching a neat stack of knowledge cards. Soft violet signal-waves join the two halves." />
+              <figcaption>
+                One parcel, two gifts: <code>for-you/</code> (the primer you read) and
+                <code>for-your-AI/</code> (the knowledge pack your assistant searches).
+              </figcaption>
+            </figure>
+
+            <p>Wiring the AI half into Claude Code takes three small steps:</p>
+            <ol>
+              <li>
+                <strong>Unzip it next to your project.</strong>
+                <pre class="code-block"><code>unzip rufield-dropin.zip
+cd rufield-kb/for-your-AI
+npm install</code></pre>
+              </li>
+              <li>
+                <strong>Point Claude Code at it with a <code>.mcp.json</code> file.</strong>
+                This tiny file tells Claude Code about the local knowledge tool. Drop it
+                in your project root:
+                <pre class="code-block"><code>{
+  "mcpServers": {
+    "rufield-kb": {
+      "command": "node",
+      "args": ["rufield-kb/for-your-AI/kb-mcp-server.mjs"]
+    }
+  }
+}</code></pre>
+                (<code>.mcp.json</code> is just a list of helper tools Claude Code is
+                allowed to call. Here it registers the knowledge pack as a tool named
+                <code>rufield-kb</code>.)
+              </li>
+              <li>
+                <strong>Add a verification gate to your <code>CLAUDE.md</code>.</strong>
+                <code>CLAUDE.md</code> is the instruction file Claude reads first. This
+                forces it to <em>check the knowledge pack</em> before answering, rather
+                than guessing:
+                <pre class="code-block"><code>## RuField questions
+Before answering ANY question about RuField, query the
+`rufield-kb` tool and ground your answer in what it returns.
+If the pack has no answer, say so plainly — do not invent one.</code></pre>
+              </li>
+            </ol>
+            <p><strong>Then confirm it works.</strong> Ask Claude Code something only the pack can answer:</p>
+            <pre class="code-block"><code>What are the privacy classes P0 through P5 in RuField, and which
+ones are denied, consent-gated, or identity-bound?</code></pre>
+            <p>
+              If the wiring is right, the answer comes back grounded in the pack &mdash;
+              <span class="pchip p0">P0</span> raw (denied off-device),
+              <span class="pchip p4">P4</span> health (consent), <span class="pchip p5">P5</span>
+              identity (bound + logged) &mdash; <em>with the source it drew from</em>. If
+              you instead get a vague reply with no source, the gate isn&rsquo;t firing:
+              re-check the <code>.mcp.json</code> path and the <code>CLAUDE.md</code> line.
+            </p>
+
+            <!-- Drag-in dropzone STUB. Real wiring lands when downloads/rufield-dropin.zip ships. -->
+            <div class="dropzone" id="dropzone" role="button" tabindex="0"
+                 aria-label="Get the RuField drop-in: activate, or drag a folder here">
+              <div class="dz-icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34">
+                  <defs><linearGradient id="dz-w" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7c5cff"/><stop offset="100%" stop-color="#e84ef0"/></linearGradient></defs>
+                  <path d="M4 17 C 9 6, 13 28, 17 17 S 25 6, 30 17" fill="none" stroke="url(#dz-w)" stroke-width="2.6" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div><strong>Get the drop-in</strong></div>
+              <div class="dz-hint">
+                Click / press Enter to download &mdash; or drag a folder here (preview
+                stub). The real <code>.zip</code> ships via the GitHub Release.
+              </div>
+              <p class="dz-status" id="dzStatus" role="status" aria-live="polite"></p>
+            </div>
+
+            <div class="footnote-note">
+              <small>
+                <strong>Honest limits, stated plainly.</strong> RuField is
+                <strong>rufield.mfs.v0.1</strong> &mdash; an honestly-measured reference
+                pipeline (data model, provenance, privacy, fusion, benchmark), <em>not a
+                product you install in your house yet</em>. v0.1 ships
+                <strong>synthetic adapters only</strong>; no validated hardware adapter
+                exists. The one real-signal path is <strong>recorded WiFi replay</strong>
+                (a proxy, not validated accuracy). The viewer is <strong>read-only</strong>.
+                And RuField explicitly <strong>does not claim medical diagnosis</strong>
+                &mdash; health-style inferences are gated and must not be read as clinical
+                claims. (Source: README L13&ndash;25, L316&ndash;344; ADR-260 §6, §25.)
+              </small>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer>
+    <div class="wrap">
+      <nav class="stack-links" aria-label="The whole project, one link each">
+        <span class="stack-lead">The project, one link each:</span>
+        <a href="https://github.com/ruvnet/rufield">Source repo &middot; ruvnet/rufield</a>
+        <a href="https://github.com/ruvnet/rufield/blob/main/docs/ADR-260-rufield-mfs.md">Spec of record &middot; ADR-260</a>
+        <a href="https://github.com/ruvnet">Reuven Cohen &middot; @ruvnet</a>
+      </nav>
+      <div>
+        A plain-language explainer for <a href="https://github.com/ruvnet/rufield">ruvnet/rufield</a>
+        by <strong>Reuven Cohen (@ruvnet)</strong> &middot; built with the Ruv-Explainer
+        dual-half pipeline &middot; not affiliated, MIT-licensed source.
+      </div>
+      <div class="prov">
+        <strong>Honest limits, in one breath:</strong> RuField is
+        <strong>rufield.mfs.v0.1</strong>, a reference stack &mdash; most numbers are
+        <strong>SYNTHETIC</strong> (scored against a simulator&rsquo;s own truth, not
+        real-world accuracy); the single real-signal path is <strong>recorded WiFi
+        replay</strong>, a physically-grounded proxy, <em>not</em> validated accuracy; no
+        hardware adapter is validated; the viewer is read-only; and it is
+        <strong>not a medical device</strong>. The architecture, privacy enforcement,
+        and provenance are real and working today.
+        <span class="prov-build">
+          &nbsp;&middot;&nbsp; Updated <strong>2026-06-19</strong> &middot; source
+          <code>@&nbsp;509d8ae</code> &middot; <strong>rufield.mfs.v0.1</strong>
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>

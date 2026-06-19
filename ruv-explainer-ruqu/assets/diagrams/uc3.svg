@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" width="100%" role="img" aria-labelledby="uc3-t uc3-d" style="max-width:1000px;height:auto;font-family:'Inter','IBM Plex Sans',system-ui,sans-serif;">
+  <title id="uc3-t">VQE: a quantum chemistry prototype in Rust</title>
+  <desc id="uc3-d">Build a Hamiltonian from Pauli strings, pick a UCCSD ansatz, then call VQE optimize. A parameterized quantum circuit is tuned step by step until the energy curve settles to its minimum, returning an estimated ground-state energy in Hartrees, with no quantum hardware.</desc>
+  <defs>
+    <linearGradient id="uc3-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#181233"/><stop offset="1" stop-color="#120e26"/></linearGradient>
+    <linearGradient id="uc3-mag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3df0"/><stop offset="1" stop-color="#8b5cff"/></linearGradient>
+    <marker id="uc3-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff3df0"/></marker>
+  </defs>
+  <rect width="1000" height="360" rx="16" fill="url(#uc3-bg)"/>
+  <text x="500" y="38" text-anchor="middle" fill="#f3eefb" font-size="19" font-weight="700">Quantum chemistry &#8212; a molecule&#8217;s lowest-energy state</text>
+  <text x="500" y="60" text-anchor="middle" fill="#7df0ff" font-size="11.5" font-family="'IBM Plex Mono',ui-monospace,monospace">Hamiltonian::from_pauli_strings([..]) &#183; Ansatz::uccsd(..) &#183; VQE::new(..).optimize()</text>
+
+  <!-- molecule -->
+  <text x="150" y="100" text-anchor="middle" fill="#9a8fc4" font-size="12" font-weight="700">Your molecule</text>
+  <g>
+    <line x1="120" y1="170" x2="180" y2="150" stroke="#8b5cff" stroke-width="3"/>
+    <line x1="120" y1="170" x2="150" y2="225" stroke="#8b5cff" stroke-width="3"/>
+    <circle cx="120" cy="170" r="20" fill="url(#uc3-mag)"/>
+    <circle cx="180" cy="150" r="14" fill="#39e8ff"/>
+    <circle cx="150" cy="225" r="14" fill="#39e8ff"/>
+  </g>
+  <text x="150" y="262" text-anchor="middle" fill="#a99fce" font-size="10">encoded as a Hamiltonian</text>
+
+  <line x1="212" y1="180" x2="252" y2="180" stroke="#ff3df0" stroke-width="2.2" marker-end="url(#uc3-ar)"/>
+
+  <!-- parameterized circuit -->
+  <text x="370" y="100" text-anchor="middle" fill="#ff5cf2" font-size="12" font-weight="700">Parameterized circuit (ansatz)</text>
+  <rect x="270" y="120" width="200" height="120" rx="10" fill="#1d1640" stroke="#ff3df0" stroke-width="1.3"/>
+  <line x1="288" y1="150" x2="452" y2="150" stroke="#6b6390"/><line x1="288" y1="180" x2="452" y2="180" stroke="#6b6390"/><line x1="288" y1="210" x2="452" y2="210" stroke="#6b6390"/>
+  <g font-family="monospace" font-size="9" fill="#cdc2ee">
+    <rect x="310" y="138" width="26" height="24" rx="4" fill="#231a44" stroke="#8b5cff"/><text x="323" y="155" text-anchor="middle">R&#952;</text>
+    <rect x="370" y="168" width="26" height="24" rx="4" fill="#231a44" stroke="#8b5cff"/><text x="383" y="185" text-anchor="middle">R&#952;</text>
+    <rect x="410" y="198" width="26" height="24" rx="4" fill="#231a44" stroke="#8b5cff"/><text x="423" y="215" text-anchor="middle">R&#952;</text>
+  </g>
+  <text x="370" y="232" text-anchor="middle" fill="#a99fce" font-size="9.5">tunable angles &#952;</text>
+
+  <line x1="482" y1="180" x2="522" y2="180" stroke="#ff3df0" stroke-width="2.2" marker-end="url(#uc3-ar)"/>
+
+  <!-- energy curve settling -->
+  <text x="700" y="100" text-anchor="middle" fill="#9a8fc4" font-size="12" font-weight="700">Energy settles to its minimum</text>
+  <rect x="540" y="112" width="320" height="150" rx="10" fill="#0e0a1f" stroke="#3a2f66"/>
+  <line x1="560" y1="130" x2="560" y2="244" stroke="#4a3f70"/><line x1="560" y1="244" x2="840" y2="244" stroke="#4a3f70"/>
+  <text x="552" y="135" text-anchor="end" fill="#7d739e" font-size="9" transform="rotate(-90 552 190)">energy</text>
+  <text x="700" y="258" text-anchor="middle" fill="#7d739e" font-size="9">optimizer steps</text>
+  <path d="M566 136 C 600 150, 630 210, 690 228 C 740 240, 790 234, 832 232" fill="none" stroke="#39e8ff" stroke-width="2.4"/>
+  <circle cx="832" cy="232" r="5" fill="#ff3df0"/>
+  <text x="700" y="200" text-anchor="middle" fill="#cdc2ee" font-size="10">each step lowers the estimate</text>
+
+  <!-- payoff -->
+  <rect x="540" y="278" width="320" height="62" rx="10" fill="#231a44" stroke="url(#uc3-mag)" stroke-width="1.5"/>
+  <text x="560" y="304" fill="#f3eefb" font-size="13" font-weight="700">You get: result.energy</text>
+  <text x="560" y="326" fill="#7df0ff" font-size="12.5" font-family="'IBM Plex Mono',ui-monospace,monospace">&#8594; an estimated ground-state energy (Hartrees)</text>
+</svg>

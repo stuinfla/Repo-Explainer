@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="spec" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a06bff"/>
+      <stop offset="20%" stop-color="#5b8cff"/>
+      <stop offset="40%" stop-color="#1fd6d6"/>
+      <stop offset="60%" stop-color="#3ee68a"/>
+      <stop offset="78%" stop-color="#ffd23e"/>
+      <stop offset="100%" stop-color="#ff5e62"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="13" fill="#08080d"/>
+  <!-- incoming white ray -->
+  <rect x="6" y="30.5" width="16" height="3" rx="1.5" fill="#f4f4ff"/>
+  <!-- prism -->
+  <path d="M30 16 L46 44 L14 44 Z" fill="none" stroke="url(#spec)" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M30 16 L46 44 L14 44 Z" fill="url(#spec)" opacity="0.16"/>
+  <!-- fanned spectrum out the right -->
+  <g stroke-width="2.2" stroke-linecap="round">
+    <line x1="38" y1="30" x2="58" y2="22" stroke="#a06bff"/>
+    <line x1="39" y1="32" x2="58" y2="30" stroke="#1fd6d6"/>
+    <line x1="40" y1="34" x2="58" y2="38" stroke="#3ee68a"/>
+    <line x1="41" y1="36" x2="58" y2="46" stroke="#ff5e62"/>
+  </g>
+</svg>

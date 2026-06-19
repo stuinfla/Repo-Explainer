@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 340" width="100%" role="img" aria-labelledby="uc7-t uc7-d" style="max-width:1000px;height:auto;font-family:'Inter','IBM Plex Sans',system-ui,sans-serif;">
+  <title id="uc7-t">In-page quantum: a live widget via WebAssembly, no server</title>
+  <desc id="uc7-d">A browser tab loads the @ruvector/ruqu-wasm WebAssembly module. The page builds a Circuit, runs genuine state-vector simulation client-side up to about 25 qubits, and measureAll returns a live result. Your visitors run the quantum simulation themselves with zero server cost.</desc>
+  <defs>
+    <linearGradient id="uc7-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#181233"/><stop offset="1" stop-color="#120e26"/></linearGradient>
+    <linearGradient id="uc7-mag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3df0"/><stop offset="1" stop-color="#8b5cff"/></linearGradient>
+    <marker id="uc7-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#39e8ff"/></marker>
+  </defs>
+  <rect width="1000" height="340" rx="16" fill="url(#uc7-bg)"/>
+  <text x="500" y="36" text-anchor="middle" fill="#f3eefb" font-size="19" font-weight="700">In-page quantum &#8212; a live widget, no backend server</text>
+  <text x="500" y="58" text-anchor="middle" fill="#7df0ff" font-size="11.5" font-family="'IBM Plex Mono',ui-monospace,monospace">new Circuit(3) &#183; sim.run(circuit) &#183; state.measureAll()</text>
+
+  <!-- browser tab -->
+  <rect x="40" y="84" width="300" height="220" rx="12" fill="#1c2444" stroke="#39e8ff" stroke-width="1.3"/>
+  <circle cx="60" cy="106" r="4" fill="#ff5c7a"/><circle cx="74" cy="106" r="4" fill="#ffc83d"/><circle cx="88" cy="106" r="4" fill="#3ddc84"/>
+  <line x1="40" y1="120" x2="340" y2="120" stroke="#2a4a66"/>
+  <text x="190" y="148" text-anchor="middle" fill="#bff3ff" font-size="13" font-weight="700">A browser tab</text>
+  <text x="190" y="168" text-anchor="middle" fill="#a9c8e0" font-size="11">your teaching app or website</text>
+  <text x="190" y="200" text-anchor="middle" fill="#d8cff0" font-size="11">no install for visitors &#8212;</text>
+  <text x="190" y="218" text-anchor="middle" fill="#d8cff0" font-size="11">it just loads with the page</text>
+  <text x="190" y="252" text-anchor="middle" fill="#9a8fc4" font-size="10.5" font-family="monospace">npm i @ruvector/ruqu-wasm</text>
+  <text x="190" y="272" text-anchor="middle" fill="#9a8fc4" font-size="10.5" font-family="monospace">180 KB gz &#183; v2.0.5</text>
+
+  <line x1="348" y1="194" x2="386" y2="194" stroke="#39e8ff" stroke-width="2.2" marker-end="url(#uc7-ar)"/>
+
+  <!-- WASM module -->
+  <rect x="394" y="120" width="212" height="148" rx="12" fill="#1d1640" stroke="url(#uc7-mag)" stroke-width="1.6"/>
+  <text x="500" y="148" text-anchor="middle" fill="#ff5cf2" font-size="13" font-weight="700">WASM module</text>
+  <text x="500" y="170" text-anchor="middle" fill="#d8cff0" font-size="11">the pure-Rust state-vector</text>
+  <text x="500" y="186" text-anchor="middle" fill="#d8cff0" font-size="11">engine, compiled to wasm32</text>
+  <text x="500" y="214" text-anchor="middle" fill="#cdc2ee" font-size="11">genuine simulation,</text>
+  <text x="500" y="230" text-anchor="middle" fill="#cdc2ee" font-size="11">client-side, ~25 qubits</text>
+  <text x="500" y="254" text-anchor="middle" fill="#ff8fa3" font-size="10">~1 GB browser memory at 25</text>
+
+  <line x1="614" y1="194" x2="652" y2="194" stroke="#39e8ff" stroke-width="2.2" marker-end="url(#uc7-ar)"/>
+
+  <!-- live readout -->
+  <rect x="660" y="120" width="300" height="148" rx="12" fill="#0e0a1f" stroke="#3a2f66"/>
+  <text x="810" y="146" text-anchor="middle" fill="#bff3ff" font-size="12.5" font-weight="700">live measurement readout</text>
+  <g>
+    <rect x="700" y="166" width="60" height="44" rx="8" fill="#231a44" stroke="#39e8ff"/><text x="730" y="192" text-anchor="middle" fill="#7df0ff" font-size="13" font-weight="700">010</text>
+    <rect x="790" y="166" width="60" height="44" rx="8" fill="#231a44" stroke="#ff3df0"/><text x="820" y="192" text-anchor="middle" fill="#ff8cf2" font-size="13" font-weight="700">101</text>
+  </g>
+  <text x="810" y="238" text-anchor="middle" fill="#d8cff0" font-size="11">each click &#8594; a fresh measured outcome</text>
+  <text x="810" y="256" text-anchor="middle" fill="#a99fce" font-size="10.5">zero server cost</text>
+
+  <text x="500" y="324" text-anchor="middle" fill="#ffd9f6" font-size="13" font-weight="700">An interactive quantum widget your visitors run themselves &#8212; entirely in their browser.</text>
+</svg>

@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhotonLayer — the lens that captures the answer, not the picture</title>
+<meta name="description" content="PhotonLayer is a deterministic optical-AI front end: a learned piece of smart glass reshapes light so a tiny sensor captures the answer instead of the whole picture — then signs a receipt proving exactly what it measured. A plain-English explainer of Reuven Cohen's (@ruvnet) PhotonLayer.">
+<meta name="author" content="Explainer for PhotonLayer by Reuven Cohen / @ruvnet">
+<meta property="og:title" content="PhotonLayer — capture the answer, not the picture">
+<meta property="og:description" content="A learned phase mask does the first chunk of 'figuring out what's in the picture' inside the light, so the sensor captures a few numbers instead of a full photo — with a signed, reproducible receipt.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/assets/img/hero-prism.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<!-- ===================== TOP BAR ===================== -->
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="PhotonLayer explainer home">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+        <defs>
+          <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#a06bff"/><stop offset="35%" stop-color="#1fd6d6"/>
+            <stop offset="70%" stop-color="#3ee68a"/><stop offset="100%" stop-color="#ff5e62"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="14.6" width="8" height="2.8" rx="1.4" fill="#f4f4ff"/>
+        <path d="M15 7 L24 23 L6 23 Z" fill="none" stroke="url(#lg)" stroke-width="2.2" stroke-linejoin="round"/>
+        <g stroke-width="2" stroke-linecap="round">
+          <line x1="19" y1="14.5" x2="30" y2="10.5" stroke="#a06bff"/>
+          <line x1="20" y1="16" x2="30" y2="16" stroke="#1fd6d6"/>
+          <line x1="20.5" y1="17.5" x2="30" y2="21.5" stroke="#ff5e62"/>
+        </g>
+      </svg>
+      <span><b>Photon</b>Layer</span>
+      <span class="tag">explainer</span>
+    </a>
+    <nav>
+      <a class="hide-sm" href="#what">What it is</a>
+      <a class="hide-sm" href="#priya">Example</a>
+      <a class="hide-sm" href="#gallery">Use cases</a>
+      <a class="hide-sm" href="#dropin">Drop-in</a>
+      <a class="ghub" href="https://github.com/ruvnet/PhotonLayer" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<a id="top"></a>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow"><span class="dot"></span> Optical AI · pure Rust · by @ruvnet</span>
+        <h1>The lens already did the thinking — so all that's left to capture is the <span class="spec-text">answer</span>.</h1>
+        <p class="lede">PhotonLayer is a deterministic optical-AI front end: a learned piece of <strong>smart glass</strong> reshapes light so a tiny sensor captures the <em>answer</em> instead of the whole picture.</p>
+        <p class="sub">Then it signs a receipt proving exactly what it measured — a result you can re-run, not just a claim. Today it's a faithful software simulator written in Rust; the actual glass is on the roadmap.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#priya">See it with a real example →</a>
+          <a class="btn btn-ghost" href="https://ruvnet.github.io/PhotonLayer/" target="_blank" rel="noopener">Try the live demo ↗</a>
+        </div>
+
+        <div class="prov" id="prov">
+          <span class="who">By <strong>Reuven Cohen</strong> · <a href="https://github.com/ruvnet" target="_blank" rel="noopener">@ruvnet</a></span>
+          <span class="pill" id="prov-live">Updated <time datetime="2026-06-19">2026-06-19</time> · source @ <code>fe86c9f</code></span>
+          <span>MIT © Ruvector</span>
+          <a href="https://github.com/ruvnet/PhotonLayer" target="_blank" rel="noopener">github.com/ruvnet/PhotonLayer ↗</a>
+        </div>
+      </div>
+
+      <div>
+        <figure class="hero-figure">
+          <img src="/assets/img/hero-prism.png" alt="A beam of plain white light enters a glowing prism and fans into a full rainbow spectrum that resolves into a few clean glowing dots — the answer.">
+        </figure>
+        <p class="hero-figcap">white light in → trained optics → a few numbers out: the answer, shaped by physics</p>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="n">64</div><div class="l">sensor pixels, vs 1,024 in a full image (16× fewer)</div></div>
+      <div class="stat"><div class="n">83.3%</div><div class="l">single-plane MNIST at 16× compression (gradient-trained)</div></div>
+      <div class="stat"><div class="n">88.8%</div><div class="l">2-plane optical cascade, still 16× compression</div></div>
+      <div class="stat"><div class="n">~24s</div><div class="l">to reproduce the headline result from clean, deterministically</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><hr class="spec-line"></div>
+
+<!-- ===================== SHELL: rail + content ===================== -->
+<div class="wrap">
+<div class="shell">
+
+  <!-- side rail -->
+  <aside class="rail" aria-label="Section navigation">
+    <p class="rail-h">The 7 questions</p>
+    <nav>
+      <a href="#what"><span class="num">01</span>What is this?</a>
+      <a href="#problem"><span class="num">02</span>What problem?</a>
+      <a href="#now"><span class="num">03</span>Why now?</a>
+      <a href="#how"><span class="num">04</span>How it works</a>
+      <a href="#solved"><span class="num">05</span>Solved state</a>
+      <a href="#priya"><span class="num">06</span>Grounding example</a>
+      <a href="#gallery"><span class="num">07</span>Use-case gallery</a>
+      <a href="#vs"><span class="num">08</span>Why this vs. what I have</a>
+      <a href="#dropin"><span class="num">09</span>How to implement</a>
+      <a href="#start"><span class="num">10</span>How to start</a>
+      <a href="#limits"><span class="num">11</span>Honest limits</a>
+    </nav>
+    <button class="expand-btn" id="expand-toggle" aria-expanded="false">Expand all sections</button>
+  </aside>
+
+  <!-- content -->
+  <main>
+
+  <!-- ===== 01 — WHAT IS THIS (Q1) ===== -->
+  <section id="what">
+  <details class="sec" open>
+    <summary>
+      <span class="s-num">01</span>
+      <span class="s-head">
+        <span class="s-q">Q1 · What is this?</span>
+        <h2 class="s-title">A camera that captures the answer, not the picture</h2>
+        <p class="s-sub">In one plain sentence, then grounded all the way down to earth.</p>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="s-body">
+      <p class="lead-in"><strong>PhotonLayer is a deterministic optical-AI front end:</strong> a learned piece of "smart glass" reshapes incoming light so a tiny sensor captures the <em>answer</em> instead of the whole picture — then signs a receipt proving exactly what it measured.</p>
+
+      <p>Here's the everyday version. A <strong>normal camera</strong> records <em>every pixel</em> of a scene, then a computer reads all of them to decide what it's looking at. That's a lot of data to move, store, and process — and the picture itself can leak (it's a viewable photo of you or your scene).</p>
+      <p>PhotonLayer <strong>flips the order.</strong> It puts a specially-shaped, <em>trained</em> piece of glass — a <strong>phase mask</strong> — in front of a small sensor. The glass bends the incoming light so that, by the time light lands on the sensor, the useful information has already been <strong>squeezed into just a handful of numbers</strong>. A tiny program reads those numbers and gives the answer.</p>
+
+      <p>The repo's own analogy: it's <em>like a translator who listens to a whole speech and hands you a one-line summary — you never needed the full transcript to act on it.</em> The "lens" is <strong>trained by trial-and-improvement</strong> to do that summarizing <strong>in the light itself, before anything is digitized.</strong></p>
+
+      <!-- DUAL VISUAL: friendly raster + technical SVG -->
+      <div class="dual">
+        <figure class="vfig">
+          <figcaption class="vlabel simple"><svg class="ic" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5 8.5l2 2 4-4.5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg> Friendly view</figcaption>
+          <div class="vbody"><img src="/assets/img/translator-summary.png" alt="A person listens to a long wall of speech and hands over a single tiny summary card — you never needed the full transcript to act."></div>
+          <figcaption class="vcap">The translator analogy: hear the whole speech, hand back one useful line. PhotonLayer does that summarizing <em>in the light</em>.</figcaption>
+        </figure>
+
+        <figure class="vfig">
+          <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M6 6v8"/></svg> Technical view — the pipeline</figcaption>
+          <div class="svgwrap">
+            <!-- Accurate to README "How it works": scene → trained optical transform → tiny sensor measurement → small decoder → decision (+ receipt) -->
+            <svg viewBox="0 0 560 230" role="img" aria-label="Pipeline: scene to trained optical transform to tiny sensor measurement to small decoder to decision, with a receipt binding it all.">
+              <defs>
+                <linearGradient id="spc1" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#a06bff"/><stop offset=".3" stop-color="#4f8cff"/>
+                  <stop offset=".5" stop-color="#1fd6d6"/><stop offset=".7" stop-color="#3ee68a"/>
+                  <stop offset="1" stop-color="#ff5e62"/>
+                </linearGradient>
+                <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L7 4L0 8z" fill="#8b8fab"/></marker>
+              </defs>
+              <!-- scene -->
+              <g font-family="JetBrains Mono, monospace" font-size="9" fill="#8b8fab">
+                <rect x="14" y="58" width="58" height="58" rx="4" fill="#11111c" stroke="#262640"/>
+                <g fill="#4f8cff" opacity=".8">
+                  <rect x="22" y="66" width="6" height="6"/><rect x="34" y="72" width="6" height="6"/><rect x="48" y="68" width="6" height="6"/><rect x="58" y="80" width="6" height="6"/><rect x="28" y="90" width="6" height="6"/><rect x="44" y="98" width="6" height="6"/><rect x="56" y="100" width="6" height="6"/><rect x="22" y="104" width="6" height="6"/>
+                </g>
+                <text x="43" y="130" text-anchor="middle">scene</text>
+                <text x="43" y="142" text-anchor="middle" fill="#5a5e7a">1024 px</text>
+              </g>
+              <line x1="74" y1="87" x2="100" y2="87" stroke="#8b8fab" stroke-width="1.4" marker-end="url(#ar)"/>
+              <!-- phase mask (trained optics) -->
+              <g>
+                <rect x="102" y="48" width="20" height="78" rx="3" fill="url(#spc1)" opacity=".85"/>
+                <rect x="102" y="48" width="20" height="78" rx="3" fill="none" stroke="#262640"/>
+                <text x="112" y="140" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#c3c6dd">phase</text>
+                <text x="112" y="150" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#c3c6dd">mask</text>
+              </g>
+              <!-- diffraction / propagation -->
+              <g stroke="url(#spc1)" stroke-width="1.3" fill="none" opacity=".75">
+                <path d="M122 87 Q150 60 178 78"/><path d="M122 87 Q150 87 178 90"/><path d="M122 87 Q150 114 178 102"/>
+              </g>
+              <text x="150" y="160" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#5a5e7a">propagate</text>
+              <text x="150" y="170" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#5a5e7a">(diffraction)</text>
+              <!-- sensor -->
+              <g>
+                <rect x="180" y="70" width="36" height="36" rx="3" fill="#11111c" stroke="#1fd6d6"/>
+                <g fill="#1fd6d6">
+                  <rect x="186" y="76" width="9" height="9"/><rect x="201" y="76" width="9" height="9"/><rect x="186" y="91" width="9" height="9"/><rect x="201" y="91" width="9" height="9" opacity=".6"/>
+                </g>
+                <text x="198" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#1fd6d6">sensor</text>
+                <text x="198" y="135" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#5a5e7a">64 px</text>
+              </g>
+              <line x1="218" y1="88" x2="246" y2="88" stroke="#8b8fab" stroke-width="1.4" marker-end="url(#ar)"/>
+              <!-- decoder -->
+              <g>
+                <rect x="248" y="66" width="64" height="44" rx="6" fill="#161624" stroke="#3ee68a"/>
+                <text x="280" y="84" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="11" fill="#3ee68a">decoder</text>
+                <text x="280" y="98" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#8b8fab">tiny · 640 MAC</text>
+              </g>
+              <line x1="314" y1="88" x2="342" y2="88" stroke="#8b8fab" stroke-width="1.4" marker-end="url(#ar)"/>
+              <!-- decision -->
+              <g>
+                <rect x="344" y="68" width="86" height="40" rx="8" fill="#11111c" stroke="#262640"/>
+                <text x="387" y="86" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-weight="600" font-size="12" fill="#eef0fb">"paper"</text>
+                <text x="387" y="100" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#8b8fab">decision</text>
+              </g>
+              <!-- receipt binding everything -->
+              <g>
+                <rect x="14" y="186" width="416" height="30" rx="6" fill="#0c0c14" stroke="#a06bff" stroke-dasharray="3 3"/>
+                <text x="24" y="205" font-family="JetBrains Mono, monospace" font-size="9" fill="#a06bff">⛓ receipt</text>
+                <text x="92" y="205" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#8b8fab">BLAKE3 hash of { image · mask · config · output · metrics · build } → re-runnable proof</text>
+              </g>
+              <line x1="43" y1="186" x2="43" y2="120" stroke="#a06bff" stroke-width=".8" stroke-dasharray="2 3" opacity=".5"/>
+              <line x1="112" y1="186" x2="112" y2="126" stroke="#a06bff" stroke-width=".8" stroke-dasharray="2 3" opacity=".5"/>
+              <line x1="198" y1="186" x2="198" y2="106" stroke="#a06bff" stroke-width=".8" stroke-dasharray="2 3" opacity=".5"/>
+              <line x1="387" y1="186" x2="387" y2="108" stroke="#a06bff" stroke-width=".8" stroke-dasharray="2 3" opacity=".5"/>
+            </svg>
+          </div>
+          <figcaption class="vcap">The real pipeline (README "How it works"): a trained mask + diffraction does analog preprocessing, the sensor records ~64 numbers, a tiny decoder reads the answer, and a BLAKE3 receipt binds every input/output.</figcaption>
+        </figure>
+      </div>
+
+      <div class="note honest"><span class="lab">Honest framing the repo insists on</span>Today this is a <strong>software simulator written in Rust</strong> — the physics, the training, and the receipts are all real and reproducible. <strong>Building the actual glass is on the roadmap.</strong> So "smart glass" currently means a faithful <em>simulation</em> that runs on your computer or in your browser.</div>
+    </div>
+  </details>
+  </section>
+
+  <!-- ===== 02 — WHAT PROBLEM (Q2) ===== -->
+  <section id="problem">
+  <details class="sec">
+    <summary>
+      <span class="s-num">02</span>
+      <span class="s-head">
+        <span class="s-q">Q2 · What problem does it solve?</span>
+        <h2 class="s-title">Every camera-based AI pays the "capture everything, then think" tax</h2>
+        <p class="s-sub">Bandwidth, power, storage — and a recoverable image of whatever it looked at.</p>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="s-body">
+      <p class="lead-in">Today's pattern is always the same: <strong>grab the whole picture, then compute on all of it.</strong> That single design choice creates four costs you can't avoid.</p>
+
+      <table class="tbl">
+        <thead><tr><th>The cost</th><th>Why it hurts</th></tr></thead>
+        <tbody>
+          <tr><td class="after"><strong>Bandwidth</strong></td><td class="before">Thousands of pixels per frame have to be read off the sensor and moved.</td></tr>
+          <tr><td class="after"><strong>Power & compute</strong></td><td class="before">A processor chews through every pixel before it can decide anything.</td></tr>
+          <tr><td class="after"><strong>Storage</strong></td><td class="before">Full frames pile up — more to keep, more to secure.</td></tr>
+          <tr><td class="after"><strong>Privacy</strong></td><td class="before">A stored frame is a <em>viewable photo</em> of whatever it saw — a recoverable image of you, your documents, your scene.</td></tr>
+        </tbody>
+      </table>
+
+      <p>PhotonLayer is a proof-of-concept for <strong>capture-the-answer sensing</strong>: do the first chunk of "figuring out what's in the picture" <em>in the light</em>, so the sensor only ever captures a tiny compressed measurement (e.g. <strong>64 numbers instead of 1,024 pixels</strong>), and the stored thing is a <em>measurement, not a viewable photo</em>.</p>
+
+      <div class="dual">
+        <figure class="vfig">
+          <figcaption class="vlabel simple"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4.5"/></svg> Friendly view</figcaption>
+          <div class="vbody"><img src="/assets/img/before-after-camera.png" alt="Left: a heavy cluttered camera grabbing a full pixel-dense photo. Right: a small calm sensor behind a prismatic lens capturing just a few bright dots."></div>
+          <figcaption class="vcap">Left: capture everything, then think — heavy and cluttered. Right: the optics already did the first pass, so only a few bright numbers are left to capture.</figcaption>
+        </figure>
+
+        <figure class="vfig">
+          <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 13L6 5l3 5 2-3 3 6z"/></svg> Technical view — where the cost lives</figcaption>
+          <div class="svgwrap">
+            <svg viewBox="0 0 560 220" role="img" aria-label="Comparison of data path: a normal camera reads 1024 pixels then computes 10240 MACs; PhotonLayer reads 64 pixels then computes 640 MACs.">
+              <defs>
+                <linearGradient id="redg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff5e62"/><stop offset="1" stop-color="#ff9a3e"/></linearGradient>
+                <linearGradient id="grg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1fd6d6"/><stop offset="1" stop-color="#3ee68a"/></linearGradient>
+              </defs>
+              <!-- top: normal camera -->
+              <text x="12" y="24" font-family="JetBrains Mono, monospace" font-size="10" fill="#ff5e62">NORMAL CAMERA + AI</text>
+              <rect x="12" y="34" width="46" height="46" rx="4" fill="#11111c" stroke="#262640"/>
+              <g fill="#8b8fab" opacity=".8"><rect x="18" y="40" width="5" height="5"/><rect x="26" y="40" width="5" height="5"/><rect x="34" y="40" width="5" height="5"/><rect x="42" y="40" width="5" height="5"/><rect x="50" y="40" width="5" height="5"/><rect x="18" y="48" width="5" height="5"/><rect x="34" y="48" width="5" height="5"/><rect x="50" y="48" width="5" height="5"/><rect x="26" y="56" width="5" height="5"/><rect x="42" y="56" width="5" height="5"/><rect x="18" y="64" width="5" height="5"/><rect x="50" y="64" width="5" height="5"/></g>
+              <rect x="78" y="44" width="120" height="26" rx="13" fill="url(#redg)" opacity=".25" stroke="url(#redg)"/>
+              <text x="138" y="61" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#ff9a3e">read 1024 px</text>
+              <line x1="58" y1="57" x2="78" y2="57" stroke="#8b8fab" marker-end="url(#ar)"/>
+              <line x1="198" y1="57" x2="218" y2="57" stroke="#8b8fab" marker-end="url(#ar)"/>
+              <rect x="220" y="40" width="150" height="34" rx="8" fill="#11111c" stroke="#262640"/>
+              <text x="295" y="61" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#c3c6dd">compute 10,240 MACs</text>
+              <line x1="370" y1="57" x2="390" y2="57" stroke="#8b8fab" marker-end="url(#ar)"/>
+              <rect x="392" y="42" width="74" height="30" rx="8" fill="#1d1d2e" stroke="#262640"/>
+              <text x="429" y="61" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="11" fill="#eef0fb">decision</text>
+              <text x="486" y="61" font-family="JetBrains Mono, monospace" font-size="9" fill="#ff5e62">+ full photo</text>
+              <text x="486" y="73" font-family="JetBrains Mono, monospace" font-size="9" fill="#ff5e62">stored ⚠</text>
+
+              <!-- divider -->
+              <line x1="12" y1="110" x2="548" y2="110" stroke="#262640" stroke-dasharray="3 4"/>
+
+              <!-- bottom: photonlayer -->
+              <text x="12" y="140" font-family="JetBrains Mono, monospace" font-size="10" fill="#3ee68a">PHOTONLAYER</text>
+              <rect x="12" y="150" width="46" height="46" rx="4" fill="#11111c" stroke="#262640"/>
+              <rect x="20" y="150" width="6" height="46" fill="url(#grg)" opacity=".7"/>
+              <text x="38" y="208" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#8b8fab">mask</text>
+              <rect x="78" y="160" width="120" height="26" rx="13" fill="url(#grg)" opacity=".22" stroke="url(#grg)"/>
+              <text x="138" y="177" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#3ee68a">read 64 px</text>
+              <line x1="58" y1="173" x2="78" y2="173" stroke="#8b8fab" marker-end="url(#ar)"/>
+              <line x1="198" y1="173" x2="218" y2="173" stroke="#8b8fab" marker-end="url(#ar)"/>
+              <rect x="220" y="156" width="150" height="34" rx="8" fill="#11111c" stroke="#262640"/>
+              <text x="295" y="177" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#c3c6dd">compute 640 MACs</text>
+              <line x1="370" y1="173" x2="390" y2="173" stroke="#8b8fab" marker-end="url(#ar)"/>
+              <rect x="392" y="158" width="74" height="30" rx="8" fill="#1d1d2e" stroke="#3ee68a"/>
+              <text x="429" y="177" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="11" fill="#eef0fb">decision</text>
+              <text x="486" y="177" font-family="JetBrains Mono, monospace" font-size="9" fill="#3ee68a">+ measurement</text>
+              <text x="486" y="189" font-family="JetBrains Mono, monospace" font-size="9" fill="#3ee68a">(not a photo) ✓</text>
+            </svg>
+          </div>
+          <figcaption class="vcap">Same decision, but PhotonLayer reads <strong>16× fewer sensor pixels</strong> and <strong>16× fewer digital-decoder MACs</strong> (640 vs 10,240), and stores a measurement instead of a recoverable photo. Numbers from the README "Measured results" tables.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </details>
+  </section>
+
+  <!-- ===== 03 — WHY NOW (Q3) ===== -->
+  <section id="now">
+  <details class="sec">
+    <summary>
+      <span class="s-num">03</span>
+      <span class="s-head">
+        <span class="s-q">Q3 · Why is that a problem now?</span>
+        <h2 class="s-title">Cameras-with-AI are everywhere — and "trust me, that's what it measured" no longer cuts it</h2>
+        <p class="s-sub">Edge sensing is exploding, privacy rules are tightening, and results need to be provable.</p>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="s-body">
+      <p class="lead-in">Three pressures collide right now, and the "capture everything, then think" design sits in the worst spot for all three.</p>
+      <ul>
+        <li><strong>Sensing moved to the edge.</strong> Doorbells, conveyor belts, drones, wearables — tiny battery- and bandwidth-limited devices are doing vision. Reading and crunching a full frame per item is exactly the budget they don't have.</li>
+        <li><strong>Privacy is now a liability, not a footnote.</strong> A stored full frame is a recoverable photo. The cheapest way to not leak a picture is to <strong>never capture one in the first place</strong> — capture a measurement that doesn't look like the scene.</li>
+        <li><strong>Results need to be provable.</strong> As AI makes more real decisions, "the model said so" isn't enough. You need to show <em>exactly</em> what was measured and that it wasn't tampered with — a re-runnable experiment, not a screenshot.</li>
+      </ul>
+      <p>PhotonLayer is the only proof-of-concept in this space that ships with <strong>bit-reproducible, signed receipts</strong>, so a result is a re-runnable experiment, not a claim. It reproduces a genuine research result — a single-layer <strong>ceiling-break to 83.3%</strong>, multi-plane <strong>88.8%</strong>, all at 16× compression, all deterministic, from clean in ~24–62 seconds — and is unusually candid about exactly what it does and doesn't prove.</p>
+
+      <div class="dual">
+        <figure class="vfig">
+          <figcaption class="vlabel simple"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4.5"/></svg> Friendly view</figcaption>
+          <div class="vbody"><img src="/assets/img/receipt-stamp.png" alt="A glowing tamper-proof digital receipt with a green checkmark seal and a subtle fingerprint motif, edged with prismatic light."></div>
+          <figcaption class="vcap">A result you can <em>prove</em>: every run emits a signed receipt — a re-runnable experiment, stamped and tamper-evident.</figcaption>
+        </figure>
+
+        <figure class="vfig">
+          <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M3 8h10M8 3v10"/></svg> Technical view — three forces, one design answer</figcaption>
+          <div class="svgwrap">
+            <svg viewBox="0 0 560 210" role="img" aria-label="Three pressures — edge bandwidth, privacy, provability — converge on the capture-the-answer design.">
+              <defs><linearGradient id="conv" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a06bff"/><stop offset=".5" stop-color="#1fd6d6"/><stop offset="1" stop-color="#3ee68a"/></linearGradient></defs>
+              <!-- three pressure pills -->
+              <g font-family="Space Grotesk, sans-serif" font-size="11">
+                <rect x="14" y="20" width="150" height="44" rx="10" fill="#11111c" stroke="#4f8cff"/>
+                <text x="89" y="40" text-anchor="middle" fill="#4f8cff" font-size="10" font-family="JetBrains Mono, monospace">EDGE</text>
+                <text x="89" y="55" text-anchor="middle" fill="#c3c6dd" font-size="10">tiny power / bandwidth</text>
+                <rect x="14" y="84" width="150" height="44" rx="10" fill="#11111c" stroke="#a06bff"/>
+                <text x="89" y="104" text-anchor="middle" fill="#a06bff" font-size="10" font-family="JetBrains Mono, monospace">PRIVACY</text>
+                <text x="89" y="119" text-anchor="middle" fill="#c3c6dd" font-size="10">don't store a photo</text>
+                <rect x="14" y="148" width="150" height="44" rx="10" fill="#11111c" stroke="#3ee68a"/>
+                <text x="89" y="168" text-anchor="middle" fill="#3ee68a" font-size="10" font-family="JetBrains Mono, monospace">PROVABILITY</text>
+                <text x="89" y="183" text-anchor="middle" fill="#c3c6dd" font-size="10">show what was measured</text>
+              </g>
+              <!-- converge -->
+              <path d="M164 42 C 250 42 250 105 330 105" fill="none" stroke="url(#conv)" stroke-width="1.6"/>
+              <path d="M164 106 L 330 106" fill="none" stroke="url(#conv)" stroke-width="1.6"/>
+              <path d="M164 170 C 250 170 250 105 330 105" fill="none" stroke="url(#conv)" stroke-width="1.6"/>
+              <!-- the answer -->
+              <rect x="332" y="70" width="216" height="72" rx="14" fill="#0c0c14" stroke="url(#conv)" stroke-width="1.5"/>
+              <text x="440" y="98" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-weight="600" font-size="14" fill="#eef0fb">Capture the answer</text>
+              <text x="440" y="118" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="#8b8fab">few pixels · measurement, not photo</text>
+              <text x="440" y="132" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="#8b8fab">+ signed reproducible receipt</text>
+            </svg>
+          </div>
+          <figcaption class="vcap">Edge limits, privacy, and provability all push toward the same answer: capture less, store a measurement not a photo, and prove it with a receipt.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </details>
+  </section>
+
+  <!-- ===== 04 — HOW IT WORKS (Q4) ===== -->
+  <section id="how">
+  <details class="sec">
+    <summary>
+      <span class="s-num">04</span>
+      <span class="s-head">
+        <span class="s-q">Q4 · How does it solve it?</span>
+        <h2 class="s-title">A trained phase mask does the first transform inside the light</h2>
+        <p class="s-sub">"Phase mask," diffraction, sensor, decoder, receipt — each one in plain terms, then exactly.</p>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="s-body">
+      <p class="lead-in"><strong>"Phase mask," in plain terms:</strong> a flat piece of optics whose surface is patterned so it nudges different parts of the light wave to arrive slightly early or late — and <em>that pattern</em> is what gets learned for your specific task.</p>
+
+      <div class="dual">
+        <figure class="vfig">
+          <figcaption class="vlabel simple"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4.5"/></svg> Friendly view</figcaption>
+          <div class="vbody"><img src="/assets/img/phase-mask-glass.png" alt="A flat patterned piece of smart glass bends incoming wavefronts of light — some parts arrive slightly early, some late — emerging as gently reshaped glowing waves."></div>
+          <figcaption class="vcap">The phase mask is patterned glass that bends the light wave: some parts arrive a touch early, some late. Train that pattern and the light arrives pre-sorted.</figcaption>
+        </figure>
+
+        <figure class="vfig">
+          <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M6 6v8"/></svg> Technical view — the optical stack</figcaption>
+          <div class="svgwrap">
+            <svg viewBox="0 0 560 260" role="img" aria-label="Optical stack: incoming wavefront, phase mask shifts phase per region, scalar diffraction propagation, sensor bins to a small measurement, decoder reads the class.">
+              <defs>
+                <linearGradient id="spc4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a06bff"/><stop offset=".5" stop-color="#1fd6d6"/><stop offset="1" stop-color="#ff5e62"/></linearGradient>
+              </defs>
+              <!-- planes labels -->
+              <g font-family="JetBrains Mono, monospace" font-size="9" fill="#5a5e7a" text-anchor="middle">
+                <text x="60" y="20">incoming light</text>
+                <text x="170" y="20">phase mask</text>
+                <text x="300" y="20">propagation</text>
+                <text x="420" y="20">sensor</text>
+                <text x="510" y="20">decoder</text>
+              </g>
+              <!-- incoming flat wavefronts -->
+              <g stroke="#c3c6dd" stroke-width="1.2" fill="none" opacity=".8">
+                <line x1="40" y1="46" x2="40" y2="206"/><line x1="52" y1="46" x2="52" y2="206"/><line x1="64" y1="46" x2="64" y2="206"/>
+              </g>
+              <g stroke="#8b8fab" stroke-width="1" fill="none" marker-end="url(#ar)"><line x1="68" y1="126" x2="120" y2="126"/></g>
+              <!-- phase mask: per-region shifts -->
+              <rect x="150" y="42" width="40" height="168" rx="4" fill="url(#spc4)" opacity=".8" stroke="#262640"/>
+              <g font-family="JetBrains Mono, monospace" font-size="7" fill="#08080d" text-anchor="middle">
+                <text x="170" y="64">+.3π</text><text x="170" y="92">−.7π</text><text x="170" y="120">+.1π</text><text x="170" y="148">−.4π</text><text x="170" y="176">+.6π</text><text x="170" y="200">−.2π</text>
+              </g>
+              <text x="170" y="232" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#a06bff">learned θ(x,y)</text>
+              <!-- after mask: warped wavefronts diffracting -->
+              <g stroke="url(#spc4)" stroke-width="1.2" fill="none" opacity=".8">
+                <path d="M198 50 Q 250 90 360 70"/>
+                <path d="M198 126 Q 250 126 360 126"/>
+                <path d="M198 200 Q 250 165 360 182"/>
+                <path d="M198 88 Q 250 110 360 98"/>
+                <path d="M198 163 Q 250 145 360 154"/>
+              </g>
+              <text x="300" y="246" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#5a5e7a">Fresnel / Fraunhofer / Angular-Spectrum · deterministic FFT</text>
+              <!-- sensor grid -->
+              <rect x="362" y="92" width="56" height="56" rx="4" fill="#11111c" stroke="#1fd6d6"/>
+              <g fill="#1fd6d6"><rect x="368" y="98" width="20" height="20" opacity=".85"/><rect x="392" y="98" width="20" height="20" opacity=".5"/><rect x="368" y="122" width="20" height="20" opacity=".6"/><rect x="392" y="122" width="20" height="20" opacity=".9"/></g>
+              <text x="390" y="166" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#1fd6d6">bin → 64 px</text>
+              <line x1="418" y1="120" x2="452" y2="120" stroke="#8b8fab" stroke-width="1" marker-end="url(#ar)"/>
+              <!-- decoder -->
+              <rect x="454" y="100" width="92" height="40" rx="8" fill="#161624" stroke="#3ee68a"/>
+              <text x="500" y="118" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="10" fill="#3ee68a">nearest-centroid</text>
+              <text x="500" y="132" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#8b8fab">reads the class</text>
+            </svg>
+          </div>
+          <figcaption class="vcap">Accurate to <code>photonlayer-core</code>: a learned phase profile θ(x,y) shifts the wave per region, scalar diffraction propagates it (Fresnel / Fraunhofer / Angular-Spectrum via a deterministic FFT), the sensor bins down to ~64 values, and a tiny decoder reads the class.</figcaption>
+        </figure>
+      </div>
+
+      <h4>How the mask gets <em>good</em>: trial-and-improvement, then real gradients</h4>
+      <p>A random mask already works a bit. To make it actually good at separating <em>your</em> classes, PhotonLayer trains the mask two ways:</p>
+      <ul>
+        <li><strong>Hill-climbing</strong> — try a small tweak, keep it only if accuracy improves. Simple, but it plateaus at an optimizer ceiling (~73%).</li>
+        <li><strong>Analytic gradient descent</strong> — train the mask through a <em>proven adjoint</em> of the diffraction operator (<code class="inl">Propagator::backward_into</code>, validated by an exact-adjoint identity <em>and</em> a finite-difference grad-check). This clears the ceiling decisively, to <strong>83.3%</strong> single-plane.</li>
+        <li><strong>Multi-plane cascade</strong> — stack phase planes with free-space propagation between them, trained end-to-end through the <em>composed</em> adjoint. Each plane sees a genuinely different field (decorrelated to ~0.04), reaching <strong>88.8%</strong> with 2 planes.</li>
+      </ul>
+
+      <div class="note"><span class="lab">The receipt</span>Every run hashes every output-determining input — image, mask, config, output frame, metrics, build provenance — into one tamper-evident <strong>BLAKE3</strong> digest. Change any one field and verification fails. That's what turns a result into a re-runnable experiment.</div>
+    </div>
+  </details>
+  </section>
+
+  <!-- ===== 05 — SOLVED STATE (Q5) ===== -->
+  <section id="solved">
+  <details class="sec">
+    <summary>
+      <span class="s-num">05</span>
+      <span class="s-head">
+        <span class="s-q">Q5 · What does a solved state look like?</span>
+        <h2 class="s-title">Fewer pixels, a measurement that isn't a photo, and a receipt you can re-run</h2>
+        <p class="s-sub">The before → after, stated as concrete, measured numbers from the repo.</p>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="s-body">
+      <p class="lead-in">"Solved" isn't abstract here — it's a set of measured numbers you can reproduce.</p>
+
+      <div class="ba">
+        <div class="card b">
+          <h5>Before · normal camera + AI</h5>
+          <p>Read <strong>1,024 pixels</strong> per frame. Compute <strong>10,240 MACs</strong> in the decoder. Store a <strong>full, viewable photo</strong>. Result is a claim — "trust the model."</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="card a">
+          <h5>After · PhotonLayer</h5>
+          <p>Read <strong>64 pixels</strong> (16× fewer). Compute <strong>640 MACs</strong> (16× fewer). Store a <strong>measurement that doesn't look like the scene</strong>. Result ships with a <strong>signed, re-runnable receipt</strong>.</p>
+        </div>
+      </div>
+
+      <table class="tbl">
+        <thead><tr><th>Measured on real MNIST (16× compression)</th><th>Sensor px</th><th>Decoder MACs</th><th>Accuracy</th></tr></thead>
+        <tbody>
+          <tr><td class="before">Full-image baseline (same tiny decoder)</td><td class="num">1024</td><td class="num">10,240</td><td class="num">75.40%</td></tr>
+          <tr><td class="before">Optical, hill-climbed mask</td><td class="num">64</td><td class="num">640</td><td class="num">73.05%</td></tr>
+          <tr><td class="after"><strong>Optical, gradient-trained (single plane)</strong></td><td class="num">64</td><td class="num">640</td><td class="num win">83.30%</td></tr>
+          <tr><td class="after"><strong>Optical, 2-plane cascade</strong></td><td class="num">64</td><td class="num">640</td><td class="num win">88.80%</td></tr>
+        </tbody>
+      </table>
+
+      <div class="dual">
+        <figure class="vfig">
+          <figcaption class="vlabel simple"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4.5"/></svg> Friendly view</figcaption>
+          <div class="vbody"><img src="/assets/img/before-after-camera.png" alt="The before-and-after again: a heavy full-photo camera versus a light sensor capturing a few clean bright dots."></div>
+          <figcaption class="vcap">Same decision, far lighter footprint — and the thing you keep is a measurement, not a recoverable picture.</figcaption>
+        </figure>
+
+        <figure class="vfig">
+          <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 14V2M2 14h12M5 11l3-4 2 2 4-6"/></svg> Technical view — breaking the ceiling</figcaption>
+          <div class="svgwrap">
+            <svg viewBox="0 0 560 230" role="img" aria-label="Bar chart: hill-climb 73.05 percent, full-image baseline 75.40 percent, gradient single plane 83.30 percent, two-plane cascade 88.80 percent.">
+              <!-- axes -->
+              <line x1="50" y1="186" x2="540" y2="186" stroke="#262640"/>
+              <line x1="50" y1="20" x2="50" y2="186" stroke="#262640"/>
+              <g font-family="JetBrains Mono, monospace" font-size="8" fill="#5a5e7a" text-anchor="end">
+                <text x="44" y="189">60</text><text x="44" y="150">70</text><text x="44" y="110">80</text><text x="44" y="70">90</text>
+              </g>
+              <g stroke="#1d1d2e" stroke-dasharray="2 3"><line x1="50" y1="146" x2="540" y2="146"/><line x1="50" y1="106" x2="540" y2="106"/><line x1="50" y1="66" x2="540" y2="66"/></g>
+              <!-- bars: scale y = 186 - (val-60)*4 -->
+              <!-- 73.05 -> 186-52.2=133.8 ; 75.40 ->186-61.6=124.4 ; 83.30 ->186-93.2=92.8 ; 88.80 ->186-115.2=70.8 -->
+              <g font-family="JetBrains Mono, monospace" font-size="9" text-anchor="middle">
+                <rect x="86" y="133.8" width="70" height="52.2" rx="3" fill="#ff9a3e" opacity=".8"/>
+                <text x="121" y="127" fill="#ff9a3e">73.05%</text>
+                <text x="121" y="202" fill="#8b8fab">hill-climb</text>
+
+                <rect x="186" y="124.4" width="70" height="61.6" rx="3" fill="#5a5e7a" opacity=".7"/>
+                <text x="221" y="117" fill="#c3c6dd">75.40%</text>
+                <text x="221" y="202" fill="#8b8fab">full-image</text>
+                <text x="221" y="213" fill="#5a5e7a">(1024 px)</text>
+
+                <rect x="286" y="92.8" width="70" height="93.2" rx="3" fill="#1fd6d6"/>
+                <text x="321" y="86" fill="#1fd6d6">83.30%</text>
+                <text x="321" y="202" fill="#8b8fab">gradient</text>
+                <text x="321" y="213" fill="#5a5e7a">(64 px)</text>
+
+                <rect x="386" y="70.8" width="70" height="115.2" rx="3" fill="#3ee68a"/>
+                <text x="421" y="64" fill="#3ee68a">88.80%</text>
+                <text x="421" y="202" fill="#8b8fab">2-plane</text>
+                <text x="421" y="213" fill="#5a5e7a">(64 px)</text>
+              </g>
+              <text x="500" y="120" font-family="JetBrains Mono, monospace" font-size="8" fill="#5a5e7a" text-anchor="middle">accuracy</text>
+              <text x="500" y="131" font-family="JetBrains Mono, monospace" font-size="8" fill="#5a5e7a" text-anchor="middle">↑</text>
+            </svg>
+          </div>
+          <figcaption class="vcap">The ceiling-break, exactly as reported: hill-climb plateaus at 73.05%; real gradient training clears it to 83.30% (single plane); a 2-plane cascade reaches 88.80% — all at 16× sensor compression with the same tiny decoder.</figcaption>
+        </figure>
+      </div>
+
+      <div class="note honest"><span class="lab">Read this number honestly</span>The 83.30% &gt; 75.40% gap is a statement about <strong>feature separability under a deliberately weak nearest-centroid decoder</strong>, <em>not</em> "optics beat digital." A small CNN on the same 1,024 raw pixels reaches ~99% and beats both. PhotonLayer's win is <strong>compression + privacy-by-physics + auditability</strong>, not raw accuracy.</div>
+    </div>
+  </details>
+  </section>
+
+  <!-- ===== 06 — GROUNDING EXAMPLE (Q-anchor) ===== -->
+  <section id="priya">
+  <details class="sec" open>
+    <summary>
+      <span class="s-num">06</span>
+      <span class="s-head">
+        <span class="s-q">The "oh — that's what it's for" moment</span>
+        <h2 class="s-title">Priya runs a small recycling line</h2>
+        <p class="s-sub">One named, ordinary person. A real before → after. No optics degree required.</p>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="s-body">
+      <p class="lead-in"><strong>Priya runs a small recycling line.</strong> A camera over the conveyor belt has to spot which bin each item belongs in. She's not an optics engineer; she just needs the sorter to be fast, cheap, and not a privacy headache — the belt sometimes carries documents and personal items.</p>
+
+      <figure class="vfig" style="margin:20px 0;">
+        <figcaption class="vlabel simple"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4.5"/></svg> Friendly view — Priya's sorting line</figcaption>
+        <div class="vbody"><img src="/assets/img/priya-recycling.png" alt="A warm illustration of a small recycling line: a conveyor with a bottle, paper and can, a smart prismatic-lens camera above sorting them into four colored bins."></div>
+        <figcaption class="vcap">A bottle, a sheet of paper, a can go past. A small smart-lens camera sorts each into one of four bins — without ever keeping a photo of what went by.</figcaption>
+      </figure>
+
+      <div class="ba">
+        <div class="card b">
+          <h5>Before</h5>
+          <p>The camera grabs a <strong>full image</strong> of every item — thousands of pixels each — and a computer chews through all of them to decide "plastic / paper / metal / glass." That's a lot of data per second, a chunky processor, and a <strong>stored photo of everything</strong> that went past, including the personal stuff. It works, but it's heavy, power-hungry, and the stored pictures make her lawyer nervous.</p>
+        </div>
+        <div class="arrow">→</div>
+        <div class="card a">
+          <h5>After PhotonLayer</h5>
+          <p>Priya's team designs a <strong>learned phase mask</strong> for exactly this 4-way sort. Now the sensor captures <strong>a few numbers per item</strong> — a measurement already shaped to separate the four classes that <strong>does not look like the item</strong> (you can't read a document off it). A tiny decoder reads "paper" off those numbers. Each run also emits a <strong>signed receipt</strong>, so she can prove to an auditor exactly what was measured.</p>
+        </div>
+      </div>
+
+      <figure class="vfig" style="margin:20px 0;">
+        <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M6 2v12"/></svg> Technical view — what Priya's measured run actually showed</figcaption>
+        <div class="svgwrap">
+          <svg viewBox="0 0 560 200" role="img" aria-label="Compression sweep at a 2x2 sensor, 64x reduction: learned mask 0.988 accuracy, random mask 0.738, naive sub-sampling loses the signal.">
+            <!-- item -->
+            <g font-family="JetBrains Mono, monospace" font-size="9" fill="#8b8fab">
+              <rect x="16" y="60" width="48" height="60" rx="4" fill="#11111c" stroke="#262640"/>
+              <rect x="34" y="68" width="12" height="44" rx="2" fill="#3ee68a" opacity=".5"/>
+              <text x="40" y="135" text-anchor="middle">item</text>
+            </g>
+            <line x1="64" y1="90" x2="92" y2="90" stroke="#8b8fab" marker-end="url(#ar)"/>
+            <!-- learned mask -->
+            <rect x="94" y="56" width="16" height="68" rx="3" fill="url(#spc1)" opacity=".85"/>
+            <text x="102" y="136" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#a06bff">learned</text>
+            <!-- 2x2 sensor -->
+            <rect x="138" y="72" width="36" height="36" rx="3" fill="#11111c" stroke="#1fd6d6"/>
+            <g fill="#1fd6d6"><rect x="142" y="76" width="14" height="14" opacity=".9"/><rect x="158" y="76" width="14" height="14" opacity=".4"/><rect x="142" y="92" width="14" height="14" opacity=".5"/><rect x="158" y="92" width="14" height="14" opacity=".8"/></g>
+            <text x="156" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#1fd6d6">2×2 sensor · 64× fewer</text>
+            <line x1="174" y1="90" x2="202" y2="90" stroke="#8b8fab" marker-end="url(#ar)"/>
+            <!-- decode -->
+            <rect x="204" y="74" width="70" height="32" rx="7" fill="#161624" stroke="#3ee68a"/>
+            <text x="239" y="94" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="11" fill="#eef0fb">"paper"</text>
+            <!-- results bars -->
+            <g font-family="JetBrains Mono, monospace" font-size="9">
+              <text x="320" y="44" fill="#8b8fab">accuracy at this 64× reduction:</text>
+              <rect x="320" y="56" width="200" height="16" rx="3" fill="#11111c" stroke="#262640"/>
+              <rect x="320" y="56" width="197.6" height="16" rx="3" fill="#3ee68a"/>
+              <text x="524" y="68" fill="#3ee68a">learned 0.988</text>
+              <rect x="320" y="80" width="200" height="16" rx="3" fill="#11111c" stroke="#262640"/>
+              <rect x="320" y="80" width="147.6" height="16" rx="3" fill="#ff9a3e" opacity=".8"/>
+              <text x="524" y="92" fill="#ff9a3e">random 0.738</text>
+              <rect x="320" y="104" width="200" height="16" rx="3" fill="#11111c" stroke="#262640"/>
+              <rect x="320" y="104" width="40" height="16" rx="3" fill="#ff5e62" opacity=".6"/>
+              <text x="524" y="116" fill="#ff5e62">naïve subsample — lost</text>
+            </g>
+            <text x="320" y="150" font-family="JetBrains Mono, monospace" font-size="8" fill="#5a5e7a">source: photonlayer-core compression-sweep table (2×2 sensor, 64× reduction)</text>
+            <rect x="320" y="160" width="220" height="26" rx="6" fill="#0c0c14" stroke="#a06bff" stroke-dasharray="3 3"/>
+            <text x="330" y="177" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#a06bff">⛓ + signed receipt → prove exactly what was measured</text>
+          </svg>
+        </div>
+        <figcaption class="vcap">In the repo's own measured sweep, the learned few-pixel front end hits <strong>~99%</strong> on a 4-class sort where a random mask gets ~74% and naïve sub-sampling loses the signal entirely. Each run emits a verifiable receipt.</figcaption>
+      </figure>
+
+      <p class="lead-in" style="margin-top:24px;">The "oh, that's what it's for" line: <em>It's the difference between a camera that photographs the scene and then thinks about it, and one where the lens already did the thinking — so all that's left to capture is the answer.</em></p>
+
+      <div class="note honest"><span class="lab">The honest hedge the repo itself demands</span>The high-accuracy numbers come from a <strong>noise-free simulation with a deliberately weak decoder</strong> — a statement about <em>feature separability</em>, not "optics beat digital." A small CNN on the raw pixels still wins on raw accuracy. Priya's win is <strong>compression + privacy-by-physics + auditability</strong>, not "more accurate than a normal camera."</div>
+    </div>
+  </details>
+  </section>
+
+  <!-- ===== 07 — USE-CASE GALLERY (Q6) ===== -->
+  <section id="gallery">
+  <details class="sec" open>
+    <summary>
+      <span class="s-num">07</span>
+      <span class="s-head">
+        <span class="s-q">Q6 · Where else does this apply?</span>
+        <h2 class="s-title">A gallery of real, runnable uses</h2>
+        <p class="s-sub">Eight scenarios — each its own card with its own visual. Every command is real and runs offline on the built-in synthetic data.</p>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="s-body">
+      <p class="gallery-intro lead-in">Open any card to see the situation, the exact command, what it does, and a diagram of what happens. (Per <code class="inl">examples/README.md</code>: "every one compiles, runs offline, and none print fabricated numbers.")</p>
+
+      <div class="dual">
+        <figure class="vfig">
+          <figcaption class="vlabel simple"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4.5"/></svg> Friendly view — what you're really doing in each demo</figcaption>
+          <div class="vbody"><img src="/assets/img/hero-prism.png" alt="Plain white light enters a prism and fans into a spectrum that resolves into a few clean dots — the recurring idea behind every demo below."></div>
+          <figcaption class="vcap">Every card below is a different angle on the same move: send light through a trained mask, capture a few numbers, and prove what happened.</figcaption>
+        </figure>
+        <figure class="vfig">
+          <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M6 6v8"/></svg> Technical view — how the 8 demos relate</figcaption>
+          <div class="svgwrap">
+            <svg viewBox="0 0 560 180" role="img" aria-label="The eight demos grouped: see compression, train the mask (hill-climb, gradient, cascade), measure leakage, the consented gate, the receipt, and the physics.">
+              <g font-family="JetBrains Mono, monospace" font-size="8.5">
+                <rect x="12" y="20" width="120" height="46" rx="9" fill="#11111c" stroke="#a06bff"/>
+                <text x="72" y="38" text-anchor="middle" fill="#a06bff">SEE IT</text>
+                <text x="72" y="52" text-anchor="middle" fill="#8b8fab">1 compression</text>
+                <rect x="148" y="20" width="180" height="46" rx="9" fill="#11111c" stroke="#1fd6d6"/>
+                <text x="238" y="38" text-anchor="middle" fill="#1fd6d6">TRAIN THE GLASS</text>
+                <text x="238" y="52" text-anchor="middle" fill="#8b8fab">2 hill-climb · 3 gradient · 4 cascade</text>
+                <rect x="344" y="20" width="204" height="46" rx="9" fill="#11111c" stroke="#3ee68a"/>
+                <text x="446" y="38" text-anchor="middle" fill="#3ee68a">TRUST &amp; PROVE</text>
+                <text x="446" y="52" text-anchor="middle" fill="#8b8fab">5 privacy · 6 gate · 7 receipt</text>
+                <rect x="148" y="92" width="180" height="40" rx="9" fill="#0c0c14" stroke="#ff9a3e"/>
+                <text x="238" y="110" text-anchor="middle" fill="#ff9a3e">UNDER THE HOOD</text>
+                <text x="238" y="124" text-anchor="middle" fill="#8b8fab">8 propagation_modes (the physics)</text>
+              </g>
+              <text x="280" y="160" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#5a5e7a">all run offline on built-in synthetic data — real numbers only</text>
+            </svg>
+          </div>
+          <figcaption class="vcap">The eight demos in four groups: see the compression, train the optics three ways, trust &amp; prove the result, and watch the underlying physics.</figcaption>
+        </figure>
+      </div>
+
+      <!-- UC 1 -->
+      <details class="uc">
+        <summary><span class="uc-n b1">1</span><span class="uc-t">See the compression with your own eyes</span><span class="uc-tag">photonlayer-core</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <div class="uc-body">
+          <div class="uc-grid">
+            <div class="uc-meta">
+              <p><span class="k">Situation</span>You don't believe a few numbers can replace a picture.</p>
+              <p><span class="k">What it does</span>Feeds a 64×64 image through a phase mask + propagation, bins the sensor down to a tiny grid, and renders <strong>both</strong> the input and the captured measurement as ASCII side-by-side.</p>
+              <p><span class="k">What you get</span>A ~64× pixel/byte reduction printed, and a sensor block that <strong>looks nothing like the scene</strong> — proof the measurement is the answer, not the photo.</p>
+              <div class="cmd" data-copy="cargo run --release --example compression -p photonlayer-core"><span class="prompt">$ </span>cargo run <span class="flag">--release</span> --example compression <span class="flag">-p</span> photonlayer-core<span class="copy-hint">copy</span></div>
+            </div>
+            <figure class="vfig">
+              <figcaption class="vlabel tech">Visual — big image in, tiny scrambled block out</figcaption>
+              <div class="svgwrap"><svg viewBox="0 0 300 150" role="img" aria-label="A large input grid passes through a mask and becomes a tiny scrambled measurement block with a 64x reduction.">
+                <rect x="10" y="30" width="80" height="80" rx="3" fill="#11111c" stroke="#262640"/>
+                <g fill="#4f8cff" opacity=".7"><rect x="18" y="38" width="8" height="8"/><rect x="34" y="46" width="8" height="8"/><rect x="58" y="40" width="8" height="8"/><rect x="70" y="58" width="8" height="8"/><rect x="26" y="70" width="8" height="8"/><rect x="50" y="82" width="8" height="8"/><rect x="66" y="90" width="8" height="8"/><rect x="34" y="96" width="8" height="8"/></g>
+                <text x="50" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#8b8fab">64×64 input</text>
+                <rect x="108" y="50" width="12" height="40" rx="2" fill="url(#spc1)" opacity=".85"/>
+                <line x1="124" y1="70" x2="150" y2="70" stroke="#8b8fab" marker-end="url(#ar)"/>
+                <rect x="154" y="56" width="28" height="28" rx="3" fill="#11111c" stroke="#1fd6d6"/>
+                <g fill="#1fd6d6"><rect x="158" y="60" width="9" height="9" opacity=".9"/><rect x="170" y="60" width="9" height="9" opacity=".4"/><rect x="158" y="72" width="9" height="9" opacity=".5"/><rect x="170" y="72" width="9" height="9" opacity=".8"/></g>
+                <text x="168" y="100" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#1fd6d6">measurement</text>
+                <rect x="206" y="58" width="84" height="26" rx="6" fill="#0c0c14" stroke="#3ee68a"/>
+                <text x="248" y="75" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#3ee68a">~64× fewer</text>
+                <text x="248" y="100" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#5a5e7a">≈ 0 correlation to scene</text>
+              </svg></div>
+            </figure>
+          </div>
+        </div>
+      </details>
+
+      <!-- UC 2 -->
+      <details class="uc">
+        <summary><span class="uc-n b2">2</span><span class="uc-t">Train the glass to be good at your task</span><span class="uc-tag">photonlayer-bench</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <div class="uc-body">
+          <div class="uc-grid">
+            <div class="uc-meta">
+              <p><span class="k">Situation</span>A random mask works okay; you want it actually <em>good</em> at separating your classes.</p>
+              <p><span class="k">What it does</span>Hill-climbs a phase mask on the synthetic shapes at a tiny 2×2 sensor, keeping only changes that improve task accuracy.</p>
+              <p><span class="k">What you get</span>The learned mask beats the random one (≈75% → 100% on the toy task) — "learning the optics genuinely helps."</p>
+              <div class="cmd" data-copy="cargo run --release --example learn_mask -p photonlayer-bench"><span class="prompt">$ </span>cargo run <span class="flag">--release</span> --example learn_mask <span class="flag">-p</span> photonlayer-bench<span class="copy-hint">copy</span></div>
+            </div>
+            <figure class="vfig">
+              <figcaption class="vlabel tech">Visual — trial-and-improve loop, accuracy rising</figcaption>
+              <div class="svgwrap"><svg viewBox="0 0 300 150" role="img" aria-label="A trial-and-improvement loop turns a random mask into a learned mask as an accuracy bar rises from 75 to 100 percent.">
+                <rect x="14" y="58" width="40" height="40" rx="3" fill="#262640"/><text x="34" y="112" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#8b8fab">random</text>
+                <path d="M60 78 q 30 -26 60 0 q -30 26 -60 0" fill="none" stroke="#a06bff" stroke-width="1.4"/><text x="90" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" fill="#a06bff">keep if better</text>
+                <rect x="128" y="58" width="40" height="40" rx="3" fill="url(#spc1)" opacity=".85"/><text x="148" y="112" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#c3c6dd">learned</text>
+                <line x1="174" y1="78" x2="194" y2="78" stroke="#8b8fab" marker-end="url(#ar)"/>
+                <rect x="198" y="86" width="90" height="12" rx="3" fill="#11111c" stroke="#262640"/><rect x="198" y="86" width="34" height="12" rx="3" fill="#ff9a3e" opacity=".7"/><text x="200" y="80" font-family="JetBrains Mono, monospace" font-size="8" fill="#ff9a3e">75%</text>
+                <rect x="198" y="64" width="90" height="12" rx="3" fill="#11111c" stroke="#262640"/><rect x="198" y="64" width="90" height="12" rx="3" fill="#3ee68a"/><text x="200" y="58" font-family="JetBrains Mono, monospace" font-size="8" fill="#3ee68a">100%</text>
+              </svg></div>
+            </figure>
+          </div>
+        </div>
+      </details>
+
+      <!-- UC 3 -->
+      <details class="uc">
+        <summary><span class="uc-n b3">3</span><span class="uc-t">Break the ceiling with real gradient training (the headline)</span><span class="uc-tag">photonlayer-bench</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <div class="uc-body">
+          <div class="uc-grid">
+            <div class="uc-meta">
+              <p><span class="k">Situation</span>Hill-climbing plateaus; you want the best a single learned plane can do.</p>
+              <p><span class="k">What it does</span>Trains the same single phase mask by <strong>analytic gradient descent</strong> through a proven adjoint of the diffraction operator (validated by an exact-adjoint identity <em>and</em> a finite-difference grad-check).</p>
+              <p><span class="k">What you get</span>The loss curve falls and accuracy clears the hill-climb ceiling — on real MNIST, <strong>73% → 83.3%</strong> at 16× compression, from clean in ~24s.</p>
+              <div class="cmd" data-copy="cargo run --release --example gradient_training -p photonlayer-bench"><span class="prompt">$ </span>cargo run <span class="flag">--release</span> --example gradient_training <span class="flag">-p</span> photonlayer-bench<span class="copy-hint">copy</span></div>
+            </div>
+            <figure class="vfig">
+              <figcaption class="vlabel tech">Visual — loss drops, ceiling breaks</figcaption>
+              <div class="svgwrap"><svg viewBox="0 0 300 150" role="img" aria-label="A falling loss curve and a bar chart stepping from 65.4 to 73 to 83.3 percent.">
+                <polyline points="20,30 50,55 80,78 110,92 140,100 170,104" fill="none" stroke="#1fd6d6" stroke-width="1.6"/><text x="20" y="24" font-family="JetBrains Mono, monospace" font-size="7" fill="#1fd6d6">loss ↓</text>
+                <g font-family="JetBrains Mono, monospace" font-size="8" text-anchor="middle">
+                  <rect x="196" y="100" width="22" height="36" fill="#5a5e7a" opacity=".7"/><text x="207" y="146" fill="#8b8fab">65.4</text>
+                  <rect x="226" y="84" width="22" height="52" fill="#ff9a3e" opacity=".8"/><text x="237" y="146" fill="#ff9a3e">73</text>
+                  <rect x="256" y="48" width="22" height="88" fill="#3ee68a"/><text x="267" y="146" fill="#3ee68a">83.3</text>
+                </g>
+                <text x="237" y="36" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" fill="#8b8fab">ceiling-break</text>
+              </svg></div>
+            </figure>
+          </div>
+        </div>
+      </details>
+
+      <!-- UC 4 -->
+      <details class="uc">
+        <summary><span class="uc-n b4">4</span><span class="uc-t">Go deeper — a multi-plane optical cascade</span><span class="uc-tag">photonlayer-bench</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <div class="uc-body">
+          <div class="uc-grid">
+            <div class="uc-meta">
+              <p><span class="k">Situation</span>One learned plane is good; can stacking planes do better?</p>
+              <p><span class="k">What it does</span>Trains 2 phase planes with free-space propagation between them, end-to-end through the <strong>composed</strong> adjoint; verifies the second plane sees a genuinely different (decorrelated, ~0.04) field, not a redundant copy.</p>
+              <p><span class="k">What you get</span>On MNIST, 2 planes reach <strong>88.8%</strong> (+5.5pp over single-plane), still at 16× compression.</p>
+              <div class="cmd" data-copy="cargo run --release --example multiplane_cascade -p photonlayer-bench"><span class="prompt">$ </span>cargo run <span class="flag">--release</span> --example multiplane_cascade <span class="flag">-p</span> photonlayer-bench<span class="copy-hint">copy</span></div>
+            </div>
+            <figure class="vfig">
+              <figcaption class="vlabel tech">Visual — plane 1 → propagate → plane 2</figcaption>
+              <div class="svgwrap"><svg viewBox="0 0 300 150" role="img" aria-label="Two phase planes with propagation between them; fields decorrelated; accuracy steps up to 88.8 percent.">
+                <rect x="24" y="40" width="14" height="70" rx="2" fill="url(#spc4)" opacity=".85"/><text x="31" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#a06bff">plane 1</text>
+                <g stroke="url(#spc4)" stroke-width="1.2" fill="none" opacity=".8"><path d="M40 60 q 30 14 60 4"/><path d="M40 90 q 30 -10 60 0"/></g>
+                <rect x="104" y="40" width="14" height="70" rx="2" fill="url(#spc4)" opacity=".85"/><text x="111" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#a06bff">plane 2</text>
+                <rect x="138" y="58" width="70" height="18" rx="9" fill="#11111c" stroke="#3ee68a"/><text x="173" y="71" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#3ee68a">decorrelated ✓ 0.04</text>
+                <rect x="222" y="44" width="20" height="62" fill="#1fd6d6"/><text x="232" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#1fd6d6">83.3</text>
+                <rect x="250" y="30" width="20" height="76" fill="#3ee68a"/><text x="260" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#3ee68a">88.8</text>
+              </svg></div>
+            </figure>
+          </div>
+        </div>
+      </details>
+
+      <!-- UC 5 -->
+      <details class="uc">
+        <summary><span class="uc-n b5">5</span><span class="uc-t">Probe how much the measurement leaks (privacy-by-physics)</span><span class="uc-tag">photonlayer-bench</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <div class="uc-body">
+          <div class="uc-grid">
+            <div class="uc-meta">
+              <p><span class="k">Situation</span>You want to know whether the compressed measurement still reveals the original scene.</p>
+              <p><span class="k">What it does</span>Runs a <strong>linear reconstruction attack</strong> — fits a ridge-regularized linear inverse from the measurement back to the image and measures how well it reconstructs (PSNR). Identity mask (no optics) leaks heavily; optical masks leak less.</p>
+              <p><span class="k">What you get</span>Identity-mask high PSNR vs optical-mask low PSNR — <strong>plus the printed caveat</strong> that this is a <em>linear lower bound, not a privacy guarantee</em>.</p>
+              <div class="cmd" data-copy="cargo run --release --example privacy_probe -p photonlayer-bench"><span class="prompt">$ </span>cargo run <span class="flag">--release</span> --example privacy_probe <span class="flag">-p</span> photonlayer-bench<span class="copy-hint">copy</span></div>
+            </div>
+            <figure class="vfig">
+              <figcaption class="vlabel tech">Visual — image → mask → reconstruction attempt</figcaption>
+              <div class="svgwrap"><svg viewBox="0 0 300 150" role="img" aria-label="A reconstruction attack: identity mask recovers the image, optical mask leaves only noise, with a caveat banner.">
+                <rect x="14" y="44" width="40" height="40" rx="3" fill="#11111c" stroke="#262640"/><circle cx="34" cy="64" r="11" fill="#4f8cff" opacity=".6"/><text x="34" y="98" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" fill="#8b8fab">scene</text>
+                <rect x="68" y="50" width="12" height="28" rx="2" fill="url(#spc1)" opacity=".85"/>
+                <line x1="84" y1="64" x2="100" y2="64" stroke="#8b8fab" marker-end="url(#ar)"/>
+                <rect x="104" y="44" width="40" height="40" rx="3" fill="#11111c" stroke="#ff5e62"/><g fill="#ff5e62" opacity=".4"><rect x="110" y="50" width="6" height="6"/><rect x="124" y="58" width="6" height="6"/><rect x="116" y="70" width="6" height="6"/><rect x="132" y="66" width="6" height="6"/></g><text x="124" y="98" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" fill="#ff5e62">linear recon: noise</text>
+                <rect x="158" y="48" width="130" height="20" rx="4" fill="#11111c" stroke="#262640"/><text x="223" y="61" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#3ee68a">optical PSNR ↓ (leaks less)</text>
+                <rect x="158" y="92" width="130" height="34" rx="6" fill="#0c0c14" stroke="#ff9a3e" stroke-dasharray="3 3"/><text x="223" y="106" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#ff9a3e">⚠ linear attack only —</text><text x="223" y="118" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#ff9a3e">NOT a privacy guarantee</text>
+              </svg></div>
+            </figure>
+          </div>
+        </div>
+      </details>
+
+      <!-- UC 6 -->
+      <details class="uc">
+        <summary><span class="uc-n b6">6</span><span class="uc-t">Run the flagship consented-verification demo (with a signed receipt)</span><span class="uc-tag">photonlayer-cli</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <div class="uc-body">
+          <div class="uc-grid">
+            <div class="uc-meta">
+              <p><span class="k">Situation</span>You want "same / not same person" without storing a recoverable face image.</p>
+              <p><span class="k">What it does</span>Does 1:1 verification on optical features (reports EER for random vs learned mask), runs the reconstruction-attack privacy score, then <strong>builds and verifies a tamper-evident BLAKE3 receipt</strong> saved to <code class="inl">/tmp</code> so you can re-verify it.</p>
+              <p><span class="k">What you get</span>A verification result, a leakage score, and a <code class="inl">verify-receipt</code>-able JSON — with the ethical boundary printed: <em>consented verification only, not mass surveillance.</em></p>
+              <div class="cmd" data-copy="cargo run -p photonlayer-cli -- privacy-gate"><span class="prompt">$ </span>cargo run <span class="flag">-p</span> photonlayer-cli -- privacy-gate<span class="copy-hint">copy</span></div>
+            </div>
+            <figure class="vfig">
+              <figcaption class="vlabel tech">Visual — two faces → optical features → match + receipt</figcaption>
+              <div class="svgwrap"><svg viewBox="0 0 300 150" role="img" aria-label="Two faces become optical features, compared for match or no-match, with a verified receipt stamp.">
+                <circle cx="30" cy="48" r="13" fill="#11111c" stroke="#4f8cff"/><circle cx="30" cy="86" r="13" fill="#11111c" stroke="#4f8cff"/>
+                <rect x="54" y="40" width="10" height="54" rx="2" fill="url(#spc1)" opacity=".85"/>
+                <line x1="66" y1="67" x2="84" y2="67" stroke="#8b8fab" marker-end="url(#ar)"/>
+                <rect x="88" y="52" width="56" height="30" rx="6" fill="#161624" stroke="#1fd6d6"/><text x="116" y="71" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#1fd6d6">optical EER</text>
+                <line x1="144" y1="67" x2="162" y2="67" stroke="#8b8fab" marker-end="url(#ar)"/>
+                <rect x="166" y="52" width="64" height="30" rx="6" fill="#0c0c14" stroke="#3ee68a"/><text x="198" y="71" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="10" fill="#3ee68a">match ✓</text>
+                <rect x="60" y="108" width="180" height="24" rx="6" fill="#0c0c14" stroke="#a06bff" stroke-dasharray="3 3"/><text x="150" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#a06bff">⛓ receipt VERIFIED · consented only</text>
+              </svg></div>
+            </figure>
+          </div>
+        </div>
+      </details>
+
+      <!-- UC 7 -->
+      <details class="uc">
+        <summary><span class="uc-n b7">7</span><span class="uc-t">Prove a result wasn't tampered with</span><span class="uc-tag">photonlayer-core</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <div class="uc-body">
+          <div class="uc-grid">
+            <div class="uc-meta">
+              <p><span class="k">Situation</span>You (or an auditor) need to trust that a reported result is exactly the run that produced it.</p>
+              <p><span class="k">What it does</span>Builds a receipt that hashes every output-determining input (image, mask, config, output frame, metrics, build provenance) into one anti-swap digest, verifies it <strong>PASSES</strong>, then flips a single byte and shows verification <strong>FAILS</strong>.</p>
+              <p><span class="k">What you get</span>A concrete "PASS → tamper → FAIL" demonstration that the receipt detects any change.</p>
+              <div class="cmd" data-copy="cargo run --release --example receipt -p photonlayer-core"><span class="prompt">$ </span>cargo run <span class="flag">--release</span> --example receipt <span class="flag">-p</span> photonlayer-core<span class="copy-hint">copy</span></div>
+            </div>
+            <figure class="vfig">
+              <figcaption class="vlabel tech">Visual — green PASS → edit one byte → red FAIL</figcaption>
+              <div class="svgwrap"><svg viewBox="0 0 300 150" role="img" aria-label="A receipt verifies green PASS, then one edited field turns it red FAIL.">
+                <rect x="20" y="34" width="100" height="84" rx="6" fill="#0c0c14" stroke="#3ee68a"/><g font-family="JetBrains Mono, monospace" font-size="7" fill="#8b8fab"><text x="30" y="50">image  ✓</text><text x="30" y="64">mask   ✓</text><text x="30" y="78">config ✓</text><text x="30" y="92">output ✓</text></g><text x="70" y="112" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="10" fill="#3ee68a">PASS</text>
+                <text x="150" y="80" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#ff9a3e">flip 1 byte →</text>
+                <rect x="180" y="34" width="100" height="84" rx="6" fill="#0c0c14" stroke="#ff5e62"/><g font-family="JetBrains Mono, monospace" font-size="7" fill="#8b8fab"><text x="190" y="50">image  ✓</text><text x="190" y="64" fill="#ff5e62">mask   ✗</text><text x="190" y="78">config ✓</text><text x="190" y="92">output ✓</text></g><text x="230" y="112" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="10" fill="#ff5e62">FAIL</text>
+              </svg></div>
+            </figure>
+          </div>
+        </div>
+      </details>
+
+      <!-- UC 8 -->
+      <details class="uc">
+        <summary><span class="uc-n b8">8</span><span class="uc-t">Watch the physics: how light spreads as it travels</span><span class="uc-tag">photonlayer-core</span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+        <div class="uc-body">
+          <div class="uc-grid">
+            <div class="uc-meta">
+              <p><span class="k">Situation</span>You want to understand what "propagation" actually means before trusting the rest.</p>
+              <p><span class="k">What it does</span>Propagates a single bright pixel under the three real diffraction models the simulator supports — <strong>Fresnel</strong> (near-field), <strong>Fraunhofer</strong> (far-field), and <strong>Angular-Spectrum</strong> — and shows the spread growing with distance.</p>
+              <p><span class="k">What you get</span>Real diffraction physics you can see, confirming the simulator isn't faking it.</p>
+              <div class="cmd" data-copy="cargo run --release --example propagation_modes -p photonlayer-core"><span class="prompt">$ </span>cargo run <span class="flag">--release</span> --example propagation_modes <span class="flag">-p</span> photonlayer-core<span class="copy-hint">copy</span></div>
+            </div>
+            <figure class="vfig">
+              <figcaption class="vlabel tech">Visual — one dot → three spreads</figcaption>
+              <div class="svgwrap"><svg viewBox="0 0 300 150" role="img" aria-label="A single bright dot spreads three different ways labelled Fresnel, Fraunhofer, and Angular-Spectrum.">
+                <circle cx="30" cy="75" r="4" fill="#f4f4ff"/><text x="30" y="120" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" fill="#8b8fab">1 pixel</text>
+                <line x1="40" y1="75" x2="60" y2="75" stroke="#8b8fab" marker-end="url(#ar)"/>
+                <radialGradient id="g1"><stop offset="0" stop-color="#1fd6d6"/><stop offset="1" stop-color="#1fd6d6" stop-opacity="0"/></radialGradient>
+                <circle cx="100" cy="45" r="16" fill="url(#g1)"/><text x="100" y="70" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" fill="#1fd6d6">Fresnel</text>
+                <radialGradient id="g2"><stop offset="0" stop-color="#a06bff"/><stop offset="1" stop-color="#a06bff" stop-opacity="0"/></radialGradient>
+                <circle cx="170" cy="75" r="22" fill="url(#g2)"/><text x="170" y="108" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" fill="#a06bff">Fraunhofer</text>
+                <radialGradient id="g3"><stop offset="0" stop-color="#3ee68a"/><stop offset="1" stop-color="#3ee68a" stop-opacity="0"/></radialGradient>
+                <circle cx="245" cy="60" r="28" fill="url(#g3)"/><text x="245" y="100" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7" fill="#3ee68a">Angular-Spectrum</text>
+              </svg></div>
+            </figure>
+          </div>
+        </div>
+      </details>
+
+    </div>
+  </details>
+  </section>
+
+  <!-- ===== 08 — WHY THIS VS WHAT I HAVE ===== -->
+  <section id="vs">
+  <details class="sec">
+    <summary>
+      <span class="s-num">08</span>
+      <span class="s-head">
+        <span class="s-q">"I already have a camera + AI — why this too?"</span>
+        <h2 class="s-title">Why this vs. the tools you already have</h2>
+        <p class="s-sub">Answered head-on: vs a normal camera+CNN, and vs "an optical neural network."</p>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="s-body">
+      <table class="tbl">
+        <thead><tr><th>You might already use…</th><th>What PhotonLayer changes</th></tr></thead>
+        <tbody>
+          <tr><td class="before"><strong>A normal camera + a CNN</strong></td><td class="after">A normal camera captures the <em>whole scene</em> then computes. PhotonLayer captures <strong>far less</strong> by doing the first transform <strong>in the optics</strong>, and stores a measurement that <strong>need not look like the scene</strong>. The repo's words: "sees enough to decide, but captures far less than a full image."</td></tr>
+          <tr><td class="before"><strong>"An optical neural network"</strong></td><td class="after">The repo deliberately positions itself as <strong>NOT</strong> that. Its wedge is <em>"auditable optical compression for task-useful sensing"</em> — narrower and "far more defensible." Multi-layer 97–99% diffractive networks are <strong>explicitly out of scope</strong>. It doesn't compete on raw accuracy.</td></tr>
+          <tr><td class="before"><strong>Any of the above</strong></td><td class="after"><strong>The one thing nothing else here gives you: bit-reproducible, signed receipts.</strong> Every run hashes its inputs/outputs into a tamper-evident digest, so a result is a re-runnable experiment, not a screenshot. That's the stated moat.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="dual">
+        <figure class="vfig">
+          <figcaption class="vlabel simple"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4.5"/></svg> Friendly view</figcaption>
+          <div class="vbody"><img src="/assets/img/before-after-camera.png" alt="The before/after split once more: heavy full-photo camera versus a calm few-dots sensor with a prismatic lens."></div>
+          <figcaption class="vcap">It's not "a better camera." It's a different deal: capture less, store a measurement not a photo, prove it with a receipt.</figcaption>
+        </figure>
+
+        <figure class="vfig">
+          <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 8h12M8 2v12"/></svg> Technical view — the defensible wedge</figcaption>
+          <div class="svgwrap">
+            <svg viewBox="0 0 560 200" role="img" aria-label="A 2x2 positioning: PhotonLayer sits at auditable + compressed, distinct from full-image CNNs and multi-layer optical networks.">
+              <!-- axes -->
+              <line x1="60" y1="170" x2="520" y2="170" stroke="#262640"/><line x1="60" y1="20" x2="60" y2="170" stroke="#262640"/>
+              <text x="290" y="192" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8b8fab">data captured  →  less</text>
+              <text x="40" y="95" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8b8fab" transform="rotate(-90 40 95)">auditable / provable  →  more</text>
+              <!-- points -->
+              <circle cx="140" cy="140" r="8" fill="#5a5e7a"/><text x="140" y="124" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#c3c6dd">camera + CNN</text>
+              <circle cx="230" cy="60" r="8" fill="#ff9a3e"/><text x="230" y="44" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#ff9a3e">multi-layer optical net</text>
+              <circle cx="440" cy="55" r="11" fill="#3ee68a"/><text x="440" y="38" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="10" fill="#3ee68a">PhotonLayer</text>
+              <text x="440" y="78" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#8b8fab">compressed + auditable</text>
+            </svg>
+          </div>
+          <figcaption class="vcap">PhotonLayer's wedge: it gives up the raw-accuracy race to own the corner nothing else here occupies — heavily compressed <em>and</em> provable.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </details>
+  </section>
+
+  <!-- ===== 09 — HOW TO IMPLEMENT (Q6 implement) + DROP-IN ===== -->
+  <section id="dropin">
+  <details class="sec">
+    <summary>
+      <span class="s-num">09</span>
+      <span class="s-head">
+        <span class="s-q">Q · How would you implement it?</span>
+        <h2 class="s-title">What's actually inside — the four real crates</h2>
+        <p class="s-sub">PhotonLayer is Rust crates, not a zip-of-models. Here's the real file-tree, each part in plain English.</p>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="s-body">
+      <p class="lead-in">One Rust workspace, four crates. This is the actual layout (from the README "Crates" table and <code class="inl">Cargo.toml</code>) — annotated so you know what each one is <em>for</em>.</p>
+
+      <div class="tree">
+<span class="root">PhotonLayer/</span>  <span class="cmt"># one Rust workspace, four crates · MIT © Ruvector</span>
+├ <span class="d">crates/</span>
+│  ├ <span class="f">photonlayer-core</span>   <span class="cmt"># the optical simulator: scalar diffraction (Fresnel/</span>
+│  │                     <span class="cmt"># Fraunhofer/angular-spectrum), deterministic FFT, phase</span>
+│  │                     <span class="cmt"># mask, sensor, metrics, signed receipts</span>  <span class="heart">← the heart</span>
+│  ├ <span class="f">photonlayer-bench</span>  <span class="cmt"># the experiments: learned-vs-random masks, the real-MNIST</span>
+│  │                     <span class="cmt"># compression benchmark, gradient + cascade training,</span>
+│  │                     <span class="cmt"># privacy probe</span>  <span class="group">← the proof</span>
+│  ├ <span class="f">photonlayer-wasm</span>   <span class="cmt"># browser build: run the whole thing in your browser, no install</span>
+│  └ <span class="f">photonlayer-cli</span>    <span class="cmt"># command-line driver: bench / barcode / edge / privacy-gate /</span>
+│                        <span class="cmt"># verify-receipt</span>  <span class="group">← the easy front door</span>
+├ <span class="d">examples/</span>            <span class="cmt"># hello_optics, compression, receipt, propagation_modes …</span>
+├ <span class="d">docs/</span>                <span class="cmt"># ADR-260/261 (core), ADR-263 (FiberGate roadmap)</span>
+├ <span class="f">Cargo.toml</span>           <span class="cmt"># workspace · version 0.1.0 · edition 2021</span>
+└ <span class="f">README.md</span>            <span class="cmt"># the dense original — this site is its plain-English handle</span>
+      </div>
+
+      <h4>Use it in your own Rust project</h4>
+      <p>Add the core crate and call the simulator directly. Re-running yields a <strong>bit-identical</strong> <code class="inl">frame_hash</code> — that's the determinism guarantee.</p>
+      <div class="cmd" data-copy="cargo add photonlayer-core"><span class="prompt">$ </span>cargo add photonlayer-core<span class="copy-hint">copy</span></div>
+<pre class="block">use photonlayer_core::prelude::*;
+
+let frame = ScalarSimulator.simulate(&amp;img, &amp;mask, &amp;cfg)?;
+// re-run with the same inputs → identical frame.frame_hash
+// build &amp; verify a tamper-evident receipt of exactly what ran:
+let receipt = Receipt::build(&amp;img, &amp;mask, &amp;cfg, &amp;frame);
+assert!(receipt.verify());</pre>
+
+      <figure class="vfig" style="margin:22px 0;">
+        <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12"/></svg> Technical view — how the four crates fit together</figcaption>
+        <div class="svgwrap">
+          <svg viewBox="0 0 560 180" role="img" aria-label="The four crates: core is the engine used by bench, cli, and wasm; cli and wasm are the two front doors.">
+            <rect x="210" y="66" width="140" height="48" rx="10" fill="#0c0c14" stroke="#ff5e62"/>
+            <text x="280" y="86" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-weight="600" font-size="12" fill="#eef0fb">photonlayer-core</text>
+            <text x="280" y="102" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#ff5e62">the heart · optics + receipts</text>
+            <!-- consumers -->
+            <rect x="30" y="20" width="130" height="40" rx="9" fill="#11111c" stroke="#3ee68a"/><text x="95" y="38" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="11" fill="#3ee68a">photonlayer-bench</text><text x="95" y="51" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#8b8fab">the proof / experiments</text>
+            <rect x="400" y="20" width="130" height="40" rx="9" fill="#11111c" stroke="#1fd6d6"/><text x="465" y="38" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="11" fill="#1fd6d6">photonlayer-cli</text><text x="465" y="51" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#8b8fab">the easy front door</text>
+            <rect x="400" y="120" width="130" height="40" rx="9" fill="#11111c" stroke="#a06bff"/><text x="465" y="138" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="11" fill="#a06bff">photonlayer-wasm</text><text x="465" y="151" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#8b8fab">browser, no install</text>
+            <g stroke="#8b8fab" stroke-width="1.2" fill="none">
+              <path d="M160 40 C 190 40 195 78 210 82" marker-end="url(#ar)"/>
+              <path d="M400 40 C 370 40 365 78 350 82" marker-end="url(#ar)"/>
+              <path d="M400 140 C 370 140 365 100 350 96" marker-end="url(#ar)"/>
+            </g>
+          </svg>
+        </div>
+        <figcaption class="vcap"><code>core</code> is the engine. <code>bench</code> proves it, <code>cli</code> drives it from a terminal, and <code>wasm</code> runs it in a browser — every front door calls the same deterministic core.</figcaption>
+      </figure>
+    </div>
+  </details>
+  </section>
+
+  <!-- ===== 10 — HOW TO START (Q7) ===== -->
+  <section id="start">
+  <details class="sec">
+    <summary>
+      <span class="s-num">10</span>
+      <span class="s-head">
+        <span class="s-q">Q7 · How do you start?</span>
+        <h2 class="s-title">Three ways to start — all real, all in the README</h2>
+        <p class="s-sub">Pick by how much you want to install: zero, a 30-line tour, or a dependency.</p>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="s-body">
+      <ol class="steps">
+        <li><strong>No install — try it in your browser.</strong> Open the <a href="https://ruvnet.github.io/PhotonLayer/" target="_blank" rel="noopener">live demo ↗</a> — it runs entirely via WASM. Shape light through a mask, watch it compress to a tiny measurement, and verify the deterministic receipt.</li>
+        <li><strong>30-line local tour.</strong> Run the minimal pipeline and see that a re-run is bit-identical:
+          <div class="cmd" data-copy="cargo run --release --example hello_optics -p photonlayer-core"><span class="prompt">$ </span>cargo run <span class="flag">--release</span> --example hello_optics <span class="flag">-p</span> photonlayer-core<span class="copy-hint">copy</span></div>
+        </li>
+        <li><strong>Use it in your own Rust project.</strong> <code class="inl">cargo add photonlayer-core</code>, then call <code class="inl">ScalarSimulator.simulate(&amp;img, &amp;mask, &amp;cfg)</code> — re-running yields a bit-identical <code class="inl">frame_hash</code>.</li>
+      </ol>
+      <div class="dual">
+        <figure class="vfig">
+          <figcaption class="vlabel simple"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4.5"/></svg> Friendly view</figcaption>
+          <div class="vbody"><img src="/assets/img/phase-mask-glass.png" alt="Light passing through patterned smart glass — the thing you get to play with the moment you open the live demo."></div>
+          <figcaption class="vcap">The fastest start needs nothing installed: open the live demo and shape light through a mask in your browser.</figcaption>
+        </figure>
+        <figure class="vfig">
+          <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 8h12M8 2v12"/></svg> Technical view — three on-ramps, by how much you install</figcaption>
+          <div class="svgwrap">
+            <svg viewBox="0 0 560 150" role="img" aria-label="Three on-ramps: zero-install browser demo, a 30-line local example, or cargo add into your own project.">
+              <g font-family="Space Grotesk, sans-serif" font-size="11">
+                <rect x="14" y="30" width="166" height="80" rx="11" fill="#11111c" stroke="#a06bff"/>
+                <text x="97" y="54" text-anchor="middle" fill="#a06bff" font-family="JetBrains Mono, monospace" font-size="10">0 · BROWSER</text>
+                <text x="97" y="74" text-anchor="middle" fill="#eef0fb">live demo (WASM)</text>
+                <text x="97" y="92" text-anchor="middle" fill="#8b8fab" font-size="10">no install</text>
+                <rect x="197" y="30" width="166" height="80" rx="11" fill="#11111c" stroke="#1fd6d6"/>
+                <text x="280" y="54" text-anchor="middle" fill="#1fd6d6" font-family="JetBrains Mono, monospace" font-size="10">1 · TOUR</text>
+                <text x="280" y="74" text-anchor="middle" fill="#eef0fb">hello_optics</text>
+                <text x="280" y="92" text-anchor="middle" fill="#8b8fab" font-size="10">30-line local run</text>
+                <rect x="380" y="30" width="166" height="80" rx="11" fill="#11111c" stroke="#3ee68a"/>
+                <text x="463" y="54" text-anchor="middle" fill="#3ee68a" font-family="JetBrains Mono, monospace" font-size="10">2 · BUILD</text>
+                <text x="463" y="74" text-anchor="middle" fill="#eef0fb">cargo add</text>
+                <text x="463" y="92" text-anchor="middle" fill="#8b8fab" font-size="10">into your Rust project</text>
+              </g>
+              <text x="280" y="132" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#5a5e7a">each one re-runs bit-identically · the determinism guarantee</text>
+            </svg>
+          </div>
+          <figcaption class="vcap">Pick your on-ramp by how much you want to install — and every one yields a bit-identical re-run.</figcaption>
+        </figure>
+      </div>
+
+      <div class="note"><span class="lab">If you want the real-data numbers</span>MNIST isn't bundled. Fetch the IDX files into <code class="inl">crates/photonlayer-bench/data/mnist/</code> first (see each test header). Without them, the examples <strong>skip cleanly</strong> (never panic) and run on synthetic data.</div>
+      <p class="center" style="margin-top:24px;"><a class="btn btn-primary" href="https://github.com/ruvnet/PhotonLayer" target="_blank" rel="noopener">Open the repo on GitHub ↗</a></p>
+    </div>
+  </details>
+  </section>
+
+  <!-- ===== 11 — HONEST LIMITS ===== -->
+  <section id="limits">
+  <details class="sec">
+    <summary>
+      <span class="s-num">11</span>
+      <span class="s-head">
+        <span class="s-q">In the repo's own words — don't soften them</span>
+        <h2 class="s-title">Honest limits</h2>
+        <p class="s-sub">PhotonLayer is unusually candid about what it does and doesn't prove. So is this page.</p>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="s-body">
+      <div class="note warn"><span class="lab">It's a simulator, not hardware (yet)</span>"Today this is a software simulator written in Rust … building the actual glass is on the roadmap." Real hardware is expected to <strong>degrade</strong> the numbers.</div>
+      <div class="note warn"><span class="lab">Not a new accuracy state-of-the-art</span>A single task-trained optical layer + tiny decoder = <em>competitive single-layer optical compression</em>, <strong>not</strong> SOTA. The gap vs the full-image baseline is feature-separability under a deliberately weak nearest-centroid decoder; a small CNN on the same raw pixels reaches ~99% and beats both.</div>
+      <div class="note warn"><span class="lab">No privacy or security guarantee</span>It stores a <em>learned measurement, not the raw image</em> — "a description, not a theorem." The bundled probe measures <strong>linear</strong> invertibility only; nonlinear (CNN/U-Net) reconstruction is <em>expected to succeed</em>. Never read it as "cannot be reconstructed" or "privacy-preserving."</div>
+      <div class="note warn"><span class="lab">The "16× MAC reduction" counts the digital decoder only</span>(640 vs 10,240). The optical FFT-scale transform is passive in real hardware but <strong>not free in this simulator</strong>, and is not counted.</div>
+      <div class="note warn"><span class="lab">All figures are noise-free scalar-diffraction simulation</span>with continuous phase. Robustness to phase <strong>quantization</strong>, sensor <strong>noise</strong>, and <strong>fabrication error</strong> is not yet characterized (a quantization/SNR ablation is on the roadmap).</div>
+      <div class="note warn"><span class="lab">Determinism is verified within runs/builds on x86-64, not yet cross-platform</span>Full Linux/macOS/WASM bit-identity is a <strong>design goal, not yet proven</strong> — the open obstacle is platform <code class="inl">libm</code> transcendentals (<code class="inl">sin</code>/<code class="inl">cos</code>/<code class="inl">atan2</code>) differing by a ULP.</div>
+      <div class="note warn"><span class="lab">MNIST data isn't bundled</span>The real-data runs need you to fetch the IDX files first; without them the examples skip cleanly and run on synthetic data.</div>
+    </div>
+  </details>
+  </section>
+
+  </main>
+</div>
+</div>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="footer">
+  <div class="wrap">
+    <hr class="spec-line" style="margin-bottom:36px;">
+    <div class="cols">
+      <div>
+        <h6>Provenance &amp; attribution</h6>
+        <p class="credit">
+          <b>PhotonLayer</b> is created by <b>Reuven Cohen</b> — <a href="https://github.com/ruvnet" target="_blank" rel="noopener" style="display:inline;">@ruvnet</a>.<br>
+          This is an independent, plain-English <b>explainer</b> of his work — built to give a powerful, dense repo a friendly handle. All numbers and quotes are grounded in the source at the SHA below; nothing here is invented.<br><br>
+          Source: <a href="https://github.com/ruvnet/PhotonLayer" target="_blank" rel="noopener" style="display:inline;">github.com/ruvnet/PhotonLayer ↗</a><br>
+          Live demo: <a href="https://ruvnet.github.io/PhotonLayer/" target="_blank" rel="noopener" style="display:inline;">ruvnet.github.io/PhotonLayer ↗</a><br>
+          License: MIT © Ruvector
+        </p>
+      </div>
+      <div>
+        <h6>On this page</h6>
+        <a href="#what">01 · What is this</a>
+        <a href="#how">04 · How it works</a>
+        <a href="#priya">06 · Priya's example</a>
+        <a href="#gallery">07 · Use-case gallery</a>
+        <a href="#dropin">09 · The four crates</a>
+        <a href="#limits">11 · Honest limits</a>
+      </div>
+      <div>
+        <h6>Academic anchors</h6>
+        <p class="credit" style="font-size:13px;">
+          Wirth-Singh et al. — arXiv:2406.06534<br>
+          Bezzam et al. — arXiv:2206.01429<br>
+          Lin et al. — <em>Science</em> 361:1004 (2018)<br>
+          Li / Ozcan — arXiv:1906.03417<br>
+          <span class="muted">Design refs in-repo: ADR-260 / 261 / 263</span>
+        </p>
+      </div>
+    </div>
+    <p class="fine">
+      Updated <time datetime="2026-06-19">2026-06-19</time> · source @ <code style="color:var(--cyan);">fe86c9f</code>
+      (<code style="color:var(--muted);">fe86c9fad9a1572ce46e337f118656961bdf4ebb</code>) ·
+      Explainer site for PhotonLayer · not affiliated content beyond attribution · all claims grounded in the cited source.
+    </p>
+  </div>
+</footer>
+
+<script src="/main.js" defer></script>
+</body>
+</html>
