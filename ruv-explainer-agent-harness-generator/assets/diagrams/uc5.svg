@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 520" width="100%" role="img" aria-labelledby="uc5-title uc5-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif">
+  <title id="uc5-title">Use case 5 — Cut your model bill without losing quality</title>
+  <desc id="uc5-desc">Problem: you pay frontier prices for work a cheaper model could do. You install the metaharness router and call route on each query. The router sends each request to the cheapest model predicted to clear your quality bar, learned from your own eval logs, with zero native deps. You get same-quality output at lower spend; the DRACO benchmark reports a cheap model delivering frontier-quality research at roughly one-tenth the cost.</desc>
+  <defs>
+    <marker id="uc5-arrow" markerWidth="13" markerHeight="13" refX="9" refY="6" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#ff9e2c"/>
+    </marker>
+    <style>
+      .panel{fill:#241d15}
+      .node{fill:#2a2018;stroke:#c2703a;stroke-width:1.4}
+      .stage{fill:#9c8b72;font-size:13px;letter-spacing:.16em}
+      .head{fill:#f3e8d8;font-size:19px;font-weight:600}
+      .body{fill:#d6c5ac;font-size:15px}
+      .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;fill:#ffb650;font-size:14px}
+      .flow{stroke:#ff9e2c;stroke-width:2.2;fill:none}
+      .pill{fill:#ff9e2c}
+      .pilltxt{fill:#1a1206;font-size:13px;font-weight:600}
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1180" height="520" rx="18" class="panel"/>
+  <rect x="0.7" y="0.7" width="1178.6" height="518.6" rx="18" fill="none" stroke="#3a2f1f" stroke-width="1.4"/>
+
+  <text x="40" y="52" fill="#ff9e2c" font-size="15" letter-spacing=".2em">USE CASE 5</text>
+  <text x="40" y="84" class="head" font-size="26">"Cut my model bill without losing quality"</text>
+
+  <!-- Stage 1: PROBLEM -->
+  <rect x="40" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="60" y="162" class="stage">PROBLEM</text>
+  <text x="60" y="200" class="head">Frontier prices</text>
+  <text x="60" y="222" class="head">for easy work</text>
+  <text x="60" y="258" class="body">Every query goes to the</text>
+  <text x="60" y="280" class="body">most expensive model —</text>
+  <text x="60" y="302" class="body">even the simple ones a</text>
+  <text x="60" y="324" class="body">cheaper model handles fine.</text>
+  <rect x="60" y="350" width="210" height="56" rx="10" fill="#1d1812" stroke="#e8531f" stroke-width="1.3"/>
+  <text x="75" y="376" class="body" font-size="14">Every request →</text>
+  <text x="75" y="398" class="body" font-size="14" fill="#e8531f">frontier model · $$$$</text>
+
+  <line x1="298" y1="280" x2="342" y2="280" class="flow" marker-end="url(#uc5-arrow)"/>
+
+  <!-- Stage 2: WHAT YOU RUN -->
+  <rect x="350" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="370" y="162" class="stage">WHAT YOU RUN</text>
+  <rect x="370" y="184" width="210" height="42" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="384" y="210" class="mono" font-size="9.6">npm i @metaharness/router</text>
+  <text x="370" y="252" class="body" font-size="13" fill="#9c8b72">…then in your code:</text>
+  <rect x="370" y="262" width="210" height="42" rx="9" fill="#1a1206" stroke="#ff9e2c" stroke-width="1.4"/>
+  <text x="384" y="288" class="mono" font-size="12">route(query)</text>
+  <text x="370" y="334" class="body" font-size="13">Picks the cheapest model</text>
+  <text x="370" y="356" class="body" font-size="13">predicted to clear YOUR</text>
+  <text x="370" y="378" class="body" font-size="13">quality bar.</text>
+  <text x="370" y="408" class="body" font-size="11.5" fill="#9c8b72">Zero native deps · learns from your eval logs</text>
+
+  <line x1="608" y1="280" x2="652" y2="280" class="flow" marker-end="url(#uc5-arrow)"/>
+
+  <!-- Stage 3: WHAT IT LOOKS LIKE -->
+  <rect x="660" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="680" y="162" class="stage">WHAT IT LOOKS LIKE</text>
+  <text x="680" y="190" class="head" font-size="16">Smart routing</text>
+  <!-- router node -->
+  <rect x="754" y="206" width="64" height="38" rx="9" fill="#1a1206" stroke="#ff9e2c" stroke-width="1.4"/>
+  <text x="786" y="230" class="body" font-size="12" fill="#ffb650" text-anchor="middle">route()</text>
+  <!-- branches -->
+  <path d="M754,225 C720,250 710,270 700,292" class="flow" marker-end="url(#uc5-arrow)"/>
+  <path d="M786,244 L786,292" class="flow" marker-end="url(#uc5-arrow)"/>
+  <path d="M818,225 C852,250 862,270 872,292" class="flow" marker-end="url(#uc5-arrow)"/>
+  <rect x="668" y="296" width="64" height="60" rx="9" fill="#1d1812" stroke="#c2703a"/>
+  <text x="700" y="320" class="body" font-size="12.5" fill="#ffb650" text-anchor="middle">cheap</text>
+  <text x="700" y="340" class="body" font-size="11" text-anchor="middle">simple Q</text>
+  <rect x="754" y="296" width="64" height="60" rx="9" fill="#1d1812" stroke="#c2703a"/>
+  <text x="786" y="320" class="body" font-size="12.5" fill="#ffb650" text-anchor="middle">mid</text>
+  <text x="786" y="340" class="body" font-size="11" text-anchor="middle">normal Q</text>
+  <rect x="840" y="296" width="64" height="60" rx="9" fill="#1d1812" stroke="#c2703a"/>
+  <text x="872" y="320" class="body" font-size="12.5" fill="#ffb650" text-anchor="middle">frontier</text>
+  <text x="872" y="340" class="body" font-size="11" text-anchor="middle">hard Q</text>
+  <text x="680" y="392" class="body" font-size="13" fill="#9c8b72">Each request lands where</text>
+  <text x="680" y="412" class="body" font-size="13" fill="#9c8b72">it's good enough — no higher.</text>
+
+  <line x1="918" y1="280" x2="962" y2="280" class="flow" marker-end="url(#uc5-arrow)"/>
+
+  <!-- Stage 4: RESULT -->
+  <rect x="970" y="130" width="170" height="300" rx="12" fill="#2a2018" stroke="#ff9e2c" stroke-width="1.8"/>
+  <rect x="986" y="150" width="138" height="26" rx="13" class="pill"/>
+  <text x="1004" y="168" class="pilltxt">PAYOFF</text>
+  <text x="990" y="212" class="head" font-size="17">Same quality,</text>
+  <text x="990" y="234" class="head" font-size="17">lower spend</text>
+  <rect x="990" y="256" width="130" height="56" rx="10" fill="#1a1206" stroke="#ff9e2c" stroke-width="1.4"/>
+  <text x="1055" y="282" font-size="26" font-weight="700" fill="#ffb650" text-anchor="middle">~1/10</text>
+  <text x="1055" y="302" class="body" font-size="12" text-anchor="middle">the cost</text>
+  <text x="990" y="340" class="body" font-size="12.5">DRACO benchmark:</text>
+  <text x="990" y="360" class="body" font-size="12.5">frontier-quality</text>
+  <text x="990" y="380" class="body" font-size="12.5">research from a</text>
+  <text x="990" y="400" class="body" font-size="12.5">small/cheap model.</text>
+</svg>

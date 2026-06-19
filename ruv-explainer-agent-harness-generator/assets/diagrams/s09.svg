@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="900" height="600" role="img" aria-labelledby="s09-title s09-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s09-title">The drop-in: one zip, two halves, three steps to wire it in</title>
+  <desc id="s09-desc">One download splits into two halves. The For-you half is a written primer to read and watch. The For-your-AI half is a searchable knowledge pack (an .rvf file plus a small MCP server). Wiring the AI half into Claude Code is three steps: unzip the kb folder, add a .mcp.json pointing at it, and paste a verification gate into CLAUDE.md so your AI answers from the real source instead of guessing.</desc>
+
+  <defs>
+    <marker id="s09-arrow" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M1 1 L10 6 L1 11 Z" fill="#e0a96d"/>
+    </marker>
+    <marker id="s09-arrow-copper" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M1 1 L10 6 L1 11 Z" fill="#c8814f"/>
+    </marker>
+  </defs>
+
+  <!-- panel -->
+  <rect x="0" y="0" width="900" height="600" rx="16" fill="#1a1512"/>
+  <rect x="0.75" y="0.75" width="898.5" height="598.5" rx="15.25" fill="none" stroke="#3a2f1f" stroke-width="1.5"/>
+
+  <!-- header -->
+  <text x="40" y="50" font-family="'IBM Plex Sans',sans-serif" font-size="22" font-weight="600" fill="#f3e9da">The drop-in &#8212; one zip, two halves</text>
+  <text x="40" y="76" font-family="'IBM Plex Sans',sans-serif" font-size="15" fill="#9c8b72">One download. Half is for you to read; half is for your AI to search.</text>
+
+  <!-- ZIP -->
+  <g>
+    <rect x="370" y="100" width="160" height="56" rx="12" fill="#2a2018" stroke="#c8814f" stroke-width="2"/>
+    <text x="450" y="126" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="15" font-weight="600" fill="#e0a96d">one .zip</text>
+    <text x="450" y="145" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11.5" fill="#9c8b72">metaharness-dropin</text>
+  </g>
+
+  <!-- split arrows -->
+  <path d="M410 156 C 360 180, 280 184, 225 196" fill="none" stroke="#c8814f" stroke-width="2.25" marker-end="url(#s09-arrow-copper)"/>
+  <path d="M490 156 C 540 180, 620 184, 675 196" fill="none" stroke="#c8814f" stroke-width="2.25" marker-end="url(#s09-arrow-copper)"/>
+
+  <!-- FOR YOU half -->
+  <g>
+    <rect x="40" y="200" width="360" height="118" rx="14" fill="#221b14" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="64" y="230" font-family="'IBM Plex Sans',sans-serif" font-size="16" font-weight="600" fill="#e0a96d">For you</text>
+    <text x="64" y="252" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#d6c5ac">A short written primer.</text>
+
+    <rect x="64" y="266" width="148" height="34" rx="8" fill="#2a2018" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="138" y="288" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#f3e9da">read</text>
+    <rect x="228" y="266" width="148" height="34" rx="8" fill="#2a2018" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="302" y="288" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#f3e9da">watch</text>
+  </g>
+
+  <!-- FOR YOUR AI half -->
+  <g>
+    <rect x="500" y="200" width="360" height="118" rx="14" fill="#221b14" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="524" y="230" font-family="'IBM Plex Sans',sans-serif" font-size="16" font-weight="600" fill="#e0a96d">For your AI</text>
+    <text x="524" y="252" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#d6c5ac">A searchable knowledge pack.</text>
+
+    <rect x="524" y="266" width="148" height="34" rx="8" fill="#2a2018" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="598" y="288" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="13" fill="#f3e9da">kb / .rvf</text>
+    <rect x="688" y="266" width="148" height="34" rx="8" fill="#2a2018" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="762" y="288" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="13" fill="#f3e9da">MCP server</text>
+  </g>
+
+  <!-- handoff: the AI half feeds the wiring below -->
+  <line x1="680" y1="318" x2="680" y2="352" stroke="#e0a96d" stroke-width="2.25" marker-end="url(#s09-arrow)"/>
+  <text x="694" y="342" font-family="'IBM Plex Sans',sans-serif" font-size="12.5" fill="#9c8b72">wire this half into Claude Code</text>
+
+  <!-- WIRING STRIP -->
+  <text x="40" y="382" font-family="'IBM Plex Sans',sans-serif" font-size="17" font-weight="600" fill="#f3e9da">Three steps to wire it in</text>
+
+  <!-- step 1 -->
+  <g>
+    <rect x="40" y="400" width="252" height="118" rx="14" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <circle cx="66" cy="428" r="13" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+    <text x="66" y="433" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">1</text>
+    <text x="90" y="433" font-family="'IBM Plex Sans',sans-serif" font-size="15" font-weight="600" fill="#f3e9da">Unzip the pack</text>
+    <rect x="60" y="450" width="212" height="30" rx="7" fill="#1a1512" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="166" y="470" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12" fill="#e0a96d">unzip &#8230; &#8594; cd kb/ &#8594; npm i</text>
+    <text x="60" y="503" font-family="'IBM Plex Sans',sans-serif" font-size="12.5" fill="#9c8b72">Put the kb/ folder by your project.</text>
+  </g>
+
+  <!-- step 2 -->
+  <g>
+    <rect x="324" y="400" width="252" height="118" rx="14" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <circle cx="350" cy="428" r="13" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+    <text x="350" y="433" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">2</text>
+    <text x="374" y="433" font-family="'IBM Plex Sans',sans-serif" font-size="15" font-weight="600" fill="#f3e9da">Add .mcp.json</text>
+    <rect x="344" y="450" width="212" height="30" rx="7" fill="#1a1512" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="450" y="470" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12" fill="#e0a96d">"metaharness-kb": &#8230;</text>
+    <text x="344" y="503" font-family="'IBM Plex Sans',sans-serif" font-size="12.5" fill="#9c8b72">Registers the pack as a tool.</text>
+  </g>
+
+  <!-- step 3 -->
+  <g>
+    <rect x="608" y="400" width="252" height="118" rx="14" fill="#2a2018" stroke="#c8814f" stroke-width="2"/>
+    <circle cx="634" cy="428" r="13" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+    <text x="634" y="433" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">3</text>
+    <text x="658" y="433" font-family="'IBM Plex Sans',sans-serif" font-size="15" font-weight="600" fill="#f3e9da">Paste the gate</text>
+    <rect x="628" y="450" width="212" height="30" rx="7" fill="#1a1512" stroke="#c8814f" stroke-width="1.25"/>
+    <text x="734" y="470" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12" fill="#e0a96d">into CLAUDE.md</text>
+    <text x="628" y="503" font-family="'IBM Plex Sans',sans-serif" font-size="12.5" fill="#9c8b72">Forces a check before answering.</text>
+  </g>
+
+  <!-- wiring arrows -->
+  <line x1="292" y1="459" x2="320" y2="459" stroke="#e0a96d" stroke-width="2.25" marker-end="url(#s09-arrow)"/>
+  <line x1="576" y1="459" x2="604" y2="459" stroke="#e0a96d" stroke-width="2.25" marker-end="url(#s09-arrow)"/>
+
+  <!-- outcome -->
+  <rect x="40" y="540" width="820" height="42" rx="10" fill="#221b14" stroke="#3a2f1f" stroke-width="1.25"/>
+  <text x="450" y="566" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" fill="#d6c5ac">Result: your AI answers from the <tspan font-weight="600" fill="#e0a96d">real source</tspan> &#8212; grounded, with citations &#8212; instead of guessing.</text>
+</svg>

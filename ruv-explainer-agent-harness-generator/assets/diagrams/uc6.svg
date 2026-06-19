@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 520" width="100%" role="img" aria-labelledby="uc6-title uc6-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif">
+  <title id="uc6-title">Use case 6 — Eject from ruflo and ship your own branded harness</title>
+  <desc id="uc6-desc">Problem: you have been using ruflo and want to ship a focused, branded harness derived from it. You run metaharness from-existing, then validate, sign and npm publish with provenance. The tool detects your ruflo install, lifts the agents, skills and commands you customised into a new harness and renames every ruflo and claude-flow reference, starting with fresh memory. You get a clean, branded, publishable harness your team can run with npx your-org your-harness.</desc>
+  <defs>
+    <marker id="uc6-arrow" markerWidth="13" markerHeight="13" refX="9" refY="6" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#ff9e2c"/>
+    </marker>
+    <style>
+      .panel{fill:#241d15}
+      .node{fill:#2a2018;stroke:#c2703a;stroke-width:1.4}
+      .stage{fill:#9c8b72;font-size:13px;letter-spacing:.16em}
+      .head{fill:#f3e8d8;font-size:19px;font-weight:600}
+      .body{fill:#d6c5ac;font-size:15px}
+      .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;fill:#ffb650;font-size:14px}
+      .flow{stroke:#ff9e2c;stroke-width:2.2;fill:none}
+      .pill{fill:#ff9e2c}
+      .pilltxt{fill:#1a1206;font-size:13px;font-weight:600}
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1180" height="520" rx="18" class="panel"/>
+  <rect x="0.7" y="0.7" width="1178.6" height="518.6" rx="18" fill="none" stroke="#3a2f1f" stroke-width="1.4"/>
+
+  <text x="40" y="52" fill="#ff9e2c" font-size="15" letter-spacing=".2em">USE CASE 6</text>
+  <text x="40" y="84" class="head" font-size="26">"Eject from ruflo and ship my own branded harness"</text>
+
+  <!-- Stage 1: PROBLEM -->
+  <rect x="40" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="60" y="162" class="stage">PROBLEM</text>
+  <text x="60" y="200" class="head">Stuck inside</text>
+  <text x="60" y="222" class="head">someone's brand</text>
+  <text x="60" y="258" class="body">You've customised ruflo</text>
+  <text x="60" y="280" class="body">heavily — but it's still</text>
+  <text x="60" y="302" class="body">"ruflo", not yours, and</text>
+  <text x="60" y="324" class="body">you can't ship it as a</text>
+  <text x="60" y="346" class="body">clean branded product.</text>
+  <rect x="60" y="368" width="210" height="40" rx="9" fill="#1d1812" stroke="#3a2f1f"/>
+  <text x="75" y="393" class="mono" font-size="12">.claude/  CLAUDE.md  .mcp.json</text>
+
+  <line x1="298" y1="280" x2="342" y2="280" class="flow" marker-end="url(#uc6-arrow)"/>
+
+  <!-- Stage 2: WHAT YOU RUN -->
+  <rect x="350" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="370" y="162" class="stage">WHAT YOU RUN</text>
+  <rect x="370" y="180" width="210" height="40" rx="9" fill="#1a1206" stroke="#ff9e2c" stroke-width="1.4"/>
+  <text x="384" y="205" class="mono" font-size="10.5">metaharness --from-existing ./</text>
+  <text x="370" y="244" class="body" font-size="13" fill="#9c8b72">…then, to ship:</text>
+  <rect x="370" y="254" width="210" height="36" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="384" y="277" class="mono" font-size="11.5">harness validate</text>
+  <rect x="370" y="296" width="210" height="36" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="384" y="319" class="mono" font-size="11.5">harness sign</text>
+  <rect x="370" y="338" width="210" height="36" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="384" y="361" class="mono" font-size="11">npm publish --provenance</text>
+  <text x="370" y="400" class="body" font-size="12.5" fill="#9c8b72">validate = 6-check release umbrella</text>
+
+  <line x1="608" y1="280" x2="652" y2="280" class="flow" marker-end="url(#uc6-arrow)"/>
+
+  <!-- Stage 3: WHAT IT LOOKS LIKE -->
+  <rect x="660" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="680" y="162" class="stage">WHAT IT LOOKS LIKE</text>
+  <text x="680" y="190" class="head" font-size="16">Lift &amp; rename</text>
+  <g font-size="13.5" fill="#d6c5ac">
+    <rect x="680" y="202" width="210" height="34" rx="8" fill="#1d1812" stroke="#c2703a"/>
+    <text x="694" y="224">Detects your ruflo install</text>
+    <rect x="680" y="242" width="210" height="34" rx="8" fill="#1d1812" stroke="#c2703a"/>
+    <text x="694" y="264">Lifts your agents / skills</text>
+    <rect x="680" y="282" width="210" height="34" rx="8" fill="#1d1812" stroke="#c2703a"/>
+    <text x="694" y="304">Renames every ruflo ref</text>
+  </g>
+  <rect x="680" y="324" width="210" height="46" rx="9" fill="#1a1206" stroke="#ff9e2c" stroke-width="1.3"/>
+  <text x="694" y="343" class="mono" font-size="11" fill="#9c8b72">ruflo / claude-flow</text>
+  <text x="694" y="361" class="mono" font-size="11">→ your-brand</text>
+  <text x="680" y="396" class="body" font-size="12.5" fill="#9c8b72">.claude-flow/ state left behind</text>
+  <text x="680" y="414" class="body" font-size="12.5" fill="#9c8b72">by design — fresh memory.</text>
+
+  <line x1="918" y1="280" x2="962" y2="280" class="flow" marker-end="url(#uc6-arrow)"/>
+
+  <!-- Stage 4: RESULT -->
+  <rect x="970" y="130" width="170" height="300" rx="12" fill="#2a2018" stroke="#ff9e2c" stroke-width="1.8"/>
+  <rect x="986" y="150" width="138" height="26" rx="13" class="pill"/>
+  <text x="1004" y="168" class="pilltxt">PAYOFF</text>
+  <text x="990" y="212" class="head" font-size="17">Your own</text>
+  <text x="990" y="234" class="head" font-size="17">branded,</text>
+  <text x="990" y="256" class="head" font-size="17">shippable</text>
+  <text x="990" y="278" class="head" font-size="17">harness</text>
+  <rect x="990" y="298" width="130" height="50" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="1000" y="320" class="mono" font-size="10">npx @your-org/</text>
+  <text x="1000" y="338" class="mono" font-size="10">your-harness</text>
+  <text x="990" y="376" class="body" font-size="12.5">Your team gets the</text>
+  <text x="990" y="396" class="body" font-size="12.5">same repo-tuned</text>
+  <text x="990" y="416" class="body" font-size="12.5">agent — fully yours.</text>
+</svg>

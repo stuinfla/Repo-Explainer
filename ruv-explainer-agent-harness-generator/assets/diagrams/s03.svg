@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" role="img" aria-labelledby="s03-title s03-desc" style="max-width:1000px;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s03-title">Why now: hosts have multiplied and the plugin marketplace woke up</title>
+  <desc id="s03-desc">Two forces make a harness factory worth building now. First, the hosts multiplied — Claude Code, Codex, pi.dev, Hermes, OpenClaw and RVM all gained agent conventions. Second, the plugin marketplace woke up — a scaffolded harness both consumes plugins from the ruflo IPFS registry and can publish its own back.</desc>
+
+  <defs>
+    <marker id="s03-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e0a96d"/>
+    </marker>
+    <marker id="s03-arrow-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c8814f"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="600" rx="14" fill="#1a1512"/>
+
+  <text x="500" y="42" text-anchor="middle" fill="#f3e9da" font-size="22" font-weight="600">Why now</text>
+  <text x="500" y="68" text-anchor="middle" fill="#c8a98a" font-size="14">Two shifts made a "factory for harnesses" worth building</text>
+
+  <line x1="500" y1="92" x2="500" y2="556" stroke="#3a2f26" stroke-width="1.5" stroke-dasharray="4 6"/>
+
+  <!-- ============ LEFT: hosts multiplied ============ -->
+  <text x="250" y="120" text-anchor="middle" fill="#c8814f" font-size="16" font-weight="600">1 · The hosts multiplied</text>
+  <text x="250" y="142" text-anchor="middle" fill="#c8a98a" font-size="12">Claude Code used to be the only place. Now there are many.</text>
+
+  <!-- then vs now -->
+  <rect x="80" y="162" width="150" height="56" rx="9" fill="#211a15" stroke="#5a463a" stroke-width="1.5"/>
+  <text x="155" y="186" text-anchor="middle" fill="#b89a82" font-size="12" font-weight="600">Then</text>
+  <text x="155" y="205" text-anchor="middle" fill="#8a6a4a" font-size="11.5">one host</text>
+
+  <line x1="232" y1="190" x2="272" y2="190" stroke="#e0a96d" stroke-width="2" marker-end="url(#s03-arrow)"/>
+
+  <rect x="274" y="162" width="150" height="56" rx="9" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="349" y="186" text-anchor="middle" fill="#f3e9da" font-size="12" font-weight="600">Now</text>
+  <text x="349" y="205" text-anchor="middle" fill="#c8a98a" font-size="11.5">six+ hosts</text>
+
+  <!-- host grid -->
+  <rect x="80" y="246" width="156" height="42" rx="7" fill="#2a2018" stroke="#c8814f" stroke-width="1"/>
+  <text x="158" y="266" text-anchor="middle" fill="#f3e9da" font-size="12.5">Claude Code</text>
+  <text x="158" y="281" text-anchor="middle" fill="#8a6a4a" font-size="10">stable</text>
+
+  <rect x="252" y="246" width="156" height="42" rx="7" fill="#2a2018" stroke="#c8814f" stroke-width="1"/>
+  <text x="330" y="266" text-anchor="middle" fill="#f3e9da" font-size="12.5">Codex CLI</text>
+  <text x="330" y="281" text-anchor="middle" fill="#8a6a4a" font-size="10">MCP support</text>
+
+  <rect x="80" y="300" width="156" height="42" rx="7" fill="#2a2018" stroke="#c8814f" stroke-width="1"/>
+  <text x="158" y="320" text-anchor="middle" fill="#f3e9da" font-size="12.5">pi.dev</text>
+  <text x="158" y="335" text-anchor="middle" fill="#8a6a4a" font-size="10">dev platform</text>
+
+  <rect x="252" y="300" width="156" height="42" rx="7" fill="#2a2018" stroke="#c8814f" stroke-width="1"/>
+  <text x="330" y="320" text-anchor="middle" fill="#f3e9da" font-size="12.5">Hermes</text>
+  <text x="330" y="335" text-anchor="middle" fill="#8a6a4a" font-size="10">Nous Research</text>
+
+  <rect x="80" y="354" width="156" height="42" rx="7" fill="#2a2018" stroke="#c8814f" stroke-width="1"/>
+  <text x="158" y="374" text-anchor="middle" fill="#f3e9da" font-size="12.5">OpenClaw</text>
+  <text x="158" y="389" text-anchor="middle" fill="#8a6a4a" font-size="10">newer</text>
+
+  <rect x="252" y="354" width="156" height="42" rx="7" fill="#2a2018" stroke="#c8814f" stroke-width="1"/>
+  <text x="330" y="374" text-anchor="middle" fill="#f3e9da" font-size="12.5">RVM</text>
+  <text x="330" y="389" text-anchor="middle" fill="#8a6a4a" font-size="10">newer</text>
+
+  <!-- one harness targets all -->
+  <rect x="120" y="430" width="248" height="58" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="244" y="455" text-anchor="middle" fill="#f3e9da" font-size="13" font-weight="600">One generated harness</text>
+  <text x="244" y="475" text-anchor="middle" fill="#c8a98a" font-size="11.5">targets any of them — no rewrite</text>
+
+  <line x1="158" y1="396" x2="200" y2="428" stroke="#e0a96d" stroke-width="1.8" marker-end="url(#s03-arrow)"/>
+  <line x1="330" y1="396" x2="288" y2="428" stroke="#e0a96d" stroke-width="1.8" marker-end="url(#s03-arrow)"/>
+
+  <!-- ============ RIGHT: marketplace woke up ============ -->
+  <text x="750" y="120" text-anchor="middle" fill="#c8814f" font-size="16" font-weight="600">2 · The marketplace woke up</text>
+  <text x="750" y="142" text-anchor="middle" fill="#c8a98a" font-size="12">Plugins are now traded — a harness both takes and gives.</text>
+
+  <!-- registry -->
+  <rect x="600" y="170" width="300" height="64" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="750" y="196" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">ruflo IPFS plugin registry</text>
+  <text x="750" y="217" text-anchor="middle" fill="#c8a98a" font-size="11.5">the shared marketplace of agent plugins</text>
+
+  <!-- your harness -->
+  <rect x="620" y="372" width="260" height="64" rx="10" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+  <text x="750" y="398" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">Your scaffolded harness</text>
+  <text x="750" y="419" text-anchor="middle" fill="#c8a98a" font-size="11.5">a marketplace participant</text>
+
+  <!-- consumes (down) -->
+  <line x1="690" y1="234" x2="690" y2="370" stroke="#e0a96d" stroke-width="2" marker-end="url(#s03-arrow)"/>
+  <rect x="556" y="278" width="118" height="48" rx="7" fill="#211a15" stroke="#e0a96d" stroke-width="1"/>
+  <text x="615" y="299" text-anchor="middle" fill="#e0a96d" font-size="11.5" font-weight="600">consumes</text>
+  <text x="615" y="316" text-anchor="middle" fill="#c8a98a" font-size="10.5">pulls plugins in</text>
+
+  <!-- publishes (up) -->
+  <line x1="810" y1="370" x2="810" y2="236" stroke="#c8814f" stroke-width="2" marker-end="url(#s03-arrow-c)"/>
+  <rect x="826" y="278" width="120" height="48" rx="7" fill="#211a15" stroke="#c8814f" stroke-width="1"/>
+  <text x="886" y="299" text-anchor="middle" fill="#c8814f" font-size="11.5" font-weight="600">publishes</text>
+  <text x="886" y="316" text-anchor="middle" fill="#c8a98a" font-size="10.5">pushes its own back</text>
+
+  <!-- takeaway right -->
+  <rect x="620" y="466" width="260" height="48" rx="10" fill="#211a15" stroke="#5a463a" stroke-width="1.5"/>
+  <text x="750" y="490" text-anchor="middle" fill="#b89a82" font-size="11.5">Without a generator, every new</text>
+  <text x="750" y="507" text-anchor="middle" fill="#b89a82" font-size="11.5">participant rebuilds 80% by hand</text>
+
+  <!-- footer -->
+  <text x="500" y="576" text-anchor="middle" fill="#b89a82" font-size="12">More hosts to target + a live plugin economy = the moment a harness factory pays off.</text>
+</svg>

@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 520" width="100%" role="img" aria-labelledby="uc4-title uc4-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif">
+  <title id="uc4-title">Use case 4 — Check that a colleague's harness .zip is safe to run</title>
+  <desc id="uc4-desc">Problem: someone hands you a generated harness .zip and you want to vet it before installing. You run harness mcp-scan, harness threat-model and harness verify, or use the Studio Verify tab. The tool statically scans for risky permissions, missing audits, wildcard permissions, unguarded secrets and unpinned deps, and confirms the Ed25519 witness signature, executing nothing. You get a clean, medium or high verdict and a shareable artifact.</desc>
+  <defs>
+    <marker id="uc4-arrow" markerWidth="13" markerHeight="13" refX="9" refY="6" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#ff9e2c"/>
+    </marker>
+    <style>
+      .panel{fill:#241d15}
+      .node{fill:#2a2018;stroke:#c2703a;stroke-width:1.4}
+      .stage{fill:#9c8b72;font-size:13px;letter-spacing:.16em}
+      .head{fill:#f3e8d8;font-size:19px;font-weight:600}
+      .body{fill:#d6c5ac;font-size:15px}
+      .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;fill:#ffb650;font-size:14px}
+      .flow{stroke:#ff9e2c;stroke-width:2.2;fill:none}
+      .pill{fill:#ff9e2c}
+      .pilltxt{fill:#1a1206;font-size:13px;font-weight:600}
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1180" height="520" rx="18" class="panel"/>
+  <rect x="0.7" y="0.7" width="1178.6" height="518.6" rx="18" fill="none" stroke="#3a2f1f" stroke-width="1.4"/>
+
+  <text x="40" y="52" fill="#ff9e2c" font-size="15" letter-spacing=".2em">USE CASE 4</text>
+  <text x="40" y="84" class="head" font-size="26">"Check that a .zip a colleague gave me is safe to run"</text>
+
+  <!-- Stage 1: PROBLEM -->
+  <rect x="40" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="60" y="162" class="stage">PROBLEM</text>
+  <text x="60" y="200" class="head">An unknown .zip</text>
+  <text x="60" y="236" class="body">A colleague hands you</text>
+  <text x="60" y="258" class="body">a generated harness.</text>
+  <text x="60" y="280" class="body">Installing it could grant</text>
+  <text x="60" y="302" class="body">shell, network or file</text>
+  <text x="60" y="324" class="body">access you didn't expect.</text>
+  <rect x="60" y="346" width="210" height="60" rx="10" fill="#1d1812" stroke="#e8531f" stroke-width="1.3"/>
+  <text x="75" y="374" class="body" font-size="14" fill="#ffb650">harness.zip</text>
+  <text x="75" y="396" class="body" font-size="13">Vet it WITHOUT running it.</text>
+
+  <line x1="298" y1="280" x2="342" y2="280" class="flow" marker-end="url(#uc4-arrow)"/>
+
+  <!-- Stage 2: WHAT YOU RUN -->
+  <rect x="350" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="370" y="162" class="stage">WHAT YOU RUN</text>
+  <rect x="370" y="180" width="210" height="40" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="384" y="205" class="mono" font-size="11.5">harness mcp-scan &lt;path&gt;</text>
+  <rect x="370" y="228" width="210" height="40" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="384" y="253" class="mono" font-size="10.5">harness threat-model &lt;path&gt;</text>
+  <rect x="370" y="276" width="210" height="40" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="384" y="301" class="mono" font-size="11.5">harness verify</text>
+  <text x="370" y="346" class="body" font-size="13">"npm audit for agent tools"</text>
+  <text x="370" y="368" class="body" font-size="13" fill="#ffb650">Static-only · nothing runs.</text>
+  <text x="370" y="404" class="body" font-size="13" fill="#9c8b72">Or use the Studio Verify tab.</text>
+
+  <line x1="608" y1="280" x2="652" y2="280" class="flow" marker-end="url(#uc4-arrow)"/>
+
+  <!-- Stage 3: WHAT IT LOOKS LIKE -->
+  <rect x="660" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="680" y="162" class="stage">WHAT IT LOOKS LIKE</text>
+  <text x="680" y="188" class="head" font-size="16">Scan checklist</text>
+  <g font-size="13" fill="#d6c5ac">
+    <text x="680" y="214">Risky MCP permissions</text>
+    <text x="894" y="214" text-anchor="end" fill="#ffb650">checked</text>
+    <text x="680" y="240">Missing audit / timeouts</text>
+    <text x="894" y="240" text-anchor="end" fill="#ffb650">checked</text>
+    <text x="680" y="266">Wildcard permissions</text>
+    <text x="894" y="266" text-anchor="end" fill="#ffb650">checked</text>
+    <text x="680" y="292">Unguarded secrets</text>
+    <text x="894" y="292" text-anchor="end" fill="#ffb650">checked</text>
+    <text x="680" y="318">Unpinned deps</text>
+    <text x="894" y="318" text-anchor="end" fill="#ffb650">checked</text>
+  </g>
+  <rect x="680" y="334" width="210" height="64" rx="9" fill="#1a1206" stroke="#ff9e2c" stroke-width="1.4"/>
+  <text x="694" y="358" class="body" font-size="13">Ed25519 witness signature</text>
+  <text x="694" y="382" class="body" font-size="13" fill="#ffb650">not tampered with</text>
+  <text x="680" y="418" class="body" font-size="12" fill="#9c8b72">mcp-scan exits 1 on any HIGH finding</text>
+
+  <line x1="918" y1="280" x2="962" y2="280" class="flow" marker-end="url(#uc4-arrow)"/>
+
+  <!-- Stage 4: RESULT -->
+  <rect x="970" y="130" width="170" height="300" rx="12" fill="#2a2018" stroke="#ff9e2c" stroke-width="1.8"/>
+  <rect x="986" y="150" width="138" height="26" rx="13" class="pill"/>
+  <text x="1004" y="168" class="pilltxt">PAYOFF</text>
+  <text x="990" y="212" class="head" font-size="17">A verdict +</text>
+  <text x="990" y="234" class="head" font-size="17">an artifact</text>
+  <g font-size="14">
+    <rect x="990" y="256" width="130" height="30" rx="8" fill="#1d1812" stroke="#c2703a"/>
+    <text x="1004" y="277" fill="#ffb650">clean</text>
+    <rect x="990" y="292" width="130" height="30" rx="8" fill="#1d1812" stroke="#c2703a"/>
+    <text x="1004" y="313" fill="#d6c5ac">medium</text>
+    <rect x="990" y="328" width="130" height="30" rx="8" fill="#1d1812" stroke="#e8531f"/>
+    <text x="1004" y="349" fill="#e8531f">high</text>
+  </g>
+  <text x="990" y="386" class="body" font-size="12.5">Shareable for PR /</text>
+  <text x="990" y="406" class="body" font-size="12.5">compliance review.</text>
+</svg>

@@ -1,0 +1,23 @@
+# secrets — NEVER commit
+.env
+.env.*
+**/.env
+docs/.env
+
+# deps & build
+node_modules/
+**/node_modules/
+.vercel/
+
+# cloned upstream repos (not ours)
+.targets/
+
+# local agent/ruflo state
+.swarm/
+.claude/
+
+# os & misc
+.DS_Store
+*.log
+*.zip
+ruvector.db

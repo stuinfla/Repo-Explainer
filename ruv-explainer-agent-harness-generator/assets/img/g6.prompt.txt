@@ -1,0 +1,12 @@
+A warm, inviting wide social share card (1200x630 banner composition, designed to feel like an open-graph preview), in a tactile "foundry / mint" aesthetic.
+
+BACKGROUND: a deep warm-charcoal field (#16120e to #1d1812), softly lit like the inside of a cozy metal workshop — not cold tech-art, not sci-fi. Gentle radial glow of molten amber light (#ff9e2c) blooming from behind the central object, casting a warm copper (#c2703a) ambient haze toward the lower corners. A faint scatter of soft amber bokeh sparks, like embers drifting in a warm forge — sparse, dreamy, never busy.
+
+CENTERPIECE: a single large, freshly-minted metal coin / commemorative stamp, slightly off-center, catching warm light on its top-left edge. The coin is struck from polished copper and brass (#c2703a / #d9a441) with a molten amber rim that glows like cooling metal (#ff9e2c into #e8531f at the hottest point). Embossed deeply into the face of the coin, in clean bold sans-serif letters, the two big letters "MH" — tactile, raised metal, catching a soft highlight. The coin has real physical depth: beveled edges, gentle reflections, a sense you could pick it up.
+
+TEXT (must be spelled exactly, crisp and legible, large, plain friendly typography in warm cream ink #f3e8d8):
+- Headline, large and confident, set beside or just below the coin: "MetaHarness"
+- Subtitle, smaller, warm and approachable, on its own line beneath: "a factory for agent frameworks"
+Keep typography minimal and clean — only these two lines of text, no other words, no logos, no UI, no buttons, generous breathing room.
+
+MOOD & STYLE: warm, friendly, inviting, approachable, hand-made-craft feeling — like the welcoming sign of a small artisan mint or foundry. Cinematic soft glow, shallow tactile depth, premium but cozy. Strictly warm palette: deep warm-charcoal, molten amber, copper, brass, ember-orange, cream ink. ABSOLUTELY NO cyan, NO blue, NO teal, NO neon-purple, NO cold sci-fi tech-grid, NO generic AI-art clutter, NO circuit boards, NO robots. Clean, calm, confident, human.

@@ -1,0 +1,1728 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MetaHarness — mint a custom agent harness from any repo</title>
+  <meta name="description" content="A plain-language explainer for MetaHarness (ruvnet/agent-harness-generator): a factory for agent frameworks. The harness is the product." />
+  <meta name="color-scheme" content="dark" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+
+  <!-- Open Graph — G6 social share card (1200x630) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="MetaHarness — the harness is the product" />
+  <meta property="og:description" content="Mint your own branded AI agent harness from any repo — its own command, its own skills, its own safety net. Nothing leaves your machine." />
+  <meta property="og:image" content="assets/img/g6.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="A freshly minted copper-and-brass coin stamped with the letters MH, glowing molten amber, beside the words MetaHarness — a factory for agent frameworks." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="MetaHarness — the harness is the product" />
+  <meta name="twitter:description" content="Mint your own branded AI agent harness from any repo. Nothing leaves your machine." />
+  <meta name="twitter:image" content="assets/img/g6.png" />
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <!--
+    ============================================================================
+    SITE CONTENT (Wave 2). Foundry/Mint aesthetic [Constraint K], zero cyan.
+    Copy authored from content/agent-harness-generator.canon.md (source of truth).
+    Plain-language, human-problem-first, terms defined in-line [Constraint O].
+    Section IA:
+      01 Why built · 02 What problem · 03 Why now · 04 How it solves ·
+      05 What solved looks like · 06 How to implement · 07 How to start
+      08 Use-Case Gallery (6 full scenarios) · 09 Drop-in (the AI-half zip)
+    Graphics wired: G1->01, G2->03, G3->08(cost), G4->05, G5->09, G6->og:image.
+    ============================================================================
+  -->
+</head>
+<body>
+
+  <!-- ===================== PROVENANCE / ATTRIBUTION (Cognitum-style) ===================== -->
+  <div class="prov-banner" role="note" aria-label="Source and provenance">
+    <div class="wrap prov-banner-inner">
+      <p class="prov-attr">
+        A plain-language explainer for
+        <a href="https://github.com/ruvnet/agent-harness-generator"><strong>ruvnet/agent-harness-generator</strong></a>
+        by <strong>Reuven Cohen</strong>
+        (<a href="https://github.com/ruvnet">@ruvnet</a>).
+        Not affiliated &mdash; an independent walkthrough of the open-source project.
+      </p>
+      <p class="prov-live">
+        <span class="prov-dot" aria-hidden="true">&#9679;</span>
+        Updated 2026-06-19 &middot; source <code>@ db65fab</code> &middot; v0.1.3
+      </p>
+    </div>
+  </div>
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="#top">
+        <span class="coin" aria-hidden="true">MH</span>
+        MetaHarness
+      </a>
+      <nav class="nav-links" aria-label="Section navigation">
+        <a href="#s01">Why</a>
+        <a href="#s04">How</a>
+        <a href="#s07">Start</a>
+        <a href="#s08">Use cases</a>
+        <a href="#s09">Drop-in</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===================== HERO ===================== -->
+  <main id="top">
+    <section class="hero">
+      <div class="wrap">
+        <p class="eyebrow">ruvnet · agent-harness-generator</p>
+        <h1>The harness is<br /><span class="molten">the product.</span></h1>
+        <p class="lede">
+          MetaHarness is a free tool that turns any GitHub repo &mdash; or a blank
+          page &mdash; into <em>your own</em> AI assistant: its own name, its own
+          <code>npx your-name</code> command, the skills it needs, a memory of your
+          project, and a built-in safety net. It runs on your machine. It never
+          runs your code. The AI model underneath stays the same &mdash; what you
+          build and own is the wrapper around it.
+        </p>
+        <div class="meta-row" aria-hidden="true">
+          <span>CLI&nbsp;<b>npx metaharness</b></span>
+          <span>LIBRARY&nbsp;<b>@ruvnet/agent-harness-generator</b></span>
+          <span>STATUS&nbsp;<b>v0.1.x beta</b></span>
+        </div>
+        <a class="cta" href="#s09">Get the drop-in &rarr;</a>
+      </div>
+    </section>
+
+    <!-- ===================== SECTIONS ===================== -->
+    <div class="sections">
+      <div class="wrap">
+
+        <!-- 01 — WHY IT WAS BUILT (arc Q1) -->
+        <details class="section" id="s01" open>
+          <summary>
+            <span class="num">01</span>
+            <span class="head-text">
+              <h2>Why it was built</h2>
+              <span class="q">Arc 1 &mdash; what pushed someone to make this?</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              First, the short version of <em>what</em> it is, so the rest makes
+              sense. A <strong>harness</strong> is the wrapper <em>around</em> an AI
+              model &mdash; not the model itself. Underneath you are still talking to
+              Claude, GPT, or whatever model you use. The harness is the bit that
+              gives your assistant a name, knows your project, carries a set of
+              skills, and keeps a safety net around what it is allowed to do.
+              MetaHarness is a <strong>factory that builds those wrappers</strong>.
+              As the project puts it: <em>&ldquo;It is not another agent framework.
+              It is a factory for agent frameworks. The model is replaceable. The
+              harness is the product.&rdquo;</em>
+            </p>
+            <p>
+              So why build a <em>factory</em> instead of just one more assistant?
+              Because of a trap the makers hit themselves. Their earlier product,
+              <strong>ruflo</strong>, came as one big bundle &mdash; a small core
+              engine welded to 60+ pre-made agents, 30+ skills, and 33 plugins, all
+              fused together. People loved the engine but wanted their <em>own</em>
+              brand, their own agents, and their own listing. The only way to get
+              that was to copy (&ldquo;fork&rdquo;) the whole bundle &mdash; and the
+              moment you did, you were cut off from every future update to the
+              engine. That is a <strong>one-way door</strong>: rebrand once, and you
+              are frozen in time.
+            </p>
+            <p>
+              MetaHarness was built to take the hinges off that door. It
+              <strong>separates the reusable engine from the opinionated content</strong>,
+              so you can take just the engine and generate just the pieces you
+              actually want &mdash; owned and branded by you, and still able to pull
+              future engine updates.
+            </p>
+<figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" width="100%" role="img" aria-labelledby="s01-title s01-desc" style="max-width:1000px;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s01-title">The one-way door: forking ruflo versus generating with MetaHarness</title>
+  <desc id="s01-desc">Forking the whole ruflo bundle freezes you and cuts you off from future kernel updates. MetaHarness generates only the pieces you want, branded by you, while still pulling future engine updates.</desc>
+
+  <defs>
+    <marker id="s01-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e0a96d"/>
+    </marker>
+    <marker id="s01-arrow-cut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a6a4a"/>
+    </marker>
+  </defs>
+
+  <!-- panel -->
+  <rect x="0" y="0" width="1000" height="620" rx="14" fill="#1a1512"/>
+
+  <!-- heading -->
+  <text x="500" y="42" text-anchor="middle" fill="#f3e9da" font-size="22" font-weight="600">The "one-way door"</text>
+  <text x="500" y="68" text-anchor="middle" fill="#c8a98a" font-size="14">Forking the whole bundle vs. generating just the pieces you want</text>
+
+  <!-- divider -->
+  <line x1="500" y1="92" x2="500" y2="588" stroke="#3a2f26" stroke-width="1.5" stroke-dasharray="4 6"/>
+
+  <!-- ===================== BEFORE (left) ===================== -->
+  <text x="250" y="120" text-anchor="middle" fill="#c8814f" font-size="16" font-weight="600">BEFORE — fork ruflo</text>
+
+  <!-- the bundle -->
+  <rect x="60" y="142" width="380" height="170" rx="10" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+  <text x="250" y="166" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">The whole ruflo bundle (one frozen copy)</text>
+
+  <rect x="78" y="182" width="156" height="50" rx="7" fill="#1f1813" stroke="#e0a96d" stroke-width="1"/>
+  <text x="156" y="202" text-anchor="middle" fill="#f3e9da" font-size="12.5">Kernel primitives</text>
+  <text x="156" y="220" text-anchor="middle" fill="#c8a98a" font-size="11">MCP, hooks, memory, routing</text>
+
+  <rect x="266" y="182" width="156" height="50" rx="7" fill="#1f1813" stroke="#e0a96d" stroke-width="1"/>
+  <text x="344" y="202" text-anchor="middle" fill="#f3e9da" font-size="12.5">Bundled content</text>
+  <text x="344" y="220" text-anchor="middle" fill="#c8a98a" font-size="10.5">60+ agents · 30+ skills · 33 plugins</text>
+
+  <text x="250" y="258" text-anchor="middle" fill="#c8a98a" font-size="11.5">Kernel and content are fused together — you must take all of it</text>
+  <text x="250" y="290" text-anchor="middle" fill="#e0a96d" font-size="12">You fork the ENTIRE thing just to rebrand it</text>
+
+  <!-- frozen copy -->
+  <rect x="120" y="350" width="260" height="74" rx="10" fill="#2a2018" stroke="#8a6a4a" stroke-width="1.5"/>
+  <text x="250" y="378" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">Your frozen fork</text>
+  <text x="250" y="400" text-anchor="middle" fill="#c8a98a" font-size="11.5">A snapshot — never moves again on its own</text>
+
+  <!-- fork arrow -->
+  <line x1="250" y1="312" x2="250" y2="348" stroke="#e0a96d" stroke-width="2" marker-end="url(#s01-arrow)"/>
+  <text x="300" y="334" text-anchor="start" fill="#c8a98a" font-size="11">fork</text>
+
+  <!-- future updates cut off -->
+  <rect x="120" y="470" width="260" height="64" rx="10" fill="#211a15" stroke="#5a463a" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="250" y="496" text-anchor="middle" fill="#b89a82" font-size="13" font-weight="600">Future engine updates</text>
+  <text x="250" y="516" text-anchor="middle" fill="#8a6a4a" font-size="11.5">never reach your fork</text>
+
+  <!-- broken / cut link -->
+  <line x1="250" y1="426" x2="250" y2="468" stroke="#8a6a4a" stroke-width="2" stroke-dasharray="3 5" marker-end="url(#s01-arrow-cut)"/>
+  <!-- cut mark -->
+  <line x1="232" y1="447" x2="248" y2="437" stroke="#c8814f" stroke-width="2.5"/>
+  <line x1="252" y1="457" x2="268" y2="447" stroke="#c8814f" stroke-width="2.5"/>
+  <text x="300" y="452" text-anchor="start" fill="#c8814f" font-size="11">cut off</text>
+
+  <!-- ===================== AFTER (right) ===================== -->
+  <text x="750" y="120" text-anchor="middle" fill="#e0a96d" font-size="16" font-weight="600">AFTER — generate with MetaHarness</text>
+
+  <!-- kernel source (stays live) -->
+  <rect x="560" y="142" width="380" height="92" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="750" y="166" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">ruflo kernel (lives upstream, keeps improving)</text>
+  <rect x="578" y="182" width="344" height="38" rx="7" fill="#1f1813" stroke="#c8814f" stroke-width="1"/>
+  <text x="750" y="206" text-anchor="middle" fill="#c8a98a" font-size="12">MCP · hooks · memory · routing · witness — pinned version</text>
+
+  <!-- generator -->
+  <rect x="640" y="262" width="220" height="48" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="750" y="285" text-anchor="middle" fill="#f3e9da" font-size="13" font-weight="600">MetaHarness generator</text>
+  <text x="750" y="302" text-anchor="middle" fill="#c8a98a" font-size="11">picks ONLY the pieces you choose</text>
+
+  <line x1="750" y1="234" x2="750" y2="260" stroke="#e0a96d" stroke-width="2" marker-end="url(#s01-arrow)"/>
+
+  <!-- your harness -->
+  <rect x="600" y="348" width="300" height="100" rx="10" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+  <text x="750" y="374" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">Your branded harness</text>
+  <text x="750" y="394" text-anchor="middle" fill="#c8a98a" font-size="11.5">npx your-name · your agents · your skills</text>
+  <rect x="618" y="406" width="264" height="30" rx="6" fill="#1f1813" stroke="#e0a96d" stroke-width="1"/>
+  <text x="750" y="425" text-anchor="middle" fill="#c8a98a" font-size="11">only the parts you wanted — owned by you</text>
+
+  <line x1="750" y1="310" x2="750" y2="346" stroke="#e0a96d" stroke-width="2" marker-end="url(#s01-arrow)"/>
+  <text x="800" y="332" text-anchor="start" fill="#c8a98a" font-size="11">generate</text>
+
+  <!-- future updates still flow -->
+  <rect x="600" y="482" width="300" height="56" rx="10" fill="#211a15" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="750" y="506" text-anchor="middle" fill="#f3e9da" font-size="13" font-weight="600">Future engine updates</text>
+  <text x="750" y="525" text-anchor="middle" fill="#c8a98a" font-size="11.5">still flow in — re-pin to a newer kernel</text>
+
+  <!-- live link from kernel down the right edge to updates, showing connection stays -->
+  <path d="M928 188 C 968 280, 968 420, 905 510" fill="none" stroke="#e0a96d" stroke-width="2" stroke-dasharray="2 4"/>
+  <path d="M905 510 L 900 500 M905 510 L 912 503" stroke="#e0a96d" stroke-width="2"/>
+  <text x="958" y="356" text-anchor="middle" fill="#e0a96d" font-size="10.5" transform="rotate(90 958 356)">stays connected to the kernel</text>
+
+  <line x1="750" y1="448" x2="750" y2="480" stroke="#e0a96d" stroke-width="2" marker-end="url(#s01-arrow)"/>
+
+  <!-- footer takeaway -->
+  <text x="500" y="608" text-anchor="middle" fill="#b89a82" font-size="12">Fork = take everything, then it freezes.  Generate = take what you need, keep getting updates.</text>
+</svg>
+              <figcaption>The one-way door, drawn out: forking the whole ruflo bundle freezes you and cuts off engine updates (left); MetaHarness generates only the pieces you want, branded by you, and stays connected to the kernel for future updates (right).</figcaption>
+            </figure>
+            <figure class="figure">
+              <img src="assets/img/g1.png" width="1376" height="768"
+                   alt="A dull grey metal plate labelled Your GitHub Repo on the left, a glowing mint press labelled Mint It in the centre, and a warm amber coin labelled Your Custom Agent on the right, connected by an arrow." />
+              <figcaption>
+                The core idea in one picture: a plain repo goes in, gets stamped,
+                and comes out as a finished, branded agent you own.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- 02 — WHAT PROBLEM IT SOLVES (arc Q2) -->
+        <details class="section" id="s02">
+          <summary>
+            <span class="num">02</span>
+            <span class="head-text">
+              <h2>What problem it solves</h2>
+              <span class="q">Arc 2 &mdash; what pain does this take away?</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              There are three everyday headaches it removes:
+            </p>
+            <ol>
+              <li>
+                <strong>Lock-in.</strong> As above &mdash; copying a bundled product
+                just to rebrand it means you give up every future update to the part
+                you actually relied on. You get stuck.
+              </li>
+              <li>
+                <strong>Too many places to run an assistant.</strong> Claude Code
+                used to be the obvious home for AI agents. Now there are several
+                &mdash; Codex, Hermes, pi.dev and more &mdash; and each one wants its
+                config files set up <em>its</em> way. (Config = the small settings
+                files that tell a tool how to behave.) Setting the same assistant up
+                by hand for each place is tedious and easy to get wrong. MetaHarness
+                writes the right files for whichever places you pick.
+              </li>
+              <li>
+                <strong>Rebuilding the same plumbing every time.</strong> Roughly
+                80% of any new agent project is the same unglamorous wiring done over
+                again: a local tool server, a place to keep memory, the rules for
+                what is allowed, and a way to sign your release so people can trust
+                it. MetaHarness generates all of that for you, correctly, in one go.
+              </li>
+            </ol>
+            <p>
+              In plain terms: instead of spending your first week rebuilding
+              scaffolding, you answer a few questions and get a clean, safe starting
+              point that is already yours.
+            </p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" role="img" aria-labelledby="s02-title s02-desc" style="max-width:1000px;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s02-title">The problem MetaHarness solves: lock-in, host fragmentation, and rebuilt plumbing</title>
+  <desc id="s02-desc">A generic AI agent guesses at your repo. Three concrete problems follow: lock-in when you fork a bundle to rebrand it, host fragmentation across different agent runtimes, and reinventing about 80 percent of the same infrastructure on every new project.</desc>
+
+  <defs>
+    <marker id="s02-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e0a96d"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="600" rx="14" fill="#1a1512"/>
+
+  <text x="500" y="42" text-anchor="middle" fill="#f3e9da" font-size="22" font-weight="600">The problem</text>
+  <text x="500" y="68" text-anchor="middle" fill="#c8a98a" font-size="14">Why a generic agent is not enough — and why three things keep going wrong</text>
+
+  <!-- ============ TOP: generic agent guessing ============ -->
+  <rect x="60" y="96" width="240" height="120" rx="10" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+  <text x="180" y="122" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">Generic AI agent</text>
+  <text x="180" y="144" text-anchor="middle" fill="#c8a98a" font-size="11.5">knows nothing about</text>
+  <text x="180" y="160" text-anchor="middle" fill="#c8a98a" font-size="11.5">YOUR codebase</text>
+  <text x="180" y="190" text-anchor="middle" fill="#e0a96d" font-size="13" font-weight="600">"...is this a Python repo?"</text>
+
+  <!-- your repo -->
+  <rect x="700" y="96" width="240" height="120" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="820" y="122" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">Your repo</text>
+  <text x="820" y="146" text-anchor="middle" fill="#c8a98a" font-size="11.5">its own layout, build,</text>
+  <text x="820" y="162" text-anchor="middle" fill="#c8a98a" font-size="11.5">tools, conventions</text>
+  <text x="820" y="192" text-anchor="middle" fill="#b89a82" font-size="12">needs an agent that fits</text>
+
+  <!-- guessing arrow with question marks -->
+  <line x1="300" y1="156" x2="698" y2="156" stroke="#c8814f" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#s02-arrow)"/>
+  <text x="500" y="140" text-anchor="middle" fill="#c8814f" font-size="13" font-weight="600">guesses  ?  ?  ?</text>
+  <text x="500" y="178" text-anchor="middle" fill="#8a6a4a" font-size="11">no project knowledge, no fit</text>
+
+  <!-- ============ band label ============ -->
+  <text x="500" y="262" text-anchor="middle" fill="#c8814f" font-size="15" font-weight="600">Three problems this creates</text>
+
+  <!-- ============ THREE PROBLEM CARDS ============ -->
+  <!-- Card 1: Lock-in -->
+  <rect x="44" y="284" width="290" height="262" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="189" y="312" text-anchor="middle" fill="#f3e9da" font-size="15" font-weight="600">1 · Lock-in</text>
+
+  <rect x="66" y="332" width="246" height="44" rx="7" fill="#1f1813" stroke="#c8814f" stroke-width="1"/>
+  <text x="189" y="350" text-anchor="middle" fill="#c8a98a" font-size="11.5">You fork a bundled product</text>
+  <text x="189" y="367" text-anchor="middle" fill="#c8a98a" font-size="11.5">just to put your brand on it</text>
+
+  <line x1="189" y1="376" x2="189" y2="396" stroke="#e0a96d" stroke-width="2" marker-end="url(#s02-arrow)"/>
+
+  <rect x="66" y="398" width="246" height="44" rx="7" fill="#1f1813" stroke="#5a463a" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="189" y="416" text-anchor="middle" fill="#b89a82" font-size="11.5">Now you are off the upstream</text>
+  <text x="189" y="433" text-anchor="middle" fill="#b89a82" font-size="11.5">— no future updates</text>
+
+  <text x="189" y="470" text-anchor="middle" fill="#e0a96d" font-size="12" font-weight="600">Rebranding</text>
+  <text x="189" y="489" text-anchor="middle" fill="#c8a98a" font-size="11.5">shouldn't cost you</text>
+  <text x="189" y="507" text-anchor="middle" fill="#c8a98a" font-size="11.5">every upstream improvement</text>
+  <text x="189" y="532" text-anchor="middle" fill="#8a6a4a" font-size="10.5">(the same one-way door)</text>
+
+  <!-- Card 2: Host fragmentation -->
+  <rect x="355" y="284" width="290" height="262" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="500" y="312" text-anchor="middle" fill="#f3e9da" font-size="15" font-weight="600">2 · Host fragmentation</text>
+
+  <text x="500" y="336" text-anchor="middle" fill="#c8a98a" font-size="11.5">Agents now run in many places —</text>
+  <text x="500" y="353" text-anchor="middle" fill="#c8a98a" font-size="11.5">each with its own config rules</text>
+
+  <rect x="377" y="368" width="112" height="34" rx="6" fill="#1f1813" stroke="#c8814f" stroke-width="1"/>
+  <text x="433" y="389" text-anchor="middle" fill="#f3e9da" font-size="11.5">Claude Code</text>
+  <rect x="511" y="368" width="112" height="34" rx="6" fill="#1f1813" stroke="#c8814f" stroke-width="1"/>
+  <text x="567" y="389" text-anchor="middle" fill="#f3e9da" font-size="11.5">Codex</text>
+
+  <rect x="377" y="410" width="112" height="34" rx="6" fill="#1f1813" stroke="#c8814f" stroke-width="1"/>
+  <text x="433" y="431" text-anchor="middle" fill="#f3e9da" font-size="11.5">Hermes</text>
+  <rect x="511" y="410" width="112" height="34" rx="6" fill="#1f1813" stroke="#c8814f" stroke-width="1"/>
+  <text x="567" y="431" text-anchor="middle" fill="#f3e9da" font-size="11.5">pi.dev</text>
+
+  <text x="500" y="470" text-anchor="middle" fill="#e0a96d" font-size="12" font-weight="600">One agent, many hosts</text>
+  <text x="500" y="491" text-anchor="middle" fill="#c8a98a" font-size="11.5">Each host wants different</text>
+  <text x="500" y="509" text-anchor="middle" fill="#c8a98a" font-size="11.5">config files — a rewrite</text>
+  <text x="500" y="531" text-anchor="middle" fill="#8a6a4a" font-size="10.5">should target any host, no rewrite</text>
+
+  <!-- Card 3: Reinventing infra -->
+  <rect x="666" y="284" width="290" height="262" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="811" y="312" text-anchor="middle" fill="#f3e9da" font-size="15" font-weight="600">3 · Rebuilt plumbing</text>
+
+  <text x="811" y="336" text-anchor="middle" fill="#c8a98a" font-size="11.5">Every new agent project rebuilds</text>
+  <text x="811" y="353" text-anchor="middle" fill="#c8a98a" font-size="11.5">the same boring infrastructure</text>
+
+  <rect x="688" y="368" width="246" height="22" rx="5" fill="#1f1813" stroke="#5a463a" stroke-width="1"/>
+  <text x="811" y="383" text-anchor="middle" fill="#b89a82" font-size="11">MCP server setup</text>
+  <rect x="688" y="394" width="246" height="22" rx="5" fill="#1f1813" stroke="#5a463a" stroke-width="1"/>
+  <text x="811" y="409" text-anchor="middle" fill="#b89a82" font-size="11">memory namespace</text>
+  <rect x="688" y="420" width="246" height="22" rx="5" fill="#1f1813" stroke="#5a463a" stroke-width="1"/>
+  <text x="811" y="435" text-anchor="middle" fill="#b89a82" font-size="11">governance policy</text>
+  <rect x="688" y="446" width="246" height="22" rx="5" fill="#1f1813" stroke="#5a463a" stroke-width="1"/>
+  <text x="811" y="461" text-anchor="middle" fill="#b89a82" font-size="11">release signing</text>
+
+  <text x="811" y="498" text-anchor="middle" fill="#e0a96d" font-size="13" font-weight="600">~80% built by hand, every time</text>
+  <text x="811" y="525" text-anchor="middle" fill="#c8a98a" font-size="11.5">the same plumbing, over and over</text>
+
+  <!-- footer -->
+  <text x="500" y="580" text-anchor="middle" fill="#b89a82" font-size="12">Lock-in, host fragmentation, and rebuilt plumbing are exactly what MetaHarness is built to remove.</text>
+</svg>
+              <figcaption>The three pains, side by side: a generic agent guesses at your repo, then lock-in, host fragmentation, and rebuilding ~80% of the same plumbing follow.</figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- 03 — WHY NOW (arc Q3) -->
+        <details class="section" id="s03">
+          <summary>
+            <span class="num">03</span>
+            <span class="head-text">
+              <h2>Why now</h2>
+              <span class="q">Arc 3 &mdash; why does this make sense at this moment?</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              A factory only pays off once there is enough variety for it to
+              produce. Two things just crossed that line.
+            </p>
+            <p>
+              <strong>The homes for AI agents multiplied.</strong> A year or two ago
+              you mostly ran assistants in one place. Now Codex, Hermes, pi.dev and
+              others each have their own way of running agents. A factory that can
+              target any of them &mdash; without you rewriting anything &mdash; is
+              suddenly worth having.
+            </p>
+            <p>
+              <strong>The plugin marketplace woke up.</strong> A
+              &ldquo;plugin&rdquo; is just an add-on capability you can drop into your
+              assistant. There is now a shared, open registry of these (hosted on
+              IPFS, a decentralised file network), so a harness you build can both
+              <em>pull in</em> ready-made plugins and, if you want,
+              <em>publish</em> its own. Building becomes assembling from parts rather
+              than carving everything from scratch &mdash; which is exactly when an
+              assembly line earns its keep.
+            </p>
+<figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" role="img" aria-labelledby="s03-title s03-desc" style="max-width:1000px;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s03-title">Why now: hosts have multiplied and the plugin marketplace woke up</title>
+  <desc id="s03-desc">Two forces make a harness factory worth building now. First, the hosts multiplied — Claude Code, Codex, pi.dev, Hermes, OpenClaw and RVM all gained agent conventions. Second, the plugin marketplace woke up — a scaffolded harness both consumes plugins from the ruflo IPFS registry and can publish its own back.</desc>
+
+  <defs>
+    <marker id="s03-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e0a96d"/>
+    </marker>
+    <marker id="s03-arrow-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c8814f"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="600" rx="14" fill="#1a1512"/>
+
+  <text x="500" y="42" text-anchor="middle" fill="#f3e9da" font-size="22" font-weight="600">Why now</text>
+  <text x="500" y="68" text-anchor="middle" fill="#c8a98a" font-size="14">Two shifts made a "factory for harnesses" worth building</text>
+
+  <line x1="500" y1="92" x2="500" y2="556" stroke="#3a2f26" stroke-width="1.5" stroke-dasharray="4 6"/>
+
+  <!-- ============ LEFT: hosts multiplied ============ -->
+  <text x="250" y="120" text-anchor="middle" fill="#c8814f" font-size="16" font-weight="600">1 · The hosts multiplied</text>
+  <text x="250" y="142" text-anchor="middle" fill="#c8a98a" font-size="12">Claude Code used to be the only place. Now there are many.</text>
+
+  <!-- then vs now -->
+  <rect x="80" y="162" width="150" height="56" rx="9" fill="#211a15" stroke="#5a463a" stroke-width="1.5"/>
+  <text x="155" y="186" text-anchor="middle" fill="#b89a82" font-size="12" font-weight="600">Then</text>
+  <text x="155" y="205" text-anchor="middle" fill="#8a6a4a" font-size="11.5">one host</text>
+
+  <line x1="232" y1="190" x2="272" y2="190" stroke="#e0a96d" stroke-width="2" marker-end="url(#s03-arrow)"/>
+
+  <rect x="274" y="162" width="150" height="56" rx="9" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="349" y="186" text-anchor="middle" fill="#f3e9da" font-size="12" font-weight="600">Now</text>
+  <text x="349" y="205" text-anchor="middle" fill="#c8a98a" font-size="11.5">six+ hosts</text>
+
+  <!-- host grid -->
+  <rect x="80" y="246" width="156" height="42" rx="7" fill="#2a2018" stroke="#c8814f" stroke-width="1"/>
+  <text x="158" y="266" text-anchor="middle" fill="#f3e9da" font-size="12.5">Claude Code</text>
+  <text x="158" y="281" text-anchor="middle" fill="#8a6a4a" font-size="10">stable</text>
+
+  <rect x="252" y="246" width="156" height="42" rx="7" fill="#2a2018" stroke="#c8814f" stroke-width="1"/>
+  <text x="330" y="266" text-anchor="middle" fill="#f3e9da" font-size="12.5">Codex CLI</text>
+  <text x="330" y="281" text-anchor="middle" fill="#8a6a4a" font-size="10">MCP support</text>
+
+  <rect x="80" y="300" width="156" height="42" rx="7" fill="#2a2018" stroke="#c8814f" stroke-width="1"/>
+  <text x="158" y="320" text-anchor="middle" fill="#f3e9da" font-size="12.5">pi.dev</text>
+  <text x="158" y="335" text-anchor="middle" fill="#8a6a4a" font-size="10">dev platform</text>
+
+  <rect x="252" y="300" width="156" height="42" rx="7" fill="#2a2018" stroke="#c8814f" stroke-width="1"/>
+  <text x="330" y="320" text-anchor="middle" fill="#f3e9da" font-size="12.5">Hermes</text>
+  <text x="330" y="335" text-anchor="middle" fill="#8a6a4a" font-size="10">Nous Research</text>
+
+  <rect x="80" y="354" width="156" height="42" rx="7" fill="#2a2018" stroke="#c8814f" stroke-width="1"/>
+  <text x="158" y="374" text-anchor="middle" fill="#f3e9da" font-size="12.5">OpenClaw</text>
+  <text x="158" y="389" text-anchor="middle" fill="#8a6a4a" font-size="10">newer</text>
+
+  <rect x="252" y="354" width="156" height="42" rx="7" fill="#2a2018" stroke="#c8814f" stroke-width="1"/>
+  <text x="330" y="374" text-anchor="middle" fill="#f3e9da" font-size="12.5">RVM</text>
+  <text x="330" y="389" text-anchor="middle" fill="#8a6a4a" font-size="10">newer</text>
+
+  <!-- one harness targets all -->
+  <rect x="120" y="430" width="248" height="58" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="244" y="455" text-anchor="middle" fill="#f3e9da" font-size="13" font-weight="600">One generated harness</text>
+  <text x="244" y="475" text-anchor="middle" fill="#c8a98a" font-size="11.5">targets any of them — no rewrite</text>
+
+  <line x1="158" y1="396" x2="200" y2="428" stroke="#e0a96d" stroke-width="1.8" marker-end="url(#s03-arrow)"/>
+  <line x1="330" y1="396" x2="288" y2="428" stroke="#e0a96d" stroke-width="1.8" marker-end="url(#s03-arrow)"/>
+
+  <!-- ============ RIGHT: marketplace woke up ============ -->
+  <text x="750" y="120" text-anchor="middle" fill="#c8814f" font-size="16" font-weight="600">2 · The marketplace woke up</text>
+  <text x="750" y="142" text-anchor="middle" fill="#c8a98a" font-size="12">Plugins are now traded — a harness both takes and gives.</text>
+
+  <!-- registry -->
+  <rect x="600" y="170" width="300" height="64" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="750" y="196" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">ruflo IPFS plugin registry</text>
+  <text x="750" y="217" text-anchor="middle" fill="#c8a98a" font-size="11.5">the shared marketplace of agent plugins</text>
+
+  <!-- your harness -->
+  <rect x="620" y="372" width="260" height="64" rx="10" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+  <text x="750" y="398" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">Your scaffolded harness</text>
+  <text x="750" y="419" text-anchor="middle" fill="#c8a98a" font-size="11.5">a marketplace participant</text>
+
+  <!-- consumes (down) -->
+  <line x1="690" y1="234" x2="690" y2="370" stroke="#e0a96d" stroke-width="2" marker-end="url(#s03-arrow)"/>
+  <rect x="556" y="278" width="118" height="48" rx="7" fill="#211a15" stroke="#e0a96d" stroke-width="1"/>
+  <text x="615" y="299" text-anchor="middle" fill="#e0a96d" font-size="11.5" font-weight="600">consumes</text>
+  <text x="615" y="316" text-anchor="middle" fill="#c8a98a" font-size="10.5">pulls plugins in</text>
+
+  <!-- publishes (up) -->
+  <line x1="810" y1="370" x2="810" y2="236" stroke="#c8814f" stroke-width="2" marker-end="url(#s03-arrow-c)"/>
+  <rect x="826" y="278" width="120" height="48" rx="7" fill="#211a15" stroke="#c8814f" stroke-width="1"/>
+  <text x="886" y="299" text-anchor="middle" fill="#c8814f" font-size="11.5" font-weight="600">publishes</text>
+  <text x="886" y="316" text-anchor="middle" fill="#c8a98a" font-size="10.5">pushes its own back</text>
+
+  <!-- takeaway right -->
+  <rect x="620" y="466" width="260" height="48" rx="10" fill="#211a15" stroke="#5a463a" stroke-width="1.5"/>
+  <text x="750" y="490" text-anchor="middle" fill="#b89a82" font-size="11.5">Without a generator, every new</text>
+  <text x="750" y="507" text-anchor="middle" fill="#b89a82" font-size="11.5">participant rebuilds 80% by hand</text>
+
+  <!-- footer -->
+  <text x="500" y="576" text-anchor="middle" fill="#b89a82" font-size="12">More hosts to target + a live plugin economy = the moment a harness factory pays off.</text>
+</svg>
+              <figcaption>Why now: the hosts multiplied (Claude Code, Codex, pi.dev, Hermes, OpenClaw, RVM) and the plugin marketplace woke up &mdash; a generated harness both consumes plugins from the IPFS registry and can publish its own back.</figcaption>
+            </figure>
+            <figure class="figure">
+              <img src="assets/img/g2.png" width="1376" height="768"
+                   alt="A friendly foundry assembly line: a box labelled Your Repo enters a glowing machine and a finished toolkit rolls out holding four labelled parts — CLI, Memory, Skills, and Guardrails." />
+              <figcaption>
+                Your repo goes in one end; a tidy, branded toolkit &mdash; a command
+                (CLI), a memory, a set of skills, and guardrails &mdash; comes out the
+                other.
+              </figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- 04 — HOW IT SOLVES IT (arc Q4: the composer) -->
+        <details class="section" id="s04">
+          <summary>
+            <span class="num">04</span>
+            <span class="head-text">
+              <h2>How it solves it</h2>
+              <span class="q">Arc 4 &mdash; how does it actually do the job?</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              It walks you through a short series of choices &mdash; call it the
+              <strong>composer</strong> &mdash; and then assembles a complete,
+              self-contained package from your answers. You can answer the questions
+              in a friendly picker (a &ldquo;wizard&rdquo;) or, if you prefer, pass
+              the same answers as command-line options. Either way you end up at the
+              same place. The steps, in order, are:
+            </p>
+            <ol>
+              <li><strong>Identity</strong> &mdash; the name, the package scope, a
+                description, a licence, and who the author is.</li>
+              <li><strong>Hosts</strong> &mdash; tick which places you want it to run
+                (Claude Code, Codex, and so on). Pick at least one.</li>
+              <li><strong>Primitives</strong> &mdash; switch the engine&rsquo;s
+                building blocks on or off: the tool server (always on), automations,
+                memory, smart routing, the marketplace hook, and signed provenance.
+                All on by default.</li>
+              <li><strong>Agents</strong> &mdash; choose helpers from a curated list
+                (it suggests a coder, a reviewer, and a tester to start).</li>
+              <li><strong>Skills</strong> &mdash; reusable abilities you can bolt on.</li>
+              <li><strong>Plugins</strong> &mdash; optional add-ons from the shared
+                registry (none by default).</li>
+              <li><strong>Features</strong> &mdash; opt-in extras like teamwork
+                between agents or self-improvement.</li>
+              <li><strong>Branding</strong> &mdash; &ldquo;powered-by&rdquo; mode or
+                fully independent, plus your brand wording.</li>
+              <li><strong>Confirm</strong> &mdash; a clear summary: every file it will
+                create, the exact engine version it pins to, and a size estimate,
+                before anything is written.</li>
+            </ol>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 1340" width="100%" role="img"
+     aria-labelledby="s04-title s04-desc" preserveAspectRatio="xMidYMid meet"
+     style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s04-title">The composer pipeline</title>
+  <desc id="s04-desc">A GitHub repo, or a blank slate, enters the composer and flows through nine
+    stages in order — Identity, Hosts, Primitives, Agents, Skills, Plugins, Features, Branding,
+    Confirm — emerging as a branded, npm-publishable agent harness package. Each stage shows in
+    plain words what happens there.</desc>
+
+  <defs>
+    <!-- warm arrowhead -->
+    <marker id="s04arrow" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#e0a96d"/>
+    </marker>
+    <marker id="s04arrowCopper" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#c8814f"/>
+    </marker>
+    <linearGradient id="s04inGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2018"/>
+      <stop offset="1" stop-color="#221a13"/>
+    </linearGradient>
+    <linearGradient id="s04outGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a2a1a"/>
+      <stop offset="1" stop-color="#2a1f14"/>
+    </linearGradient>
+  </defs>
+
+  <!-- panel -->
+  <rect x="0" y="0" width="1180" height="1340" rx="18" fill="#1a1512"/>
+  <rect x="1" y="1" width="1178" height="1338" rx="17" fill="none" stroke="#3a2f1f" stroke-width="1.5"/>
+
+  <!-- header -->
+  <text x="56" y="58" font-size="13" letter-spacing="3" fill="#c8814f"
+        font-family="'IBM Plex Mono',monospace">HOW IT ACTUALLY WORKS UNDER THE COVERS</text>
+  <text x="56" y="92" font-size="26" font-weight="700" fill="#f3e9da">The composer pipeline</text>
+  <text x="56" y="120" font-size="14" fill="#d6c5ac">You answer nine questions, in order. The composer assembles a complete package from your answers.</text>
+
+  <!-- ============ INPUT ============ -->
+  <g>
+    <rect x="56" y="158" width="250" height="92" rx="12" fill="url(#s04inGrad)" stroke="#c8814f" stroke-width="1.5"/>
+    <text x="76" y="190" font-size="16" font-weight="700" fill="#f3e9da">A GitHub repo</text>
+    <text x="76" y="214" font-size="14" fill="#d6c5ac">&#8230;or a blank slate.</text>
+    <text x="76" y="236" font-size="12.5" fill="#9c8b72" font-style="italic">It never runs your code &#8212; it only reads.</text>
+
+    <!-- mode note -->
+    <rect x="334" y="166" width="296" height="76" rx="10" fill="#221a13" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="350" y="192" font-size="13" font-weight="700" fill="#e0a96d">Same nine questions, two ways</text>
+    <text x="350" y="213" font-size="13" fill="#d6c5ac">A friendly picker (the &#8220;wizard&#8221;), or</text>
+    <text x="350" y="231" font-size="13" fill="#d6c5ac">the same answers as command-line flags.</text>
+  </g>
+
+  <!-- arrow input -> stage 1 -->
+  <line x1="181" y1="250" x2="181" y2="296" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- ============ STAGE TEMPLATE ============ -->
+  <!-- Each stage: number chip, title, one-line what-happens-here -->
+
+  <!-- Stage 1 Identity -->
+  <g>
+    <rect x="56" y="300" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="343" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="349" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">1</text>
+    <text x="142" y="336" font-size="18" font-weight="700" fill="#f3e9da">Identity</text>
+    <text x="142" y="362" font-size="14" fill="#d6c5ac">The name, the package scope, a description, a licence, and who the author is. One screen.</text>
+  </g>
+  <line x1="590" y1="386" x2="590" y2="408" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 2 Hosts -->
+  <g>
+    <rect x="56" y="412" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="455" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="461" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">2</text>
+    <text x="142" y="448" font-size="18" font-weight="700" fill="#f3e9da">Hosts</text>
+    <text x="142" y="474" font-size="14" fill="#d6c5ac">Tick where it should run &#8212; Claude Code, Codex, pi.dev, Hermes, and more. Pick at least one.</text>
+  </g>
+  <line x1="590" y1="498" x2="590" y2="520" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 3 Primitives -->
+  <g>
+    <rect x="56" y="524" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="567" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="573" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">3</text>
+    <text x="142" y="560" font-size="18" font-weight="700" fill="#f3e9da">Primitives</text>
+    <text x="142" y="586" font-size="14" fill="#d6c5ac">Engine blocks on or off: tool server (always on), automations, memory, routing, marketplace, provenance. All on by default.</text>
+  </g>
+  <line x1="590" y1="610" x2="590" y2="632" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 4 Agents -->
+  <g>
+    <rect x="56" y="636" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="679" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="685" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">4</text>
+    <text x="142" y="672" font-size="18" font-weight="700" fill="#f3e9da">Agents</text>
+    <text x="142" y="698" font-size="14" fill="#d6c5ac">Choose helpers from a curated catalogue. It suggests a coder, a reviewer, and a tester to start.</text>
+  </g>
+  <line x1="590" y1="722" x2="590" y2="744" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 5 Skills -->
+  <g>
+    <rect x="56" y="748" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="791" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="797" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">5</text>
+    <text x="142" y="784" font-size="18" font-weight="700" fill="#f3e9da">Skills</text>
+    <text x="142" y="810" font-size="14" fill="#d6c5ac">Reusable abilities you bolt on &#8212; defaults wire up hooks, memory search, and swarm orchestration.</text>
+  </g>
+  <line x1="590" y1="834" x2="590" y2="856" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 6 Plugins -->
+  <g>
+    <rect x="56" y="860" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="903" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="909" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">6</text>
+    <text x="142" y="896" font-size="18" font-weight="700" fill="#f3e9da">Plugins</text>
+    <text x="142" y="922" font-size="14" fill="#d6c5ac">Optional add-ons from the shared registry, with live download counts and ratings. None by default.</text>
+  </g>
+  <line x1="590" y1="946" x2="590" y2="968" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 7 Features -->
+  <g>
+    <rect x="56" y="972" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="1015" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="1021" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">7</text>
+    <text x="142" y="1008" font-size="18" font-weight="700" fill="#f3e9da">Features</text>
+    <text x="142" y="1034" font-size="14" fill="#d6c5ac">Opt-in extras that change the wiring: teamwork between agents, claims-based access, self-improvement.</text>
+  </g>
+  <line x1="590" y1="1058" x2="590" y2="1080" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 8 Branding -->
+  <g>
+    <rect x="56" y="1084" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="1127" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="1133" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">8</text>
+    <text x="142" y="1120" font-size="18" font-weight="700" fill="#f3e9da">Branding</text>
+    <text x="142" y="1146" font-size="14" fill="#d6c5ac">&#8220;Powered-by&#8221; mode or fully independent, plus your own brand wording.</text>
+  </g>
+  <line x1="590" y1="1170" x2="590" y2="1192" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 9 Confirm -->
+  <g>
+    <rect x="56" y="1196" width="1068" height="86" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.8"/>
+    <circle cx="100" cy="1239" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="1245" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">9</text>
+    <text x="142" y="1232" font-size="18" font-weight="700" fill="#f3e9da">Confirm</text>
+    <text x="142" y="1258" font-size="14" fill="#d6c5ac">A summary: every file it will create, the exact engine version it pins to, and a size estimate &#8212; before anything is written.</text>
+  </g>
+
+  <!-- ============ OUTPUT (right-side callout from Confirm) ============ -->
+  <!-- routed arrow from Confirm (bottom stage) up the right rail to the output card -->
+  <path d="M1124 1239 H1156 V300 H720" fill="none" stroke="#c8814f" stroke-width="2.5"/>
+  <path d="M732 300 H720" fill="none" stroke="#c8814f" stroke-width="2.5" marker-end="url(#s04arrowCopper)"/>
+
+  <!-- output card sits in the open top-right space -->
+  <g>
+    <rect x="658" y="166" width="466" height="120" rx="13" fill="url(#s04outGrad)" stroke="#e0a96d" stroke-width="2"/>
+    <text x="682" y="200" font-size="13" letter-spacing="2" fill="#c8814f"
+          font-family="'IBM Plex Mono',monospace">EMERGES AS</text>
+    <text x="682" y="230" font-size="19" font-weight="700" fill="#f3e9da">A branded, npm-publishable harness</text>
+    <text x="682" y="256" font-size="14" fill="#d6c5ac">Your own <tspan font-family="'IBM Plex Mono',monospace" fill="#e0a96d">npx your-name</tspan> command &#8212; a self-contained</text>
+    <text x="682" y="276" font-size="14" fill="#d6c5ac">package you own and can publish. (See section 05.)</text>
+  </g>
+
+  <!-- footnote -->
+  <text x="56" y="1316" font-size="12.5" fill="#9c8b72" font-style="italic">
+    The composer&#8217;s state is one typed answer-object &#8212; the picker and the flags build the same thing, so both paths produce the same harness.
+  </text>
+</svg>
+              <figcaption>The composer pipeline: a repo or blank slate enters and flows top-to-bottom through the nine ADR-003 stages &mdash; Identity, Hosts, Primitives, Agents, Skills, Plugins, Features, Branding, Confirm &mdash; emerging as a branded, npm-publishable harness. It never runs your code.</figcaption>
+            </figure>
+            <p>
+              Two things make this safe and predictable. <strong>It never runs your
+              code</strong> &mdash; when it looks at a repo it only reads the file
+              list and a few text files to make suggestions; it does not execute
+              anything. And the generated tool server starts <strong>locked
+              down</strong> (&ldquo;default-deny&rdquo;): no internet access, no
+              shell, no writing to files, until <em>you</em> explicitly allow each
+              one. Nothing is on that you did not turn on.
+            </p>
+            <p class="footnote-note">
+              <small>
+                A note so the numbers add up: the teaching walkthrough on this page
+                uses <strong>seven questions</strong> (the 7 stages of understanding,
+                sections 01&ndash;07). The tool&rsquo;s own composer has the
+                <strong>nine</strong> build steps listed just above. They are
+                different lists for different jobs &mdash; don&rsquo;t worry if the
+                counts differ.
+              </small>
+            </p>
+          </div>
+        </details>
+
+        <!-- 05 — WHAT SOLVED LOOKS LIKE (arc Q5) -->
+        <details class="section" id="s05">
+          <summary>
+            <span class="num">05</span>
+            <span class="head-text">
+              <h2>What &ldquo;solved&rdquo; looks like</h2>
+              <span class="q">Arc 5 &mdash; how do you know it worked?</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              When it has done its job, you have a single, self-contained package
+              &mdash; say you called it <code>my-bot</code> &mdash; that includes:
+            </p>
+            <ul>
+              <li>Its own <code>npx my-bot</code> command, branded as yours, not as
+                someone else&rsquo;s tool.</li>
+              <li>Its own local tool server, locked down by default.</li>
+              <li>Its own private memory space, kept separate from everything else.</li>
+              <li>The agents, skills, plugins, and per-place config files you chose.</li>
+              <li>A <strong>signed receipt</strong> of exactly what is inside it
+                (a cryptographic signature called an Ed25519 witness manifest), so
+                anyone who installs it can confirm they got precisely what you
+                shipped &mdash; nothing swapped or added.</li>
+            </ul>
+            <p>
+              You can publish it (<code>npm publish</code>) and your users run
+              <code>npx my-bot init</code>. They never see the factory underneath
+              &mdash; only your brand.
+            </p>
+            <p>
+              And it does not have to stand still. A finished harness can be set to
+              quietly <strong>improve its own settings over time</strong>: it tries a
+              small tweak, tests it safely in a sandbox, and keeps the change only if
+              it measurably helped. The AI model never changes &mdash; only the
+              wrapper gets a little better. (More on this in the use cases below.)
+            </p>
+<figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 980" width="100%" role="img"
+     aria-labelledby="s05-title s05-desc" preserveAspectRatio="xMidYMid meet"
+     style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s05-title">Anatomy of a generated harness</title>
+  <desc id="s05-desc">What is literally inside the output package: a repo-aware command-line tool,
+    a local tool (MCP) server, a project-scoped memory space, skills generated from your file
+    layout, a default-deny governance policy, and witness-signed releases — all wrapping a
+    replaceable AI model and pointed at your repository.</desc>
+
+  <defs>
+    <marker id="s05arrow" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#e0a96d"/>
+    </marker>
+    <marker id="s05arrowCopper" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#c8814f"/>
+    </marker>
+    <linearGradient id="s05modelGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2a1a"/>
+      <stop offset="1" stop-color="#2a1f14"/>
+    </linearGradient>
+    <linearGradient id="s05repoGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2018"/>
+      <stop offset="1" stop-color="#221a13"/>
+    </linearGradient>
+  </defs>
+
+  <!-- panel -->
+  <rect x="0" y="0" width="1180" height="980" rx="18" fill="#1a1512"/>
+  <rect x="1" y="1" width="1178" height="978" rx="17" fill="none" stroke="#3a2f1f" stroke-width="1.5"/>
+
+  <!-- header -->
+  <text x="56" y="58" font-size="13" letter-spacing="3" fill="#c8814f"
+        font-family="'IBM Plex Mono',monospace">WHAT &#8220;SOLVED&#8221; LOOKS LIKE</text>
+  <text x="56" y="92" font-size="26" font-weight="700" fill="#f3e9da">Anatomy of a generated harness</text>
+  <text x="56" y="120" font-size="14" fill="#d6c5ac">One self-contained package &#8212; say you called it <tspan font-family="'IBM Plex Mono',monospace" fill="#e0a96d">my-bot</tspan>. Here is what is literally inside it.</text>
+
+  <!-- ============ THE HARNESS WRAPPER (big enclosing rounded-rect) ============ -->
+  <rect x="56" y="150" width="800" height="700" rx="16" fill="#211a13" stroke="#e0a96d" stroke-width="2"/>
+  <text x="80" y="184" font-size="15" letter-spacing="2" fill="#e0a96d"
+        font-family="'IBM Plex Mono',monospace">THE HARNESS &#8212; THE WRAPPER YOU OWN</text>
+  <text x="80" y="206" font-size="13" fill="#9c8b72" font-style="italic">Everything below is yours, branded as you, and ships in the package.</text>
+
+  <!-- The six inner components, two columns x three rows -->
+
+  <!-- 1. repo-aware CLI -->
+  <g>
+    <rect x="84" y="230" width="356" height="118" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="106" y="262" font-size="17" font-weight="700" fill="#f3e9da">A repo-aware command-line tool</text>
+    <text x="106" y="288" font-size="13.5" fill="#d6c5ac">Your own <tspan font-family="'IBM Plex Mono',monospace" fill="#e0a96d">npx my-bot</tspan> command, branded as</text>
+    <text x="106" y="307" font-size="13.5" fill="#d6c5ac">yours &#8212; not as someone else&#8217;s tool. It knows</text>
+    <text x="106" y="326" font-size="13.5" fill="#d6c5ac">your project, because it was built for it.</text>
+  </g>
+
+  <!-- 2. local MCP server -->
+  <g>
+    <rect x="472" y="230" width="356" height="118" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="494" y="262" font-size="17" font-weight="700" fill="#f3e9da">A local tool server</text>
+    <text x="494" y="288" font-size="13.5" fill="#d6c5ac">Its own MCP server registration, running on</text>
+    <text x="494" y="307" font-size="13.5" fill="#d6c5ac">your machine. This is how the agents reach</text>
+    <text x="494" y="326" font-size="13.5" fill="#d6c5ac">tools &#8212; nothing hosted, nothing remote.</text>
+  </g>
+
+  <!-- 3. project-scoped memory -->
+  <g>
+    <rect x="84" y="364" width="356" height="118" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="106" y="396" font-size="17" font-weight="700" fill="#f3e9da">Project-scoped memory</text>
+    <text x="106" y="422" font-size="13.5" fill="#d6c5ac">Its own private memory space, kept separate</text>
+    <text x="106" y="441" font-size="13.5" fill="#d6c5ac">from everything else on your machine. What</text>
+    <text x="106" y="460" font-size="13.5" fill="#d6c5ac">it learns about your project stays with it.</text>
+  </g>
+
+  <!-- 4. skills from file layout -->
+  <g>
+    <rect x="472" y="364" width="356" height="118" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="494" y="396" font-size="17" font-weight="700" fill="#f3e9da">Skills from your file layout</text>
+    <text x="494" y="422" font-size="13.5" fill="#d6c5ac">It reads your repo&#8217;s file list, manifest and</text>
+    <text x="494" y="441" font-size="13.5" fill="#d6c5ac">README to suggest the right agents and skills</text>
+    <text x="494" y="460" font-size="13.5" fill="#d6c5ac">&#8212; without ever executing your code.</text>
+  </g>
+
+  <!-- 5. default-deny governance -->
+  <g>
+    <rect x="84" y="498" width="356" height="118" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="106" y="530" font-size="17" font-weight="700" fill="#f3e9da">A default-deny safety policy</text>
+    <text x="106" y="556" font-size="13.5" fill="#d6c5ac">The tool server starts locked down: no</text>
+    <text x="106" y="575" font-size="13.5" fill="#d6c5ac">internet, no shell, no writing files &#8212; until</text>
+    <text x="106" y="594" font-size="13.5" fill="#d6c5ac"><tspan font-style="italic">you</tspan> allow each one. Nothing on you didn&#8217;t turn on.</text>
+  </g>
+
+  <!-- 6. witness-signed releases -->
+  <g>
+    <rect x="472" y="498" width="356" height="118" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="494" y="530" font-size="17" font-weight="700" fill="#f3e9da">Witness-signed releases</text>
+    <text x="494" y="556" font-size="13.5" fill="#d6c5ac">A signed receipt of exactly what is inside</text>
+    <text x="494" y="575" font-size="13.5" fill="#d6c5ac">(an Ed25519 witness manifest), so anyone who</text>
+    <text x="494" y="594" font-size="13.5" fill="#d6c5ac">installs it can confirm nothing was swapped.</text>
+  </g>
+
+  <!-- selected agents/skills/plugins band -->
+  <g>
+    <rect x="84" y="632" width="744" height="78" rx="11" fill="#241d15" stroke="#3a2f1f" stroke-width="1.2"/>
+    <text x="106" y="662" font-size="15" font-weight="700" fill="#e0a96d">&#43; the agents, skills, plugins, and per-host config files you chose</text>
+    <text x="106" y="686" font-size="13.5" fill="#d6c5ac">Copied from the catalogue into the package &#8212; your selection, wired up and ready to run.</text>
+  </g>
+
+  <!-- the replaceable model slot inside the wrapper -->
+  <g>
+    <rect x="84" y="726" width="744" height="100" rx="11" fill="url(#s05modelGrad)" stroke="#e0a96d" stroke-width="1.8" stroke-dasharray="7 5"/>
+    <text x="106" y="758" font-size="13" letter-spacing="2" fill="#c8814f"
+          font-family="'IBM Plex Mono',monospace">REPLACEABLE SLOT</text>
+    <text x="106" y="784" font-size="17" font-weight="700" fill="#f3e9da">The AI model &#8212; Claude, GPT, or whatever your host brings</text>
+    <text x="106" y="808" font-size="13.5" fill="#d6c5ac">The harness wraps the model; it is not the model. Swap the model and everything above still stands.</text>
+  </g>
+
+  <!-- ============ POINTED AT YOUR REPO ============ -->
+  <g>
+    <rect x="912" y="380" width="212" height="240" rx="13" fill="url(#s05repoGrad)" stroke="#c8814f" stroke-width="1.8"/>
+    <text x="934" y="414" font-size="13" letter-spacing="2" fill="#c8814f"
+          font-family="'IBM Plex Mono',monospace">POINTED AT</text>
+    <text x="934" y="446" font-size="20" font-weight="700" fill="#f3e9da">YOUR repo</text>
+    <text x="934" y="476" font-size="13.5" fill="#d6c5ac">The whole harness is</text>
+    <text x="934" y="495" font-size="13.5" fill="#d6c5ac">tuned to one codebase</text>
+    <text x="934" y="514" font-size="13.5" fill="#d6c5ac">&#8212; yours &#8212; not a</text>
+    <text x="934" y="533" font-size="13.5" fill="#d6c5ac">generic chatbot.</text>
+    <text x="934" y="566" font-size="12.5" fill="#9c8b72" font-style="italic">It reads, but never</text>
+    <text x="934" y="584" font-size="12.5" fill="#9c8b72" font-style="italic">runs, your code.</text>
+  </g>
+  <!-- arrow: harness points at your repo -->
+  <line x1="828" y1="500" x2="906" y2="500" stroke="#c8814f" stroke-width="2.5" marker-end="url(#s05arrowCopper)"/>
+  <text x="836" y="490" font-size="12" fill="#9c8b72" font-family="'IBM Plex Mono',monospace">aimed at &#8594;</text>
+
+  <!-- ============ PUBLISH / RECEIVE callout ============ -->
+  <g>
+    <rect x="912" y="150" width="212" height="200" rx="13" fill="#211a13" stroke="#e0a96d" stroke-width="1.6"/>
+    <text x="934" y="184" font-size="13" letter-spacing="2" fill="#c8814f"
+          font-family="'IBM Plex Mono',monospace">SHIP IT</text>
+    <text x="934" y="212" font-size="14" fill="#d6c5ac"><tspan font-family="'IBM Plex Mono',monospace" fill="#e0a96d">npm publish</tspan></text>
+    <text x="934" y="236" font-size="13.5" fill="#d6c5ac">Your users run</text>
+    <text x="934" y="255" font-size="14" fill="#d6c5ac"><tspan font-family="'IBM Plex Mono',monospace" fill="#e0a96d">npx my-bot init</tspan></text>
+    <text x="934" y="284" font-size="13" fill="#9c8b72" font-style="italic">They never see the</text>
+    <text x="934" y="302" font-size="13" fill="#9c8b72" font-style="italic">factory underneath</text>
+    <text x="934" y="320" font-size="13" fill="#9c8b72" font-style="italic">&#8212; only your brand.</text>
+  </g>
+  <!-- arrow up from harness to ship-it -->
+  <line x1="856" y1="240" x2="906" y2="240" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s05arrow)"/>
+
+  <!-- footnote -->
+  <text x="56" y="900" font-size="13" font-weight="700" fill="#e0a96d">The model is replaceable. The harness is the product.</text>
+  <text x="56" y="924" font-size="12.5" fill="#9c8b72" font-style="italic">Nothing here is invented &#8212; every piece is what the generator writes into the package, locked down and signed by default.</text>
+  <text x="56" y="950" font-size="12.5" fill="#9c8b72" font-style="italic">v0.1.x beta &#8212; published and usable; the README badge shows 568 tests passing.</text>
+</svg>
+              <figcaption>Anatomy of a generated harness: the wrapper you own &mdash; repo-aware CLI, local MCP tool server, project-scoped memory, skills inferred from your file layout, default-deny governance, Ed25519 witness-signed releases &mdash; wrapping a replaceable model and pointed at your repo. The model is replaceable; the harness is the product.</figcaption>
+            </figure>
+            <figure class="figure">
+              <img src="assets/img/g4.png" width="1376" height="768"
+                   alt="A warm circular loop of molten metal with three steps around it — try a small tweak, test it safely, keep what helps — and a glowing checkmark in the centre." />
+              <figcaption>
+                The self-improvement loop: try a small tweak, test it safely, keep
+                only what helps. It can keep going on its own.
+              </figcaption>
+            </figure>
+            <p class="footnote-note">
+              <small>
+                Honest maturity note: this is <strong>v0.1.x beta</strong> &mdash;
+                published and usable, but still settling. The README badge shows
+                <strong>568 tests passing</strong>; you may see slightly different
+                totals in other docs as they catch up, so treat 568 as
+                &ldquo;the headline figure,&rdquo; not gospel.
+              </small>
+            </p>
+          </div>
+        </details>
+
+        <!-- 06 — HOW TO IMPLEMENT IT (arc Q6) -->
+        <details class="section" id="s06">
+          <summary>
+            <span class="num">06</span>
+            <span class="head-text">
+              <h2>How to implement it</h2>
+              <span class="q">Arc 6 &mdash; what does the path from idea to package look like?</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              There are two ways in, and they give the same result &mdash; a
+              <code>.zip</code> (or scaffolded folder) that is yours to keep.
+            </p>
+            <p>
+              <strong>1. In your browser, with nothing to install.</strong> Open the
+              Studio at
+              <a href="https://ruvnet.github.io/agent-harness-generator/">ruvnet.github.io/agent-harness-generator</a>,
+              pick a tab (turn a repo into a harness, create one from scratch, add a
+              skill or agent, or verify a harness), make your choices, and click
+              <strong>Download .zip</strong>. Then on your own machine:
+            </p>
+            <pre class="code-block"><code>unzip my-bot.zip
+cd my-bot
+npm install</code></pre>
+            <p>
+              The Studio runs entirely in your browser. For analysis it only reads a
+              repo&rsquo;s public file <em>list</em> through GitHub&rsquo;s
+              API &mdash; it never reads your file contents on a server, and there is
+              no account, no sign-in, and no tracking.
+            </p>
+            <p>
+              <strong>2. In your terminal, if you live there.</strong> The same
+              behaviour, from the command line:
+            </p>
+            <pre class="code-block"><code>npx metaharness my-bot --template vertical:coding --host claude-code
+# or be asked the questions instead:
+npx metaharness --wizard</code></pre>
+            <p>
+              After scaffolding, the files are yours: open them, delete what you
+              don&rsquo;t need, adjust the wording and the routing, and when
+              you&rsquo;re happy, ship it with <code>npm publish --provenance</code>
+              (the <code>--provenance</code> part attaches that signed receipt so
+              installers can trust it).
+            </p>
+            <p>
+              One naming note so nothing trips you up: the published command is
+              <code>npx metaharness</code>. In some older docs you may see
+              <code>npx create-agent-harness</code> &mdash; that is the
+              <em>same tool</em> under its internal package name, not a second
+              product. Lead with <code>metaharness</code>.
+            </p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" width="900" height="540" role="img" aria-labelledby="s06-title s06-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s06-title">Two ways in, one result</title>
+  <desc id="s06-desc">Two implementation paths — the browser Studio and the terminal (npx metaharness) — both produce the same branded harness package that is yours to keep.</desc>
+
+  <defs>
+    <marker id="s06-arrow" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M1 1 L10 6 L1 11 Z" fill="#e0a96d"/>
+    </marker>
+    <marker id="s06-arrow-copper" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M1 1 L10 6 L1 11 Z" fill="#c8814f"/>
+    </marker>
+  </defs>
+
+  <!-- panel -->
+  <rect x="0" y="0" width="900" height="540" rx="16" fill="#1a1512"/>
+  <rect x="0.75" y="0.75" width="898.5" height="538.5" rx="15.25" fill="none" stroke="#3a2f1f" stroke-width="1.5"/>
+
+  <!-- header -->
+  <text x="40" y="50" font-family="'IBM Plex Sans',sans-serif" font-size="22" font-weight="600" fill="#f3e9da">Two ways in &#8212; same result</text>
+  <text x="40" y="76" font-family="'IBM Plex Sans',sans-serif" font-size="15" fill="#9c8b72">Pick the path that fits how you work. Both hand you a .zip (or folder) that is yours to keep.</text>
+
+  <!-- ===================== PATH A: BROWSER STUDIO ===================== -->
+  <!-- lane label -->
+  <rect x="40" y="104" width="160" height="30" rx="8" fill="#2a2018" stroke="#c8814f" stroke-width="1.25"/>
+  <text x="120" y="124" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">Browser Studio</text>
+  <text x="220" y="124" font-family="'IBM Plex Sans',sans-serif" font-size="13" fill="#9c8b72">nothing to install</text>
+
+  <!-- A nodes -->
+  <g>
+    <rect x="40" y="152" width="180" height="66" rx="12" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="130" y="182" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">Open the Studio</text>
+    <text x="130" y="202" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11.5" fill="#c8814f">ruvnet.github.io</text>
+  </g>
+
+  <g>
+    <rect x="262" y="152" width="180" height="66" rx="12" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="352" y="178" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">Pick a tab,</text>
+    <text x="352" y="196" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">make choices</text>
+    <text x="352" y="212" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="11.5" fill="#9c8b72">repo, scratch, skill, verify</text>
+  </g>
+
+  <g>
+    <rect x="484" y="152" width="180" height="66" rx="12" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="574" y="182" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">Download .zip</text>
+    <text x="574" y="202" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="11.5" fill="#9c8b72">in your browser</text>
+  </g>
+
+  <!-- A arrows -->
+  <line x1="220" y1="185" x2="258" y2="185" stroke="#e0a96d" stroke-width="2" marker-end="url(#s06-arrow)"/>
+  <line x1="442" y1="185" x2="480" y2="185" stroke="#e0a96d" stroke-width="2" marker-end="url(#s06-arrow)"/>
+
+  <!-- ===================== PATH B: TERMINAL ===================== -->
+  <rect x="40" y="266" width="160" height="30" rx="8" fill="#2a2018" stroke="#c8814f" stroke-width="1.25"/>
+  <text x="120" y="286" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">Terminal</text>
+  <text x="220" y="286" font-family="'IBM Plex Sans',sans-serif" font-size="13" fill="#9c8b72">if you live in the command line</text>
+
+  <g>
+    <rect x="40" y="314" width="180" height="66" rx="12" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="130" y="344" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">Run the command</text>
+    <text x="130" y="364" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11" fill="#c8814f">npx metaharness</text>
+  </g>
+
+  <g>
+    <rect x="262" y="314" width="180" height="66" rx="12" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="352" y="340" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">Flags or wizard</text>
+    <text x="352" y="358" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="11.5" fill="#9c8b72">--template --host</text>
+    <text x="352" y="374" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="11.5" fill="#9c8b72">or --wizard asks you</text>
+  </g>
+
+  <g>
+    <rect x="484" y="314" width="180" height="66" rx="12" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="574" y="344" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">Scaffolded folder</text>
+    <text x="574" y="364" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="11.5" fill="#9c8b72">written to disk</text>
+  </g>
+
+  <line x1="220" y1="347" x2="258" y2="347" stroke="#e0a96d" stroke-width="2" marker-end="url(#s06-arrow)"/>
+  <line x1="442" y1="347" x2="480" y2="347" stroke="#e0a96d" stroke-width="2" marker-end="url(#s06-arrow)"/>
+
+  <!-- ===================== CONVERGE: SAME PACKAGE ===================== -->
+  <g>
+    <rect x="712" y="208" width="156" height="116" rx="14" fill="#2a2018" stroke="#c8814f" stroke-width="2"/>
+    <text x="790" y="244" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="15" font-weight="600" fill="#e0a96d">Same branded</text>
+    <text x="790" y="263" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="15" font-weight="600" fill="#e0a96d">package</text>
+    <text x="790" y="287" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="12" fill="#f3e9da">your own npx my-bot,</text>
+    <text x="790" y="303" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="12" fill="#f3e9da">yours to keep</text>
+  </g>
+
+  <!-- converging arrows from both paths into the same package -->
+  <path d="M664 185 C 696 185, 700 230, 712 248" fill="none" stroke="#c8814f" stroke-width="2.25" marker-end="url(#s06-arrow-copper)"/>
+  <path d="M664 347 C 696 347, 700 300, 712 284" fill="none" stroke="#c8814f" stroke-width="2.25" marker-end="url(#s06-arrow-copper)"/>
+
+  <!-- ===================== TAIL: UNZIP / INSTALL ===================== -->
+  <rect x="40" y="430" width="828" height="76" rx="12" fill="#221b14" stroke="#3a2f1f" stroke-width="1.25"/>
+  <text x="64" y="458" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">Then, on your own machine &#8212; identical from here:</text>
+  <text x="64" y="484" font-family="'IBM Plex Mono',monospace" font-size="13" fill="#f3e9da">unzip my-bot.zip &#160; &#8594; &#160; cd my-bot &#160; &#8594; &#160; npm install &#160; &#8594; &#160; edit, then  npm publish --provenance</text>
+</svg>
+              <figcaption>Two ways in, one result: the in-browser Studio (Download .zip) and the terminal (npx metaharness) both produce the same harness folder that is yours to keep.</figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- 07 — HOW TO START (arc Q7) -->
+        <details class="section" id="s07">
+          <summary>
+            <span class="num">07</span>
+            <span class="head-text">
+              <h2>How to start</h2>
+              <span class="q">Arc 7 &mdash; what is the single fastest first step?</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              If you&rsquo;re not sure what to pick, <strong>run the wizard</strong>.
+              It asks just four things &mdash; a name, a template, where it will run,
+              and a one-line description &mdash; and then prints the exact
+              <code>npx metaharness …</code> command it would have run, so you can
+              skip the questions next time:
+            </p>
+            <pre class="code-block"><code>npx metaharness --wizard</code></pre>
+            <p>
+              Already know what you want? Jump straight in:
+            </p>
+            <pre class="code-block"><code>npx metaharness my-bot --template vertical:coding --host claude-code
+cd my-bot &amp;&amp; npm install &amp;&amp; npx . --help</code></pre>
+            <p>
+              Want to see what&rsquo;s on the menu first? <code>npx metaharness
+              --list</code> shows every template. And once your harness exists, run
+              <code>harness doctor</code> &mdash; a quick health check that confirms
+              the scaffold is set up correctly before you go further.
+            </p>
+            <p>
+              That&rsquo;s the whole on-ramp: one command, four questions, a working
+              package. The use cases below show where to take it next.
+            </p>
+            <figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" width="900" height="420" role="img" aria-labelledby="s07-title s07-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s07-title">The fastest start: one command, four questions, your own tool</title>
+  <desc id="s07-desc">A three-step flow. Run npx metaharness --wizard, answer a few plain questions (name, template, host, description), and you get your own npx your-name command. The wizard also prints the exact command so you can skip the questions next time.</desc>
+
+  <defs>
+    <marker id="s07-arrow" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M1 1 L10 6 L1 11 Z" fill="#e0a96d"/>
+    </marker>
+  </defs>
+
+  <!-- panel -->
+  <rect x="0" y="0" width="900" height="420" rx="16" fill="#1a1512"/>
+  <rect x="0.75" y="0.75" width="898.5" height="418.5" rx="15.25" fill="none" stroke="#3a2f1f" stroke-width="1.5"/>
+
+  <!-- header -->
+  <text x="40" y="50" font-family="'IBM Plex Sans',sans-serif" font-size="22" font-weight="600" fill="#f3e9da">The fastest start</text>
+  <text x="40" y="76" font-family="'IBM Plex Sans',sans-serif" font-size="15" fill="#9c8b72">One command, four questions, a working package &#8212; in your own name.</text>
+
+  <!-- STEP 1 -->
+  <g>
+    <rect x="40" y="118" width="240" height="150" rx="14" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <circle cx="66" cy="146" r="13" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+    <text x="66" y="151" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">1</text>
+    <text x="90" y="151" font-family="'IBM Plex Sans',sans-serif" font-size="16" font-weight="600" fill="#f3e9da">Run the wizard</text>
+    <rect x="60" y="170" width="200" height="34" rx="7" fill="#1a1512" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="160" y="192" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="13" fill="#e0a96d">npx metaharness --wizard</text>
+    <text x="160" y="232" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="13" fill="#9c8b72">Nothing to set up.</text>
+    <text x="160" y="250" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="13" fill="#9c8b72">npx fetches it for you.</text>
+  </g>
+
+  <!-- STEP 2 -->
+  <g>
+    <rect x="330" y="118" width="240" height="150" rx="14" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <circle cx="356" cy="146" r="13" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+    <text x="356" y="151" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">2</text>
+    <text x="380" y="151" font-family="'IBM Plex Sans',sans-serif" font-size="16" font-weight="600" fill="#f3e9da">Answer 4 questions</text>
+
+    <text x="356" y="180" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#c8814f">&#8226;</text>
+    <text x="372" y="180" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#f3e9da">a name</text>
+    <text x="356" y="204" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#c8814f">&#8226;</text>
+    <text x="372" y="204" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#f3e9da">a template</text>
+    <text x="356" y="228" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#c8814f">&#8226;</text>
+    <text x="372" y="228" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#f3e9da">where it will run (host)</text>
+    <text x="356" y="252" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#c8814f">&#8226;</text>
+    <text x="372" y="252" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#f3e9da">a one-line description</text>
+  </g>
+
+  <!-- STEP 3 -->
+  <g>
+    <rect x="620" y="118" width="240" height="150" rx="14" fill="#2a2018" stroke="#c8814f" stroke-width="2"/>
+    <circle cx="646" cy="146" r="13" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+    <text x="646" y="151" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">3</text>
+    <text x="670" y="151" font-family="'IBM Plex Sans',sans-serif" font-size="16" font-weight="600" fill="#f3e9da">You get your tool</text>
+    <rect x="640" y="170" width="200" height="34" rx="7" fill="#1a1512" stroke="#c8814f" stroke-width="1.25"/>
+    <text x="740" y="192" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="13" fill="#e0a96d">npx &lt;your-name&gt;</text>
+    <text x="740" y="232" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="13" fill="#9c8b72">Your brand, your skills,</text>
+    <text x="740" y="250" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="13" fill="#9c8b72">your own command.</text>
+  </g>
+
+  <!-- step arrows -->
+  <line x1="280" y1="193" x2="326" y2="193" stroke="#e0a96d" stroke-width="2.25" marker-end="url(#s07-arrow)"/>
+  <line x1="570" y1="193" x2="616" y2="193" stroke="#e0a96d" stroke-width="2.25" marker-end="url(#s07-arrow)"/>
+
+  <!-- skip-next-time loop -->
+  <rect x="40" y="312" width="820" height="68" rx="12" fill="#221b14" stroke="#3a2f1f" stroke-width="1.25"/>
+  <text x="64" y="340" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">Bonus: skip the questions next time</text>
+  <text x="64" y="364" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#d6c5ac">The wizard prints the exact <tspan font-family="'IBM Plex Mono',monospace" fill="#f3e9da">npx metaharness &#8230;</tspan> command it just ran &#8212; paste it to repeat in one line.</text>
+</svg>
+              <figcaption>The fastest start: one command (npx metaharness --wizard), four questions (name, template, host, one-line description), and a working package &mdash; with the exact non-interactive command printed so you can skip the questions next time.</figcaption>
+            </figure>
+          </div>
+        </details>
+
+        <!-- 08 — USE-CASE GALLERY (6 full scenarios) [J, INV-11] -->
+        <details class="section" id="s08">
+          <summary>
+            <span class="num">08</span>
+            <span class="head-text">
+              <h2>Use-case gallery</h2>
+              <span class="q">Six real situations &mdash; the situation &rarr; the exact command &rarr; what it does &rarr; what you get.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              Every command below is taken straight from the project&rsquo;s own
+              docs &mdash; nothing here is made up. Pick the one that sounds like you.
+            </p>
+            <div class="grid cases">
+
+              <!-- Scenario 1 -->
+              <div class="card case">
+                <span class="tag">Scenario 1</span>
+                <h3>&ldquo;I have a repo and want an assistant that actually understands it&rdquo;</h3>
+                <figure class="figure diagram uc-diagram">
+                  <img src="assets/diagrams/uc1.svg" loading="lazy" alt="Flow: your repo enters analyze-repo (reads file list only, never runs code), out comes a fitted set of agents, skills, and tools as a ready harness or .zip." />
+                  <figcaption>Scenario 1 &mdash; repo in, an assistant that actually understands it out (it reads, it never runs).</figcaption>
+                </figure>
+                <dl>
+                  <dt>The situation</dt>
+                  <dd>You maintain a codebase and want a coding helper tuned to
+                    <em>that</em> project &mdash; not a generic chatbot that knows
+                    nothing about your file layout.</dd>
+                  <dt>The exact command</dt>
+                  <dd>
+                    <pre class="code-block"><code>harness analyze-repo .                    # just look, suggest nothing risky
+harness analyze-repo . --scaffold my-bot  # build the suggested harness</code></pre>
+                    Or, in the browser: the Studio&rsquo;s
+                    <strong>Repo &rarr; Harness</strong> tab &mdash; paste the GitHub
+                    URL, review the suggestions, click <strong>Download .zip</strong>.
+                  </dd>
+                  <dt>What it does</dt>
+                  <dd>Reads your file list, your <code>package.json</code>, your
+                    README, and your mix of languages, then recommends a fitting set
+                    of agents, skills, and tools. It <strong>never runs your
+                    code</strong>; any build or test commands it spots are written
+                    down but switched off (marked
+                    <code>execution: disabled</code>).</dd>
+                  <dt>What you get</dt>
+                  <dd>A ready-to-use harness (or a <code>.zip</code>) with a sensible
+                    starting agent set for your repo &mdash; <code>npm install</code>
+                    and you&rsquo;re running.</dd>
+                </dl>
+              </div>
+
+              <!-- Scenario 2 -->
+              <div class="card case">
+                <span class="tag">Scenario 2</span>
+                <h3>&ldquo;Is this repo even worth building an assistant for &mdash; and what will it cost?&rdquo;</h3>
+                <figure class="figure diagram uc-diagram">
+                  <img src="assets/diagrams/uc2.svg" loading="lazy" alt="Flow: a repo enters score/genome (read-only), out comes a one-screen report card with fit, build-likelihood, tool safety, cost-per-run, and a ready / needs-work / blocked verdict." />
+                  <figcaption>Scenario 2 &mdash; a go / no-go report card before you build, backed by evidence.</figcaption>
+                </figure>
+                <dl>
+                  <dt>The situation</dt>
+                  <dd>Before you commit any time, you want a quick read on whether a
+                    repo is a good candidate, and roughly what each run will cost.</dd>
+                  <dt>The exact command</dt>
+                  <dd>
+                    <pre class="code-block"><code>npx metaharness score &lt;repo&gt;   # a one-screen report card
+harness genome &lt;repo&gt;          # a fuller pre-build readiness report</code></pre>
+                  </dd>
+                  <dt>What it does</dt>
+                  <dd>Reads the repo (again, <strong>never runs it</strong>) and
+                    prints a single screen: how well a harness fits, how likely it is
+                    to build cleanly, how safe the tools look, and the rough cost per
+                    run. <code>genome</code> adds a plain verdict &mdash;
+                    <em>ready</em>, <em>needs-work</em>, or <em>blocked</em>.</dd>
+                  <dt>What you get</dt>
+                  <dd>A clear go / no-go decision, backed by evidence,
+                    <em>before</em> you build anything &mdash; plus a suggested plan.</dd>
+                </dl>
+              </div>
+
+              <!-- Scenario 3 -->
+              <div class="card case">
+                <span class="tag">Scenario 3</span>
+                <h3>&ldquo;Give me a ready-made team for my industry &mdash; support, trading, legal&hellip;&rdquo;</h3>
+                <figure class="figure diagram uc-diagram">
+                  <img src="assets/diagrams/uc3.svg" loading="lazy" alt="Flow: pick a vertical template (support, trading, legal), out comes a domain team of purpose-built agents with matching skills and per-host config, locked down by default." />
+                  <figcaption>Scenario 3 &mdash; a ready-made domain team from a single template, locked down by default.</figcaption>
+                </figure>
+                <dl>
+                  <dt>The situation</dt>
+                  <dd>You want a pre-built set of agents for a known area and
+                    you&rsquo;d rather not memorise any options.</dd>
+                  <dt>The exact command</dt>
+                  <dd>
+                    <pre class="code-block"><code>npx metaharness --list                       # browse every template
+npx metaharness my-bot --template vertical:support
+npx @metaharness/support my-bot              # same thing, zero options to remember</code></pre>
+                  </dd>
+                  <dt>What it does</dt>
+                  <dd>Builds a harness pre-loaded with that area&rsquo;s purpose-built
+                    agents (with their instructions written in), plus the matching
+                    skills, commands, and per-place settings &mdash; all locked down
+                    by default. The shortcut wrapper produces a byte-for-byte
+                    identical result to the longer command.</dd>
+                  <dt>What you get</dt>
+                  <dd>A working domain team &mdash; for example a customer-support
+                    pod, a quant-trading setup that is paper-only until you say
+                    otherwise, or a contract reviewer that only ever drafts, never
+                    sends.</dd>
+                </dl>
+              </div>
+
+              <!-- Scenario 4 -->
+              <div class="card case">
+                <span class="tag">Scenario 4</span>
+                <h3>&ldquo;A colleague sent me a harness &mdash; is it safe to run?&rdquo;</h3>
+                <figure class="figure diagram uc-diagram">
+                  <img src="assets/diagrams/uc4.svg" loading="lazy" alt="Flow: a colleague's .zip enters mcp-scan / threat-model / verify (nothing executed), out comes a clean / medium / high verdict, a shareable report, and a confirmed signed receipt." />
+                  <figcaption>Scenario 4 &mdash; vet a colleague's harness statically: clean / medium / high, nothing executed.</figcaption>
+                </figure>
+                <dl>
+                  <dt>The situation</dt>
+                  <dd>Someone hands you a generated <code>.zip</code> and you want to
+                    vet it before installing anything.</dd>
+                  <dt>The exact command</dt>
+                  <dd>The Studio&rsquo;s <strong>Verify</strong> tab (checks without
+                    unzipping or running a thing), or from the terminal:
+                    <pre class="code-block"><code>harness mcp-scan &lt;path&gt;      # like "npm audit" but for agent tools
+harness threat-model &lt;path&gt;  # a shareable review write-up
+harness verify               # confirm the signed receipt is intact</code></pre>
+                  </dd>
+                  <dt>What it does</dt>
+                  <dd>Statically inspects the harness for risky permissions
+                    (internet, shell, file-writing), missing timeouts, wildcard
+                    rules, exposed secrets, and unpinned dependencies.
+                    <code>mcp-scan</code> stops with an error on any high-severity
+                    finding. <code>verify</code> confirms nobody has tampered with the
+                    signed receipt. <strong>Nothing is executed.</strong></dd>
+                  <dt>What you get</dt>
+                  <dd>A clean / medium / high verdict and a shareable report &mdash;
+                    in plain terms, &ldquo;no riskier than any other npm package you
+                    would install&rdquo; if it passes.</dd>
+                </dl>
+              </div>
+
+              <!-- Scenario 5 -->
+              <div class="card case">
+                <span class="tag">Scenario 5</span>
+                <h3>&ldquo;Cut my model bill without losing quality&rdquo;</h3>
+                <figure class="figure diagram uc-diagram">
+                  <img src="assets/diagrams/uc5.svg" loading="lazy" alt="Flow: each request enters the router, which sends it to the cheapest model predicted to clear your quality bar, so you get the same answer quality for a far smaller bill." />
+                  <figcaption>Scenario 5 &mdash; route each task to the cheapest model that still clears your quality bar.</figcaption>
+                </figure>
+                <dl>
+                  <dt>The situation</dt>
+                  <dd>You&rsquo;re paying top-tier prices for work a cheaper model
+                    could handle just as well.</dd>
+                  <dt>The exact command</dt>
+                  <dd>
+                    <pre class="code-block"><code>npm i @metaharness/router
+# then in your code:
+# route(query) -> the cheapest model predicted to clear your quality bar</code></pre>
+                  </dd>
+                  <dt>What it does</dt>
+                  <dd>The router sends each request to the cheapest model it expects
+                    to still meet the standard you set &mdash; a standard it learns
+                    from your own results. It works out of the box, and you can train
+                    it on your own data for an even better fit.</dd>
+                  <dt>What you get</dt>
+                  <dd>The same quality of answer for less money. The project&rsquo;s
+                    own benchmark reports a small, cheap model delivering
+                    top-tier-quality research at roughly one-tenth the cost.
+                    <em>Honest caveat:</em> the underlying timing signal is described
+                    as &ldquo;a diagnostic signal, not a proven early warning &mdash;
+                    test it on your own workload before relying on it.&rdquo;</dd>
+                </dl>
+                <figure class="figure">
+                  <img src="assets/img/g3.png" width="1376" height="768"
+                       alt="A simple bar chart on a light cream background: a tall BEFORE bar marked with three dollar signs next to a much shorter AFTER bar marked with a cent sign, each topped by an identical green checkmark to show the quality is the same." />
+                  <figcaption>
+                    Same result, far smaller bill: route each task to the cheapest
+                    model that is still good enough.
+                  </figcaption>
+                </figure>
+              </div>
+
+              <!-- Scenario 6 -->
+              <div class="card case">
+                <span class="tag">Scenario 6</span>
+                <h3>&ldquo;Let the harness quietly improve itself (Darwin Mode)&rdquo;</h3>
+                <figure class="figure diagram uc-diagram">
+                  <img src="assets/diagrams/uc6.svg" loading="lazy" alt="Flow (Darwin Mode): the harness changes one of its own settings, tests it safely in a sandbox, and keeps it only if it measurably helped. The model stays frozen; only the wrapper evolves." />
+                  <figcaption>Scenario 6 &mdash; Darwin Mode: try a tweak, test it safely, keep only what measurably helps.</figcaption>
+                </figure>
+                <dl>
+                  <dt>The situation</dt>
+                  <dd>You want your harness to tune its own settings over time
+                    &mdash; without anyone touching the AI model.</dd>
+                  <dt>The exact command</dt>
+                  <dd>
+                    <pre class="code-block"><code>npm run evolve     # built into every harness; add --no-darwin to switch it off</code></pre>
+                  </dd>
+                  <dt>What it does</dt>
+                  <dd>It changes one of its own settings, tests that change safely in
+                    a sandbox, and keeps it only if it <em>measurably</em> made
+                    things better. The model stays frozen; only the wrapper evolves.
+                    <strong>Safe by default</strong> &mdash; no internet, no API key,
+                    just careful tuning behind a safety gate.</dd>
+                  <dt>What you get</dt>
+                  <dd>A harness that gets a little better on its own, measured against
+                    a real goal (the project validates this on actual bug-fixing
+                    tasks). Treat it as experimental &mdash; you can always opt out
+                    with <code>--no-darwin</code>. (Pictured up in section 05.)</dd>
+                </dl>
+              </div>
+
+            </div>
+          </div>
+        </details>
+
+        <!-- 09 — DROP-IN (the AI-half Smart Zip) [D13] -->
+        <details class="section" id="s09">
+          <summary>
+            <span class="num">09</span>
+            <span class="head-text">
+              <h2>Drop-in</h2>
+              <span class="q">The AI half &mdash; one download, drop it into your agent.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              Everything on this page also comes as <strong>one download with two
+              halves</strong>. One half is <em>for you</em> &mdash; a short written
+              primer. The other half is <em>for your AI</em> &mdash; a small,
+              searchable knowledge pack your assistant can read so it can answer
+              questions about MetaHarness accurately, with sources, instead of
+              guessing.
+            </p>
+<figure class="figure diagram">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="900" height="600" role="img" aria-labelledby="s09-title s09-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s09-title">The drop-in: one zip, two halves, three steps to wire it in</title>
+  <desc id="s09-desc">One download splits into two halves. The For-you half is a written primer to read and watch. The For-your-AI half is a searchable knowledge pack (an .rvf file plus a small MCP server). Wiring the AI half into Claude Code is three steps: unzip the kb folder, add a .mcp.json pointing at it, and paste a verification gate into CLAUDE.md so your AI answers from the real source instead of guessing.</desc>
+
+  <defs>
+    <marker id="s09-arrow" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+      <path d="M1 1 L10 6 L1 11 Z" fill="#e0a96d"/>
+    </marker>
+    <marker id="s09-arrow-copper" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M1 1 L10 6 L1 11 Z" fill="#c8814f"/>
+    </marker>
+  </defs>
+
+  <!-- panel -->
+  <rect x="0" y="0" width="900" height="600" rx="16" fill="#1a1512"/>
+  <rect x="0.75" y="0.75" width="898.5" height="598.5" rx="15.25" fill="none" stroke="#3a2f1f" stroke-width="1.5"/>
+
+  <!-- header -->
+  <text x="40" y="50" font-family="'IBM Plex Sans',sans-serif" font-size="22" font-weight="600" fill="#f3e9da">The drop-in &#8212; one zip, two halves</text>
+  <text x="40" y="76" font-family="'IBM Plex Sans',sans-serif" font-size="15" fill="#9c8b72">One download. Half is for you to read; half is for your AI to search.</text>
+
+  <!-- ZIP -->
+  <g>
+    <rect x="370" y="100" width="160" height="56" rx="12" fill="#2a2018" stroke="#c8814f" stroke-width="2"/>
+    <text x="450" y="126" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="15" font-weight="600" fill="#e0a96d">one .zip</text>
+    <text x="450" y="145" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11.5" fill="#9c8b72">metaharness-dropin</text>
+  </g>
+
+  <!-- split arrows -->
+  <path d="M410 156 C 360 180, 280 184, 225 196" fill="none" stroke="#c8814f" stroke-width="2.25" marker-end="url(#s09-arrow-copper)"/>
+  <path d="M490 156 C 540 180, 620 184, 675 196" fill="none" stroke="#c8814f" stroke-width="2.25" marker-end="url(#s09-arrow-copper)"/>
+
+  <!-- FOR YOU half -->
+  <g>
+    <rect x="40" y="200" width="360" height="118" rx="14" fill="#221b14" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="64" y="230" font-family="'IBM Plex Sans',sans-serif" font-size="16" font-weight="600" fill="#e0a96d">For you</text>
+    <text x="64" y="252" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#d6c5ac">A short written primer.</text>
+
+    <rect x="64" y="266" width="148" height="34" rx="8" fill="#2a2018" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="138" y="288" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#f3e9da">read</text>
+    <rect x="228" y="266" width="148" height="34" rx="8" fill="#2a2018" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="302" y="288" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#f3e9da">watch</text>
+  </g>
+
+  <!-- FOR YOUR AI half -->
+  <g>
+    <rect x="500" y="200" width="360" height="118" rx="14" fill="#221b14" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="524" y="230" font-family="'IBM Plex Sans',sans-serif" font-size="16" font-weight="600" fill="#e0a96d">For your AI</text>
+    <text x="524" y="252" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#d6c5ac">A searchable knowledge pack.</text>
+
+    <rect x="524" y="266" width="148" height="34" rx="8" fill="#2a2018" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="598" y="288" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="13" fill="#f3e9da">kb / .rvf</text>
+    <rect x="688" y="266" width="148" height="34" rx="8" fill="#2a2018" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="762" y="288" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="13" fill="#f3e9da">MCP server</text>
+  </g>
+
+  <!-- handoff: the AI half feeds the wiring below -->
+  <line x1="680" y1="318" x2="680" y2="352" stroke="#e0a96d" stroke-width="2.25" marker-end="url(#s09-arrow)"/>
+  <text x="694" y="342" font-family="'IBM Plex Sans',sans-serif" font-size="12.5" fill="#9c8b72">wire this half into Claude Code</text>
+
+  <!-- WIRING STRIP -->
+  <text x="40" y="382" font-family="'IBM Plex Sans',sans-serif" font-size="17" font-weight="600" fill="#f3e9da">Three steps to wire it in</text>
+
+  <!-- step 1 -->
+  <g>
+    <rect x="40" y="400" width="252" height="118" rx="14" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <circle cx="66" cy="428" r="13" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+    <text x="66" y="433" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">1</text>
+    <text x="90" y="433" font-family="'IBM Plex Sans',sans-serif" font-size="15" font-weight="600" fill="#f3e9da">Unzip the pack</text>
+    <rect x="60" y="450" width="212" height="30" rx="7" fill="#1a1512" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="166" y="470" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12" fill="#e0a96d">unzip &#8230; &#8594; cd kb/ &#8594; npm i</text>
+    <text x="60" y="503" font-family="'IBM Plex Sans',sans-serif" font-size="12.5" fill="#9c8b72">Put the kb/ folder by your project.</text>
+  </g>
+
+  <!-- step 2 -->
+  <g>
+    <rect x="324" y="400" width="252" height="118" rx="14" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <circle cx="350" cy="428" r="13" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+    <text x="350" y="433" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">2</text>
+    <text x="374" y="433" font-family="'IBM Plex Sans',sans-serif" font-size="15" font-weight="600" fill="#f3e9da">Add .mcp.json</text>
+    <rect x="344" y="450" width="212" height="30" rx="7" fill="#1a1512" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="450" y="470" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12" fill="#e0a96d">"metaharness-kb": &#8230;</text>
+    <text x="344" y="503" font-family="'IBM Plex Sans',sans-serif" font-size="12.5" fill="#9c8b72">Registers the pack as a tool.</text>
+  </g>
+
+  <!-- step 3 -->
+  <g>
+    <rect x="608" y="400" width="252" height="118" rx="14" fill="#2a2018" stroke="#c8814f" stroke-width="2"/>
+    <circle cx="634" cy="428" r="13" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+    <text x="634" y="433" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">3</text>
+    <text x="658" y="433" font-family="'IBM Plex Sans',sans-serif" font-size="15" font-weight="600" fill="#f3e9da">Paste the gate</text>
+    <rect x="628" y="450" width="212" height="30" rx="7" fill="#1a1512" stroke="#c8814f" stroke-width="1.25"/>
+    <text x="734" y="470" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="12" fill="#e0a96d">into CLAUDE.md</text>
+    <text x="628" y="503" font-family="'IBM Plex Sans',sans-serif" font-size="12.5" fill="#9c8b72">Forces a check before answering.</text>
+  </g>
+
+  <!-- wiring arrows -->
+  <line x1="292" y1="459" x2="320" y2="459" stroke="#e0a96d" stroke-width="2.25" marker-end="url(#s09-arrow)"/>
+  <line x1="576" y1="459" x2="604" y2="459" stroke="#e0a96d" stroke-width="2.25" marker-end="url(#s09-arrow)"/>
+
+  <!-- outcome -->
+  <rect x="40" y="540" width="820" height="42" rx="10" fill="#221b14" stroke="#3a2f1f" stroke-width="1.25"/>
+  <text x="450" y="566" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" fill="#d6c5ac">Result: your AI answers from the <tspan font-weight="600" fill="#e0a96d">real source</tspan> &#8212; grounded, with citations &#8212; instead of guessing.</text>
+</svg>
+              <figcaption>The drop-in, step by step: one zip splits into for-humans/ (the primer you read) and for-ai/ (the knowledge pack your assistant searches), wired into Claude Code in three small steps &mdash; unzip, register a .mcp.json tool, add a CLAUDE.md gate.</figcaption>
+            </figure>
+            <figure class="figure">
+              <img src="assets/img/g5.png" width="1376" height="768"
+                   alt="One zip file at the top splits into two equal panels: a left panel labelled For you showing a person reading and watching, and a right panel labelled For your AI showing a warm, searchable glowing brain with a magnifying glass." />
+              <figcaption>
+                One zip, two halves: <code>for-humans/</code> (the primer you read)
+                and <code>for-ai/</code> (the knowledge pack your assistant searches).
+              </figcaption>
+            </figure>
+
+            <p>
+              Wiring the AI half into Claude Code takes three small steps:
+            </p>
+            <ol>
+              <li>
+                <strong>Unzip it next to your project.</strong>
+                <pre class="code-block"><code>unzip metaharness-dropin.zip
+cd metaharness-dropin/for-ai
+npm install</code></pre>
+              </li>
+              <li>
+                <strong>Point Claude Code at it with a <code>.mcp.json</code> file.</strong>
+                This tiny file tells Claude Code about the local knowledge tool. Drop
+                it in your project root:
+                <pre class="code-block"><code>{
+  "mcpServers": {
+    "metaharness-kb": {
+      "command": "node",
+      "args": ["metaharness-dropin/for-ai/kb-mcp-server.mjs"]
+    }
+  }
+}</code></pre>
+                (<code>.mcp.json</code> is just a list of helper tools Claude Code is
+                allowed to call. Here it registers the knowledge pack as a tool
+                named <code>metaharness-kb</code>.)
+              </li>
+              <li>
+                <strong>Add a verification gate to your <code>CLAUDE.md</code>.</strong>
+                <code>CLAUDE.md</code> is the instruction file Claude reads first.
+                This line forces it to <em>check the knowledge pack</em> before
+                answering, rather than guessing:
+                <pre class="code-block"><code>## MetaHarness questions
+Before answering ANY question about MetaHarness, query the
+`metaharness-kb` tool and ground your answer in what it returns.
+If the pack has no answer, say so plainly — do not invent one.</code></pre>
+              </li>
+            </ol>
+            <p>
+              <strong>Then confirm it works.</strong> Ask Claude Code a question only
+              the pack can answer, for example:
+            </p>
+            <pre class="code-block"><code>What are the nine composer stages in MetaHarness, in order?</code></pre>
+            <p>
+              If the wiring is right, the answer comes back grounded in the knowledge
+              pack &mdash; Identity, Hosts, Primitives, Agents, Skills, Plugins,
+              Features, Branding, Confirm &mdash; with the source it drew from. If you
+              instead get a vague reply with no source, the gate isn&rsquo;t firing:
+              re-check the <code>.mcp.json</code> path and the <code>CLAUDE.md</code>
+              line above.
+            </p>
+
+            <!-- Drag-in dropzone STUB. Real wiring (download href, file handling)
+                 lands when downloads/metaharness-dropin.zip is built (P7/P9).
+                 main.js provides click + keyboard fallback now. -->
+            <div
+              class="dropzone"
+              id="dropzone"
+              role="button"
+              tabindex="0"
+              aria-label="Get the MetaHarness drop-in: activate, or drag a folder here"
+            >
+              <div class="dz-icon" aria-hidden="true">&#9881;</div>
+              <div><strong>Get the drop-in</strong></div>
+              <div class="dz-hint">
+                Click / press Enter to download &mdash; or drag a repo folder here
+                (preview stub). Real <code>.zip</code> wires up in P7/P9.
+              </div>
+              <p class="dz-status" id="dzStatus" role="status" aria-live="polite"></p>
+            </div>
+          </div>
+        </details>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer>
+    <div class="wrap">
+      <nav class="stack-links" aria-label="The whole stack, one link each">
+        <span class="stack-lead">The whole stack, one link each:</span>
+        <a href="https://github.com/ruvnet/agent-harness-generator">Source repo &middot; ruvnet/agent-harness-generator</a>
+        <a href="https://ruvnet.github.io/agent-harness-generator/">Studio &middot; build a harness in your browser</a>
+        <a href="https://github.com/ruvnet">Reuven Cohen &middot; @ruvnet</a>
+      </nav>
+      <div>
+        Explainer for <a href="https://github.com/ruvnet/agent-harness-generator">ruvnet/agent-harness-generator</a>
+        &middot; built with the Ruv-Explainer dual-half pipeline.
+      </div>
+      <div class="prov">
+        Honest limits, stated plainly: MetaHarness is <strong>v0.1.x beta</strong>
+        &mdash; published and usable, still settling. The README headline is
+        <strong>568 tests passing</strong> (other docs cite slightly different
+        totals as they catch up). It targets <strong>six stable hosts</strong>, with
+        three newer ones (Copilot, OpenCode, GitHub Actions) added more recently. And
+        it <strong>never executes your code</strong> &mdash; all repo analysis is
+        read-only.
+        <span class="prov-build" data-build-hook="P9">
+          <!-- P9 build step injects HEAD sha + build date from /kb/.last-built.json here -->
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>

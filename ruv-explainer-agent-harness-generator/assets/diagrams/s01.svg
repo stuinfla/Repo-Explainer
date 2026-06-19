@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" width="100%" role="img" aria-labelledby="s01-title s01-desc" style="max-width:1000px;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s01-title">The one-way door: forking ruflo versus generating with MetaHarness</title>
+  <desc id="s01-desc">Forking the whole ruflo bundle freezes you and cuts you off from future kernel updates. MetaHarness generates only the pieces you want, branded by you, while still pulling future engine updates.</desc>
+
+  <defs>
+    <marker id="s01-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e0a96d"/>
+    </marker>
+    <marker id="s01-arrow-cut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a6a4a"/>
+    </marker>
+  </defs>
+
+  <!-- panel -->
+  <rect x="0" y="0" width="1000" height="620" rx="14" fill="#1a1512"/>
+
+  <!-- heading -->
+  <text x="500" y="42" text-anchor="middle" fill="#f3e9da" font-size="22" font-weight="600">The "one-way door"</text>
+  <text x="500" y="68" text-anchor="middle" fill="#c8a98a" font-size="14">Forking the whole bundle vs. generating just the pieces you want</text>
+
+  <!-- divider -->
+  <line x1="500" y1="92" x2="500" y2="588" stroke="#3a2f26" stroke-width="1.5" stroke-dasharray="4 6"/>
+
+  <!-- ===================== BEFORE (left) ===================== -->
+  <text x="250" y="120" text-anchor="middle" fill="#c8814f" font-size="16" font-weight="600">BEFORE — fork ruflo</text>
+
+  <!-- the bundle -->
+  <rect x="60" y="142" width="380" height="170" rx="10" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+  <text x="250" y="166" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">The whole ruflo bundle (one frozen copy)</text>
+
+  <rect x="78" y="182" width="156" height="50" rx="7" fill="#1f1813" stroke="#e0a96d" stroke-width="1"/>
+  <text x="156" y="202" text-anchor="middle" fill="#f3e9da" font-size="12.5">Kernel primitives</text>
+  <text x="156" y="220" text-anchor="middle" fill="#c8a98a" font-size="11">MCP, hooks, memory, routing</text>
+
+  <rect x="266" y="182" width="156" height="50" rx="7" fill="#1f1813" stroke="#e0a96d" stroke-width="1"/>
+  <text x="344" y="202" text-anchor="middle" fill="#f3e9da" font-size="12.5">Bundled content</text>
+  <text x="344" y="220" text-anchor="middle" fill="#c8a98a" font-size="10.5">60+ agents · 30+ skills · 33 plugins</text>
+
+  <text x="250" y="258" text-anchor="middle" fill="#c8a98a" font-size="11.5">Kernel and content are fused together — you must take all of it</text>
+  <text x="250" y="290" text-anchor="middle" fill="#e0a96d" font-size="12">You fork the ENTIRE thing just to rebrand it</text>
+
+  <!-- frozen copy -->
+  <rect x="120" y="350" width="260" height="74" rx="10" fill="#2a2018" stroke="#8a6a4a" stroke-width="1.5"/>
+  <text x="250" y="378" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">Your frozen fork</text>
+  <text x="250" y="400" text-anchor="middle" fill="#c8a98a" font-size="11.5">A snapshot — never moves again on its own</text>
+
+  <!-- fork arrow -->
+  <line x1="250" y1="312" x2="250" y2="348" stroke="#e0a96d" stroke-width="2" marker-end="url(#s01-arrow)"/>
+  <text x="300" y="334" text-anchor="start" fill="#c8a98a" font-size="11">fork</text>
+
+  <!-- future updates cut off -->
+  <rect x="120" y="470" width="260" height="64" rx="10" fill="#211a15" stroke="#5a463a" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="250" y="496" text-anchor="middle" fill="#b89a82" font-size="13" font-weight="600">Future engine updates</text>
+  <text x="250" y="516" text-anchor="middle" fill="#8a6a4a" font-size="11.5">never reach your fork</text>
+
+  <!-- broken / cut link -->
+  <line x1="250" y1="426" x2="250" y2="468" stroke="#8a6a4a" stroke-width="2" stroke-dasharray="3 5" marker-end="url(#s01-arrow-cut)"/>
+  <!-- cut mark -->
+  <line x1="232" y1="447" x2="248" y2="437" stroke="#c8814f" stroke-width="2.5"/>
+  <line x1="252" y1="457" x2="268" y2="447" stroke="#c8814f" stroke-width="2.5"/>
+  <text x="300" y="452" text-anchor="start" fill="#c8814f" font-size="11">cut off</text>
+
+  <!-- ===================== AFTER (right) ===================== -->
+  <text x="750" y="120" text-anchor="middle" fill="#e0a96d" font-size="16" font-weight="600">AFTER — generate with MetaHarness</text>
+
+  <!-- kernel source (stays live) -->
+  <rect x="560" y="142" width="380" height="92" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="750" y="166" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">ruflo kernel (lives upstream, keeps improving)</text>
+  <rect x="578" y="182" width="344" height="38" rx="7" fill="#1f1813" stroke="#c8814f" stroke-width="1"/>
+  <text x="750" y="206" text-anchor="middle" fill="#c8a98a" font-size="12">MCP · hooks · memory · routing · witness — pinned version</text>
+
+  <!-- generator -->
+  <rect x="640" y="262" width="220" height="48" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="750" y="285" text-anchor="middle" fill="#f3e9da" font-size="13" font-weight="600">MetaHarness generator</text>
+  <text x="750" y="302" text-anchor="middle" fill="#c8a98a" font-size="11">picks ONLY the pieces you choose</text>
+
+  <line x1="750" y1="234" x2="750" y2="260" stroke="#e0a96d" stroke-width="2" marker-end="url(#s01-arrow)"/>
+
+  <!-- your harness -->
+  <rect x="600" y="348" width="300" height="100" rx="10" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+  <text x="750" y="374" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">Your branded harness</text>
+  <text x="750" y="394" text-anchor="middle" fill="#c8a98a" font-size="11.5">npx your-name · your agents · your skills</text>
+  <rect x="618" y="406" width="264" height="30" rx="6" fill="#1f1813" stroke="#e0a96d" stroke-width="1"/>
+  <text x="750" y="425" text-anchor="middle" fill="#c8a98a" font-size="11">only the parts you wanted — owned by you</text>
+
+  <line x1="750" y1="310" x2="750" y2="346" stroke="#e0a96d" stroke-width="2" marker-end="url(#s01-arrow)"/>
+  <text x="800" y="332" text-anchor="start" fill="#c8a98a" font-size="11">generate</text>
+
+  <!-- future updates still flow -->
+  <rect x="600" y="482" width="300" height="56" rx="10" fill="#211a15" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="750" y="506" text-anchor="middle" fill="#f3e9da" font-size="13" font-weight="600">Future engine updates</text>
+  <text x="750" y="525" text-anchor="middle" fill="#c8a98a" font-size="11.5">still flow in — re-pin to a newer kernel</text>
+
+  <!-- live link from kernel down the right edge to updates, showing connection stays -->
+  <path d="M928 188 C 968 280, 968 420, 905 510" fill="none" stroke="#e0a96d" stroke-width="2" stroke-dasharray="2 4"/>
+  <path d="M905 510 L 900 500 M905 510 L 912 503" stroke="#e0a96d" stroke-width="2"/>
+  <text x="958" y="356" text-anchor="middle" fill="#e0a96d" font-size="10.5" transform="rotate(90 958 356)">stays connected to the kernel</text>
+
+  <line x1="750" y1="448" x2="750" y2="480" stroke="#e0a96d" stroke-width="2" marker-end="url(#s01-arrow)"/>
+
+  <!-- footer takeaway -->
+  <text x="500" y="608" text-anchor="middle" fill="#b89a82" font-size="12">Fork = take everything, then it freezes.  Generate = take what you need, keep getting updates.</text>
+</svg>

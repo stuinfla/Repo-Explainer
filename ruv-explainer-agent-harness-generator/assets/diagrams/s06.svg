@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" width="900" height="540" role="img" aria-labelledby="s06-title s06-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s06-title">Two ways in, one result</title>
+  <desc id="s06-desc">Two implementation paths — the browser Studio and the terminal (npx metaharness) — both produce the same branded harness package that is yours to keep.</desc>
+
+  <defs>
+    <marker id="s06-arrow" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M1 1 L10 6 L1 11 Z" fill="#e0a96d"/>
+    </marker>
+    <marker id="s06-arrow-copper" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M1 1 L10 6 L1 11 Z" fill="#c8814f"/>
+    </marker>
+  </defs>
+
+  <!-- panel -->
+  <rect x="0" y="0" width="900" height="540" rx="16" fill="#1a1512"/>
+  <rect x="0.75" y="0.75" width="898.5" height="538.5" rx="15.25" fill="none" stroke="#3a2f1f" stroke-width="1.5"/>
+
+  <!-- header -->
+  <text x="40" y="50" font-family="'IBM Plex Sans',sans-serif" font-size="22" font-weight="600" fill="#f3e9da">Two ways in &#8212; same result</text>
+  <text x="40" y="76" font-family="'IBM Plex Sans',sans-serif" font-size="15" fill="#9c8b72">Pick the path that fits how you work. Both hand you a .zip (or folder) that is yours to keep.</text>
+
+  <!-- ===================== PATH A: BROWSER STUDIO ===================== -->
+  <!-- lane label -->
+  <rect x="40" y="104" width="160" height="30" rx="8" fill="#2a2018" stroke="#c8814f" stroke-width="1.25"/>
+  <text x="120" y="124" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">Browser Studio</text>
+  <text x="220" y="124" font-family="'IBM Plex Sans',sans-serif" font-size="13" fill="#9c8b72">nothing to install</text>
+
+  <!-- A nodes -->
+  <g>
+    <rect x="40" y="152" width="180" height="66" rx="12" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="130" y="182" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">Open the Studio</text>
+    <text x="130" y="202" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11.5" fill="#c8814f">ruvnet.github.io</text>
+  </g>
+
+  <g>
+    <rect x="262" y="152" width="180" height="66" rx="12" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="352" y="178" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">Pick a tab,</text>
+    <text x="352" y="196" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">make choices</text>
+    <text x="352" y="212" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="11.5" fill="#9c8b72">repo, scratch, skill, verify</text>
+  </g>
+
+  <g>
+    <rect x="484" y="152" width="180" height="66" rx="12" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="574" y="182" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">Download .zip</text>
+    <text x="574" y="202" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="11.5" fill="#9c8b72">in your browser</text>
+  </g>
+
+  <!-- A arrows -->
+  <line x1="220" y1="185" x2="258" y2="185" stroke="#e0a96d" stroke-width="2" marker-end="url(#s06-arrow)"/>
+  <line x1="442" y1="185" x2="480" y2="185" stroke="#e0a96d" stroke-width="2" marker-end="url(#s06-arrow)"/>
+
+  <!-- ===================== PATH B: TERMINAL ===================== -->
+  <rect x="40" y="266" width="160" height="30" rx="8" fill="#2a2018" stroke="#c8814f" stroke-width="1.25"/>
+  <text x="120" y="286" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">Terminal</text>
+  <text x="220" y="286" font-family="'IBM Plex Sans',sans-serif" font-size="13" fill="#9c8b72">if you live in the command line</text>
+
+  <g>
+    <rect x="40" y="314" width="180" height="66" rx="12" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="130" y="344" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">Run the command</text>
+    <text x="130" y="364" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11" fill="#c8814f">npx metaharness</text>
+  </g>
+
+  <g>
+    <rect x="262" y="314" width="180" height="66" rx="12" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="352" y="340" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">Flags or wizard</text>
+    <text x="352" y="358" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="11.5" fill="#9c8b72">--template --host</text>
+    <text x="352" y="374" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="11.5" fill="#9c8b72">or --wizard asks you</text>
+  </g>
+
+  <g>
+    <rect x="484" y="314" width="180" height="66" rx="12" fill="#2a2018" stroke="#e0a96d" stroke-width="1.25"/>
+    <text x="574" y="344" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#f3e9da">Scaffolded folder</text>
+    <text x="574" y="364" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="11.5" fill="#9c8b72">written to disk</text>
+  </g>
+
+  <line x1="220" y1="347" x2="258" y2="347" stroke="#e0a96d" stroke-width="2" marker-end="url(#s06-arrow)"/>
+  <line x1="442" y1="347" x2="480" y2="347" stroke="#e0a96d" stroke-width="2" marker-end="url(#s06-arrow)"/>
+
+  <!-- ===================== CONVERGE: SAME PACKAGE ===================== -->
+  <g>
+    <rect x="712" y="208" width="156" height="116" rx="14" fill="#2a2018" stroke="#c8814f" stroke-width="2"/>
+    <text x="790" y="244" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="15" font-weight="600" fill="#e0a96d">Same branded</text>
+    <text x="790" y="263" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="15" font-weight="600" fill="#e0a96d">package</text>
+    <text x="790" y="287" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="12" fill="#f3e9da">your own npx my-bot,</text>
+    <text x="790" y="303" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="12" fill="#f3e9da">yours to keep</text>
+  </g>
+
+  <!-- converging arrows from both paths into the same package -->
+  <path d="M664 185 C 696 185, 700 230, 712 248" fill="none" stroke="#c8814f" stroke-width="2.25" marker-end="url(#s06-arrow-copper)"/>
+  <path d="M664 347 C 696 347, 700 300, 712 284" fill="none" stroke="#c8814f" stroke-width="2.25" marker-end="url(#s06-arrow-copper)"/>
+
+  <!-- ===================== TAIL: UNZIP / INSTALL ===================== -->
+  <rect x="40" y="430" width="828" height="76" rx="12" fill="#221b14" stroke="#3a2f1f" stroke-width="1.25"/>
+  <text x="64" y="458" font-family="'IBM Plex Sans',sans-serif" font-size="14" font-weight="600" fill="#e0a96d">Then, on your own machine &#8212; identical from here:</text>
+  <text x="64" y="484" font-family="'IBM Plex Mono',monospace" font-size="13" fill="#f3e9da">unzip my-bot.zip &#160; &#8594; &#160; cd my-bot &#160; &#8594; &#160; npm install &#160; &#8594; &#160; edit, then  npm publish --provenance</text>
+</svg>

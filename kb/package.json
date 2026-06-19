@@ -1,0 +1,29 @@
+{
+  "name": "metaharness-kb",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Generic, config-driven RVF knowledge-base engine (build/grade/gate) + portable CLI and MCP stdio server. Targets are defined in kb.config.mjs; pass --target <slug> to the scripts.",
+  "bin": {
+    "kb-ask": "./ask-kb.mjs",
+    "kb-mcp": "./kb-mcp-server.mjs"
+  },
+  "scripts": {
+    "ask": "node ask-kb.mjs",
+    "mcp": "node kb-mcp-server.mjs",
+    "build": "node build-kb.mjs",
+    "build:big": "node build-big-variant.mjs both",
+    "index-primer": "node index-primer.mjs",
+    "guard": "node guard-check.mjs",
+    "grade": "node grade-kb.mjs",
+    "gate": "node gate.mjs",
+    "bundles": "node make-bundles.mjs"
+  },
+  "dependencies": {
+    "@ruvector/rvf": "^0.2.2",
+    "@xenova/transformers": "^2.17.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

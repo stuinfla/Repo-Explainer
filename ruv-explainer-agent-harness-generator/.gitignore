@@ -1,0 +1,17 @@
+# Binaries & bundles are NOT committed here [H] — they ship via GitHub Release.
+downloads/*.zip
+*.zip
+*.rvf
+*.rvf.lock
+*.embed.json
+
+# Generated font binaries: drop the real woff2 into assets/fonts/ at build time.
+# (kept out of git; see assets/fonts/README.md for the 5 required files)
+assets/fonts/*.woff2
+
+# Tooling noise
+node_modules/
+.vercel/
+.DS_Store
+*.log
+.vercel

@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 980" width="100%" role="img"
+     aria-labelledby="s05-title s05-desc" preserveAspectRatio="xMidYMid meet"
+     style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s05-title">Anatomy of a generated harness</title>
+  <desc id="s05-desc">What is literally inside the output package: a repo-aware command-line tool,
+    a local tool (MCP) server, a project-scoped memory space, skills generated from your file
+    layout, a default-deny governance policy, and witness-signed releases — all wrapping a
+    replaceable AI model and pointed at your repository.</desc>
+
+  <defs>
+    <marker id="s05arrow" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#e0a96d"/>
+    </marker>
+    <marker id="s05arrowCopper" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#c8814f"/>
+    </marker>
+    <linearGradient id="s05modelGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2a1a"/>
+      <stop offset="1" stop-color="#2a1f14"/>
+    </linearGradient>
+    <linearGradient id="s05repoGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2018"/>
+      <stop offset="1" stop-color="#221a13"/>
+    </linearGradient>
+  </defs>
+
+  <!-- panel -->
+  <rect x="0" y="0" width="1180" height="980" rx="18" fill="#1a1512"/>
+  <rect x="1" y="1" width="1178" height="978" rx="17" fill="none" stroke="#3a2f1f" stroke-width="1.5"/>
+
+  <!-- header -->
+  <text x="56" y="58" font-size="13" letter-spacing="3" fill="#c8814f"
+        font-family="'IBM Plex Mono',monospace">WHAT &#8220;SOLVED&#8221; LOOKS LIKE</text>
+  <text x="56" y="92" font-size="26" font-weight="700" fill="#f3e9da">Anatomy of a generated harness</text>
+  <text x="56" y="120" font-size="14" fill="#d6c5ac">One self-contained package &#8212; say you called it <tspan font-family="'IBM Plex Mono',monospace" fill="#e0a96d">my-bot</tspan>. Here is what is literally inside it.</text>
+
+  <!-- ============ THE HARNESS WRAPPER (big enclosing rounded-rect) ============ -->
+  <rect x="56" y="150" width="800" height="700" rx="16" fill="#211a13" stroke="#e0a96d" stroke-width="2"/>
+  <text x="80" y="184" font-size="15" letter-spacing="2" fill="#e0a96d"
+        font-family="'IBM Plex Mono',monospace">THE HARNESS &#8212; THE WRAPPER YOU OWN</text>
+  <text x="80" y="206" font-size="13" fill="#9c8b72" font-style="italic">Everything below is yours, branded as you, and ships in the package.</text>
+
+  <!-- The six inner components, two columns x three rows -->
+
+  <!-- 1. repo-aware CLI -->
+  <g>
+    <rect x="84" y="230" width="356" height="118" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="106" y="262" font-size="17" font-weight="700" fill="#f3e9da">A repo-aware command-line tool</text>
+    <text x="106" y="288" font-size="13.5" fill="#d6c5ac">Your own <tspan font-family="'IBM Plex Mono',monospace" fill="#e0a96d">npx my-bot</tspan> command, branded as</text>
+    <text x="106" y="307" font-size="13.5" fill="#d6c5ac">yours &#8212; not as someone else&#8217;s tool. It knows</text>
+    <text x="106" y="326" font-size="13.5" fill="#d6c5ac">your project, because it was built for it.</text>
+  </g>
+
+  <!-- 2. local MCP server -->
+  <g>
+    <rect x="472" y="230" width="356" height="118" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="494" y="262" font-size="17" font-weight="700" fill="#f3e9da">A local tool server</text>
+    <text x="494" y="288" font-size="13.5" fill="#d6c5ac">Its own MCP server registration, running on</text>
+    <text x="494" y="307" font-size="13.5" fill="#d6c5ac">your machine. This is how the agents reach</text>
+    <text x="494" y="326" font-size="13.5" fill="#d6c5ac">tools &#8212; nothing hosted, nothing remote.</text>
+  </g>
+
+  <!-- 3. project-scoped memory -->
+  <g>
+    <rect x="84" y="364" width="356" height="118" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="106" y="396" font-size="17" font-weight="700" fill="#f3e9da">Project-scoped memory</text>
+    <text x="106" y="422" font-size="13.5" fill="#d6c5ac">Its own private memory space, kept separate</text>
+    <text x="106" y="441" font-size="13.5" fill="#d6c5ac">from everything else on your machine. What</text>
+    <text x="106" y="460" font-size="13.5" fill="#d6c5ac">it learns about your project stays with it.</text>
+  </g>
+
+  <!-- 4. skills from file layout -->
+  <g>
+    <rect x="472" y="364" width="356" height="118" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="494" y="396" font-size="17" font-weight="700" fill="#f3e9da">Skills from your file layout</text>
+    <text x="494" y="422" font-size="13.5" fill="#d6c5ac">It reads your repo&#8217;s file list, manifest and</text>
+    <text x="494" y="441" font-size="13.5" fill="#d6c5ac">README to suggest the right agents and skills</text>
+    <text x="494" y="460" font-size="13.5" fill="#d6c5ac">&#8212; without ever executing your code.</text>
+  </g>
+
+  <!-- 5. default-deny governance -->
+  <g>
+    <rect x="84" y="498" width="356" height="118" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="106" y="530" font-size="17" font-weight="700" fill="#f3e9da">A default-deny safety policy</text>
+    <text x="106" y="556" font-size="13.5" fill="#d6c5ac">The tool server starts locked down: no</text>
+    <text x="106" y="575" font-size="13.5" fill="#d6c5ac">internet, no shell, no writing files &#8212; until</text>
+    <text x="106" y="594" font-size="13.5" fill="#d6c5ac"><tspan font-style="italic">you</tspan> allow each one. Nothing on you didn&#8217;t turn on.</text>
+  </g>
+
+  <!-- 6. witness-signed releases -->
+  <g>
+    <rect x="472" y="498" width="356" height="118" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="494" y="530" font-size="17" font-weight="700" fill="#f3e9da">Witness-signed releases</text>
+    <text x="494" y="556" font-size="13.5" fill="#d6c5ac">A signed receipt of exactly what is inside</text>
+    <text x="494" y="575" font-size="13.5" fill="#d6c5ac">(an Ed25519 witness manifest), so anyone who</text>
+    <text x="494" y="594" font-size="13.5" fill="#d6c5ac">installs it can confirm nothing was swapped.</text>
+  </g>
+
+  <!-- selected agents/skills/plugins band -->
+  <g>
+    <rect x="84" y="632" width="744" height="78" rx="11" fill="#241d15" stroke="#3a2f1f" stroke-width="1.2"/>
+    <text x="106" y="662" font-size="15" font-weight="700" fill="#e0a96d">&#43; the agents, skills, plugins, and per-host config files you chose</text>
+    <text x="106" y="686" font-size="13.5" fill="#d6c5ac">Copied from the catalogue into the package &#8212; your selection, wired up and ready to run.</text>
+  </g>
+
+  <!-- the replaceable model slot inside the wrapper -->
+  <g>
+    <rect x="84" y="726" width="744" height="100" rx="11" fill="url(#s05modelGrad)" stroke="#e0a96d" stroke-width="1.8" stroke-dasharray="7 5"/>
+    <text x="106" y="758" font-size="13" letter-spacing="2" fill="#c8814f"
+          font-family="'IBM Plex Mono',monospace">REPLACEABLE SLOT</text>
+    <text x="106" y="784" font-size="17" font-weight="700" fill="#f3e9da">The AI model &#8212; Claude, GPT, or whatever your host brings</text>
+    <text x="106" y="808" font-size="13.5" fill="#d6c5ac">The harness wraps the model; it is not the model. Swap the model and everything above still stands.</text>
+  </g>
+
+  <!-- ============ POINTED AT YOUR REPO ============ -->
+  <g>
+    <rect x="912" y="380" width="212" height="240" rx="13" fill="url(#s05repoGrad)" stroke="#c8814f" stroke-width="1.8"/>
+    <text x="934" y="414" font-size="13" letter-spacing="2" fill="#c8814f"
+          font-family="'IBM Plex Mono',monospace">POINTED AT</text>
+    <text x="934" y="446" font-size="20" font-weight="700" fill="#f3e9da">YOUR repo</text>
+    <text x="934" y="476" font-size="13.5" fill="#d6c5ac">The whole harness is</text>
+    <text x="934" y="495" font-size="13.5" fill="#d6c5ac">tuned to one codebase</text>
+    <text x="934" y="514" font-size="13.5" fill="#d6c5ac">&#8212; yours &#8212; not a</text>
+    <text x="934" y="533" font-size="13.5" fill="#d6c5ac">generic chatbot.</text>
+    <text x="934" y="566" font-size="12.5" fill="#9c8b72" font-style="italic">It reads, but never</text>
+    <text x="934" y="584" font-size="12.5" fill="#9c8b72" font-style="italic">runs, your code.</text>
+  </g>
+  <!-- arrow: harness points at your repo -->
+  <line x1="828" y1="500" x2="906" y2="500" stroke="#c8814f" stroke-width="2.5" marker-end="url(#s05arrowCopper)"/>
+  <text x="836" y="490" font-size="12" fill="#9c8b72" font-family="'IBM Plex Mono',monospace">aimed at &#8594;</text>
+
+  <!-- ============ PUBLISH / RECEIVE callout ============ -->
+  <g>
+    <rect x="912" y="150" width="212" height="200" rx="13" fill="#211a13" stroke="#e0a96d" stroke-width="1.6"/>
+    <text x="934" y="184" font-size="13" letter-spacing="2" fill="#c8814f"
+          font-family="'IBM Plex Mono',monospace">SHIP IT</text>
+    <text x="934" y="212" font-size="14" fill="#d6c5ac"><tspan font-family="'IBM Plex Mono',monospace" fill="#e0a96d">npm publish</tspan></text>
+    <text x="934" y="236" font-size="13.5" fill="#d6c5ac">Your users run</text>
+    <text x="934" y="255" font-size="14" fill="#d6c5ac"><tspan font-family="'IBM Plex Mono',monospace" fill="#e0a96d">npx my-bot init</tspan></text>
+    <text x="934" y="284" font-size="13" fill="#9c8b72" font-style="italic">They never see the</text>
+    <text x="934" y="302" font-size="13" fill="#9c8b72" font-style="italic">factory underneath</text>
+    <text x="934" y="320" font-size="13" fill="#9c8b72" font-style="italic">&#8212; only your brand.</text>
+  </g>
+  <!-- arrow up from harness to ship-it -->
+  <line x1="856" y1="240" x2="906" y2="240" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s05arrow)"/>
+
+  <!-- footnote -->
+  <text x="56" y="900" font-size="13" font-weight="700" fill="#e0a96d">The model is replaceable. The harness is the product.</text>
+  <text x="56" y="924" font-size="12.5" fill="#9c8b72" font-style="italic">Nothing here is invented &#8212; every piece is what the generator writes into the package, locked down and signed by default.</text>
+  <text x="56" y="950" font-size="12.5" fill="#9c8b72" font-style="italic">v0.1.x beta &#8212; published and usable; the README badge shows 568 tests passing.</text>
+</svg>

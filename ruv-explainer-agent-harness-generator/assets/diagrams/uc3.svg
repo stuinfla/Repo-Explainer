@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 520" width="100%" role="img" aria-labelledby="uc3-title uc3-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif">
+  <title id="uc3-title">Use case 3 — Spin up a vertical pod from a template</title>
+  <desc id="uc3-desc">Problem: you want a ready-made multi-agent setup for a known vertical such as support, trading or legal and you do not want to remember flags. You run metaharness with a vertical template, or the dedicated one-command wrapper. The tool scaffolds domain agents with system prompts, skills and per-host settings, all default-deny. You get a working vertical pod such as customer support, paper-by-default quant trading, or drafts-only contract redline.</desc>
+  <defs>
+    <marker id="uc3-arrow" markerWidth="13" markerHeight="13" refX="9" refY="6" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#ff9e2c"/>
+    </marker>
+    <style>
+      .panel{fill:#241d15}
+      .node{fill:#2a2018;stroke:#c2703a;stroke-width:1.4}
+      .stage{fill:#9c8b72;font-size:13px;letter-spacing:.16em}
+      .head{fill:#f3e8d8;font-size:19px;font-weight:600}
+      .body{fill:#d6c5ac;font-size:15px}
+      .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;fill:#ffb650;font-size:14px}
+      .flow{stroke:#ff9e2c;stroke-width:2.2;fill:none}
+      .pill{fill:#ff9e2c}
+      .pilltxt{fill:#1a1206;font-size:13px;font-weight:600}
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1180" height="520" rx="18" class="panel"/>
+  <rect x="0.7" y="0.7" width="1178.6" height="518.6" rx="18" fill="none" stroke="#3a2f1f" stroke-width="1.4"/>
+
+  <text x="40" y="52" fill="#ff9e2c" font-size="15" letter-spacing=".2em">USE CASE 3</text>
+  <text x="40" y="84" class="head" font-size="26">"Spin up a support / trading / legal pod from a template"</text>
+
+  <!-- Stage 1: PROBLEM -->
+  <rect x="40" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="60" y="162" class="stage">PROBLEM</text>
+  <text x="60" y="200" class="head">Build a whole pod</text>
+  <text x="60" y="222" class="head">by hand?</text>
+  <text x="60" y="258" class="body">You want a ready-made</text>
+  <text x="60" y="280" class="body">multi-agent setup for a</text>
+  <text x="60" y="302" class="body">known vertical — and</text>
+  <text x="60" y="324" class="body">don't want to remember</text>
+  <text x="60" y="346" class="body">a list of flags.</text>
+  <text x="60" y="392" class="body" font-size="13" fill="#9c8b72">support · trading · legal</text>
+
+  <line x1="298" y1="280" x2="342" y2="280" class="flow" marker-end="url(#uc3-arrow)"/>
+
+  <!-- Stage 2: WHAT YOU RUN -->
+  <rect x="350" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="370" y="162" class="stage">WHAT YOU RUN</text>
+  <rect x="370" y="184" width="210" height="42" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="384" y="210" class="mono" font-size="11">metaharness --list</text>
+  <text x="370" y="248" class="body" font-size="13" fill="#9c8b72">…pick a template, then:</text>
+  <rect x="370" y="258" width="210" height="42" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="384" y="277" class="mono" font-size="10.5">metaharness my-bot</text>
+  <text x="384" y="293" class="mono" font-size="10.5">--template vertical:support</text>
+  <text x="370" y="332" class="body" font-size="13" fill="#9c8b72">…or no flags at all:</text>
+  <rect x="370" y="342" width="210" height="42" rx="9" fill="#1a1206" stroke="#ff9e2c" stroke-width="1.4"/>
+  <text x="384" y="368" class="mono" font-size="10.5">npx @metaharness/support</text>
+  <text x="370" y="412" class="body" font-size="12.5" fill="#9c8b72">Wrapper = byte-identical scaffold</text>
+
+  <line x1="608" y1="280" x2="652" y2="280" class="flow" marker-end="url(#uc3-arrow)"/>
+
+  <!-- Stage 3: WHAT IT LOOKS LIKE -->
+  <rect x="660" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="680" y="162" class="stage">WHAT IT LOOKS LIKE</text>
+  <text x="680" y="190" class="head" font-size="16">Pre-loaded pod</text>
+  <g font-size="13.5" fill="#d6c5ac">
+    <rect x="680" y="202" width="210" height="32" rx="7" fill="#1d1812" stroke="#c2703a"/>
+    <text x="694" y="223">Domain agents + prompts</text>
+    <rect x="680" y="240" width="210" height="32" rx="7" fill="#1d1812" stroke="#c2703a"/>
+    <text x="694" y="261">Skills &amp; commands</text>
+    <rect x="680" y="278" width="210" height="32" rx="7" fill="#1d1812" stroke="#c2703a"/>
+    <text x="694" y="299">Per-host settings</text>
+    <rect x="680" y="316" width="210" height="32" rx="7" fill="#1d1812" stroke="#e8531f"/>
+    <text x="694" y="337" fill="#ffb650">All default-deny</text>
+  </g>
+  <text x="680" y="378" class="body" font-size="13" fill="#9c8b72">Nothing is allowed until</text>
+  <text x="680" y="398" class="body" font-size="13" fill="#9c8b72">you explicitly open it.</text>
+
+  <line x1="918" y1="280" x2="962" y2="280" class="flow" marker-end="url(#uc3-arrow)"/>
+
+  <!-- Stage 4: RESULT -->
+  <rect x="970" y="130" width="170" height="300" rx="12" fill="#2a2018" stroke="#ff9e2c" stroke-width="1.8"/>
+  <rect x="986" y="150" width="138" height="26" rx="13" class="pill"/>
+  <text x="1004" y="168" class="pilltxt">PAYOFF</text>
+  <text x="990" y="212" class="head" font-size="17">A working</text>
+  <text x="990" y="234" class="head" font-size="17">vertical pod</text>
+  <g font-size="13" fill="#d6c5ac">
+    <text x="990" y="276">e.g.</text>
+    <text x="990" y="300" fill="#ffb650">• Customer support</text>
+    <text x="990" y="324" fill="#ffb650">• Paper-by-default</text>
+    <text x="1006" y="344" fill="#ffb650">quant trading</text>
+    <text x="990" y="368" fill="#ffb650">• Drafts-only</text>
+    <text x="1006" y="388" fill="#ffb650">contract redline</text>
+  </g>
+</svg>

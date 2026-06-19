@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="100%" role="img" aria-labelledby="s02-title s02-desc" style="max-width:1000px;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s02-title">The problem MetaHarness solves: lock-in, host fragmentation, and rebuilt plumbing</title>
+  <desc id="s02-desc">A generic AI agent guesses at your repo. Three concrete problems follow: lock-in when you fork a bundle to rebrand it, host fragmentation across different agent runtimes, and reinventing about 80 percent of the same infrastructure on every new project.</desc>
+
+  <defs>
+    <marker id="s02-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#e0a96d"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="600" rx="14" fill="#1a1512"/>
+
+  <text x="500" y="42" text-anchor="middle" fill="#f3e9da" font-size="22" font-weight="600">The problem</text>
+  <text x="500" y="68" text-anchor="middle" fill="#c8a98a" font-size="14">Why a generic agent is not enough — and why three things keep going wrong</text>
+
+  <!-- ============ TOP: generic agent guessing ============ -->
+  <rect x="60" y="96" width="240" height="120" rx="10" fill="#2a2018" stroke="#c8814f" stroke-width="1.5"/>
+  <text x="180" y="122" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">Generic AI agent</text>
+  <text x="180" y="144" text-anchor="middle" fill="#c8a98a" font-size="11.5">knows nothing about</text>
+  <text x="180" y="160" text-anchor="middle" fill="#c8a98a" font-size="11.5">YOUR codebase</text>
+  <text x="180" y="190" text-anchor="middle" fill="#e0a96d" font-size="13" font-weight="600">"...is this a Python repo?"</text>
+
+  <!-- your repo -->
+  <rect x="700" y="96" width="240" height="120" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="820" y="122" text-anchor="middle" fill="#f3e9da" font-size="14" font-weight="600">Your repo</text>
+  <text x="820" y="146" text-anchor="middle" fill="#c8a98a" font-size="11.5">its own layout, build,</text>
+  <text x="820" y="162" text-anchor="middle" fill="#c8a98a" font-size="11.5">tools, conventions</text>
+  <text x="820" y="192" text-anchor="middle" fill="#b89a82" font-size="12">needs an agent that fits</text>
+
+  <!-- guessing arrow with question marks -->
+  <line x1="300" y1="156" x2="698" y2="156" stroke="#c8814f" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#s02-arrow)"/>
+  <text x="500" y="140" text-anchor="middle" fill="#c8814f" font-size="13" font-weight="600">guesses  ?  ?  ?</text>
+  <text x="500" y="178" text-anchor="middle" fill="#8a6a4a" font-size="11">no project knowledge, no fit</text>
+
+  <!-- ============ band label ============ -->
+  <text x="500" y="262" text-anchor="middle" fill="#c8814f" font-size="15" font-weight="600">Three problems this creates</text>
+
+  <!-- ============ THREE PROBLEM CARDS ============ -->
+  <!-- Card 1: Lock-in -->
+  <rect x="44" y="284" width="290" height="262" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="189" y="312" text-anchor="middle" fill="#f3e9da" font-size="15" font-weight="600">1 · Lock-in</text>
+
+  <rect x="66" y="332" width="246" height="44" rx="7" fill="#1f1813" stroke="#c8814f" stroke-width="1"/>
+  <text x="189" y="350" text-anchor="middle" fill="#c8a98a" font-size="11.5">You fork a bundled product</text>
+  <text x="189" y="367" text-anchor="middle" fill="#c8a98a" font-size="11.5">just to put your brand on it</text>
+
+  <line x1="189" y1="376" x2="189" y2="396" stroke="#e0a96d" stroke-width="2" marker-end="url(#s02-arrow)"/>
+
+  <rect x="66" y="398" width="246" height="44" rx="7" fill="#1f1813" stroke="#5a463a" stroke-width="1" stroke-dasharray="4 4"/>
+  <text x="189" y="416" text-anchor="middle" fill="#b89a82" font-size="11.5">Now you are off the upstream</text>
+  <text x="189" y="433" text-anchor="middle" fill="#b89a82" font-size="11.5">— no future updates</text>
+
+  <text x="189" y="470" text-anchor="middle" fill="#e0a96d" font-size="12" font-weight="600">Rebranding</text>
+  <text x="189" y="489" text-anchor="middle" fill="#c8a98a" font-size="11.5">shouldn't cost you</text>
+  <text x="189" y="507" text-anchor="middle" fill="#c8a98a" font-size="11.5">every upstream improvement</text>
+  <text x="189" y="532" text-anchor="middle" fill="#8a6a4a" font-size="10.5">(the same one-way door)</text>
+
+  <!-- Card 2: Host fragmentation -->
+  <rect x="355" y="284" width="290" height="262" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="500" y="312" text-anchor="middle" fill="#f3e9da" font-size="15" font-weight="600">2 · Host fragmentation</text>
+
+  <text x="500" y="336" text-anchor="middle" fill="#c8a98a" font-size="11.5">Agents now run in many places —</text>
+  <text x="500" y="353" text-anchor="middle" fill="#c8a98a" font-size="11.5">each with its own config rules</text>
+
+  <rect x="377" y="368" width="112" height="34" rx="6" fill="#1f1813" stroke="#c8814f" stroke-width="1"/>
+  <text x="433" y="389" text-anchor="middle" fill="#f3e9da" font-size="11.5">Claude Code</text>
+  <rect x="511" y="368" width="112" height="34" rx="6" fill="#1f1813" stroke="#c8814f" stroke-width="1"/>
+  <text x="567" y="389" text-anchor="middle" fill="#f3e9da" font-size="11.5">Codex</text>
+
+  <rect x="377" y="410" width="112" height="34" rx="6" fill="#1f1813" stroke="#c8814f" stroke-width="1"/>
+  <text x="433" y="431" text-anchor="middle" fill="#f3e9da" font-size="11.5">Hermes</text>
+  <rect x="511" y="410" width="112" height="34" rx="6" fill="#1f1813" stroke="#c8814f" stroke-width="1"/>
+  <text x="567" y="431" text-anchor="middle" fill="#f3e9da" font-size="11.5">pi.dev</text>
+
+  <text x="500" y="470" text-anchor="middle" fill="#e0a96d" font-size="12" font-weight="600">One agent, many hosts</text>
+  <text x="500" y="491" text-anchor="middle" fill="#c8a98a" font-size="11.5">Each host wants different</text>
+  <text x="500" y="509" text-anchor="middle" fill="#c8a98a" font-size="11.5">config files — a rewrite</text>
+  <text x="500" y="531" text-anchor="middle" fill="#8a6a4a" font-size="10.5">should target any host, no rewrite</text>
+
+  <!-- Card 3: Reinventing infra -->
+  <rect x="666" y="284" width="290" height="262" rx="10" fill="#2a2018" stroke="#e0a96d" stroke-width="1.5"/>
+  <text x="811" y="312" text-anchor="middle" fill="#f3e9da" font-size="15" font-weight="600">3 · Rebuilt plumbing</text>
+
+  <text x="811" y="336" text-anchor="middle" fill="#c8a98a" font-size="11.5">Every new agent project rebuilds</text>
+  <text x="811" y="353" text-anchor="middle" fill="#c8a98a" font-size="11.5">the same boring infrastructure</text>
+
+  <rect x="688" y="368" width="246" height="22" rx="5" fill="#1f1813" stroke="#5a463a" stroke-width="1"/>
+  <text x="811" y="383" text-anchor="middle" fill="#b89a82" font-size="11">MCP server setup</text>
+  <rect x="688" y="394" width="246" height="22" rx="5" fill="#1f1813" stroke="#5a463a" stroke-width="1"/>
+  <text x="811" y="409" text-anchor="middle" fill="#b89a82" font-size="11">memory namespace</text>
+  <rect x="688" y="420" width="246" height="22" rx="5" fill="#1f1813" stroke="#5a463a" stroke-width="1"/>
+  <text x="811" y="435" text-anchor="middle" fill="#b89a82" font-size="11">governance policy</text>
+  <rect x="688" y="446" width="246" height="22" rx="5" fill="#1f1813" stroke="#5a463a" stroke-width="1"/>
+  <text x="811" y="461" text-anchor="middle" fill="#b89a82" font-size="11">release signing</text>
+
+  <text x="811" y="498" text-anchor="middle" fill="#e0a96d" font-size="13" font-weight="600">~80% built by hand, every time</text>
+  <text x="811" y="525" text-anchor="middle" fill="#c8a98a" font-size="11.5">the same plumbing, over and over</text>
+
+  <!-- footer -->
+  <text x="500" y="580" text-anchor="middle" fill="#b89a82" font-size="12">Lock-in, host fragmentation, and rebuilt plumbing are exactly what MetaHarness is built to remove.</text>
+</svg>

@@ -1,0 +1,20 @@
+{
+  "name": "ruv-explainer-agent-harness-generator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Foundry/mint ExplainerSite for MetaHarness (ruvnet/agent-harness-generator). Static, no build, no deps.",
+  "license": "MIT",
+  "homepage": "https://ruv-explainer-agent-harness-generator.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stuinfla/ruv-explainer-agent-harness-generator"
+  },
+  "keywords": [
+    "metaharness",
+    "agent-harness-generator",
+    "ruvnet",
+    "explainer",
+    "static-site"
+  ],
+  "scripts": {}
+}

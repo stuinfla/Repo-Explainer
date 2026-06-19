@@ -1,0 +1,16 @@
+{
+  "id": "photonlayer",
+  "displayName": "PhotonLayer — Deterministic Optical-AI Front End (Rust)",
+  "submodule": "https://github.com/ruvnet/PhotonLayer",
+  "notebookId": "TODO:create-notebooklm-notebook",
+  "embedSmall": "Xenova/all-MiniLM-L6-v2",
+  "embedBig": "Xenova/bge-base-en-v1.5",
+  "scopeExclude": [
+    "vendor/**",
+    "target/**",
+    "**/target/**",
+    "crates/photonlayer-bench/data/**",
+    "**/pkg/**",
+    "node_modules/**"
+  ]
+}

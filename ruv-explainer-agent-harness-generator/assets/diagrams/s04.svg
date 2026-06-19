@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 1340" width="100%" role="img"
+     aria-labelledby="s04-title s04-desc" preserveAspectRatio="xMidYMid meet"
+     style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
+  <title id="s04-title">The composer pipeline</title>
+  <desc id="s04-desc">A GitHub repo, or a blank slate, enters the composer and flows through nine
+    stages in order — Identity, Hosts, Primitives, Agents, Skills, Plugins, Features, Branding,
+    Confirm — emerging as a branded, npm-publishable agent harness package. Each stage shows in
+    plain words what happens there.</desc>
+
+  <defs>
+    <!-- warm arrowhead -->
+    <marker id="s04arrow" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#e0a96d"/>
+    </marker>
+    <marker id="s04arrowCopper" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M1 1 L11 6 L1 11 Z" fill="#c8814f"/>
+    </marker>
+    <linearGradient id="s04inGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2018"/>
+      <stop offset="1" stop-color="#221a13"/>
+    </linearGradient>
+    <linearGradient id="s04outGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a2a1a"/>
+      <stop offset="1" stop-color="#2a1f14"/>
+    </linearGradient>
+  </defs>
+
+  <!-- panel -->
+  <rect x="0" y="0" width="1180" height="1340" rx="18" fill="#1a1512"/>
+  <rect x="1" y="1" width="1178" height="1338" rx="17" fill="none" stroke="#3a2f1f" stroke-width="1.5"/>
+
+  <!-- header -->
+  <text x="56" y="58" font-size="13" letter-spacing="3" fill="#c8814f"
+        font-family="'IBM Plex Mono',monospace">HOW IT ACTUALLY WORKS UNDER THE COVERS</text>
+  <text x="56" y="92" font-size="26" font-weight="700" fill="#f3e9da">The composer pipeline</text>
+  <text x="56" y="120" font-size="14" fill="#d6c5ac">You answer nine questions, in order. The composer assembles a complete package from your answers.</text>
+
+  <!-- ============ INPUT ============ -->
+  <g>
+    <rect x="56" y="158" width="250" height="92" rx="12" fill="url(#s04inGrad)" stroke="#c8814f" stroke-width="1.5"/>
+    <text x="76" y="190" font-size="16" font-weight="700" fill="#f3e9da">A GitHub repo</text>
+    <text x="76" y="214" font-size="14" fill="#d6c5ac">&#8230;or a blank slate.</text>
+    <text x="76" y="236" font-size="12.5" fill="#9c8b72" font-style="italic">It never runs your code &#8212; it only reads.</text>
+
+    <!-- mode note -->
+    <rect x="334" y="166" width="296" height="76" rx="10" fill="#221a13" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="350" y="192" font-size="13" font-weight="700" fill="#e0a96d">Same nine questions, two ways</text>
+    <text x="350" y="213" font-size="13" fill="#d6c5ac">A friendly picker (the &#8220;wizard&#8221;), or</text>
+    <text x="350" y="231" font-size="13" fill="#d6c5ac">the same answers as command-line flags.</text>
+  </g>
+
+  <!-- arrow input -> stage 1 -->
+  <line x1="181" y1="250" x2="181" y2="296" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- ============ STAGE TEMPLATE ============ -->
+  <!-- Each stage: number chip, title, one-line what-happens-here -->
+
+  <!-- Stage 1 Identity -->
+  <g>
+    <rect x="56" y="300" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="343" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="349" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">1</text>
+    <text x="142" y="336" font-size="18" font-weight="700" fill="#f3e9da">Identity</text>
+    <text x="142" y="362" font-size="14" fill="#d6c5ac">The name, the package scope, a description, a licence, and who the author is. One screen.</text>
+  </g>
+  <line x1="590" y1="386" x2="590" y2="408" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 2 Hosts -->
+  <g>
+    <rect x="56" y="412" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="455" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="461" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">2</text>
+    <text x="142" y="448" font-size="18" font-weight="700" fill="#f3e9da">Hosts</text>
+    <text x="142" y="474" font-size="14" fill="#d6c5ac">Tick where it should run &#8212; Claude Code, Codex, pi.dev, Hermes, and more. Pick at least one.</text>
+  </g>
+  <line x1="590" y1="498" x2="590" y2="520" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 3 Primitives -->
+  <g>
+    <rect x="56" y="524" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="567" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="573" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">3</text>
+    <text x="142" y="560" font-size="18" font-weight="700" fill="#f3e9da">Primitives</text>
+    <text x="142" y="586" font-size="14" fill="#d6c5ac">Engine blocks on or off: tool server (always on), automations, memory, routing, marketplace, provenance. All on by default.</text>
+  </g>
+  <line x1="590" y1="610" x2="590" y2="632" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 4 Agents -->
+  <g>
+    <rect x="56" y="636" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="679" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="685" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">4</text>
+    <text x="142" y="672" font-size="18" font-weight="700" fill="#f3e9da">Agents</text>
+    <text x="142" y="698" font-size="14" fill="#d6c5ac">Choose helpers from a curated catalogue. It suggests a coder, a reviewer, and a tester to start.</text>
+  </g>
+  <line x1="590" y1="722" x2="590" y2="744" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 5 Skills -->
+  <g>
+    <rect x="56" y="748" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="791" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="797" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">5</text>
+    <text x="142" y="784" font-size="18" font-weight="700" fill="#f3e9da">Skills</text>
+    <text x="142" y="810" font-size="14" fill="#d6c5ac">Reusable abilities you bolt on &#8212; defaults wire up hooks, memory search, and swarm orchestration.</text>
+  </g>
+  <line x1="590" y1="834" x2="590" y2="856" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 6 Plugins -->
+  <g>
+    <rect x="56" y="860" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="903" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="909" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">6</text>
+    <text x="142" y="896" font-size="18" font-weight="700" fill="#f3e9da">Plugins</text>
+    <text x="142" y="922" font-size="14" fill="#d6c5ac">Optional add-ons from the shared registry, with live download counts and ratings. None by default.</text>
+  </g>
+  <line x1="590" y1="946" x2="590" y2="968" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 7 Features -->
+  <g>
+    <rect x="56" y="972" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="1015" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="1021" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">7</text>
+    <text x="142" y="1008" font-size="18" font-weight="700" fill="#f3e9da">Features</text>
+    <text x="142" y="1034" font-size="14" fill="#d6c5ac">Opt-in extras that change the wiring: teamwork between agents, claims-based access, self-improvement.</text>
+  </g>
+  <line x1="590" y1="1058" x2="590" y2="1080" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 8 Branding -->
+  <g>
+    <rect x="56" y="1084" width="1068" height="86" rx="11" fill="#2a2018" stroke="#e0a96d" stroke-width="1.4"/>
+    <circle cx="100" cy="1127" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="1133" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">8</text>
+    <text x="142" y="1120" font-size="18" font-weight="700" fill="#f3e9da">Branding</text>
+    <text x="142" y="1146" font-size="14" fill="#d6c5ac">&#8220;Powered-by&#8221; mode or fully independent, plus your own brand wording.</text>
+  </g>
+  <line x1="590" y1="1170" x2="590" y2="1192" stroke="#e0a96d" stroke-width="2.5" marker-end="url(#s04arrow)"/>
+
+  <!-- Stage 9 Confirm -->
+  <g>
+    <rect x="56" y="1196" width="1068" height="86" rx="11" fill="#2a2018" stroke="#c8814f" stroke-width="1.8"/>
+    <circle cx="100" cy="1239" r="20" fill="#221a13" stroke="#c8814f" stroke-width="1.4"/>
+    <text x="100" y="1245" font-size="17" font-weight="700" fill="#e0a96d" text-anchor="middle">9</text>
+    <text x="142" y="1232" font-size="18" font-weight="700" fill="#f3e9da">Confirm</text>
+    <text x="142" y="1258" font-size="14" fill="#d6c5ac">A summary: every file it will create, the exact engine version it pins to, and a size estimate &#8212; before anything is written.</text>
+  </g>
+
+  <!-- ============ OUTPUT (right-side callout from Confirm) ============ -->
+  <!-- routed arrow from Confirm (bottom stage) up the right rail to the output card -->
+  <path d="M1124 1239 H1156 V300 H720" fill="none" stroke="#c8814f" stroke-width="2.5"/>
+  <path d="M732 300 H720" fill="none" stroke="#c8814f" stroke-width="2.5" marker-end="url(#s04arrowCopper)"/>
+
+  <!-- output card sits in the open top-right space -->
+  <g>
+    <rect x="658" y="166" width="466" height="120" rx="13" fill="url(#s04outGrad)" stroke="#e0a96d" stroke-width="2"/>
+    <text x="682" y="200" font-size="13" letter-spacing="2" fill="#c8814f"
+          font-family="'IBM Plex Mono',monospace">EMERGES AS</text>
+    <text x="682" y="230" font-size="19" font-weight="700" fill="#f3e9da">A branded, npm-publishable harness</text>
+    <text x="682" y="256" font-size="14" fill="#d6c5ac">Your own <tspan font-family="'IBM Plex Mono',monospace" fill="#e0a96d">npx your-name</tspan> command &#8212; a self-contained</text>
+    <text x="682" y="276" font-size="14" fill="#d6c5ac">package you own and can publish. (See section 05.)</text>
+  </g>
+
+  <!-- footnote -->
+  <text x="56" y="1316" font-size="12.5" fill="#9c8b72" font-style="italic">
+    The composer&#8217;s state is one typed answer-object &#8212; the picker and the flags build the same thing, so both paths produce the same harness.
+  </text>
+</svg>

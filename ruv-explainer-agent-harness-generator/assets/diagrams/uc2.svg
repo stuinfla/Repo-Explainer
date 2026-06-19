@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 520" width="100%" role="img" aria-labelledby="uc2-title uc2-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif">
+  <title id="uc2-title">Use case 2 — Score a repo before you commit to building a harness</title>
+  <desc id="uc2-desc">Problem: you are unsure a repo is a good candidate or what each run will cost. You run metaharness score and harness genome. The tool reads the repo without running it and prints a report card of fit, build-likelihood, safety and cost per run, plus a ready, needs-work or blocked verdict. You get a go or no-go decision with evidence before scaffolding.</desc>
+  <defs>
+    <marker id="uc2-arrow" markerWidth="13" markerHeight="13" refX="9" refY="6" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#ff9e2c"/>
+    </marker>
+    <style>
+      .panel{fill:#241d15}
+      .node{fill:#2a2018;stroke:#c2703a;stroke-width:1.4}
+      .stage{fill:#9c8b72;font-size:13px;letter-spacing:.16em}
+      .head{fill:#f3e8d8;font-size:19px;font-weight:600}
+      .body{fill:#d6c5ac;font-size:15px}
+      .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;fill:#ffb650;font-size:14px}
+      .flow{stroke:#ff9e2c;stroke-width:2.2;fill:none}
+      .pill{fill:#ff9e2c}
+      .pilltxt{fill:#1a1206;font-size:13px;font-weight:600}
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1180" height="520" rx="18" class="panel"/>
+  <rect x="0.7" y="0.7" width="1178.6" height="518.6" rx="18" fill="none" stroke="#3a2f1f" stroke-width="1.4"/>
+
+  <text x="40" y="52" fill="#ff9e2c" font-size="15" letter-spacing=".2em">USE CASE 2</text>
+  <text x="40" y="84" class="head" font-size="26">"Score a repo BEFORE I commit to building a harness for it"</text>
+
+  <!-- Stage 1: PROBLEM -->
+  <rect x="40" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="60" y="162" class="stage">PROBLEM</text>
+  <text x="60" y="200" class="head">Should I even</text>
+  <text x="60" y="222" class="head">build this?</text>
+  <text x="60" y="258" class="body">You don't know if the</text>
+  <text x="60" y="280" class="body">repo is a good fit —</text>
+  <text x="60" y="302" class="body">or what each agent</text>
+  <text x="60" y="324" class="body">run will cost you.</text>
+  <text x="60" y="372" class="body" font-size="20" fill="#e8531f">?  ?  ?</text>
+
+  <line x1="298" y1="280" x2="342" y2="280" class="flow" marker-end="url(#uc2-arrow)"/>
+
+  <!-- Stage 2: WHAT YOU RUN -->
+  <rect x="350" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="370" y="162" class="stage">WHAT YOU RUN</text>
+  <rect x="370" y="184" width="210" height="44" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="384" y="211" class="mono" font-size="12">metaharness score &lt;repo&gt;</text>
+  <rect x="370" y="240" width="210" height="44" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="384" y="267" class="mono" font-size="12">harness genome &lt;repo&gt;</text>
+  <text x="370" y="316" class="body">Reads the repo —</text>
+  <text x="370" y="338" class="body" fill="#ffb650">again, never runs it.</text>
+  <rect x="370" y="356" width="210" height="56" rx="10" fill="#1d1812" stroke="#3a2f1f" stroke-width="1.2"/>
+  <text x="386" y="382" class="body" font-size="13">Deterministic, one-screen</text>
+  <text x="386" y="402" class="body" font-size="13">scorecard. No surprises.</text>
+
+  <line x1="608" y1="280" x2="652" y2="280" class="flow" marker-end="url(#uc2-arrow)"/>
+
+  <!-- Stage 3: WHAT IT LOOKS LIKE -->
+  <rect x="660" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="680" y="162" class="stage">WHAT IT LOOKS LIKE</text>
+  <text x="680" y="190" class="head" font-size="16">Report card</text>
+  <g font-size="13.5" fill="#d6c5ac">
+    <rect x="680" y="204" width="210" height="30" rx="7" fill="#1d1812" stroke="#3a2f1f"/>
+    <text x="694" y="224">Fit</text><text x="850" y="224" fill="#ffb650" text-anchor="end">8 / 10</text>
+    <rect x="680" y="240" width="210" height="30" rx="7" fill="#1d1812" stroke="#3a2f1f"/>
+    <text x="694" y="260">Build-likelihood</text><text x="850" y="260" fill="#ffb650" text-anchor="end">high</text>
+    <rect x="680" y="276" width="210" height="30" rx="7" fill="#1d1812" stroke="#3a2f1f"/>
+    <text x="694" y="296">Safety</text><text x="850" y="296" fill="#ffb650" text-anchor="end">clean</text>
+    <rect x="680" y="312" width="210" height="30" rx="7" fill="#1d1812" stroke="#3a2f1f"/>
+    <text x="694" y="332">Cost / run</text><text x="850" y="332" fill="#ffb650" text-anchor="end">~$0.04</text>
+  </g>
+  <rect x="680" y="356" width="210" height="42" rx="9" fill="#1a1206" stroke="#ff9e2c" stroke-width="1.4"/>
+  <text x="694" y="382" class="body" font-size="14">Verdict:</text>
+  <text x="876" y="382" font-size="15" font-weight="600" fill="#ffb650" text-anchor="end">ready</text>
+
+  <line x1="918" y1="280" x2="962" y2="280" class="flow" marker-end="url(#uc2-arrow)"/>
+
+  <!-- Stage 4: RESULT -->
+  <rect x="970" y="130" width="170" height="300" rx="12" fill="#2a2018" stroke="#ff9e2c" stroke-width="1.8"/>
+  <rect x="986" y="150" width="138" height="26" rx="13" class="pill"/>
+  <text x="1004" y="168" class="pilltxt">PAYOFF</text>
+  <text x="990" y="214" class="head" font-size="18">Go / no-go</text>
+  <text x="990" y="238" class="head" font-size="18">with evidence</text>
+  <text x="990" y="282" class="body" font-size="14">A clear decision</text>
+  <text x="990" y="304" class="body" font-size="14">BEFORE you spend</text>
+  <text x="990" y="326" class="body" font-size="14">time scaffolding —</text>
+  <text x="990" y="348" class="body" font-size="14">plus a recommended</text>
+  <text x="990" y="370" class="body" font-size="14">plan to follow.</text>
+  <text x="990" y="408" class="body" font-size="13" fill="#9c8b72">ready · needs-work</text>
+</svg>

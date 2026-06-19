@@ -1,0 +1,497 @@
+/* =============================================================================
+   MetaHarness ExplainerSite — FOUNDRY / MINT
+   Aesthetic lock [Constraint K]: deep WARM-charcoal (never blue-black), molten
+   amber/copper accents, industrial-refined display type (Big Shoulders Display)
+   over IBM Plex Sans/Mono, generous space, tactile pressed-metal depth.
+   ZERO CYAN — deliberately NOT the cognitum cool-cyan/phosphor reference.
+   P2 SHELL: tokens + structure + motion only; section copy is placeholder.
+   ========================================================================== */
+
+/* ---- Self-hosted fonts (zero CDN). woff2 files land in assets/fonts/ ------ */
+@font-face {
+  font-family: "Big Shoulders Display";
+  src: url("assets/fonts/BigShouldersDisplay-SemiBold.woff2") format("woff2");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Big Shoulders Display";
+  src: url("assets/fonts/BigShouldersDisplay-Black.woff2") format("woff2");
+  font-weight: 900; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("assets/fonts/IBMPlexSans-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("assets/fonts/IBMPlexSans-Medium.woff2") format("woff2");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("assets/fonts/IBMPlexMono-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+
+/* ---- :root FOUNDRY DESIGN TOKENS [P2.1] -------------------------------------
+   Hues are warm (yellow/orange bias). No blue, no cyan, no green anywhere. */
+:root {
+  /* Warm-charcoal substrate — graphite with an iron-warm cast, not navy */
+  --bg:          #16120e;   /* deepest — page floor */
+  --bg-2:        #1d1812;   /* raised plane */
+  --panel:       #241d15;   /* card body */
+  --panel-2:     #2c2418;   /* card header / inset */
+  --ridge:       #3a2f1f;   /* hairline edges, embossed seams */
+
+  /* Molten metal accents — amber poured into copper */
+  --amber:       #ff9e2c;   /* primary molten amber */
+  --amber-hot:   #ffb650;   /* highlight / hover lift */
+  --copper:      #c2703a;   /* secondary copper */
+  --copper-deep: #8a4a26;   /* shadow side of copper */
+  --ember:       #e8531f;   /* hottest stamp / danger-warm */
+  --brass:       #d9a441;   /* tertiary brass for micro-labels */
+
+  /* Ink — warm off-white, never blue-white */
+  --ink:         #f3e8d8;   /* primary text on dark */
+  --ink-2:       #d6c5ac;   /* secondary text */
+  --muted:       #9c8b72;   /* captions, meta */
+  --faint:       #6b5e49;   /* hairline labels */
+  --on-amber:    #1a1206;   /* text that sits ON molten fills */
+
+  /* Lines / fills derived from the warm accents */
+  --line:        rgba(217,164,65,0.14);
+  --line-strong: rgba(217,164,65,0.30);
+  --fill-amber:  rgba(255,158,44,0.10);
+  --fill-copper: rgba(194,112,58,0.12);
+
+  /* Tactile depth — pressed-metal shadows + cast glow */
+  --shadow:      0 22px 48px -26px rgba(0,0,0,0.82);
+  --shadow-deep: 0 38px 90px -40px rgba(0,0,0,0.9);
+  --emboss:      inset 0 1px 0 rgba(255,196,120,0.07),
+                 inset 0 -1px 0 rgba(0,0,0,0.45);
+  --glow-amber:  0 0 0 1px rgba(255,158,44,0.25),
+                 0 14px 40px -16px rgba(255,158,44,0.32);
+
+  /* Type */
+  --display: "Big Shoulders Display", "Arial Narrow", system-ui, sans-serif;
+  --sans:    "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --mono:    "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Rhythm */
+  --maxw:    1120px;
+  --gutter:  clamp(20px, 5vw, 56px);
+  --radius:  14px;
+  --radius-s: 9px;
+  --ease:    cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* ---- Reset / base --------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16.5px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Cast-iron grain: layered warm radials + a faint poured-metal sheen.
+     No blue/cyan in any stop. */
+  background-image:
+    radial-gradient(1100px 620px at 78% -8%, rgba(255,158,44,0.10), transparent 60%),
+    radial-gradient(900px 700px at -10% 8%, rgba(194,112,58,0.08), transparent 55%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+  background-attachment: fixed;
+}
+
+img { max-width: 100%; height: auto; display: block; }
+
+a {
+  color: var(--amber);
+  text-decoration: none;
+  transition: color 0.18s var(--ease);
+}
+a:hover { color: var(--amber-hot); }
+a:focus-visible,
+summary:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ---- Layout --------------------------------------------------------------- */
+.wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
+
+/* ---- Type system ---------------------------------------------------------- */
+h1, h2, h3, h4 {
+  font-family: var(--display);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: 0.005em;
+  margin: 0 0 0.5em;
+  text-transform: uppercase;
+}
+h1 { font-size: clamp(2.8rem, 8vw, 5.6rem); }
+h2 { font-size: clamp(1.9rem, 4.4vw, 3rem); }
+h3 { font-size: 1.5rem; font-weight: 600; letter-spacing: 0.01em; }
+p  { margin: 0 0 1rem; max-width: 68ch; color: var(--ink-2); }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 400;
+  margin: 0 0 14px;
+}
+.mono { font-family: var(--mono); }
+.lede { font-size: 1.18rem; color: var(--ink); max-width: 64ch; }
+.placeholder {
+  color: var(--muted);
+  font-style: italic;
+  border-left: 2px solid var(--copper-deep);
+  padding-left: 14px;
+}
+
+/* Lists — comfortable rhythm, warm markers */
+ol, ul { margin: 0 0 1rem; padding-left: 1.4em; max-width: 68ch; color: var(--ink-2); }
+li { margin: 0 0 0.55em; }
+li::marker { color: var(--copper); }
+li strong { color: var(--ink); }
+
+/* Multi-line command block — a cast-metal plate of commands */
+pre.code-block {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--amber-hot);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--copper);
+  border-radius: var(--radius-s);
+  padding: 16px 18px;
+  margin: 0 0 1rem;
+  overflow-x: auto;
+  box-shadow: var(--emboss);
+  max-width: 68ch;
+}
+pre.code-block code {
+  background: none; border: none; box-shadow: none; padding: 0;
+  font-size: inherit; color: inherit; white-space: pre;
+}
+
+/* Small honest-note paragraphs at the foot of a section */
+.footnote-note {
+  margin-top: 18px;
+  padding: 12px 16px;
+  border: 1px dashed var(--copper-deep);
+  border-radius: var(--radius-s);
+  background: var(--fill-copper);
+  color: var(--muted);
+  max-width: 70ch;
+}
+.footnote-note small { color: var(--muted); line-height: 1.55; }
+
+/* Inline command chip — looks struck into metal */
+code, .cmd {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  color: var(--amber-hot);
+  background: var(--fill-amber);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  padding: 0.12em 0.45em;
+  box-shadow: var(--emboss);
+}
+
+/* ---- Provenance / attribution banner (Cognitum-style) --------------------- */
+.prov-banner {
+  border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(44,36,24,0.55), rgba(29,24,18,0.45));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.prov-banner-inner {
+  display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: space-between; gap: 10px 26px;
+  padding-top: 9px; padding-bottom: 9px;
+}
+.prov-attr {
+  margin: 0; max-width: none;
+  font-family: var(--sans); font-size: 12.5px; line-height: 1.5;
+  color: var(--muted); letter-spacing: 0.01em;
+}
+.prov-attr strong { color: var(--ink-2); font-weight: 500; }
+.prov-attr a { color: var(--brass); }
+.prov-attr a:hover { color: var(--amber-hot); }
+.prov-live {
+  margin: 0; flex: 0 0 auto;
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.05em;
+  color: var(--faint); white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.prov-live code {
+  font-size: 0.95em; color: var(--brass);
+  background: var(--fill-amber); padding: 0.08em 0.4em;
+}
+.prov-dot {
+  color: var(--amber); font-size: 9px;
+  filter: drop-shadow(0 0 4px rgba(255,158,44,0.8));
+  animation: prov-pulse 2.6s var(--ease) infinite;
+}
+@keyframes prov-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+/* ---- Header / nav --------------------------------------------------------- */
+.site-head {
+  position: sticky; top: 0; z-index: 40;
+  background: rgba(22,18,14,0.78);
+  backdrop-filter: blur(11px);
+  -webkit-backdrop-filter: blur(11px);
+  border-bottom: 1px solid var(--line);
+}
+.site-head .wrap {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+}
+.brand {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: var(--display); font-weight: 900; font-size: 1.25rem;
+  letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink);
+}
+.brand .coin {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--display); font-weight: 900; font-size: 13px;
+  color: var(--on-amber);
+  background: radial-gradient(circle at 34% 28%, var(--amber-hot), var(--copper) 78%, var(--copper-deep));
+  box-shadow: var(--glow-amber), var(--emboss);
+}
+.nav-links { display: flex; gap: 4px; }
+.nav-links a {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.05em;
+  color: var(--muted); padding: 7px 11px; border-radius: 7px;
+  transition: color 0.18s var(--ease), background 0.18s var(--ease);
+}
+.nav-links a:hover { color: var(--ink); background: var(--fill-amber); }
+
+/* ---- Hero ----------------------------------------------------------------- */
+.hero { padding: clamp(64px, 12vw, 132px) 0 clamp(48px, 8vw, 88px); }
+.hero h1 { color: var(--ink); }
+.hero h1 .molten {
+  background: linear-gradient(96deg, var(--amber-hot), var(--copper) 60%, var(--ember));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero .lede { margin-top: 20px; }
+.hero .meta-row {
+  display: flex; gap: 26px; flex-wrap: wrap; margin-top: 34px;
+  font-family: var(--mono); font-size: 12px; color: var(--faint);
+  letter-spacing: 0.05em;
+}
+.hero .meta-row b { color: var(--brass); font-weight: 400; }
+.cta {
+  display: inline-flex; align-items: center; gap: 10px; margin-top: 34px;
+  font-family: var(--display); font-weight: 600; font-size: 1.05rem;
+  letter-spacing: 0.03em; text-transform: uppercase;
+  color: var(--on-amber);
+  background: linear-gradient(96deg, var(--amber-hot), var(--copper));
+  padding: 13px 26px; border-radius: 10px;
+  box-shadow: var(--glow-amber), var(--emboss);
+  transition: transform 0.16s var(--ease), filter 0.16s var(--ease);
+}
+.cta:hover { transform: translateY(-2px); filter: brightness(1.06); color: var(--on-amber); }
+
+/* ---- Sections (native <details>) ----------------------------------------- */
+.sections { padding: clamp(32px, 6vw, 64px) 0 clamp(64px, 10vw, 110px); }
+
+.section {
+  background:
+    linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--ridge);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow), var(--emboss);
+  margin: 0 0 18px;
+  overflow: hidden;
+}
+.section[open] { box-shadow: var(--shadow-deep), var(--emboss); }
+
+/* The clickable bar — a stamped foundry plate */
+.section > summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: baseline; gap: 18px;
+  padding: 26px clamp(20px, 4vw, 34px);
+  user-select: none;
+  transition: background 0.2s var(--ease);
+}
+.section > summary::-webkit-details-marker { display: none; }
+.section > summary:hover { background: var(--fill-amber); }
+
+.section .num {
+  font-family: var(--mono); font-size: 13px; letter-spacing: 0.22em;
+  color: var(--copper); flex: 0 0 auto; padding-top: 6px;
+}
+.section .head-text { flex: 1 1 auto; }
+.section .head-text h2 {
+  margin: 0; color: var(--ink);
+  font-size: clamp(1.4rem, 3.2vw, 2.05rem);
+}
+.section .head-text .q {
+  display: block; font-family: var(--mono); font-size: 12px;
+  letter-spacing: 0.06em; color: var(--muted); margin-top: 6px;
+  text-transform: none;
+}
+/* Chevron that rotates on open */
+.section .chev {
+  flex: 0 0 auto; width: 26px; height: 26px; align-self: center;
+  border-radius: 50%; display: grid; place-items: center;
+  border: 1px solid var(--line-strong); color: var(--amber);
+  font-size: 13px; line-height: 1;
+  transition: transform 0.25s var(--ease), background 0.2s var(--ease);
+}
+.section[open] .chev { transform: rotate(90deg); background: var(--fill-amber); }
+
+.section .body {
+  padding: 4px clamp(20px, 4vw, 34px) 32px;
+  border-top: 1px solid var(--line);
+  margin-top: 2px;
+}
+.section .body > *:first-child { margin-top: 18px; }
+
+/* Figure slot — where G1-G6 land in P5 */
+.figure {
+  margin: 24px 0; border: 1px solid var(--ridge); border-radius: var(--radius-s);
+  background: var(--panel-2); padding: 18px; box-shadow: var(--emboss);
+}
+.figure .slot {
+  aspect-ratio: 16 / 9; border-radius: 6px;
+  border: 1px dashed var(--copper-deep);
+  background:
+    repeating-linear-gradient(45deg, rgba(217,164,65,0.05) 0 12px, transparent 12px 24px);
+  display: grid; place-items: center;
+  color: var(--faint); font-family: var(--mono); font-size: 12px;
+  letter-spacing: 0.08em; text-align: center; padding: 16px;
+}
+.figure figcaption {
+  margin-top: 12px; color: var(--muted);
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.03em;
+}
+
+/* Diagram figures: inline SVGs (s01-s07,s09) and <img> SVGs (uc1-uc6).
+   Force responsive width regardless of any width/height attrs on the SVG root. */
+.figure.diagram { background: var(--bg); }
+.figure.diagram > svg,
+.figure.diagram > img {
+  display: block; width: 100%; height: auto; max-width: 100%;
+  border-radius: 6px;
+}
+.figure.uc-diagram { margin: 16px 0 4px; padding: 14px; }
+.figure.uc-diagram figcaption { margin-top: 10px; }
+
+/* Use-case + drop-in cards reuse the plate look */
+.grid {
+  display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin-top: 18px;
+}
+.card {
+  background: var(--panel-2); border: 1px solid var(--ridge);
+  border-radius: var(--radius-s); padding: 20px; box-shadow: var(--emboss);
+}
+.card .tag {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--copper);
+}
+.card h3 { margin: 8px 0 10px; color: var(--ink); }
+
+/* Use-case gallery: full scenario cards span the grid for readability */
+.grid.cases { grid-template-columns: 1fr; gap: 18px; }
+.case p { max-width: none; }
+.case pre.code-block { max-width: none; }
+.case dl { margin: 14px 0 0; }
+.case dt {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--brass); margin-top: 14px;
+}
+.case dt:first-child { margin-top: 0; }
+.case dd { margin: 5px 0 0; color: var(--ink-2); }
+.case .figure { margin: 18px 0 0; }
+
+/* ---- Dropzone (the drag-in stub) ----------------------------------------- */
+.dropzone {
+  margin-top: 22px; border: 2px dashed var(--copper-deep);
+  border-radius: var(--radius); padding: clamp(28px, 6vw, 52px);
+  text-align: center; background: var(--fill-copper);
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease),
+              transform 0.2s var(--ease);
+  cursor: pointer;
+}
+.dropzone:hover { border-color: var(--copper); background: var(--fill-amber); }
+.dropzone.is-dragover {
+  border-color: var(--amber-hot); background: var(--fill-amber);
+  transform: scale(1.01); box-shadow: var(--glow-amber);
+}
+.dropzone .dz-icon {
+  font-family: var(--display); font-weight: 900; font-size: 2rem;
+  color: var(--amber); margin-bottom: 8px;
+}
+.dropzone .dz-hint {
+  font-family: var(--mono); font-size: 12px; color: var(--muted);
+  letter-spacing: 0.04em; margin-top: 10px;
+}
+.dz-status {
+  margin-top: 14px; font-family: var(--mono); font-size: 12.5px;
+  color: var(--brass); min-height: 1.2em;
+}
+
+/* ---- Footer --------------------------------------------------------------- */
+footer {
+  border-top: 1px solid var(--line);
+  padding: 48px 0 72px;
+  color: var(--faint);
+  font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.03em;
+}
+footer a { color: var(--brass); }
+footer .prov { margin-top: 10px; color: var(--muted); }
+
+/* "The whole stack, one link each" footer nav */
+.stack-links {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 22px;
+  margin-bottom: 16px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.stack-links .stack-lead {
+  color: var(--faint); text-transform: uppercase; letter-spacing: 0.12em;
+}
+.stack-links a { color: var(--brass); }
+.stack-links a:hover { color: var(--amber-hot); }
+
+/* ---- Responsive ----------------------------------------------------------- */
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .nav-links { display: none; }
+  .section > summary { gap: 12px; padding: 20px 18px; }
+  .section .num { padding-top: 4px; }
+  .hero .meta-row { gap: 16px; }
+}
+
+/* ---- Reduced motion ------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .cta:hover, .dropzone.is-dragover { transform: none; }
+}

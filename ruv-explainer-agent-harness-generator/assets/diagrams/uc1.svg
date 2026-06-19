@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 520" width="100%" role="img" aria-labelledby="uc1-title uc1-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif">
+  <title id="uc1-title">Use case 1 — Turn a repo into an agent that understands it</title>
+  <desc id="uc1-desc">Problem: a generic chatbot does not know your codebase. You run harness analyze-repo with the scaffold flag. The tool reads the file list, manifest, README and language mix without running your code, and emits a scaffolded harness tuned to that repo, ready to npm install.</desc>
+  <defs>
+    <marker id="uc1-arrow" markerWidth="13" markerHeight="13" refX="9" refY="6" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#ff9e2c"/>
+    </marker>
+    <style>
+      .panel{fill:#241d15}
+      .node{fill:#2a2018;stroke:#c2703a;stroke-width:1.4;rx:12}
+      .stage{fill:#9c8b72;font-size:13px;letter-spacing:.16em;text-transform:uppercase}
+      .head{fill:#f3e8d8;font-size:19px;font-weight:600}
+      .body{fill:#d6c5ac;font-size:15px}
+      .mono{font-family:'IBM Plex Mono',ui-monospace,monospace;fill:#ffb650;font-size:14px}
+      .flow{stroke:#ff9e2c;stroke-width:2.2;fill:none}
+      .pill{fill:#ff9e2c}
+      .pilltxt{fill:#1a1206;font-size:13px;font-weight:600}
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1180" height="520" rx="18" class="panel"/>
+  <rect x="0.7" y="0.7" width="1178.6" height="518.6" rx="18" fill="none" stroke="#3a2f1f" stroke-width="1.4"/>
+
+  <text x="40" y="52" fill="#ff9e2c" font-size="15" letter-spacing=".2em">USE CASE 1</text>
+  <text x="40" y="84" class="head" font-size="26">"I have a repo — give me an agent that actually understands it"</text>
+
+  <!-- Stage 1: PROBLEM -->
+  <rect x="40" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="60" y="162" class="stage">Problem</text>
+  <text x="60" y="200" class="head">Generic chatbot</text>
+  <text x="60" y="228" class="body">It has never seen your</text>
+  <text x="60" y="250" class="body">code. Wrong file names,</text>
+  <text x="60" y="272" class="body">wrong build steps,</text>
+  <text x="60" y="294" class="body">guesses at structure.</text>
+  <rect x="60" y="320" width="210" height="90" rx="10" fill="#1d1812" stroke="#3a2f1f" stroke-width="1.2"/>
+  <text x="75" y="352" class="body" font-size="14">Your GitHub repo</text>
+  <text x="75" y="378" class="mono" font-size="13">/src  /tests</text>
+  <text x="75" y="400" class="mono" font-size="13">package.json  README</text>
+
+  <line x1="298" y1="280" x2="342" y2="280" class="flow" marker-end="url(#uc1-arrow)"/>
+
+  <!-- Stage 2: WHAT YOU RUN -->
+  <rect x="350" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="370" y="162" class="stage">What you run</text>
+  <rect x="370" y="184" width="210" height="50" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="384" y="206" class="mono" font-size="12.5">harness analyze-repo .</text>
+  <text x="384" y="224" class="mono" font-size="12.5" fill="#9c8b72">--scaffold my-bot</text>
+  <text x="370" y="268" class="body">Reads file list, manifest,</text>
+  <text x="370" y="290" class="body">README and language mix.</text>
+  <rect x="370" y="312" width="210" height="98" rx="10" fill="#1d1812" stroke="#e8531f" stroke-width="1.3"/>
+  <text x="386" y="342" class="body" font-size="14" fill="#ffb650">Never runs your code</text>
+  <text x="386" y="368" class="body" font-size="13">Build/test commands are</text>
+  <text x="386" y="388" class="mono" font-size="11.5">trust: inferred</text>
+  <text x="386" y="406" class="mono" font-size="11.5">execution: disabled</text>
+
+  <line x1="608" y1="280" x2="652" y2="280" class="flow" marker-end="url(#uc1-arrow)"/>
+
+  <!-- Stage 3: WHAT IT LOOKS LIKE -->
+  <rect x="660" y="130" width="250" height="300" rx="12" class="node"/>
+  <text x="680" y="162" class="stage">What it looks like</text>
+  <text x="680" y="196" class="head" font-size="17">Recommended set</text>
+  <g font-size="14" fill="#d6c5ac">
+    <rect x="680" y="214" width="210" height="34" rx="8" fill="#1d1812" stroke="#c2703a" stroke-width="1"/>
+    <text x="696" y="236">Agents: coder · reviewer</text>
+    <rect x="680" y="256" width="210" height="34" rx="8" fill="#1d1812" stroke="#c2703a" stroke-width="1"/>
+    <text x="696" y="278">Skills: memory-search</text>
+    <rect x="680" y="298" width="210" height="34" rx="8" fill="#1d1812" stroke="#c2703a" stroke-width="1"/>
+    <text x="696" y="320">MCP tools for your stack</text>
+  </g>
+  <text x="680" y="362" class="body" font-size="13" fill="#9c8b72">Review and edit before</text>
+  <text x="680" y="382" class="body" font-size="13" fill="#9c8b72">you download — it's a</text>
+  <text x="680" y="402" class="body" font-size="13" fill="#9c8b72">strong starting point.</text>
+
+  <line x1="918" y1="280" x2="962" y2="280" class="flow" marker-end="url(#uc1-arrow)"/>
+
+  <!-- Stage 4: RESULT -->
+  <rect x="970" y="130" width="170" height="300" rx="12" fill="#2a2018" stroke="#ff9e2c" stroke-width="1.8"/>
+  <rect x="986" y="150" width="138" height="26" rx="13" class="pill"/>
+  <text x="1004" y="168" class="pilltxt">PAYOFF</text>
+  <text x="990" y="212" class="head" font-size="17">A harness</text>
+  <text x="990" y="234" class="head" font-size="17">tuned to</text>
+  <text x="990" y="256" class="head" font-size="17">your repo</text>
+  <rect x="990" y="282" width="130" height="48" rx="9" fill="#1a1206" stroke="#c2703a" stroke-width="1.2"/>
+  <text x="1004" y="312" class="mono" font-size="13">npm install</text>
+  <text x="990" y="362" class="body" font-size="13">Run it — or get</text>
+  <text x="990" y="382" class="body" font-size="13">a .zip you own.</text>
+</svg>

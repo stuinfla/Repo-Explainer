@@ -1,0 +1,18 @@
+{
+  "id": "ruqu",
+  "displayName": "ruqu — Quantum Computing Simulator in Rust + WASM",
+  "submodule": "https://github.com/ruvnet/ruqu",
+  "notebookId": "TODO:create-notebooklm-notebook",
+  "embedSmall": "Xenova/all-MiniLM-L6-v2",
+  "embedBig": "Xenova/bge-base-en-v1.5",
+  "scopeExclude": [
+    "vendor/**",
+    "target/**",
+    "**/target/**",
+    "node_modules/**",
+    "**/node_modules/**",
+    "cli/dist/**",
+    "**/pkg/**",
+    "*.log"
+  ]
+}
