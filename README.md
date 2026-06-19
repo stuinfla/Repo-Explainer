@@ -50,9 +50,9 @@ This README — and everything the pipeline produces — speaks to **two readers
 
 ## What does it produce? The two hero artifacts
 
-Every repo we process ships **two** things — neither optional, both quality-gated. One is for a person; one is for that person's AI.
+Every repo we process ships **two** things — neither optional, both quality-gated: **(1)** a *website* that explains the tool to **you**, and **(2)** a *drop-in smart zip* that itself has **two halves** — a `for-humans/` side (the primer **+ the NotebookLM studio**, for you to watch and read) and a `for-ai/` side (the knowledge base, for your AI). The studio media rides in the **human** half of the zip — it's for *you*, not the model.
 
-![Two artifacts side by side: on the left a "For Humans" book — the explainer website; on the right a "For Your AI" folder — the drop-in smart zip — both being lifted out of one download.](assets/readme/dual-hero-output.png)
+![One download, two halves of the smart zip: a "for-humans" side (the primer + the NotebookLM studio) and a "for-your-AI" side (the knowledge base) — both lifted out of the same drop-in.](assets/readme/dual-hero-output.png)
 
 ![The dual-hero output — an explainer website for humans on the left, and a drop-in smart zip for your AI on the right, each labeled with what it contains and who it serves.](assets/diagrams/dual-hero.svg)
 
@@ -60,21 +60,26 @@ Every repo we process ships **two** things — neither optional, both quality-ga
 <summary>ASCII Version (for AI/accessibility)</summary>
 
 ```
-                Two hero artifacts, one per repo
-   A site that explains it to YOU - and a drop-in that makes YOUR AI expert on it.
+                   Two hero artifacts, one per repo
+   A site that explains it to YOU - and a smart zip that primes YOU and your AI.
 
-  +-------------------------------+     +-------------------------------+
-  |   THE EXPLAINER WEBSITE       |     |    THE DROP-IN SMART ZIP      |
-  |   (for a curious human)       |     |  (for your AI assistant)      |
-  |-------------------------------|     |-------------------------------|
-  | - Captivating hero + pitch    |     | - Single-file RVF/HNSW KB     |
-  | - The 7 questions, in order   |     | - ask-kb CLI + MCP server     |
-  | - A before->after persona     |     | - All passages, searchable    |
-  | - 5+ real use-cases           |     | - NotebookLM studio:          |
-  | - Friendly art + diagrams     |     |     audio overview + report   |
-  |                               |     | - Unzip -> .mcp.json -> ask   |
-  | => You "get it" + want to try |     | => AI answers from real source|
-  +-------------------------------+     +-------------------------------+
+  HERO 1: THE EXPLAINER WEBSITE        HERO 2: THE DROP-IN SMART ZIP
+  (for a curious human)                (one download - TWO halves)
+  +---------------------------+        +--------------------------------------+
+  | - Captivating hero + pitch|        |  for-humans/  (you)                  |
+  | - The 7 questions          |       |   - <repo>-primer.md                 |
+  | - A before->after persona |        |   - NotebookLM studio (watch/read):  |
+  | - 5+ real use-cases        |       |       audio . video . slides . report|
+  | - Friendly art + diagrams |        |   - link to the public NotebookLM    |
+  |                           |        |  ------------------------------------|
+  | => You "get it"            |       |  for-ai/  (your AI)                  |
+  +---------------------------+        |   - single-file RVF / HNSW KB         |
+                                       |   - ask-kb CLI + MCP server           |
+   The studio (audio/video/slides/     |   - every passage (code + docs)      |
+   report) is FOR YOU, the human -     |  ------------------------------------|
+   it just rides in the same zip.      |  unzip -> .mcp.json -> AI answers     |
+                                       |  from the real source                |
+                                       +--------------------------------------+
 ```
 
 </details>

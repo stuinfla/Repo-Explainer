@@ -1,45 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 460" width="920" height="460" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 560" width="920" height="560" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
   <defs>
-    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fbf6ee"/>
-      <stop offset="1" stop-color="#f3ead9"/>
-    </linearGradient>
-    <linearGradient id="human" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff4e2"/>
-      <stop offset="1" stop-color="#ffe7c2"/>
-    </linearGradient>
-    <linearGradient id="ai" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#e7f6ed"/>
-      <stop offset="1" stop-color="#cfeedd"/>
-    </linearGradient>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbf6ee"/><stop offset="1" stop-color="#f3ead9"/></linearGradient>
+    <linearGradient id="human" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4e2"/><stop offset="1" stop-color="#ffe7c2"/></linearGradient>
+    <linearGradient id="ai" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e7f6ed"/><stop offset="1" stop-color="#d6f0e1"/></linearGradient>
   </defs>
-  <rect width="920" height="460" rx="16" fill="url(#bg2)"/>
-  <text x="460" y="42" text-anchor="middle" fill="#3b2f1e" font-size="22" font-weight="700">Two hero artifacts, one per repo</text>
-  <text x="460" y="66" text-anchor="middle" fill="#7a6a52" font-size="13">A site that explains it to YOU &#8212; and a drop-in that makes YOUR AI expert on it.</text>
+  <rect width="920" height="560" rx="16" fill="url(#bg2)"/>
+  <text x="460" y="44" text-anchor="middle" fill="#3b2f1e" font-size="23" font-weight="700">Two hero artifacts, one per repo</text>
+  <text x="460" y="68" text-anchor="middle" fill="#7a6a52" font-size="13.5">A website that explains it to YOU — and a smart zip that primes both YOU and your AI.</text>
 
-  <!-- Human half -->
-  <rect x="48" y="100" width="380" height="300" rx="16" fill="url(#human)" stroke="#e0b878" stroke-width="2"/>
-  <text x="238" y="140" text-anchor="middle" font-size="34">&#128104;&#8205;&#128187;</text>
-  <text x="238" y="178" text-anchor="middle" fill="#8a5a1a" font-size="16" font-weight="700">The Explainer Website</text>
-  <text x="238" y="200" text-anchor="middle" fill="#a07433" font-size="12.5">for a curious human</text>
-  <line x1="84" y1="216" x2="392" y2="216" stroke="#e0b878" stroke-width="1" stroke-dasharray="4 4"/>
-  <text x="84" y="246" fill="#5f4a2c" font-size="12.5">&#9679; Captivating hero + plain-language pitch</text>
-  <text x="84" y="272" fill="#5f4a2c" font-size="12.5">&#9679; The 7 questions, each its own section</text>
-  <text x="84" y="298" fill="#5f4a2c" font-size="12.5">&#9679; A relatable before&#8594;after persona</text>
-  <text x="84" y="324" fill="#5f4a2c" font-size="12.5">&#9679; A gallery of 5+ real use-cases</text>
-  <text x="84" y="350" fill="#5f4a2c" font-size="12.5">&#9679; Friendly art + accurate diagrams</text>
-  <text x="238" y="384" text-anchor="middle" fill="#8a5a1a" font-size="12" font-weight="600">&#8594; You finally "get it" and want to try it</text>
+  <!-- HERO 1: Explainer Website -->
+  <rect x="44" y="98" width="372" height="430" rx="16" fill="url(#human)" stroke="#e0b878" stroke-width="2"/>
+  <g transform="translate(72,124)" stroke="#9a6418" stroke-width="2.5" fill="none">
+    <rect x="0" y="0" width="50" height="33" rx="3" fill="#ffffff"/>
+    <line x1="8" y1="11" x2="32" y2="11" stroke="#e0b878"/><line x1="8" y1="19" x2="42" y2="19" stroke="#e0b878"/>
+    <path d="M20 33 L20 41 M14 44 L36 44" stroke="#9a6418" stroke-linecap="round"/>
+  </g>
+  <text x="140" y="142" fill="#8a5a1a" font-size="18" font-weight="700">The Explainer Website</text>
+  <text x="140" y="164" fill="#a07433" font-size="12.5">Hero 1 · for a curious human</text>
+  <g fill="#5f4a2c" font-size="13">
+    <text x="74" y="224">• Captivating hero + plain-language pitch</text>
+    <text x="74" y="256">• The 7 questions, each its own section</text>
+    <text x="74" y="288">• A relatable before→after persona</text>
+    <text x="74" y="320">• A gallery of 5+ real use-cases</text>
+    <text x="74" y="352">• Friendly art AND accurate diagrams</text>
+  </g>
+  <text x="74" y="490" fill="#8a5a1a" font-size="14" font-weight="700">→ You finally "get it"</text>
 
-  <!-- AI half -->
-  <rect x="492" y="100" width="380" height="300" rx="16" fill="url(#ai)" stroke="#7cc99c" stroke-width="2"/>
-  <text x="682" y="140" text-anchor="middle" font-size="34">&#129302;</text>
-  <text x="682" y="178" text-anchor="middle" fill="#1f7a4d" font-size="16" font-weight="700">The Drop-in Smart Zip</text>
-  <text x="682" y="200" text-anchor="middle" fill="#2f8a5d" font-size="12.5">for your AI coding assistant</text>
-  <line x1="528" y1="216" x2="836" y2="216" stroke="#7cc99c" stroke-width="1" stroke-dasharray="4 4"/>
-  <text x="528" y="246" fill="#1f5a3a" font-size="12.5">&#9679; Single-file RVF / HNSW vector KB</text>
-  <text x="528" y="272" fill="#1f5a3a" font-size="12.5">&#9679; ask-kb CLI + MCP server</text>
-  <text x="528" y="298" fill="#1f5a3a" font-size="12.5">&#9679; All passages, fully searchable</text>
-  <text x="528" y="324" fill="#1f5a3a" font-size="12.5">&#9679; NotebookLM studio: audio + report</text>
-  <text x="528" y="350" fill="#1f5a3a" font-size="12.5">&#9679; Unzip &#8594; .mcp.json &#8594; ask in plain English</text>
-  <text x="682" y="384" text-anchor="middle" fill="#1f7a4d" font-size="12" font-weight="600">&#8594; Your AI answers from the real source</text>
+  <!-- HERO 2: Drop-in Smart Zip (two halves) -->
+  <rect x="448" y="98" width="428" height="430" rx="16" fill="#eef8f1" stroke="#7cc99c" stroke-width="2"/>
+  <g transform="translate(476,122)" stroke="#1f7a4d" stroke-width="2.5" fill="none" stroke-linejoin="round">
+    <path d="M0 13 L24 1 L48 13 L48 38 L24 50 L0 38 Z" fill="#ffffff"/>
+    <path d="M0 13 L24 25 L48 13"/><line x1="24" y1="25" x2="24" y2="50"/>
+  </g>
+  <text x="540" y="140" fill="#1f7a4d" font-size="18" font-weight="700">The Drop-in Smart Zip</text>
+  <text x="540" y="162" fill="#2f8a5d" font-size="12.5">Hero 2 · one download — TWO halves</text>
+
+  <!-- for-humans half -->
+  <rect x="470" y="186" width="384" height="138" rx="11" fill="url(#human)" stroke="#e0b878" stroke-width="1.5"/>
+  <text x="488" y="212" font-family="Menlo, monospace" font-size="14" font-weight="700" fill="#8a5a1a">for-humans/  (you)</text>
+  <g fill="#5f4a2c" font-size="12.5">
+    <text x="488" y="238">• &lt;repo&gt;-primer.md — plain-English guide</text>
+    <text x="488" y="264">• NotebookLM studio (for YOU to watch/read):</text>
+    <text x="506" y="288">audio · video · slides · report</text>
+    <text x="488" y="312">• link to the public NotebookLM</text>
+  </g>
+
+  <!-- for-ai half -->
+  <rect x="470" y="334" width="384" height="138" rx="11" fill="url(#ai)" stroke="#7cc99c" stroke-width="1.5"/>
+  <text x="488" y="360" font-family="Menlo, monospace" font-size="14" font-weight="700" fill="#1f7a4d">for-ai/  (your AI)</text>
+  <g fill="#1f5a3a" font-size="12.5">
+    <text x="488" y="386">• Single-file RVF / HNSW vector KB</text>
+    <text x="488" y="410">• ask-kb CLI + MCP server</text>
+    <text x="488" y="434">• Every passage (code + docs), searchable</text>
+  </g>
+  <text x="470" y="502" fill="#1f7a4d" font-size="13" font-weight="700">unzip → add .mcp.json → your AI answers from the real source</text>
 </svg>
