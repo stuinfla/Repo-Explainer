@@ -83,7 +83,7 @@ Every repo we process ships **two** things — neither optional, both quality-ga
 A self-contained site that opens with a captivating visual and a one-sentence plain-language pitch, then walks you through the seven questions a newcomer actually asks (Why was it built? What problem does it solve? Why now? How does it work? What does "solved" look like? How would I implement it? How do I start?). It anchors on one **relatable, named persona** with a real before→after, then offers a gallery of 5+ concrete use-cases. *How you use it:* read it like a short illustrated story — no setup, nothing to install. By the end you can say what the tool does and whether you want it.
 
 **(b) The drop-in smart zip — so your AI gets it.**
-A single download with two halves. The `for-ai/` half is a **single-file RVF / HNSW vector knowledge base** (384-dimensional, embedded locally with `bge-small` — no API, no server) of the repo's *own* code and docs, plus an `ask-kb` command-line tool and an **MCP server** you wire into Claude Code or Cursor. The `for-humans/` half includes the primer **and the NotebookLM studio media** — an audio overview and a written report. *How you use it:* unzip it into your project as `kb/`, add a two-line `.mcp.json`, and now when you ask your AI assistant about that tool, it answers from the **real source** instead of guessing. (Play the audio overview first — it's the fastest way in.)
+A single download with two halves. The `for-ai/` half is a **single-file RVF / HNSW vector knowledge base** (384-dimensional, embedded locally with `bge-small` — no API, no server) of the repo's *own* code and docs, plus an `ask-kb` command-line tool and an **MCP server** you wire into Claude Code or Cursor. The `for-humans/` half includes the primer **and the NotebookLM studio media** — an audio overview, an explainer video, a slide deck, an infographic, and a written report. Each repo's NotebookLM notebook is **public**, so a single link opens all of that media in one place (see each tool's 🎧 **Studio** link in the gallery above). *How you use it:* unzip it into your project as `kb/`, add a two-line `.mcp.json`, and now when you ask your AI assistant about that tool, it answers from the **real source** instead of guessing. (Play the audio overview first — it's the fastest way in.)
 
 ---
 
@@ -97,7 +97,7 @@ Four live explainers, each its own public site and repo. Click a **Live explaine
 
 > **Gives any project its own AI assistant that actually knows *that* project — built for you in about a minute, instead of by an expert over days.** An AI assistant is a brilliant generalist, but out of the box it's never seen your code, so it guesses. MetaHarness hands your AI a memory of your project, the right skills, and guardrails — automatically.
 
-🔗 **Live:** <https://metaharness-explainer.vercel.app> · 📁 **Explainer repo:** [stuinfla/metaharness-explainer](https://github.com/stuinfla/metaharness-explainer) · ⚡ **Upstream:** [ruvnet/agent-harness-generator](https://github.com/ruvnet/agent-harness-generator)
+🔗 **Live:** <https://metaharness-explainer.vercel.app> · 🎧 **Studio:** [public NotebookLM](https://notebooklm.google.com/notebook/3cc18f99-ef82-457d-bd80-686238d0685a) · 📁 **Explainer repo:** [stuinfla/metaharness-explainer](https://github.com/stuinfla/metaharness-explainer) · ⚡ **Upstream:** [ruvnet/agent-harness-generator](https://github.com/ruvnet/agent-harness-generator)
 *(Repo name `agent-harness-generator` ships as the CLI `metaharness` — same tool.)*
 
 ### PhotonLayer
@@ -106,7 +106,7 @@ Four live explainers, each its own public site and repo. Click a **Live explaine
 
 > **A deterministic optical-AI front end: a learned phase mask shapes light so a tiny sensor captures the *answer*, not the picture.** Instead of taking a photo and then running it through a model, the optics themselves do part of the computation — at the speed of light, before any chip wakes up.
 
-🔗 **Live:** <https://photonlayer-explainer.vercel.app> · 📁 **Explainer repo:** [stuinfla/photonlayer-explainer](https://github.com/stuinfla/photonlayer-explainer) · ⚡ **Upstream:** [ruvnet/PhotonLayer](https://github.com/ruvnet/PhotonLayer)
+🔗 **Live:** <https://photonlayer-explainer.vercel.app> · 🎧 **Studio:** [public NotebookLM](https://notebooklm.google.com/notebook/d97351e0-542f-4c80-9e56-19cb1dca04f5) · 📁 **Explainer repo:** [stuinfla/photonlayer-explainer](https://github.com/stuinfla/photonlayer-explainer) · ⚡ **Upstream:** [ruvnet/PhotonLayer](https://github.com/ruvnet/PhotonLayer)
 
 ### ruqu
 
@@ -114,7 +114,7 @@ Four live explainers, each its own public site and repo. Click a **Live explaine
 
 > **A fast quantum-computing simulator in Rust + WebAssembly — build and run quantum algorithms with no quantum hardware, right in your browser.** It lets you learn, prototype, and test quantum circuits today, without waiting for (or paying for) a real quantum machine.
 
-🔗 **Live:** <https://ruqu-explainer.vercel.app> · 📁 **Explainer repo:** [stuinfla/ruqu-explainer](https://github.com/stuinfla/ruqu-explainer) · ⚡ **Upstream:** [ruvnet/ruqu](https://github.com/ruvnet/ruqu)
+🔗 **Live:** <https://ruqu-explainer.vercel.app> · 🎧 **Studio:** [public NotebookLM](https://notebooklm.google.com/notebook/994580f7-b28d-4c02-9346-8829220af63a) · 📁 **Explainer repo:** [stuinfla/ruqu-explainer](https://github.com/stuinfla/ruqu-explainer) · ⚡ **Upstream:** [ruvnet/ruqu](https://github.com/ruvnet/ruqu)
 
 ### ruvn
 
@@ -122,7 +122,7 @@ Four live explainers, each its own public site and repo. Click a **Live explaine
 
 > **An AI research engine: turns a question into a graded, cited evidence dossier.** Instead of one confident paragraph, you get a structured report — sources gathered, weighed, and graded — so you can actually trust (and check) the answer.
 
-🔗 **Live:** <https://ruvn-explainer.vercel.app> · 📁 **Explainer repo:** [stuinfla/ruvn-explainer](https://github.com/stuinfla/ruvn-explainer) · ⚡ **Upstream:** [ruvnet/ruvn](https://github.com/ruvnet/ruvn)
+🔗 **Live:** <https://ruvn-explainer.vercel.app> · 🎧 **Studio:** [public NotebookLM](https://notebooklm.google.com/notebook/7d3e90bf-5bb7-4b78-9770-6e2c92bf5da0) · 📁 **Explainer repo:** [stuinfla/ruvn-explainer](https://github.com/stuinfla/ruvn-explainer) · ⚡ **Upstream:** [ruvnet/ruvn](https://github.com/ruvnet/ruvn)
 
 ---
 
@@ -161,7 +161,7 @@ Per repo, the pipeline:
 1. **Ingests the upstream repo** — only the tool's *own* authored tree (it reads `.gitmodules` and skips vendored/nested submodule code, so a primer never accidentally teaches some *other* tool's internals).
 2. **Builds a single-file RVF knowledge base** — embedding the repo's code and docs locally with `bge-small` (384-dim), using **structure-aware chunking** (split at function/heading boundaries, keep doc-comments with their symbol). At this scale, chunking quality matters more than the embedding model.
 3. **Authors the explainer site** — image-first (every section opens with its visual, *then* words), with **dual-level visuals** in every section (a friendly illustration *and* an accurate, source-true SVG diagram), a resonant before→after persona, an honest "why this over what I already have?" differentiation, and **prominent attribution** to Reuven Cohen / @ruvnet on the first screen.
-4. **Builds the NotebookLM studio** — its own notebook, an audio overview and a report, authored with optimized prompts.
+4. **Builds the NotebookLM studio** — its own notebook with a full studio set (audio overview, explainer video, slide deck, infographic, report) from optimized prompts, then made **public** so one link opens all the media.
 5. **Runs the 5-gate Self-Evaluating Quality Gate** (below) — and only declares "done" when it passes *with evidence*.
 6. **Deploys public** (its own GitHub repo + Vercel site, `-explainer` suffix) and **verifies the live URL returns HTTP 200** — proving the fix actually shipped, never asserting it.
 
