@@ -1,14 +1,14 @@
 <div align="center">
 
-# Ruv-Explainer
+# Repo Explainer
 
-### A "Repo-Primer Pipeline" that turns Reuven Cohen's dense, powerful repos into approachable explainers — for humans *and* for your AI.
+### Turn any GitHub repo into a visual, approachable explainer page — for humans *and* for your AI.
 
-*Power tools deserve handles. This builds them.*
+*Complex repos deserve clear introductions. This builds them.*
 
-![A prism splitting a beam of white light into a clean rainbow — the project's metaphor: take something complex and intense, and separate it into something clear and beautiful.](assets/readme/hero-prism.png)
+![Cinematic showcase of explainer pages floating above code — the project's metaphor: take something dense and technical, and turn it into something anyone can understand.](assets/img/hero-showcase.png)
 
-**4 live explainers · [browse them below ↓](#-the-tools-weve-explained-so-far)**
+**[Try it now →](https://repo-explainer-six.vercel.app)**&ensp;·&ensp;**5 live explainers · [browse them below ↓](#-explainers-weve-built)**
 
 </div>
 
@@ -16,218 +16,209 @@
 
 ## What is this?
 
-[Reuven Cohen](https://github.com/ruvnet) (**@ruvnet**, "ruv") ships brilliant, genuinely novel software at a remarkable pace. The problem: the repos are *dense*. They're written by an expert, for experts, and a newcomer who lands on one often can't tell what it is, what it's for, or how to begin.
+You built something great and put it on GitHub. The problem: nobody understands it. Your README is written by someone who already gets it — for someone who already gets it. A newcomer lands on the repo, reads three paragraphs of jargon, and quietly closes the tab.
 
-**Ruv-Explainer is an independent project that fixes that one repo at a time.** It's a repeatable pipeline — a "**Repo-Primer Pipeline**" — that takes an under-documented ruvnet repo and produces two things a newcomer actually needs:
+**Repo Explainer fixes that.** It's a repeatable pipeline that takes any GitHub repo and produces two things a newcomer actually needs:
 
-1. **A beautiful explainer website** that teaches *you*, a curious human, what the tool is and why you'd want it.
-2. **A drop-in "smart zip"** that makes *your own AI assistant* instantly expert on that exact repo.
+1. **A beautiful explainer website** that teaches a curious human what the tool is, why they'd want it, and how to start.
+2. **A drop-in "smart zip"** that makes their AI assistant instantly expert on that exact repo — no guessing, no hallucination.
 
-> **To be clear:** the tools being explained are **Reuven Cohen's**. Ruv-Explainer is **not** affiliated with him — it's an independent effort built to help more people discover, understand, and adopt his work.
-
----
-
-## Why was it built?
-
-Ruv ships **power tools without handles.**
-
-The work is excellent. But the READMEs are written at the speed of someone who already understands the idea completely — so they're terse, deeply technical, and assume a lot. A non-technical person (or even a technical person new to the subject) opens the repo, reads three paragraphs of jargon, and quietly closes the tab. A genuinely useful tool goes unused, not because it's bad, but because nobody could find the door.
-
-This project is the door. It meets newcomers where they live: plain language first, a friendly picture before any wall of text, one relatable real-world example before any command, and honest answers to the questions people actually have — *"what does this do, why do I care, and how do I start?"*
+> **How it works:** paste a GitHub URL → the pipeline reads the repo, builds a knowledge base, authors a visual explainer site, generates studio media (audio overview, infographic, report), runs 5 quality gates, and deploys the result to its own Vercel URL + GitHub repo.
 
 ---
 
-## Who is it for?
+## What does it produce?
 
-This README — and everything the pipeline produces — speaks to **two readers at once:**
+Every repo gets **two hero artifacts**, both quality-gated:
 
-| You are... | You want to... | Start here |
-|---|---|---|
-| 🧑‍💻 **A curious newcomer** (non-technical, maybe a Claude Code / Cursor user) who keeps seeing ruvnet's powerful repos and wants to understand them | *Get your head around what a tool is and whether it's for you* | The [gallery of live explainers ↓](#-the-tools-weve-explained-so-far) — pick one and read it like a story |
-| 🛠️ **A builder** who wants to run this pipeline on more repos | *Produce the same dual-audience explainer for another repo* | [The recipe ↓](#the-recipe-how-it-works) and [How to run it ↓](#how-to-run-it-on-a-new-repo) |
+![One download, two halves: an explainer website for humans on the left, and a drop-in smart zip for your AI on the right.](assets/img/dual-hero-output.png)
 
----
-
-## What does it produce? The two hero artifacts
-
-Every repo we process ships **two** things — neither optional, both quality-gated: **(1)** a *website* that explains the tool to **you**, and **(2)** a *drop-in smart zip* that itself has **two halves** — a `for-humans/` side (the primer **+ the NotebookLM studio**, for you to watch and read) and a `for-ai/` side (the knowledge base, for your AI). The studio media rides in the **human** half of the zip — it's for *you*, not the model.
-
-![One download, two halves of the smart zip: a "for-humans" side (the primer + the NotebookLM studio) and a "for-your-AI" side (the knowledge base) — both lifted out of the same drop-in.](assets/readme/dual-hero-output.png)
-
-![The dual-hero output — an explainer website for humans on the left, and a drop-in smart zip for your AI on the right, each labeled with what it contains and who it serves.](assets/diagrams/dual-hero.svg)
+![The dual-hero output — an explainer website for humans and a drop-in smart zip for your AI, each labeled with what it contains.](assets/img/dual-hero.svg)
 
 <details>
-<summary>ASCII Version (for AI/accessibility)</summary>
+<summary>Text version (for accessibility)</summary>
 
 ```
                    Two hero artifacts, one per repo
-   A site that explains it to YOU - and a smart zip that primes YOU and your AI.
 
   HERO 1: THE EXPLAINER WEBSITE        HERO 2: THE DROP-IN SMART ZIP
-  (for a curious human)                (one download - TWO halves)
+  (for a curious human)                (one download — TWO halves)
   +---------------------------+        +--------------------------------------+
   | - Captivating hero + pitch|        |  for-humans/  (you)                  |
-  | - The 7 questions          |       |   - <repo>-primer.md                 |
-  | - A before->after persona |        |   - NotebookLM studio (watch/read):  |
-  | - 5+ real use-cases        |       |       audio . video . slides . report|
-  | - Friendly art + diagrams |        |   - link to the public NotebookLM    |
-  |                           |        |  ------------------------------------|
-  | => You "get it"            |       |  for-ai/  (your AI)                  |
-  +---------------------------+        |   - single-file RVF / HNSW KB         |
-                                       |   - ask-kb CLI + MCP server           |
-   The studio (audio/video/slides/     |   - every passage (code + docs)      |
-   report) is FOR YOU, the human -     |  ------------------------------------|
-   it just rides in the same zip.      |  unzip -> .mcp.json -> AI answers     |
-                                       |  from the real source                |
+  | - Plain-language walkthru |        |   - Written primer                   |
+  | - Before→after persona    |        |   - Studio media (audio, report,     |
+  | - 5+ real use-cases       |        |     infographic)                     |
+  | - Architecture diagrams   |        |  ------------------------------------|
+  |                           |        |  for-ai/  (your AI assistant)        |
+  | => You "get it"           |        |   - Vector knowledge base            |
+  +---------------------------+        |   - Search CLI + MCP server          |
+                                       |   - Every passage from the repo      |
                                        +--------------------------------------+
 ```
 
 </details>
 
 **(a) The explainer website — so a human gets it.**
-A self-contained site that opens with a captivating visual and a one-sentence plain-language pitch, then walks you through the seven questions a newcomer actually asks (Why was it built? What problem does it solve? Why now? How does it work? What does "solved" look like? How would I implement it? How do I start?). It anchors on one **relatable, named persona** with a real before→after, then offers a gallery of 5+ concrete use-cases. *How you use it:* read it like a short illustrated story — no setup, nothing to install. By the end you can say what the tool does and whether you want it.
+A self-contained site that opens with a captivating visual and a one-sentence pitch, then walks through the questions a newcomer actually asks: *What is this? What problem does it solve? How does it work? How do I start?* It anchors on a relatable persona with a real before→after story, then shows concrete use-cases. No setup, nothing to install — read it like a short illustrated story.
 
 **(b) The drop-in smart zip — so your AI gets it.**
-A single download with two halves. The `for-ai/` half is a **single-file RVF / HNSW vector knowledge base** (384-dimensional, embedded locally with `bge-small` — no API, no server) of the repo's *own* code and docs, plus an `ask-kb` command-line tool and an **MCP server** you wire into Claude Code or Cursor. The `for-humans/` half includes the primer **and the NotebookLM studio media** — an audio overview, an explainer video, a slide deck, an infographic, and a written report. Each repo's NotebookLM notebook is **public**, so a single link opens all of that media in one place (see each tool's 🎧 **Studio** link in the gallery above). *How you use it:* unzip it into your project as `kb/`, add a two-line `.mcp.json`, and now when you ask your AI assistant about that tool, it answers from the **real source** instead of guessing. (Play the audio overview first — it's the fastest way in.)
+A single download with two halves. The `for-ai/` half is a vector knowledge base of the repo's own code and docs, plus a search tool and Model Context Protocol (MCP) server you can wire into Claude Code or Cursor. The `for-humans/` half includes the written primer and studio media — an audio overview, an infographic, and a deep-dive report. Unzip it, add a two-line config, and your AI answers from the **real source** instead of guessing.
 
 ---
 
-## 🖼️ The tools we've explained so far
+## 🖼️ Explainers we've built
 
-Four live explainers, each its own public site and repo. Click a **Live explainer** link, read it, and you'll understand the upstream tool in minutes. Each card also links the explainer's own GitHub repo and **Reuven Cohen's upstream repo** it's based on.
+Five live explainers — each its own public site and GitHub repo. Click a card to see it in action.
 
 ### MetaHarness
 
-[![MetaHarness: a dull grey GitHub repo being stamped by a mint press into a glowing custom agent coin.](assets/readme/metaharness.png)](https://metaharness-explainer.vercel.app)
+[![MetaHarness explainer page screenshot](assets/img/screenshots/metaharness.png)](https://metaharness-explainer.vercel.app)
 
-> **Gives any project its own AI assistant that actually knows *that* project — built for you in about a minute, instead of by an expert over days.** An AI assistant is a brilliant generalist, but out of the box it's never seen your code, so it guesses. MetaHarness hands your AI a memory of your project, the right skills, and guardrails — automatically.
+> **Gives any project its own AI assistant that actually knows *that* project — built in about a minute.** An AI assistant is a brilliant generalist, but out of the box it's never seen your code. MetaHarness hands your AI a memory of your project, the right skills, and guardrails — automatically.
 
-🔗 **Live:** <https://metaharness-explainer.vercel.app> · 🎧 **Studio:** [public NotebookLM](https://notebooklm.google.com/notebook/3cc18f99-ef82-457d-bd80-686238d0685a) · 📁 **Explainer repo:** [stuinfla/metaharness-explainer](https://github.com/stuinfla/metaharness-explainer) · ⚡ **Upstream:** [ruvnet/agent-harness-generator](https://github.com/ruvnet/agent-harness-generator)
-*(Repo name `agent-harness-generator` ships as the CLI `metaharness` — same tool.)*
+🔗 [Live explainer](https://metaharness-explainer.vercel.app) · 📁 [Explainer repo](https://github.com/stuinfla/metaharness-explainer) · ⚡ [Source repo](https://github.com/ruvnet/agent-harness-generator) · 👤 [Reuven Cohen](https://github.com/ruvnet)
 
 ### PhotonLayer
 
-[![PhotonLayer: a prism splitting a white beam into a rainbow, the metaphor for shaping light to compute an answer.](assets/readme/photonlayer.png)](https://photonlayer-explainer.vercel.app)
+[![PhotonLayer explainer page screenshot](assets/img/screenshots/photonlayer.png)](https://photonlayer-explainer.vercel.app)
 
-> **A deterministic optical-AI front end: a learned phase mask shapes light so a tiny sensor captures the *answer*, not the picture.** Instead of taking a photo and then running it through a model, the optics themselves do part of the computation — at the speed of light, before any chip wakes up.
+> **A deterministic optical-AI front end: a learned phase mask shapes light so a tiny sensor captures the *answer*, not the picture.** The optics themselves do part of the computation — at the speed of light, before any chip wakes up.
 
-🔗 **Live:** <https://photonlayer-explainer.vercel.app> · 🎧 **Studio:** [public NotebookLM](https://notebooklm.google.com/notebook/d97351e0-542f-4c80-9e56-19cb1dca04f5) · 📁 **Explainer repo:** [stuinfla/photonlayer-explainer](https://github.com/stuinfla/photonlayer-explainer) · ⚡ **Upstream:** [ruvnet/PhotonLayer](https://github.com/ruvnet/PhotonLayer)
+🔗 [Live explainer](https://photonlayer-explainer.vercel.app) · 📁 [Explainer repo](https://github.com/stuinfla/photonlayer-explainer) · ⚡ [Source repo](https://github.com/ruvnet/PhotonLayer) · 👤 [Reuven Cohen](https://github.com/ruvnet)
 
 ### ruqu
 
-[![ruqu: a glowing translucent Bloch-sphere quantum orb floating above an open laptop.](assets/readme/ruqu.png)](https://ruqu-explainer.vercel.app)
+[![ruqu explainer page screenshot](assets/img/screenshots/ruqu.png)](https://ruqu-explainer.vercel.app)
 
-> **A fast quantum-computing simulator in Rust + WebAssembly — build and run quantum algorithms with no quantum hardware, right in your browser.** It lets you learn, prototype, and test quantum circuits today, without waiting for (or paying for) a real quantum machine.
+> **A fast quantum-computing simulator in Rust + WebAssembly — build and run quantum algorithms with no quantum hardware, right in your browser.**
 
-🔗 **Live:** <https://ruqu-explainer.vercel.app> · 🎧 **Studio:** [public NotebookLM](https://notebooklm.google.com/notebook/994580f7-b28d-4c02-9346-8829220af63a) · 📁 **Explainer repo:** [stuinfla/ruqu-explainer](https://github.com/stuinfla/ruqu-explainer) · ⚡ **Upstream:** [ruvnet/ruqu](https://github.com/ruvnet/ruqu)
+🔗 [Live explainer](https://ruqu-explainer.vercel.app) · 📁 [Explainer repo](https://github.com/stuinfla/ruqu-explainer) · ⚡ [Source repo](https://github.com/ruvnet/ruqu) · 👤 [Reuven Cohen](https://github.com/ruvnet)
 
 ### ruvn
 
-[![ruvn: an evidence dossier open on a desk with graded clippings A, B, C, D under a magnifying glass.](assets/readme/ruvn.png)](https://ruvn-explainer.vercel.app)
+[![ruvn explainer page screenshot](assets/img/screenshots/ruvn.png)](https://ruvn-explainer.vercel.app)
 
-> **An AI research engine: turns a question into a graded, cited evidence dossier.** Instead of one confident paragraph, you get a structured report — sources gathered, weighed, and graded — so you can actually trust (and check) the answer.
+> **An AI research engine that turns a question into a graded, cited evidence dossier.** Instead of one confident paragraph, you get a structured report with sources gathered, weighed, and graded.
 
-🔗 **Live:** <https://ruvn-explainer.vercel.app> · 🎧 **Studio:** [public NotebookLM](https://notebooklm.google.com/notebook/7d3e90bf-5bb7-4b78-9770-6e2c92bf5da0) · 📁 **Explainer repo:** [stuinfla/ruvn-explainer](https://github.com/stuinfla/ruvn-explainer) · ⚡ **Upstream:** [ruvnet/ruvn](https://github.com/ruvnet/ruvn)
+🔗 [Live explainer](https://ruvn-explainer.vercel.app) · 📁 [Explainer repo](https://github.com/stuinfla/ruvn-explainer) · ⚡ [Source repo](https://github.com/ruvnet/ruvn) · 👤 [Reuven Cohen](https://github.com/ruvnet)
+
+### Agentic QE
+
+[![Agentic QE explainer page screenshot](assets/img/screenshots/agentic-qe.png)](https://agentic-qe-explainer.vercel.app)
+
+> **A framework that replaces manual software testing with a fleet of AI agents — each one a specialist in a different kind of quality check.** Ship faster, catch more bugs, without a QA team bottleneck.
+
+🔗 [Live explainer](https://agentic-qe-explainer.vercel.app) · 📁 [Explainer repo](https://github.com/stuinfla/agentic-qe-explainer) · ⚡ [Source repo](https://github.com/ruvnet/agentic-qe) · 👤 [Reuven Cohen](https://github.com/ruvnet)
 
 ---
 
-## The recipe (how it works)
+## How it works — the Repo-Primer Pipeline
 
-The whole point of Ruv-Explainer is that it's a **repeatable recipe**, not a one-off. Build one repo's primer to a proven standard, then replay the identical pipeline on the next.
+The whole point is that it's a **repeatable recipe**, not a one-off. Build one repo's explainer to a proven standard, then replay the identical pipeline on the next.
 
-![The Repo-Primer Pipeline: an upstream repo flows into a build stage (KB + site + studio), then through five quality gates, producing two outputs — an explainer site and a smart zip.](assets/diagrams/pipeline.svg)
+![The Repo-Primer Pipeline: a repo flows through build stages and five quality gates, producing an explainer site and a smart zip.](assets/img/pipeline.svg)
 
 <details>
-<summary>ASCII Version (for AI/accessibility)</summary>
+<summary>Text version (for accessibility)</summary>
 
 ```
                        The Repo-Primer Pipeline
-   One under-documented repo in -> two approachable, proven-good artifacts out
 
  +-------------+     +------------------+     +-------------------+     +----------------+
- |  Upstream   | --> |      BUILD       | --> |  5 QUALITY GATES  | --> | Explainer site |
+ |  Any GitHub | --> |      BUILD       | --> |  5 QUALITY GATES  | --> | Explainer site |
  |   repo      |     | 1 ingest tree    |     |  A KB answers     |     |  (for humans)  |
- | @ruvnet's   |     | 2 384-dim RVF KB |     |  B comp. + felt   |     +----------------+
- | dense       |     | 3 explainer site |     |  C consistency    |     | Smart zip      |
- | power tool  |     | 4 NotebookLM     |     |  D studio graded  | --> |  (for your AI) |
- +-------------+     |   studio         |     |  E visuals graded |     +----------------+
-                     +------------------+     |  each >=95 ->     |
-                                             |  done=proven-good |
+ |             |     | 2 vector KB      |     |  B comprehension  |     +----------------+
+ |             |     | 3 explainer site |     |  C consistency    |     | Smart zip      |
+ |             |     | 4 studio media   |     |  D studio graded  | --> |  (for your AI) |
+ +-------------+     |                  |     |  E visuals graded |     +----------------+
+                     +------------------+     |  each >=95        |
                                              +-------------------+
-
- Evergreen: a cron poll rebuilds only when the upstream repo's commit SHA moves.
- Then deploy public to Vercel and verify the live site returns HTTP 200.
 ```
 
 </details>
 
 Per repo, the pipeline:
 
-1. **Ingests the upstream repo** — only the tool's *own* authored tree (it reads `.gitmodules` and skips vendored/nested submodule code, so a primer never accidentally teaches some *other* tool's internals).
-2. **Builds a single-file RVF knowledge base** — embedding the repo's code and docs locally with `bge-small` (384-dim), using **structure-aware chunking** (split at function/heading boundaries, keep doc-comments with their symbol). At this scale, chunking quality matters more than the embedding model.
-3. **Authors the explainer site** — image-first (every section opens with its visual, *then* words), with **dual-level visuals** in every section (a friendly illustration *and* an accurate, source-true SVG diagram), a resonant before→after persona, an honest "why this over what I already have?" differentiation, and **prominent attribution** to Reuven Cohen / @ruvnet on the first screen.
-4. **Builds the NotebookLM studio** — its own notebook with a full studio set (audio overview, explainer video, slide deck, infographic, report) from optimized prompts, then made **public** so one link opens all the media.
-5. **Runs the 5-gate Self-Evaluating Quality Gate** (below) — and only declares "done" when it passes *with evidence*.
-6. **Deploys public** (its own GitHub repo + Vercel site, `-explainer` suffix) and **verifies the live URL returns HTTP 200** — proving the fix actually shipped, never asserting it.
+1. **Ingests the repo** — reads the code tree, skipping vendored or submodule code so the explainer teaches *this* tool only.
+2. **Builds a vector knowledge base** — embeds the repo's code and docs locally (384-dimensional, structure-aware chunking at function/heading boundaries).
+3. **Authors the explainer site** — image-first design, with dual-level visuals (a friendly illustration *and* an accurate architecture diagram per section), a relatable before→after persona, and prominent attribution to the original author.
+4. **Generates studio media** — audio overview, infographic, and deep-dive report, all built from the repo's own content.
+5. **Runs 5 quality gates** — and only declares "done" when every gate passes with evidence.
+6. **Deploys** — to its own GitHub repo + Vercel site, then verifies the live URL returns HTTP 200.
 
-### The 5 gates — "done = proven-good, with evidence"
+### The 5 gates — "done = proven-good"
 
-The hard-won rule behind this project: **"done" never means "the files exist."** On an early build, knowledge bases shipped *un-graded* and needed 4–5 regeneration cycles to get right. So now the build **evaluates its own output** and only passes when every gate clears its bar.
+The hard-won rule: **"done" never means "the files exist."** The build evaluates its own output and only passes when every gate clears its bar.
 
-![The 5-gate quality system: gates A through E in sequence — KB answers, comprehension and felt, consistency and dry-run, studio graded, visuals graded — each scoring at least 95, feeding a final "done = proven-good" gate.](assets/diagrams/five-gates.svg)
+![The 5-gate quality system: gates A through E, each scoring at least 95.](assets/img/five-gates.svg)
 
 <details>
-<summary>ASCII Version (for AI/accessibility)</summary>
+<summary>Text version (for accessibility)</summary>
 
 ```
               The 5-Gate Self-Evaluating Quality System
-   "Done" never means "files exist." It means proven-good, with evidence.
 
-  +------------+   +--------------+   +-------------+   +-------------+   +-------------+   +------+
-  |     A      |-> |      B       |-> |     C       |-> |     D       |-> |     E       |-> | DONE |
-  | KB answers |   | comprehension|   | consistency |   |   studio    |   |  visuals    |   |  ()  |
-  |            |   |   + felt     |   |             |   |   graded    |   |  graded     |   |proven|
-  | query real |   | reviewer     |   | no invented |   | transcribe  |   | vision-check|   | good |
-  | .rvf;      |   | walks the    |   | APIs; all 7 |   | the audio   |   | every image:|   +------+
-  | tuned +    |   | live site -  |   | stages;     |   | + report;   |   | friendly    |
-  | held-out   |   | "do I want   |   | links;      |   | teaches a   |   | on-ramp AND |
-  | questions  |   |  this?"      |   | dry-run     |   | beginner?   |   | accurate dgm|
-  |   >=95     |   |    >=95      |   | pass/fail   |   |    >=95      |   |    >=95      |
   +------------+   +--------------+   +-------------+   +-------------+   +-------------+
-
-  The headline 0-100 score is the LOWEST gate - a primer is only as done as its weakest gate.
-  Any gate below bar -> diagnose -> fix -> re-grade. Standard bar >=98; >=95 under time pressure.
-  This is the cure for the un-graded-KB / 4-5-regeneration failure.
+  |     A      |-> |      B       |-> |     C       |-> |     D       |-> |     E       |-> DONE
+  | KB answers |   | comprehension|   | consistency |   |   studio    |   |  visuals    |
+  | query the  |   | walk the     |   | no invented |   |   graded    |   |  graded     |
+  | real KB;   |   | live site:   |   | APIs; links |   | audio +     |   | every image |
+  | score >=95 |   | "do I want   |   | resolve;    |   | report      |   | friendly +  |
+  |            |   |  this?"      |   | dry-run     |   | teach a     |   | accurate    |
+  +------------+   +--------------+   +-------------+   | beginner    |   +-------------+
+                                                        +-------------+
+  The headline score = the LOWEST gate. A primer is only as done as its weakest gate.
 ```
 
 </details>
 
 | Gate | What it checks | How it passes |
 |---|---|---|
-| **A — KB answer-quality** | The real `.rvf` is queried with a fixed set *and* a held-out set; graded on retrieval relevance + answer correctness vs. source. | Deterministic score ≥ 95 on **both** sets. Never ship an un-graded KB. |
-| **B — Comprehension + felt** | A reviewer actually *renders and walks the live site* as the newcomer persona — then answers three honest "felt" questions: *Does this impress me? Invite me in? Make me want to use it?* | All three felt questions "yes"; a "no" is a fail, not a nitpick. |
-| **C — Consistency + drop-in dry-run** | Claims grounded in source (no invented APIs), all 7 stages present, ≥5 use-cases, links resolve, and the smart zip loads + returns a grounded answer. | Pass / fail. |
-| **D — Studio graded** | The NotebookLM audio + report are *transcribed and read* (never assumed) and graded for clarity, comfort, confidence, completeness. | Score ≥ 95. |
-| **E — Visuals graded** | Every image is vision-checked — and must span **two tiers**: a friendly raster on-ramp *and* an accurate, source-true SVG architecture diagram. | Score ≥ 95. Friendly-but-not-explanatory fails. |
+| **A — KB answers** | The vector knowledge base is queried with test questions; graded on retrieval relevance + answer correctness vs. source. | Score ≥ 95 on both tuned and held-out question sets. |
+| **B — Comprehension** | A reviewer walks the live site as a newcomer — then answers: *Does this impress me? Invite me in? Make me want to use it?* | All three questions answered "yes." |
+| **C — Consistency** | Claims grounded in source (no invented APIs), all sections present, ≥5 use-cases, links resolve, smart zip loads correctly. | Pass / fail. |
+| **D — Studio graded** | Audio + report are reviewed for clarity, comfort, confidence, and completeness. | Score ≥ 95. |
+| **E — Visuals graded** | Every image is checked — must include both a friendly on-ramp *and* an accurate architecture diagram. | Score ≥ 95. |
 
-The headline score is the **lowest** gate — a primer is only as done as its weakest gate. The standard bar is **≥ 98**; **≥ 95** is acceptable under genuine time pressure. The full set of binding constraints (A–BB) lives in the recipe documents:
-
-- 📐 **The recipe (ADR):** [`docs/adr/0001-repo-primer-pipeline.md`](docs/adr/0001-repo-primer-pipeline.md) — Part I (pipeline architecture) + Part II (explainer site + the 5-gate quality system), with all constraints A–BB.
-- 🧩 **The domain model (DDD):** [`docs/ddd/repo-primer-domain-model.md`](docs/ddd/repo-primer-domain-model.md) — the ubiquitous language, bounded contexts, aggregates, and invariants.
+The standard bar is **≥ 98**; ≥ 95 is acceptable under time pressure.
 
 ---
 
-## How to run it on a new repo
+## Build your own
 
-The high-level loop, pointing at the real files in this repo:
+**Option 1: Use the website**
+Paste a GitHub URL at [repo-explainer-six.vercel.app](https://repo-explainer-six.vercel.app) and the pipeline builds it for you.
 
-1. **Configure the target** — add a per-repo config under [`config/repos/`](config/repos/) (submodule path, NotebookLM notebook id, embed model, scope-exclusion patterns).
-2. **Build + grade the KB** — the [`kb/`](kb/) scripts build the single 384-dim RVF (`kb/build-single-384.mjs`), then **grade it** (`kb/grade-kb.mjs` + `kb/gate.mjs`) on tuned + held-out questions (`kb/questions/`). This is **Gate A** — don't proceed until it's green.
-3. **Build + gate the site** — author the explainer site (image-first, dual-level visuals, resonant persona, prominent attribution), then run **Gates B/C/E** by rendering and walking the live site.
-4. **Build the studio** — create the repo's NotebookLM notebook, generate the audio overview + report with optimized prompts, and grade them (**Gate D**).
-5. **Deploy + verify** — ship to its own public GitHub repo + Vercel site, then `curl -sI` the real URL for HTTP 200. Record the whole walk in [`docs/build-journal/`](docs/build-journal/) — config, gate scores, fixes, and deploy proof. A primer with no journal entry isn't finished.
+**Option 2: Run the pipeline yourself**
 
-> 🆕 **New here? Start with [`START-HERE.md`](START-HERE.md).** It's the orientation doc for the repo's own contributors.
+1. **Configure the target** — add a per-repo config under [`config/repos/`](config/repos/).
+2. **Build + grade the knowledge base** — the scripts in [`kb/`](kb/) build the vector DB and grade it (Gate A).
+3. **Build + gate the site** — author the explainer (image-first, dual-level visuals, persona), run Gates B/C/E.
+4. **Generate studio media** — audio overview, infographic, report. Grade them (Gate D).
+5. **Deploy + verify** — ship to its own GitHub repo + Vercel site, verify HTTP 200.
+
+---
+
+## When an explainer is built for your repo
+
+Each explainer is **its own separate project** — a standalone GitHub repo and Vercel site that belongs to you:
+
+- **Your own GitHub repo**: `your-username/yourproject-explainer`
+- **Your own Vercel URL**: `yourproject-explainer.vercel.app`
+- **Your own files**: HTML, CSS, images, studio media, knowledge base — everything self-contained
+- **No shared infrastructure**: nothing depends on any other explainer or on this pipeline repo
+
+You get invited as a collaborator on the explainer repo, and a pull request is opened on your original repo's README to add a badge linking to the explainer:
+
+```markdown
+[![Explainer](https://img.shields.io/badge/📖_Explainer-Visual_Walkthrough-6c3ce0?style=for-the-badge)](https://yourproject-explainer.vercel.app)
+
+> **New here?** This repo has a [visual explainer page](https://yourproject-explainer.vercel.app) —
+> a plain-language walkthrough with architecture diagrams, audio overview, and a
+> downloadable knowledge pack for your AI assistant.
+```
+
+You can merge, edit, or close the PR — it's your repo, your call.
 
 ---
 
@@ -235,28 +226,25 @@ The high-level loop, pointing at the real files in this repo:
 
 | Layer | Tool | Why |
 |---|---|---|
-| **Vector knowledge base** | [`@ruvector/rvf`](https://www.npmjs.com/package/@ruvector/rvf) — RVF single-file HNSW vector DB | One file, zero server, zero Docker. Drops into any project. |
-| **Embeddings** | `Xenova/bge-small-en-v1.5` (384-dim, local ONNX) | Strong retrieval model, runs on a laptop, **no external API**. |
-| **Human-half media** | [NotebookLM](https://notebooklm.google.com/) via the `nlm` CLI | Audio overview + report that teach a true beginner. |
-| **Hosting** | [Vercel](https://vercel.com/) | Git-connected, auto-deploy, public, instant preview URLs. |
-| **Orchestration** | Ruflo | Capacity-aware parallel swarms (one per repo) for the scale phase. |
-| **Site craft** | image-first design, dual-tier visuals, hand-authored SVG diagrams | Beats a plain README by meeting both a newcomer *and* a technical reader in the same section. |
+| **Vector knowledge base** | RVF single-file HNSW vector DB | One file, zero server, zero Docker. Drops into any project. |
+| **Embeddings** | `bge-small-en-v1.5` (384-dim, local) | Strong retrieval, runs on a laptop, no external API. |
+| **Studio media** | Google NotebookLM | Audio overview + report that teach a true beginner. |
+| **Image generation** | OpenAI gpt-image-1 | Hero images and section illustrations. |
+| **Hosting** | Vercel | Git-connected, auto-deploy, instant preview URLs. |
+| **Orchestration** | Ruflo | Capacity-aware parallel swarms for building multiple explainers. |
+| **Site design** | Image-first, dual-tier visuals, hand-authored SVG diagrams | Meets both a newcomer and a technical reader in the same section. |
 
 ---
 
-## Credit & provenance
+## Credit
 
-**The tools explained here belong to [Reuven Cohen / @ruvnet](https://github.com/ruvnet).** All the credit for the underlying technology — MetaHarness, PhotonLayer, ruqu, ruvn, and the rest — is his.
-
-**Ruv-Explainer is an independent project.** It is not affiliated with or endorsed by Reuven Cohen. It exists for one reason: to help more people discover, understand, and actually adopt his work — by giving each powerful repo the handle it was missing.
-
-If these explainers help you get into a tool you'd otherwise have bounced off of, go star the **upstream** repo, and go build something with it. That's the whole point.
+The tools explained in the gallery above belong to [Reuven Cohen / @ruvnet](https://github.com/ruvnet). All credit for the underlying technology — MetaHarness, PhotonLayer, ruqu, ruvn, and Agentic QE — is his. Repo Explainer is an independent project that exists to help more people discover, understand, and adopt great work.
 
 ---
 
 <div align="center">
 
-**Built with the Repo-Primer Pipeline** · [github.com/stuinfla/Ruv-Explainer](https://github.com/stuinfla/Ruv-Explainer)
-*Explaining [@ruvnet](https://github.com/ruvnet)'s power tools, one handle at a time.*
+**[Repo Explainer](https://repo-explainer-six.vercel.app)** · [github.com/stuinfla/repo-explainer](https://github.com/stuinfla/repo-explainer)
+*Complex repos deserve clear introductions.*
 
 </div>
