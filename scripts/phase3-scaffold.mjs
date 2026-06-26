@@ -66,6 +66,13 @@ const sectionBlocks = sections.map(s => {
       <div class="gallery-grid"><!-- IMG:gallery --></div>
     </div>
   </section>`;
+  // Use cases: wrap the Phase 4 cards in a responsive grid container.
+  if (s.id === 'use-cases') return `  <section id="use-cases" class="section${alt}" data-section="use-cases">
+    <div class="wrap">
+      <h2>${s.label}</h2>
+      <div class="use-case-grid"><!-- CONTENT:use-cases --></div>
+    </div>
+  </section>`;
   // Heading first, then a single content marker Phase 4 replaces. No leftover
   // placeholder text, no duplicate headings.
   return `  <section id="${s.id}" class="section${alt}" data-section="${s.id}">
@@ -210,11 +217,16 @@ p { margin-bottom: var(--sp-4); }
   overflow: hidden; min-height: 480px; display: flex; align-items: center;
 }
 .hero-bg {
-  position: absolute; inset: 0;
+  position: absolute; inset: 0; z-index: 0;
   background-image: url('assets/img/hero.png');
-  background-size: cover; background-position: center; opacity: 0.35;
+  background-size: cover; background-position: center; opacity: 0.4;
 }
-.hero-inner { position: relative; z-index: 1; }
+/* Scrim over the hero image so headline text is always legible. */
+.hero::after {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(27,31,46,0.35) 0%, rgba(27,31,46,0.78) 100%);
+}
+.hero-inner { position: relative; z-index: 2; }
 .hero h1 { color: var(--ink-on-dark); margin-bottom: var(--sp-4); }
 .hero .tagline { color: rgba(240,238,232,0.85); margin-bottom: var(--sp-8); }
 .hero-actions { display: flex; gap: var(--sp-4); flex-wrap: wrap; }
@@ -280,6 +292,23 @@ pre:hover .copy-btn { opacity: 1; }
 .gallery-item:hover { box-shadow: var(--card-shadow-lg); transform: translateY(-2px); }
 .gallery-item img { width: 100%; aspect-ratio: 16/10; object-fit: cover; }
 .gallery-item figcaption { padding: var(--sp-3) var(--sp-4); font-size: 0.875rem; color: var(--ink-2); }
+
+/* Use-case cards (Phase 4 emits a series of .use-case-card blocks) */
+.use-case-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-6); margin-top: var(--sp-8); }
+.use-case-card {
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg); padding: var(--sp-6);
+  box-shadow: var(--card-shadow); transition: box-shadow 0.3s, transform 0.3s;
+}
+.use-case-card:hover { box-shadow: var(--card-shadow-lg); transform: translateY(-2px); }
+.use-case-card h3 { color: var(--ink); margin-bottom: var(--sp-3); }
+.use-case-card p { margin-bottom: var(--sp-3); }
+.use-case-card .audience { margin-bottom: 0; font-size: 0.875rem; color: var(--ink-muted); }
+.use-case-card .audience strong { color: var(--accent); }
+@media (max-width: 640px) { .use-case-grid { grid-template-columns: 1fr; } }
+
+/* Graceful fallback when a section's content could not be generated */
+.content-error { color: var(--ink-muted); font-style: italic; }
 
 ul, ol { padding-left: var(--sp-6); margin-bottom: var(--sp-4); }
 li { margin-bottom: var(--sp-2); }
