@@ -177,6 +177,14 @@ jobs:
               commit -m "Initial explainer for ${{ inputs.target_owner }}/${{ inputs.target_repo }}"
           git push -u origin main --force
 
+      - name: "Phase 7: Invite repo owner as collaborator"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          gh api "repos/${EXPLAINER_REPO}/collaborators/${{ inputs.target_owner }}" \
+            -X PUT -f permission=push \
+            || echo "::warning::Could not invite ${{ inputs.target_owner }} as collaborator"
+
       # ──────────────────────────────────────────────
       # Phase 8 — Deploy to Vercel
       # ──────────────────────────────────────────────

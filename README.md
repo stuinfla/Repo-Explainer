@@ -186,10 +186,11 @@ The standard bar is **≥ 98**; ≥ 95 is acceptable under time pressure.
 
 ## Build your own
 
-**Option 1: Use the website**
-Paste a GitHub URL at [repo-explainer-six.vercel.app](https://repo-explainer-six.vercel.app) and the pipeline builds it for you.
+### Option 1: Use the website (recommended)
 
-**Option 2: Run the pipeline yourself**
+Go to **[repo-explainer-six.vercel.app](https://repo-explainer-six.vercel.app)**, paste any public GitHub URL, optionally enter your email, and click **Build Explainer**. The pipeline does everything automatically — clone, analyze, build, quality-gate, deploy — and shows you real-time progress. When it's done, you get a live URL and a GitHub repo.
+
+### Option 2: Run the pipeline yourself
 
 1. **Configure the target** — add a per-repo config under [`config/repos/`](config/repos/).
 2. **Build + grade the knowledge base** — the scripts in [`kb/`](kb/) build the vector DB and grade it (Gate A).
@@ -199,16 +200,134 @@ Paste a GitHub URL at [repo-explainer-six.vercel.app](https://repo-explainer-six
 
 ---
 
+## The automated build pipeline
+
+When you paste a URL on the website, this is exactly what happens — no simulations, no placeholders, real infrastructure end to end:
+
+```
+  YOU                        VERCEL                     GITHUB ACTIONS
+  ───                        ──────                     ──────────────
+   │                           │                              │
+   │  Paste URL + email        │                              │
+   ├──────────────────────────>│                              │
+   │                           │  1. Validate repo (GH API)  │
+   │                           │  2. Create status Gist      │
+   │                           │  3. Create tracking Issue   │
+   │                           │  4. Fire workflow_dispatch  │
+   │                           ├─────────────────────────────>│
+   │   { buildId, gistId }     │                              │
+   │<──────────────────────────│                              │
+   │                           │                              │
+   │   Poll /api/status        │                              │
+   │   every 5 seconds         │    ┌─────────────────────┐   │
+   │──────────────────────────>│    │  P0: Setup           │   │
+   │   { step: 0, running }   │    │  P1: Clone repo      │   │
+   │<──────────────────────────│    │  P2: Build KB        │──>│ Update
+   │                           │    │  P3: Scaffold site   │   │ Gist at
+   │──────────────────────────>│    │  P4: Author content  │   │ every
+   │   { step: 3, running }   │    │  P5: Generate images │   │ step
+   │<──────────────────────────│    │  P6: Quality gates   │   │
+   │                           │    │  P7: Create GH repo  │   │
+   │──────────────────────────>│    │  P8: Deploy to Vercel│   │
+   │   { step: 8, running }   │    │  P9: Notify          │   │
+   │<──────────────────────────│    └─────────────────────┘   │
+   │                           │                              │
+   │──────────────────────────>│                              │
+   │   { status: "done",      │    Invite owner as           │
+   │     result: {             │    collaborator              │
+   │       explainerUrl,       │    ┌───────────────────┐     │
+   │       repoUrl,            │    │  Email via Resend  │     │
+   │       issueUrl            │    │  Comment on Issue   │     │
+   │     }                     │    └───────────────────┘     │
+   │   }                       │                              │
+   │<──────────────────────────│                              │
+   │                           │                              │
+   │  "Your explainer is live!"│                              │
+```
+
+### The 9 pipeline phases
+
+| Phase | What it does | Time |
+|-------|-------------|------|
+| **P0** Setup | Checkout Repo-Explainer, install Node.js 20, `npm ci` | ~30s |
+| **P1** Clone | Shallow clone of the target repo, validate it exists | ~10s |
+| **P2** Build KB | Run the knowledge base builder — embed code and docs into a vector DB | ~60s |
+| **P3** Scaffold | Create the explainer site structure from a template | ~10s |
+| **P4** Author | Generate the 7-section explainer content | ~90s |
+| **P5** Images | Generate hero image and section illustrations (OpenAI) | ~60s |
+| **P6** Quality gates | Run all 5 gates — KB answers, comprehension, consistency, studio, visuals | ~60s |
+| **P7** Create repo | Create `stuinfla/{repo}-explainer` on GitHub, push all files, invite owner as collaborator | ~20s |
+| **P8** Deploy | Deploy to Vercel, alias to `{repo}-explainer.vercel.app` | ~30s |
+| **P9** Notify | Comment on tracking issue with results, send email notification | ~5s |
+
+**Total: 5–10 minutes.** The user sees a real-time progress bar the entire time.
+
+### Progress tracking
+
+```
+  ┌──────────────────────────────────────────────────┐
+  │  GitHub Gist (status.json) — the single source   │
+  │  of truth for build progress                     │
+  ├──────────────────────────────────────────────────┤
+  │                                                  │
+  │  Written by:  GitHub Actions (at each phase)     │
+  │  Read by:     /api/status → client polling       │
+  │                                                  │
+  │  {                                               │
+  │    "buildId": "a1b2c3d4-...",                    │
+  │    "step": 3,                                    │
+  │    "totalSteps": 9,                              │
+  │    "stepName": "Scaffolding explainer site",     │
+  │    "status": "running",                          │
+  │    "startedAt": "2026-06-25T...",                │
+  │    "error": null,                                │
+  │    "result": null                                │
+  │  }                                               │
+  └──────────────────────────────────────────────────┘
+```
+
+The gist is **public** — no auth needed to read it. The client polls `/api/status?id=BUILD_ID&gist=GIST_ID` every 5 seconds. On network errors, it backs off exponentially (5s → 10s → 20s).
+
+---
+
 ## When an explainer is built for your repo
 
-Each explainer is **its own separate project** — a standalone GitHub repo and Vercel site that belongs to you:
+Each explainer is **its own separate project** — a standalone GitHub repo and Vercel site:
 
-- **Your own GitHub repo**: `your-username/yourproject-explainer`
+- **Your own GitHub repo**: `stuinfla/yourproject-explainer` (you get invited as a collaborator with push access)
 - **Your own Vercel URL**: `yourproject-explainer.vercel.app`
 - **Your own files**: HTML, CSS, images, studio media, knowledge base — everything self-contained
 - **No shared infrastructure**: nothing depends on any other explainer or on this pipeline repo
 
-You get invited as a collaborator on the explainer repo, and a pull request is opened on your original repo's README to add a badge linking to the explainer:
+### What happens automatically
+
+```
+  ┌───────────────────────────────────────────────────────────┐
+  │                   YOUR EXPLAINER                          │
+  ├───────────────────────────────────────────────────────────┤
+  │                                                           │
+  │  1. GitHub repo created: stuinfla/{repo}-explainer        │
+  │     └─ You are invited as collaborator (push access)      │
+  │                                                           │
+  │  2. Vercel site deployed: {repo}-explainer.vercel.app     │
+  │     └─ Auto-deploys on every push to the GitHub repo      │
+  │                                                           │
+  │  3. Tracking issue commented with results table:          │
+  │     ┌─────────────┬─────────────────────────────────┐     │
+  │     │ Live site    │ {repo}-explainer.vercel.app     │     │
+  │     │ Repository   │ github.com/stuinfla/{repo}-... │     │
+  │     │ Build ID     │ a1b2c3d4-...                   │     │
+  │     └─────────────┴─────────────────────────────────┘     │
+  │                                                           │
+  │  4. Email notification sent (if email provided)           │
+  │                                                           │
+  │  5. PR opened on your original repo's README              │
+  │     with a badge linking to the explainer                 │
+  │                                                           │
+  └───────────────────────────────────────────────────────────┘
+```
+
+A pull request is opened on your original repo's README to add a badge:
 
 ```markdown
 [![Explainer](https://img.shields.io/badge/📖_Explainer-Visual_Walkthrough-6c3ce0?style=for-the-badge)](https://yourproject-explainer.vercel.app)
@@ -222,17 +341,70 @@ You can merge, edit, or close the PR — it's your repo, your call.
 
 ---
 
+## Architecture
+
+```
+  ┌─────────────────────────────────────────────────────────────────┐
+  │                        REPO EXPLAINER                           │
+  ├─────────────────────────────────────────────────────────────────┤
+  │                                                                 │
+  │   www/                          .github/workflows/              │
+  │   ├─ index.html  (landing)     └─ build-explainer.yml           │
+  │   ├─ main.js     (form + poll)    (9-phase pipeline)            │
+  │   ├─ styles.css                                                 │
+  │   ├─ api/                       scripts/                        │
+  │   │  ├─ build.js  (validate,   └─ update-gist-status.sh        │
+  │   │  │  create gist,              (gist PATCH helper)           │
+  │   │  │  dispatch workflow)                                      │
+  │   │  └─ status.js (read gist)  kb/                              │
+  │   └─ assets/                   └─ (vector DB build scripts)     │
+  │      └─ img/, screenshots/                                      │
+  │                                                                 │
+  ├─────────────────────────────────────────────────────────────────┤
+  │                                                                 │
+  │  EXTERNAL SERVICES                                              │
+  │  ┌──────────┐  ┌──────────┐  ┌───────────┐  ┌──────────┐       │
+  │  │  GitHub   │  │  Vercel  │  │  OpenAI   │  │  Resend  │       │
+  │  │  Actions  │  │  Deploy  │  │  Images   │  │  Email   │       │
+  │  │  + Gists  │  │  + CDN   │  │  API      │  │  API     │       │
+  │  └──────────┘  └──────────┘  └───────────┘  └──────────┘       │
+  │                                                                 │
+  └─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Tech stack
 
 | Layer | Tool | Why |
 |---|---|---|
+| **Website** | Vanilla HTML/CSS/JS on Vercel | Zero dependencies, instant load, works everywhere |
+| **API** | Vercel Serverless Functions | Auto-scaling, zero config, same repo as the site |
+| **Pipeline** | GitHub Actions (`workflow_dispatch`) | Free 2000 min/month, runs in the cloud, no server to manage |
+| **Progress tracking** | GitHub Gists (public JSON) | Free, no database, no auth to read, updated by each pipeline phase |
+| **Issue tracking** | GitHub Issues | Audit trail for every build request, human-readable |
 | **Vector knowledge base** | RVF single-file HNSW vector DB | One file, zero server, zero Docker. Drops into any project. |
 | **Embeddings** | `bge-small-en-v1.5` (384-dim, local) | Strong retrieval, runs on a laptop, no external API. |
 | **Studio media** | Google NotebookLM | Audio overview + report that teach a true beginner. |
 | **Image generation** | OpenAI gpt-image-1 | Hero images and section illustrations. |
 | **Hosting** | Vercel | Git-connected, auto-deploy, instant preview URLs. |
+| **Email notification** | Resend API (free tier: 100/day) | Transactional email when build completes |
 | **Orchestration** | Ruflo | Capacity-aware parallel swarms for building multiple explainers. |
 | **Site design** | Image-first, dual-tier visuals, hand-authored SVG diagrams | Meets both a newcomer and a technical reader in the same section. |
+
+---
+
+## Required secrets
+
+To run the automated pipeline, set these as GitHub Actions secrets on the `Repo-Explainer` repo AND as environment variables on the Vercel project:
+
+| Secret | Where | What it does |
+|--------|-------|-------------|
+| `GH_PAT` / `GITHUB_TOKEN` | GitHub + Vercel | Create gists, dispatch workflows, create repos, invite collaborators |
+| `VERCEL_TOKEN` | GitHub | Deploy explainer sites to Vercel from the Actions runner |
+| `VERCEL_ORG_ID` | GitHub | Vercel team/org identifier |
+| `OPENAI_API_KEY` | GitHub | Generate hero images and section illustrations |
+| `RESEND_API_KEY` | GitHub (optional) | Send email notifications when builds complete |
 
 ---
 
@@ -244,7 +416,7 @@ The tools explained in the gallery above belong to [Reuven Cohen / @ruvnet](http
 
 <div align="center">
 
-**[Repo Explainer](https://repo-explainer-six.vercel.app)** · [github.com/stuinfla/repo-explainer](https://github.com/stuinfla/repo-explainer)
+**[Repo Explainer](https://repo-explainer-six.vercel.app)** · [github.com/stuinfla/Repo-Explainer](https://github.com/stuinfla/Repo-Explainer)
 *Complex repos deserve clear introductions.*
 
 </div>
