@@ -168,6 +168,7 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           npm i -g vercel@latest
 
@@ -192,15 +193,21 @@ jobs:
           fi
           echo "Deployed to: $DEPLOYMENT_URL"
 
-          # Best-effort alias to the custom domain (may not be configured yet).
-          # The site is already live at the deployment URL regardless.
-          if vercel alias set "$DEPLOYMENT_URL" "$EXPLAINER_DOMAIN" --token "$VERCEL_TOKEN" 2>alias.err; then
+          # Best-effort alias to the custom domain. Assigning the alias is
+          # harmless even before DNS is configured — it makes the subdomain go
+          # live automatically the moment the Cloudflare CNAME exists.
+          vercel alias set "$DEPLOYMENT_URL" "$EXPLAINER_DOMAIN" --token "$VERCEL_TOKEN" 2>alias.err \
+            || { echo "::warning::Alias assignment failed:"; cat alias.err 2>/dev/null || true; }
+
+          # Advertise the custom domain ONLY if it actually serves right now;
+          # otherwise fall back to the deployment URL so the link always works.
+          # This self-heals: once DNS resolves, future builds use the domain.
+          if curl -fsS --max-time 12 -o /dev/null "https://$EXPLAINER_DOMAIN"; then
             LIVE_URL="https://$EXPLAINER_DOMAIN"
-            echo "Aliased to $LIVE_URL"
+            echo "Custom domain is live: $LIVE_URL"
           else
             LIVE_URL="$DEPLOYMENT_URL"
-            echo "::warning::Alias to $EXPLAINER_DOMAIN not set yet (DNS/domain pending); site live at $DEPLOYMENT_URL"
-            cat alias.err 2>/dev/null || true
+            echo "::warning::Custom domain $EXPLAINER_DOMAIN not resolving yet (Cloudflare DNS pending) — advertising $DEPLOYMENT_URL"
           fi
 
           echo "DEPLOYMENT_URL=$DEPLOYMENT_URL" >> "$GITHUB_ENV"
