@@ -215,25 +215,19 @@ jobs:
             "https://api.github.com/gists/$GIST_ID"
 
       - name: "Phase 9: Send email notification"
-        if: inputs.submitter_email != '' && env.HAS_RESEND == 'true'
+        if: inputs.submitter_email != '' && env.HAS_GMAIL == 'true'
         env:
-          HAS_RESEND: ${{ secrets.RESEND_API_KEY != '' }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          HAS_GMAIL: ${{ secrets.GMAIL_APP_PASSWORD != '' }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          EMAIL_TO: ${{ inputs.submitter_email }}
+          EMAIL_SUBJECT: "Your explainer for ${{ inputs.target_owner }}/${{ inputs.target_repo }} is ready!"
         run: |
-          curl -s -X POST "https://api.resend.com/emails" \
-            -H "Authorization: Bearer $RESEND_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "$(jq -n \
-              --arg to "${{ inputs.submitter_email }}" \
-              --arg repo "${{ inputs.target_owner }}/${{ inputs.target_repo }}" \
-              --arg url "https://$EXPLAINER_DOMAIN" \
-              --arg ghUrl "https://github.com/$EXPLAINER_REPO" \
-              '{
-                from: "Repo Explainer <noreply@repo-explainer.dev>",
-                to: [$to],
-                subject: ("Your explainer for " + $repo + " is ready!"),
-                html: ("<h2>Your Repo Explainer is ready</h2><p>Repository: <a href=\"" + $ghUrl + "\">" + $repo + "-explainer</a></p><p>Live site: <a href=\"" + $url + "\">" + $url + "</a></p>")
-              }')"
+          EMAIL_HTML="<h2>Your Repo Explainer is ready</h2>"
+          EMAIL_HTML="$EMAIL_HTML<p>Repository: <a href=\"https://github.com/$EXPLAINER_REPO\">$EXPLAINER_REPO</a></p>"
+          EMAIL_HTML="$EMAIL_HTML<p>Live site: <a href=\"https://$EXPLAINER_DOMAIN\">https://$EXPLAINER_DOMAIN</a></p>"
+          export EMAIL_HTML
+          node scripts/phase9-send-email.mjs
 
       # ──────────────────────────────────────────────
       # Failure handler — update gist with error
