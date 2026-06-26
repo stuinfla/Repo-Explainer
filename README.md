@@ -204,6 +204,11 @@ Go to **[repo-explainer-six.vercel.app](https://repo-explainer-six.vercel.app)**
 
 When you paste a URL on the website, this is exactly what happens — no simulations, no placeholders, real infrastructure end to end:
 
+![The automated build pipeline: user pastes a URL, Vercel validates and dispatches to GitHub Actions, which runs 9 phases and updates a status gist that the client polls in real time.](assets/img/build-pipeline-flow.svg)
+
+<details>
+<summary>Text version (for accessibility)</summary>
+
 ```
   YOU                        VERCEL                     GITHUB ACTIONS
   ───                        ──────                     ──────────────
@@ -244,6 +249,8 @@ When you paste a URL on the website, this is exactly what happens — no simulat
    │                           │                              │
    │  "Your explainer is live!"│                              │
 ```
+
+</details>
 
 ### The 9 pipeline phases
 
@@ -301,6 +308,11 @@ Each explainer is **its own separate project** — a standalone GitHub repo and 
 
 ### What happens automatically
 
+![What you get when your explainer is built: a GitHub repo (you're invited as collaborator), a live Vercel site, a tracking issue, email notification, and a PR on your README.](assets/img/what-you-get-automated.svg)
+
+<details>
+<summary>Text version (for accessibility)</summary>
+
 ```
   ┌───────────────────────────────────────────────────────────┐
   │                   YOUR EXPLAINER                          │
@@ -327,6 +339,8 @@ Each explainer is **its own separate project** — a standalone GitHub repo and 
   └───────────────────────────────────────────────────────────┘
 ```
 
+</details>
+
 A pull request is opened on your original repo's README to add a badge:
 
 ```markdown
@@ -342,6 +356,11 @@ You can merge, edit, or close the PR — it's your repo, your call.
 ---
 
 ## Architecture
+
+![Repo Explainer architecture: internal components (www, workflows, scripts, kb) connected to external services (GitHub Actions, Vercel, OpenAI, Resend).](assets/img/architecture.svg)
+
+<details>
+<summary>Text version (for accessibility)</summary>
 
 ```
   ┌─────────────────────────────────────────────────────────────────┐
@@ -371,6 +390,8 @@ You can merge, edit, or close the PR — it's your repo, your call.
   │                                                                 │
   └─────────────────────────────────────────────────────────────────┘
 ```
+
+</details>
 
 ---
 
