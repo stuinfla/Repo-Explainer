@@ -193,6 +193,15 @@ jobs:
           fi
           echo "Deployed to: $DEPLOYMENT_URL"
 
+          # Post-deploy smoke test: confirm the deployed site actually serves a
+          # page to an unauthenticated visitor (catches protection/build issues).
+          SMOKE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$DEPLOYMENT_URL")
+          if [ "$SMOKE" = "200" ]; then
+            echo "Smoke test OK — $DEPLOYMENT_URL returned 200 (public)."
+          else
+            echo "::warning::Smoke test — $DEPLOYMENT_URL returned HTTP $SMOKE (expected 200; check deployment protection)."
+          fi
+
           # Best-effort alias to the custom domain. Assigning the alias is
           # harmless even before DNS is configured — it makes the subdomain go
           # live automatically the moment the Cloudflare CNAME exists.

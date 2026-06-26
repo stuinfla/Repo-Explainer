@@ -20,19 +20,21 @@
   var outputTitle = document.getElementById("outputTitle");
   var outputDesc = document.getElementById("outputDesc");
   var outputSteps = document.getElementById("outputSteps");
+  // Estimates are calibrated to real pipeline runs (~2–3 min end to end), not
+  // padded — an honest countdown makes the wait feel shorter, not longer.
   var PIPELINE_STEPS = [
-    { name: "Setup environment",       desc: "Installing dependencies and preparing the build runner", est: "~30s" },
-    { name: "Cloning repository",      desc: "Downloading your repo's code and documentation", est: "~10s" },
-    { name: "Building knowledge base", desc: "Embedding code and docs into a searchable vector database", est: "~60s" },
-    { name: "Scaffolding explainer",   desc: "Creating the site structure from our explainer template", est: "~10s" },
-    { name: "Authoring content",       desc: "Writing 7 sections that explain your project in plain language", est: "~90s" },
-    { name: "Generating images",       desc: "Creating hero image and section illustrations with AI", est: "~60s" },
-    { name: "Running quality gates",   desc: "Checking accuracy, completeness, and visual quality (5 gates)", est: "~60s" },
-    { name: "Creating GitHub repo",    desc: "Publishing files and inviting you as a collaborator", est: "~20s" },
-    { name: "Deploying to Vercel",     desc: "Launching your live site at a custom URL", est: "~30s" }
+    { name: "Setting up",              desc: "Preparing the build runner and tools", est: "~25s" },
+    { name: "Cloning repository",      desc: "Downloading your repo's code and documentation", est: "~5s" },
+    { name: "Analyzing the codebase",  desc: "Mapping structure, languages, symbols, and docs", est: "~5s" },
+    { name: "Scaffolding explainer",   desc: "Creating the site structure from our explainer template", est: "~5s" },
+    { name: "Authoring content",       desc: "Writing the sections that explain your project in plain language", est: "~45s" },
+    { name: "Generating images",       desc: "Creating the hero image and section illustrations with AI", est: "~50s" },
+    { name: "Running quality gates",   desc: "Checking accuracy, completeness, and visual quality (5 gates)", est: "~5s" },
+    { name: "Publishing to GitHub",    desc: "Creating your explainer repo and granting you push access", est: "~10s" },
+    { name: "Deploying to Vercel",     desc: "Launching your live, public site", est: "~35s" }
   ];
 
-  var TOTAL_ESTIMATED_SECONDS = 370;
+  var TOTAL_ESTIMATED_SECONDS = 200;
 
   var ICON_PENDING = "○";   // ○
   var ICON_ACTIVE  = "▶";   // ▶
@@ -97,7 +99,7 @@
     }
     var timerRow = document.createElement("div");
     timerRow.className = "output-elapsed";
-    timerRow.textContent = "Elapsed: 0:00 — Estimated total: ~6 minutes";
+    timerRow.textContent = "Elapsed: 0:00 — Estimated total: ~3 minutes";
     outputSteps.appendChild(timerRow);
 
     var statusMsg = document.createElement("div");
@@ -118,44 +120,75 @@
     }
   }
 
-  /* Show success result with clickable links (XSS-safe) */
+  /* Build one result row: label, the full URL as text, a Copy button, and Open */
+  function makeLinkRow(label, url, primary) {
+    var row = document.createElement("div");
+    row.className = "output-link-row" + (primary ? " primary" : "");
+
+    var lbl = document.createElement("span");
+    lbl.className = "output-link-label";
+    lbl.textContent = label;
+    row.appendChild(lbl);
+
+    var urlEl = document.createElement("a");
+    urlEl.className = "output-link-url";
+    urlEl.href = url; urlEl.target = "_blank"; urlEl.rel = "noopener";
+    urlEl.textContent = url;
+    row.appendChild(urlEl);
+
+    var actions = document.createElement("span");
+    actions.className = "output-link-actions";
+
+    var copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "output-copy-btn";
+    copyBtn.textContent = "Copy link";
+    copyBtn.addEventListener("click", function () {
+      function done() {
+        copyBtn.textContent = "Copied!";
+        copyBtn.classList.add("copied");
+        setTimeout(function () { copyBtn.textContent = "Copy link"; copyBtn.classList.remove("copied"); }, 2000);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done).catch(function () { window.prompt("Copy this link:", url); });
+      } else {
+        window.prompt("Copy this link:", url);
+      }
+    });
+    actions.appendChild(copyBtn);
+
+    var openBtn = document.createElement("a");
+    openBtn.className = "output-open-btn" + (primary ? " primary" : "");
+    openBtn.href = url; openBtn.target = "_blank"; openBtn.rel = "noopener";
+    openBtn.textContent = "Open ↗";
+    actions.appendChild(openBtn);
+
+    row.appendChild(actions);
+    return row;
+  }
+
+  /* Show success result with clickable + copyable links (XSS-safe) */
   function showSuccessResult(data) {
-    outputTitle.textContent = "Your explainer is live!";
+    outputTitle.textContent = "Your explainer is live! 🎉";
     outputDesc.innerHTML = "";
 
     var intro = document.createElement("p");
     intro.className = "output-success-intro";
-    intro.textContent = "Your explainer page is deployed and ready to share. You've been invited as a collaborator on the GitHub repo.";
+    intro.textContent = "Your explainer page is deployed and public — copy either link to share it with anyone, no login required. You also have push access to the GitHub repo.";
     outputDesc.appendChild(intro);
 
     var wrap = document.createElement("div");
     wrap.className = "output-result-links";
-
-    if (data.siteUrl) {
-      var p1 = document.createElement("p");
-      var a1 = document.createElement("a");
-      a1.href = data.siteUrl;
-      a1.target = "_blank";
-      a1.rel = "noopener";
-      a1.className = "output-link output-link-primary";
-      a1.textContent = "Visit your explainer →";
-      p1.appendChild(a1);
-      wrap.appendChild(p1);
-    }
-
-    if (data.repoUrl) {
-      var p2 = document.createElement("p");
-      var a2 = document.createElement("a");
-      a2.href = data.repoUrl;
-      a2.target = "_blank";
-      a2.rel = "noopener";
-      a2.className = "output-link";
-      a2.textContent = "GitHub repo (you have push access) →";
-      p2.appendChild(a2);
-      wrap.appendChild(p2);
-    }
-
+    if (data.siteUrl) wrap.appendChild(makeLinkRow("Explainer page", data.siteUrl, true));
+    if (data.repoUrl) wrap.appendChild(makeLinkRow("GitHub repo", data.repoUrl, false));
     outputDesc.appendChild(wrap);
+
+    if (!data.siteUrl && !data.repoUrl) {
+      var note = document.createElement("p");
+      note.className = "output-error-msg";
+      note.textContent = "The build finished but returned no links. Check the GitHub Actions run for details.";
+      outputDesc.appendChild(note);
+    }
   }
 
   /* Show failure result with error message and Try Again button */
@@ -272,7 +305,7 @@
           }
 
           outputTitle.textContent = "Building explainer for " + repoName;
-          outputDesc.textContent = "Pipeline is running — this takes about 6 minutes";
+          outputDesc.textContent = "Pipeline is running — this usually takes about 3 minutes";
 
           var ui = renderPipelineSteps();
           var startTime = Date.now();
@@ -482,6 +515,21 @@
 
   // Add visible class styles
   var style = document.createElement("style");
-  style.textContent = ".visible { opacity: 1 !important; transform: translateY(0) !important; }";
+  style.textContent = [
+    ".visible { opacity: 1 !important; transform: translateY(0) !important; }",
+    ".output-link-row { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:12px 14px; border:1px solid rgba(255,255,255,0.12); border-radius:10px; background:rgba(255,255,255,0.04); margin-bottom:10px; }",
+    ".output-link-row.primary { border-color:rgba(52,211,153,0.5); background:rgba(52,211,153,0.08); }",
+    ".output-link-label { font-family:var(--sans); font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:rgba(255,255,255,0.55); min-width:92px; }",
+    ".output-link-url { flex:1 1 200px; font-family:var(--mono); font-size:0.82rem; color:#c4b5fd; word-break:break-all; text-decoration:none; }",
+    ".output-link-row.primary .output-link-url { color:#6ee7b7; }",
+    ".output-link-url:hover { text-decoration:underline; }",
+    ".output-link-actions { display:flex; gap:8px; align-items:center; }",
+    ".output-copy-btn { cursor:pointer; font-family:var(--sans); font-size:0.78rem; font-weight:600; padding:7px 12px; border-radius:7px; border:1px solid rgba(255,255,255,0.25); background:transparent; color:#fff; transition:background 0.15s, border-color 0.15s; }",
+    ".output-copy-btn:hover { background:rgba(255,255,255,0.12); }",
+    ".output-copy-btn.copied { background:#34d399; border-color:#34d399; color:#0b1020; }",
+    ".output-open-btn { font-family:var(--sans); font-size:0.78rem; font-weight:600; padding:7px 12px; border-radius:7px; text-decoration:none; border:1px solid transparent; background:rgba(108,60,224,0.28); color:#c4b5fd; }",
+    ".output-open-btn.primary { background:#34d399; color:#0b1020; }",
+    ".output-open-btn:hover { filter:brightness(1.1); }"
+  ].join("\n");
   document.head.appendChild(style);
 })();
