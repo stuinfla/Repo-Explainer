@@ -55,10 +55,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
 
-      - name: "Phase 0: Install dependencies"
-        run: npm ci
+      - name: "Phase 0: Install jq"
+        run: sudo apt-get install -y jq
 
       - name: "Phase 0: Update gist — setup complete"
         run: ./scripts/update-gist-status.sh "$GIST_ID" 0 9 "Setup" "running"
