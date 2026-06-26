@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="400" viewBox="0 0 960 400">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16162a"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7c4dff"/>
+      <stop offset="100%" stop-color="#6c3ce0"/>
+    </linearGradient>
+    <linearGradient id="arrowGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#6c3ce0"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="400" rx="12" fill="url(#bgGrad)"/>
+  <rect x="1" y="1" width="958" height="398" rx="11" fill="none" stroke="#2a2a4a" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="480" y="36" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#a78bfa" letter-spacing="1.5">AUTOMATED EXPLAINER PIPELINE</text>
+
+  <!-- ===== LEFT: Your Repo ===== -->
+  <rect x="40" y="130" width="180" height="140" rx="12" fill="#222244" stroke="#6c3ce0" stroke-width="1.5"/>
+
+  <!-- GitHub-style logo (simplified octocat silhouette as a circle + mark) -->
+  <circle cx="130" cy="175" r="22" fill="#2d2d50" stroke="#6c3ce0" stroke-width="1"/>
+  <!-- Git branch icon -->
+  <circle cx="122" cy="168" r="3" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+  <line x1="122" y1="171" x2="122" y2="182" stroke="#a78bfa" stroke-width="1.5"/>
+  <circle cx="138" cy="168" r="3" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+  <line x1="138" y1="171" x2="138" y2="176" stroke="#a78bfa" stroke-width="1.5"/>
+  <path d="M138 176 C138 182 122 178 122 182" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+
+  <text x="130" y="212" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#ffffff">Your Repo</text>
+  <text x="130" y="232" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#9ca3af">github.com/you/repo</text>
+  <text x="130" y="248" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#9ca3af">Opens an issue</text>
+
+  <!-- ===== ARROW ===== -->
+  <line x1="230" y1="200" x2="355" y2="200" stroke="url(#arrowGrad)" stroke-width="2" stroke-dasharray="6 3"/>
+  <polygon points="355,194 367,200 355,206" fill="#10b981"/>
+
+  <!-- Arrow label -->
+  <rect x="248" y="172" width="100" height="20" rx="4" fill="#2a2a4a"/>
+  <text x="298" y="186" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#f59e0b">Pipeline runs</text>
+  <text x="298" y="218" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#9ca3af">~5-10 min</text>
+
+  <!-- ===== RIGHT: What You Get ===== -->
+  <rect x="380" y="55" width="550" height="330" rx="12" fill="#1e1e38" stroke="#2a2a4a" stroke-width="1"/>
+  <text x="655" y="82" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#ffffff">What You Get</text>
+  <line x1="400" y1="92" x2="910" y2="92" stroke="#2a2a4a" stroke-width="1"/>
+
+  <!-- Item 1: GitHub Repo -->
+  <rect x="400" y="104" width="510" height="48" rx="8" fill="#222244" stroke="#2d2d50" stroke-width="1"/>
+  <!-- Checkmark circle -->
+  <circle cx="422" cy="128" r="10" fill="#10b981" opacity="0.15"/>
+  <polyline points="416,128 420,132 428,123" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Text -->
+  <text x="440" y="123" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#ffffff">GitHub repo</text>
+  <text x="440" y="140" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#9ca3af">stuinfla/</text>
+  <text x="488" y="140" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#a78bfa" font-style="italic">{repo}</text>
+  <text x="520" y="140" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#9ca3af">-explainer</text>
+  <!-- Badge -->
+  <rect x="780" y="114" width="118" height="22" rx="4" fill="#6c3ce0" opacity="0.2"/>
+  <text x="839" y="129" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#a78bfa">Invited as collaborator</text>
+
+  <!-- Item 2: Live Site -->
+  <rect x="400" y="160" width="510" height="48" rx="8" fill="#222244" stroke="#2d2d50" stroke-width="1"/>
+  <circle cx="422" cy="184" r="10" fill="#10b981" opacity="0.15"/>
+  <polyline points="416,184 420,188 428,179" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="440" y="179" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#ffffff">Live site</text>
+  <text x="440" y="196" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#a78bfa" font-style="italic">{repo}</text>
+  <text x="472" y="196" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#9ca3af">-explainer.vercel.app</text>
+  <rect x="800" y="170" width="98" height="22" rx="4" fill="#10b981" opacity="0.15"/>
+  <text x="849" y="185" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#10b981">Auto-deploys</text>
+
+  <!-- Item 3: Tracking Issue -->
+  <rect x="400" y="216" width="510" height="48" rx="8" fill="#222244" stroke="#2d2d50" stroke-width="1"/>
+  <circle cx="422" cy="240" r="10" fill="#10b981" opacity="0.15"/>
+  <polyline points="416,240 420,244 428,235" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="440" y="235" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#ffffff">Tracking issue</text>
+  <text x="440" y="252" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#9ca3af">Commented with results table</text>
+  <!-- Table icon -->
+  <rect x="818" y="228" width="16" height="12" rx="2" fill="none" stroke="#f59e0b" stroke-width="1.2"/>
+  <line x1="818" y1="234" x2="834" y2="234" stroke="#f59e0b" stroke-width="1"/>
+  <line x1="826" y1="228" x2="826" y2="240" stroke="#f59e0b" stroke-width="1"/>
+  <text x="848" y="239" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#f59e0b">Results</text>
+
+  <!-- Item 4: Email Notification -->
+  <rect x="400" y="272" width="510" height="48" rx="8" fill="#222244" stroke="#2d2d50" stroke-width="1"/>
+  <circle cx="422" cy="296" r="10" fill="#10b981" opacity="0.15"/>
+  <polyline points="416,296 420,300 428,291" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="440" y="291" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#ffffff">Email notification</text>
+  <text x="440" y="308" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#9ca3af">"Your explainer is ready!"</text>
+  <!-- Mail icon -->
+  <rect x="818" y="286" width="16" height="12" rx="2" fill="none" stroke="#a78bfa" stroke-width="1.2"/>
+  <polyline points="818,288 826,294 834,288" fill="none" stroke="#a78bfa" stroke-width="1"/>
+
+  <!-- Item 5: PR on README -->
+  <rect x="400" y="328" width="510" height="48" rx="8" fill="#222244" stroke="#2d2d50" stroke-width="1"/>
+  <circle cx="422" cy="352" r="10" fill="#10b981" opacity="0.15"/>
+  <polyline points="416,352 420,356 428,347" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="440" y="347" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#ffffff">PR on your README</text>
+  <text x="440" y="364" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#9ca3af">Badge linking to explainer site</text>
+  <!-- PR merge icon -->
+  <circle cx="822" cy="347" r="3" fill="none" stroke="#10b981" stroke-width="1.5"/>
+  <line x1="822" y1="350" x2="822" y2="360" stroke="#10b981" stroke-width="1.5"/>
+  <circle cx="832" cy="347" r="3" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+  <path d="M832 350 C832 356 822 354 822 360" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="848" y="355" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#10b981">PR</text>
+</svg>

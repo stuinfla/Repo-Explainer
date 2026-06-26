@@ -1,0 +1,242 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 920" width="960" height="920" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1a2e"/>
+      <stop offset="1" stop-color="#12122a"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#252545"/>
+      <stop offset="1" stop-color="#1e1e3a"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6c3ce0"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#059669"/>
+      <stop offset="1" stop-color="#10b981"/>
+    </linearGradient>
+    <marker id="arrowPurple" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#8b5cf6"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#10b981"/>
+    </marker>
+    <marker id="arrowAmber" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#f59e0b"/>
+    </marker>
+    <marker id="arrowCyan" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#22d3ee"/>
+    </marker>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="920" rx="16" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="480" y="38" text-anchor="middle" fill="#f4f0ff" font-size="20" font-weight="700">Repo Explainer  —  Automated Build Pipeline</text>
+  <text x="480" y="58" text-anchor="middle" fill="#9990b8" font-size="12">From URL submission to live explainer in minutes</text>
+
+  <!-- ============================================================ -->
+  <!-- COLUMN HEADERS                                                -->
+  <!-- ============================================================ -->
+
+  <!-- User column header -->
+  <rect x="40" y="80" width="200" height="32" rx="6" fill="url(#purpleGrad)" filter="url(#shadow)"/>
+  <text x="140" y="101" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">USER</text>
+
+  <!-- Vercel API column header -->
+  <rect x="290" y="80" width="200" height="32" rx="6" fill="url(#purpleGrad)" filter="url(#shadow)"/>
+  <text x="390" y="101" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">VERCEL API</text>
+
+  <!-- GitHub Actions column header -->
+  <rect x="570" y="80" width="350" height="32" rx="6" fill="url(#purpleGrad)" filter="url(#shadow)"/>
+  <text x="745" y="101" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">GITHUB ACTIONS</text>
+
+  <!-- Column separator lines -->
+  <line x1="260" y1="80" x2="260" y2="890" stroke="#2e2e50" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="540" y1="80" x2="540" y2="890" stroke="#2e2e50" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- ============================================================ -->
+  <!-- USER COLUMN                                                   -->
+  <!-- ============================================================ -->
+
+  <!-- Paste URL + email -->
+  <rect x="50" y="135" width="180" height="56" rx="10" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="140" y="158" text-anchor="middle" fill="#f4f0ff" font-size="12" font-weight="600">Paste URL + email</text>
+  <text x="140" y="178" text-anchor="middle" fill="#9990b8" font-size="10">POST /api/build</text>
+
+  <!-- Poll every 5s -->
+  <rect x="50" y="530" width="180" height="56" rx="10" fill="url(#card)" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="140" y="553" text-anchor="middle" fill="#f4f0ff" font-size="12" font-weight="600">Poll status</text>
+  <text x="140" y="573" text-anchor="middle" fill="#f59e0b" font-size="10">GET /api/status  (every 5s)</text>
+
+  <!-- Explainer is live! -->
+  <rect x="50" y="840" width="180" height="56" rx="10" fill="url(#card)" stroke="#10b981" stroke-width="2" filter="url(#shadow)"/>
+  <text x="140" y="864" text-anchor="middle" fill="#10b981" font-size="13" font-weight="700">Your explainer</text>
+  <text x="140" y="882" text-anchor="middle" fill="#10b981" font-size="13" font-weight="700">is live!</text>
+
+  <!-- ============================================================ -->
+  <!-- VERCEL API COLUMN                                             -->
+  <!-- ============================================================ -->
+
+  <rect x="300" y="135" width="180" height="46" rx="10" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="390" y="163" text-anchor="middle" fill="#f4f0ff" font-size="12" font-weight="600">Validate repo</text>
+
+  <rect x="300" y="200" width="180" height="46" rx="10" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="390" y="228" text-anchor="middle" fill="#f4f0ff" font-size="12" font-weight="600">Create status Gist</text>
+
+  <rect x="300" y="265" width="180" height="46" rx="10" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="390" y="293" text-anchor="middle" fill="#f4f0ff" font-size="12" font-weight="600">Create tracking Issue</text>
+
+  <rect x="300" y="330" width="180" height="46" rx="10" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="390" y="358" text-anchor="middle" fill="#f4f0ff" font-size="12" font-weight="600">Fire workflow_dispatch</text>
+
+  <!-- Read Gist (status poll) -->
+  <rect x="300" y="530" width="180" height="56" rx="10" fill="url(#card)" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="390" y="553" text-anchor="middle" fill="#f4f0ff" font-size="12" font-weight="600">Read Gist status</text>
+  <text x="390" y="573" text-anchor="middle" fill="#9990b8" font-size="10">Return current phase to user</text>
+
+  <!-- ============================================================ -->
+  <!-- VERCEL INTERNAL ARROWS (vertical flow)                       -->
+  <!-- ============================================================ -->
+  <line x1="390" y1="181" x2="390" y2="200" stroke="#6c3ce0" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <line x1="390" y1="246" x2="390" y2="265" stroke="#6c3ce0" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+  <line x1="390" y1="311" x2="390" y2="330" stroke="#6c3ce0" stroke-width="1.5" marker-end="url(#arrowPurple)"/>
+
+  <!-- ============================================================ -->
+  <!-- GITHUB ACTIONS COLUMN  —  10 phases                         -->
+  <!-- ============================================================ -->
+
+  <!-- Gist box (target for update arrows) -->
+  <rect x="570" y="130" width="100" height="40" rx="8" fill="url(#card)" stroke="#22d3ee" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="620" y="155" text-anchor="middle" fill="#22d3ee" font-size="11" font-weight="700">Gist</text>
+
+  <!-- Phase boxes — stacked -->
+  <rect x="690" y="130" width="220" height="40" rx="8" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="703" y="155" fill="#8b5cf6" font-size="11" font-weight="700">P0</text>
+  <text x="728" y="155" fill="#f4f0ff" font-size="11">Setup  (env, deps, secrets)</text>
+
+  <rect x="690" y="180" width="220" height="40" rx="8" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="703" y="205" fill="#8b5cf6" font-size="11" font-weight="700">P1</text>
+  <text x="728" y="205" fill="#f4f0ff" font-size="11">Clone  (shallow clone repo)</text>
+
+  <rect x="690" y="230" width="220" height="40" rx="8" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="703" y="255" fill="#8b5cf6" font-size="11" font-weight="700">P2</text>
+  <text x="728" y="255" fill="#f4f0ff" font-size="11">Build KB  (384-dim HNSW)</text>
+
+  <rect x="690" y="280" width="220" height="40" rx="8" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="703" y="305" fill="#8b5cf6" font-size="11" font-weight="700">P3</text>
+  <text x="728" y="305" fill="#f4f0ff" font-size="11">Scaffold  (site structure)</text>
+
+  <rect x="690" y="330" width="220" height="40" rx="8" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="703" y="355" fill="#8b5cf6" font-size="11" font-weight="700">P4</text>
+  <text x="728" y="355" fill="#f4f0ff" font-size="11">Author  (LLM content gen)</text>
+
+  <rect x="690" y="380" width="220" height="40" rx="8" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="703" y="405" fill="#8b5cf6" font-size="11" font-weight="700">P5</text>
+  <text x="728" y="405" fill="#f4f0ff" font-size="11">Images  (SVG diagrams)</text>
+
+  <rect x="690" y="430" width="220" height="40" rx="8" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="703" y="455" fill="#8b5cf6" font-size="11" font-weight="700">P6</text>
+  <text x="728" y="455" fill="#f4f0ff" font-size="11">Quality Gates  (5 checks)</text>
+
+  <rect x="690" y="480" width="220" height="40" rx="8" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="703" y="505" fill="#8b5cf6" font-size="11" font-weight="700">P7</text>
+  <text x="728" y="505" fill="#f4f0ff" font-size="11">Create Repo  (push to GH)</text>
+
+  <rect x="690" y="530" width="220" height="40" rx="8" fill="url(#card)" stroke="#10b981" stroke-width="2" filter="url(#shadow)"/>
+  <text x="703" y="555" fill="#10b981" font-size="11" font-weight="700">P8</text>
+  <text x="728" y="555" fill="#f4f0ff" font-size="11">Deploy  (Vercel / Pages)</text>
+
+  <rect x="690" y="580" width="220" height="40" rx="8" fill="url(#card)" stroke="#10b981" stroke-width="2" filter="url(#shadow)"/>
+  <text x="703" y="605" fill="#10b981" font-size="11" font-weight="700">P9</text>
+  <text x="728" y="605" fill="#f4f0ff" font-size="11">Notify  (email + Gist final)</text>
+
+  <!-- Phase connector lines (vertical between phases) -->
+  <line x1="800" y1="170" x2="800" y2="180" stroke="#3d3d6b" stroke-width="1"/>
+  <line x1="800" y1="220" x2="800" y2="230" stroke="#3d3d6b" stroke-width="1"/>
+  <line x1="800" y1="270" x2="800" y2="280" stroke="#3d3d6b" stroke-width="1"/>
+  <line x1="800" y1="320" x2="800" y2="330" stroke="#3d3d6b" stroke-width="1"/>
+  <line x1="800" y1="370" x2="800" y2="380" stroke="#3d3d6b" stroke-width="1"/>
+  <line x1="800" y1="420" x2="800" y2="430" stroke="#3d3d6b" stroke-width="1"/>
+  <line x1="800" y1="470" x2="800" y2="480" stroke="#3d3d6b" stroke-width="1"/>
+  <line x1="800" y1="520" x2="800" y2="530" stroke="#3d3d6b" stroke-width="1"/>
+  <line x1="800" y1="570" x2="800" y2="580" stroke="#3d3d6b" stroke-width="1"/>
+
+  <!-- ============================================================ -->
+  <!-- MAIN FLOW ARROWS                                              -->
+  <!-- ============================================================ -->
+
+  <!-- Arrow 1: User -> Vercel (POST /api/build) -->
+  <line x1="230" y1="163" x2="297" y2="158" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrowPurple)"/>
+  <text x="262" y="150" text-anchor="middle" fill="#8b5cf6" font-size="9" font-weight="600">POST</text>
+
+  <!-- Arrow 2: Vercel -> GitHub Actions (workflow_dispatch) -->
+  <path d="M480,353 L690,150" stroke="#8b5cf6" stroke-width="2" fill="none" marker-end="url(#arrowPurple)"/>
+  <text x="600" y="232" text-anchor="middle" fill="#8b5cf6" font-size="9" font-weight="600" transform="rotate(-27, 600, 232)">workflow_dispatch</text>
+
+  <!-- Arrow 3: GitHub Actions -> Gist (update at each step) -->
+  <!-- Horizontal arrow from phase area to Gist box -->
+  <line x1="688" y1="300" x2="672" y2="165" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowCyan)"/>
+  <text x="660" y="240" text-anchor="end" fill="#22d3ee" font-size="9">update</text>
+  <text x="660" y="252" text-anchor="end" fill="#22d3ee" font-size="9">each step</text>
+
+  <!-- Arrow 4: Vercel -> Gist (read status) -->
+  <path d="M480,555 C530,555 550,170 570,150" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="5,3" marker-end="url(#arrowAmber)"/>
+  <text x="530" y="370" text-anchor="middle" fill="#f59e0b" font-size="9">read</text>
+
+  <!-- Arrow 5: User -> Vercel (poll every 5s) -->
+  <line x1="230" y1="558" x2="297" y2="558" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <text x="262" y="548" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="600">poll 5s</text>
+
+  <!-- Arrow 6: Vercel returns status to User -->
+  <line x1="300" y1="572" x2="233" y2="572" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowAmber)"/>
+
+  <!-- ============================================================ -->
+  <!-- FINAL SUCCESS FLOW                                            -->
+  <!-- ============================================================ -->
+
+  <!-- P9 Notify -> User gets live -->
+  <path d="M690,600 L540,700 L390,750 L140,838" stroke="#10b981" stroke-width="2.5" fill="none" stroke-dasharray="6,3" marker-end="url(#arrowGreen)" filter="url(#glow)"/>
+  <text x="400" y="735" text-anchor="middle" fill="#10b981" font-size="10" font-weight="600">email notification + live URL</text>
+
+  <!-- ============================================================ -->
+  <!-- LEGEND                                                        -->
+  <!-- ============================================================ -->
+  <rect x="40" y="650" width="200" height="170" rx="10" fill="url(#card)" stroke="#2e2e50" stroke-width="1"/>
+  <text x="140" y="675" text-anchor="middle" fill="#f4f0ff" font-size="11" font-weight="700">LEGEND</text>
+
+  <line x1="60" y1="695" x2="90" y2="695" stroke="#8b5cf6" stroke-width="2"/>
+  <text x="100" y="699" fill="#9990b8" font-size="10">API request</text>
+
+  <line x1="60" y1="715" x2="90" y2="715" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="100" y="719" fill="#9990b8" font-size="10">Status polling</text>
+
+  <line x1="60" y1="735" x2="90" y2="735" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="100" y="739" fill="#9990b8" font-size="10">Gist update</text>
+
+  <line x1="60" y1="755" x2="90" y2="755" stroke="#10b981" stroke-width="2.5"/>
+  <text x="100" y="759" fill="#9990b8" font-size="10">Success notification</text>
+
+  <rect x="60" y="775" width="12" height="12" rx="3" fill="url(#card)" stroke="#6c3ce0" stroke-width="1.5"/>
+  <text x="82" y="785" fill="#9990b8" font-size="10">Active phase</text>
+
+  <rect x="60" y="795" width="12" height="12" rx="3" fill="url(#card)" stroke="#10b981" stroke-width="2"/>
+  <text x="82" y="805" fill="#9990b8" font-size="10">Success state</text>
+
+  <!-- ============================================================ -->
+  <!-- TIMING NOTE                                                   -->
+  <!-- ============================================================ -->
+  <rect x="290" y="840" width="350" height="50" rx="10" fill="url(#card)" stroke="#3d3d6b" stroke-width="1" filter="url(#shadow)"/>
+  <text x="465" y="862" text-anchor="middle" fill="#9990b8" font-size="11">Typical build time:</text>
+  <text x="465" y="880" text-anchor="middle" fill="#8b5cf6" font-size="13" font-weight="700">3 - 8 minutes  (10 phases, fully automated)</text>
+
+</svg>

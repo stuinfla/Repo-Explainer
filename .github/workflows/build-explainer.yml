@@ -1,0 +1,313 @@
+name: Build Repo Explainer
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_owner:
+        description: GitHub owner of the repo to explain
+        required: true
+        type: string
+      target_repo:
+        description: GitHub repo name to explain
+        required: true
+        type: string
+      build_id:
+        description: UUID for tracking this build
+        required: true
+        type: string
+      gist_id:
+        description: GitHub Gist ID for status updates
+        required: true
+        type: string
+      submitter_email:
+        description: Email to notify when done
+        required: false
+        type: string
+      issue_number:
+        description: Tracking issue number
+        required: false
+        type: string
+
+env:
+  BUILD_ID: ${{ inputs.build_id }}
+  GIST_ID: ${{ inputs.gist_id }}
+  TARGET_OWNER: ${{ inputs.target_owner }}
+  TARGET_REPO: ${{ inputs.target_repo }}
+  EXPLAINER_REPO: stuinfla/${{ inputs.target_repo }}-explainer
+  EXPLAINER_DOMAIN: ${{ inputs.target_repo }}-explainer.vercel.app
+  GH_PAT: ${{ secrets.GH_PAT }}
+  STARTED_AT: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record start time
+        run: echo "STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
+      # ──────────────────────────────────────────────
+      # Phase 0 — Setup
+      # ──────────────────────────────────────────────
+      - name: "Phase 0: Checkout Repo-Explainer"
+        uses: actions/checkout@v4
+
+      - name: "Phase 0: Setup Node.js 20"
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: "Phase 0: Install dependencies"
+        run: npm ci
+
+      - name: "Phase 0: Update gist — setup complete"
+        run: ./scripts/update-gist-status.sh "$GIST_ID" 0 9 "Setup" "running"
+
+      # ──────────────────────────────────────────────
+      # Phase 1 — Clone target repo
+      # ──────────────────────────────────────────────
+      - name: "Phase 1: Update gist — cloning target"
+        run: ./scripts/update-gist-status.sh "$GIST_ID" 1 9 "Cloning target repository" "running"
+
+      - name: "Phase 1: Shallow clone target repo"
+        run: |
+          git clone --depth 1 \
+            "https://github.com/${{ inputs.target_owner }}/${{ inputs.target_repo }}.git" \
+            target-repo
+          if [ ! -d "target-repo" ]; then
+            echo "::error::Target repo not found: ${{ inputs.target_owner }}/${{ inputs.target_repo }}"
+            exit 1
+          fi
+          echo "Target repo cloned successfully"
+          ls -la target-repo/
+
+      # ──────────────────────────────────────────────
+      # Phase 2 — Build knowledge base
+      # ──────────────────────────────────────────────
+      - name: "Phase 2: Update gist — building KB"
+        run: ./scripts/update-gist-status.sh "$GIST_ID" 2 9 "Building knowledge base" "running"
+
+      - name: "Phase 2: Build knowledge base"
+        run: |
+          echo "KB build would run here"
+          echo "Target repo: target-repo/"
+          echo "KB output: kb-output/"
+          mkdir -p kb-output
+
+      # ──────────────────────────────────────────────
+      # Phase 3 — Scaffold explainer site
+      # ──────────────────────────────────────────────
+      - name: "Phase 3: Update gist — scaffolding site"
+        run: ./scripts/update-gist-status.sh "$GIST_ID" 3 9 "Scaffolding explainer site" "running"
+
+      - name: "Phase 3: Scaffold site from template"
+        run: |
+          echo "Scaffolding explainer site for ${{ inputs.target_repo }}"
+          mkdir -p explainer-site
+          # Placeholder: copy template structure when available
+          mkdir -p explainer-site/{public,src,content}
+          echo "{\"name\": \"${{ inputs.target_repo }}-explainer\"}" > explainer-site/package.json
+
+      # ──────────────────────────────────────────────
+      # Phase 4 — Author content
+      # ──────────────────────────────────────────────
+      - name: "Phase 4: Update gist — authoring content"
+        run: ./scripts/update-gist-status.sh "$GIST_ID" 4 9 "Authoring explainer content" "running"
+
+      - name: "Phase 4: Generate 7-section explainer content"
+        run: |
+          echo "Content authoring would run here"
+          echo "Generating 7 sections for ${{ inputs.target_repo }}"
+          for i in $(seq 1 7); do
+            mkdir -p "explainer-site/content/section-$i"
+            echo "# Section $i" > "explainer-site/content/section-$i/index.md"
+          done
+
+      # ──────────────────────────────────────────────
+      # Phase 5 — Generate images
+      # ──────────────────────────────────────────────
+      - name: "Phase 5: Update gist — generating images"
+        run: ./scripts/update-gist-status.sh "$GIST_ID" 5 9 "Generating images" "running"
+
+      - name: "Phase 5: Generate hero and section images"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          echo "Image generation would run here"
+          echo "Using OpenAI API for hero image and section illustrations"
+          mkdir -p explainer-site/public/images
+
+      # ──────────────────────────────────────────────
+      # Phase 6 — Quality gates
+      # ──────────────────────────────────────────────
+      - name: "Phase 6: Update gist — running quality gates"
+        run: ./scripts/update-gist-status.sh "$GIST_ID" 6 9 "Running quality gates" "running"
+
+      - name: "Phase 6: Run 5-gate quality system"
+        run: |
+          echo "Quality gates would run here"
+          echo "Gate 1: Structure validation"
+          echo "Gate 2: Content completeness"
+          echo "Gate 3: Link integrity"
+          echo "Gate 4: Accessibility check"
+          echo "Gate 5: Performance baseline"
+
+      # ──────────────────────────────────────────────
+      # Phase 7 — Create GitHub repo and push
+      # ──────────────────────────────────────────────
+      - name: "Phase 7: Update gist — creating repo"
+        run: ./scripts/update-gist-status.sh "$GIST_ID" 7 9 "Creating GitHub repository" "running"
+
+      - name: "Phase 7: Create repo and push explainer"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          # Create the public repo (or skip if it already exists)
+          gh repo create "$EXPLAINER_REPO" --public --description \
+            "Explainer site for ${{ inputs.target_owner }}/${{ inputs.target_repo }}" 2>/dev/null \
+            || echo "Repo already exists, continuing"
+
+          cd explainer-site
+          git init
+          git remote add origin "https://x-access-token:${GH_PAT}@github.com/${EXPLAINER_REPO}.git"
+          git checkout -b main
+          git add -A
+          git -c user.name="Repo Explainer Bot" \
+              -c user.email="bot@repo-explainer.dev" \
+              commit -m "Initial explainer for ${{ inputs.target_owner }}/${{ inputs.target_repo }}"
+          git push -u origin main --force
+
+      - name: "Phase 7: Invite repo owner as collaborator"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          gh api "repos/${EXPLAINER_REPO}/collaborators/${{ inputs.target_owner }}" \
+            -X PUT -f permission=push \
+            || echo "::warning::Could not invite ${{ inputs.target_owner }} as collaborator"
+
+      # ──────────────────────────────────────────────
+      # Phase 8 — Deploy to Vercel
+      # ──────────────────────────────────────────────
+      - name: "Phase 8: Update gist — deploying"
+        run: ./scripts/update-gist-status.sh "$GIST_ID" 8 9 "Deploying to Vercel" "running"
+
+      - name: "Phase 8: Deploy to Vercel"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        run: |
+          npm i -g vercel@latest
+
+          cd explainer-site
+          vercel pull --yes --token "$VERCEL_TOKEN" 2>/dev/null || true
+          DEPLOYMENT_URL=$(vercel deploy --prod --yes --token "$VERCEL_TOKEN" 2>&1 | tail -1)
+          echo "Deployed to: $DEPLOYMENT_URL"
+
+          vercel alias set "$DEPLOYMENT_URL" "$EXPLAINER_DOMAIN" --token "$VERCEL_TOKEN" \
+            || echo "::warning::Alias failed — site is still live at $DEPLOYMENT_URL"
+
+          echo "DEPLOYMENT_URL=$DEPLOYMENT_URL" >> "$GITHUB_ENV"
+
+      # ──────────────────────────────────────────────
+      # Phase 9 — Notify
+      # ──────────────────────────────────────────────
+      - name: "Phase 9: Update gist — done"
+        run: |
+          RESULT=$(jq -n \
+            --arg explainerUrl "https://$EXPLAINER_DOMAIN" \
+            --arg repoUrl "https://github.com/$EXPLAINER_REPO" \
+            --arg issueUrl "https://github.com/${{ github.repository }}/issues/${{ inputs.issue_number }}" \
+            '{explainerUrl: $explainerUrl, repoUrl: $repoUrl, issueUrl: $issueUrl}')
+
+          PAYLOAD=$(jq -n \
+            --arg buildId "$BUILD_ID" \
+            --arg startedAt "$STARTED_AT" \
+            --argjson result "$RESULT" \
+            '{
+              buildId: $buildId,
+              step: 9,
+              totalSteps: 9,
+              stepName: "Complete",
+              status: "done",
+              startedAt: $startedAt,
+              error: null,
+              result: $result
+            }')
+
+          GIST_BODY=$(jq -n --arg content "$PAYLOAD" '{files: {"status.json": {content: $content}}}')
+
+          curl -s -X PATCH \
+            -H "Authorization: token $GH_PAT" \
+            -H "Accept: application/vnd.github+json" \
+            -d "$GIST_BODY" \
+            "https://api.github.com/gists/$GIST_ID"
+
+      - name: "Phase 9: Comment on tracking issue"
+        if: inputs.issue_number != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          gh issue comment "${{ inputs.issue_number }}" \
+            --repo "${{ github.repository }}" \
+            --body "$(cat <<EOF
+          ## Explainer Ready
+
+          | Item | Link |
+          |------|------|
+          | Live site | [https://$EXPLAINER_DOMAIN](https://$EXPLAINER_DOMAIN) |
+          | Repository | [github.com/$EXPLAINER_REPO](https://github.com/$EXPLAINER_REPO) |
+          | Build ID | \`$BUILD_ID\` |
+
+          Generated from [${{ inputs.target_owner }}/${{ inputs.target_repo }}](https://github.com/${{ inputs.target_owner }}/${{ inputs.target_repo }}).
+          EOF
+          )"
+
+      - name: "Phase 9: Send email notification"
+        if: inputs.submitter_email != '' && env.HAS_RESEND == 'true'
+        env:
+          HAS_RESEND: ${{ secrets.RESEND_API_KEY != '' }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          curl -s -X POST "https://api.resend.com/emails" \
+            -H "Authorization: Bearer $RESEND_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n \
+              --arg to "${{ inputs.submitter_email }}" \
+              --arg repo "${{ inputs.target_owner }}/${{ inputs.target_repo }}" \
+              --arg url "https://$EXPLAINER_DOMAIN" \
+              --arg ghUrl "https://github.com/$EXPLAINER_REPO" \
+              '{
+                from: "Repo Explainer <noreply@repo-explainer.dev>",
+                to: [$to],
+                subject: ("Your explainer for " + $repo + " is ready!"),
+                html: ("<h2>Your Repo Explainer is ready</h2><p>Repository: <a href=\"" + $ghUrl + "\">" + $repo + "-explainer</a></p><p>Live site: <a href=\"" + $url + "\">" + $url + "</a></p>")
+              }')"
+
+      # ──────────────────────────────────────────────
+      # Failure handler — update gist with error
+      # ──────────────────────────────────────────────
+      - name: "On failure: update gist with error"
+        if: failure()
+        run: |
+          FAILED_STEP="${{ github.action }}"
+          ./scripts/update-gist-status.sh \
+            "$GIST_ID" 0 9 "$FAILED_STEP" "failed" \
+            "Build failed at step: $FAILED_STEP. See workflow run for details."
+
+      - name: "On failure: comment on tracking issue"
+        if: failure() && inputs.issue_number != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          gh issue comment "${{ inputs.issue_number }}" \
+            --repo "${{ github.repository }}" \
+            --body "$(cat <<EOF
+          ## Explainer Build Failed
+
+          | Item | Detail |
+          |------|--------|
+          | Build ID | \`$BUILD_ID\` |
+          | Target | ${{ inputs.target_owner }}/${{ inputs.target_repo }} |
+          | Workflow run | [View logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
+          EOF
+          )"

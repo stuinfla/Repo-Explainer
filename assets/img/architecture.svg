@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" width="960" height="520">
+  <defs>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8b5cf6"/>
+    </marker>
+    <marker id="arrow-amber" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="520" rx="12" fill="#1a1a2e"/>
+
+  <!-- Main container -->
+  <rect x="20" y="16" width="920" height="488" rx="10" fill="none" stroke="#6c3ce0" stroke-width="2" stroke-opacity="0.5"/>
+
+  <!-- Title bar -->
+  <rect x="20" y="16" width="920" height="44" rx="10" fill="#6c3ce0" fill-opacity="0.15"/>
+  <rect x="20" y="50" width="920" height="10" fill="#1a1a2e"/>
+  <text x="480" y="45" text-anchor="middle" fill="#fff" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" letter-spacing="2">REPO EXPLAINER</text>
+  <circle cx="44" cy="38" r="5" fill="#10b981"/>
+  <circle cx="62" cy="38" r="5" fill="#f59e0b"/>
+  <circle cx="80" cy="38" r="5" fill="#ef4444"/>
+
+  <!-- Row 1 label -->
+  <text x="48" y="86" fill="#a78bfa" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" letter-spacing="1.5" text-transform="uppercase">INTERNAL COMPONENTS</text>
+
+  <!-- Box 1: www/ -->
+  <rect x="40" y="96" width="205" height="150" rx="8" fill="#1e1e3a" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="40" y="96" width="205" height="30" rx="8" fill="#6c3ce0" fill-opacity="0.2"/>
+  <rect x="40" y="118" width="205" height="8" fill="#1e1e3a"/>
+  <text x="56" y="117" fill="#c4b5fd" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700">www/</text>
+  <text x="56" y="142" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="10">Landing site, form, progress UI</text>
+  <line x1="56" y1="152" x2="229" y2="152" stroke="#6c3ce0" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="56" y="170" fill="#e2e8f0" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="500">index.html  main.js  styles.css</text>
+  <text x="56" y="188" fill="#e2e8f0" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="500">api/build.js</text>
+  <text x="56" y="204" fill="#e2e8f0" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="500">api/status.js</text>
+  <circle cx="224" cy="110" r="4" fill="#10b981" fill-opacity="0.8"/>
+
+  <!-- Box 2: .github/workflows/ -->
+  <rect x="265" y="96" width="205" height="150" rx="8" fill="#1e1e3a" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="265" y="96" width="205" height="30" rx="8" fill="#6c3ce0" fill-opacity="0.2"/>
+  <rect x="265" y="118" width="205" height="8" fill="#1e1e3a"/>
+  <text x="281" y="117" fill="#c4b5fd" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700">.github/workflows/</text>
+  <text x="281" y="142" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="10">Build pipeline</text>
+  <line x1="281" y1="152" x2="454" y2="152" stroke="#6c3ce0" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="281" y="170" fill="#e2e8f0" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="500">build-explainer.yml</text>
+  <rect x="281" y="180" width="60" height="18" rx="4" fill="#6c3ce0" fill-opacity="0.15" stroke="#6c3ce0" stroke-width="0.5"/>
+  <text x="311" y="193" text-anchor="middle" fill="#a78bfa" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600">9 phases</text>
+  <circle cx="449" cy="110" r="4" fill="#10b981" fill-opacity="0.8"/>
+
+  <!-- Box 3: scripts/ -->
+  <rect x="490" y="96" width="205" height="150" rx="8" fill="#1e1e3a" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="490" y="96" width="205" height="30" rx="8" fill="#6c3ce0" fill-opacity="0.2"/>
+  <rect x="490" y="118" width="205" height="8" fill="#1e1e3a"/>
+  <text x="506" y="117" fill="#c4b5fd" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700">scripts/</text>
+  <text x="506" y="142" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="10">Pipeline helpers</text>
+  <line x1="506" y1="152" x2="679" y2="152" stroke="#6c3ce0" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="506" y="170" fill="#e2e8f0" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="500">update-gist-status.sh</text>
+  <circle cx="674" cy="110" r="4" fill="#10b981" fill-opacity="0.8"/>
+
+  <!-- Box 4: kb/ -->
+  <rect x="715" y="96" width="205" height="150" rx="8" fill="#1e1e3a" stroke="#6c3ce0" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="715" y="96" width="205" height="30" rx="8" fill="#6c3ce0" fill-opacity="0.2"/>
+  <rect x="715" y="118" width="205" height="8" fill="#1e1e3a"/>
+  <text x="731" y="117" fill="#c4b5fd" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700">kb/</text>
+  <text x="731" y="142" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="10">Knowledge base tools</text>
+  <line x1="731" y1="152" x2="904" y2="152" stroke="#6c3ce0" stroke-opacity="0.2" stroke-width="1"/>
+  <text x="731" y="170" fill="#e2e8f0" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="500">Vector DB build scripts</text>
+  <circle cx="899" cy="110" r="4" fill="#10b981" fill-opacity="0.8"/>
+
+  <!-- Arrow: www/ -> .github/workflows/ (triggers) -->
+  <line x1="245" y1="170" x2="265" y2="170" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="255" y="163" text-anchor="middle" fill="#8b5cf6" font-family="system-ui, -apple-system, sans-serif" font-size="8" font-style="italic" transform="rotate(-90 255 163)">triggers</text>
+
+  <!-- Row 2 label -->
+  <text x="48" y="280" fill="#fbbf24" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="600" letter-spacing="1.5">EXTERNAL SERVICES</text>
+
+  <!-- Connecting arrows from Row 1 to Row 2 -->
+  <!-- .github/workflows/ -> external services (centered arrow down) -->
+  <path d="M 367 246 L 367 270 L 142 270 L 142 290" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#arrow-amber)"/>
+  <path d="M 367 246 L 367 290" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#arrow-amber)"/>
+  <path d="M 367 246 L 367 270 L 592 270 L 592 290" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#arrow-amber)"/>
+  <path d="M 367 246 L 367 270 L 817 270 L 817 290" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#arrow-amber)"/>
+  <text x="390" y="262" fill="#f59e0b" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-style="italic">uses</text>
+
+  <!-- Box 5: GitHub Actions + Gists -->
+  <rect x="40" y="290" width="205" height="130" rx="8" fill="#1e1e3a" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="40" y="290" width="205" height="30" rx="8" fill="#f59e0b" fill-opacity="0.12"/>
+  <rect x="40" y="312" width="205" height="8" fill="#1e1e3a"/>
+  <text x="56" y="311" fill="#fcd34d" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700">GitHub Actions + Gists</text>
+  <text x="56" y="340" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="10">Pipeline execution</text>
+  <text x="56" y="356" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="10">Progress tracking via Gists</text>
+  <!-- GitHub icon placeholder -->
+  <rect x="56" y="370" width="50" height="18" rx="4" fill="#f59e0b" fill-opacity="0.1" stroke="#f59e0b" stroke-width="0.5"/>
+  <text x="81" y="383" text-anchor="middle" fill="#fbbf24" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600">CI/CD</text>
+  <rect x="114" y="370" width="60" height="18" rx="4" fill="#f59e0b" fill-opacity="0.1" stroke="#f59e0b" stroke-width="0.5"/>
+  <text x="144" y="383" text-anchor="middle" fill="#fbbf24" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600">Status API</text>
+
+  <!-- Box 6: Vercel -->
+  <rect x="265" y="290" width="205" height="130" rx="8" fill="#1e1e3a" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="265" y="290" width="205" height="30" rx="8" fill="#f59e0b" fill-opacity="0.12"/>
+  <rect x="265" y="312" width="205" height="8" fill="#1e1e3a"/>
+  <text x="281" y="311" fill="#fcd34d" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700">Vercel</text>
+  <text x="281" y="340" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="10">Hosting + CDN</text>
+  <text x="281" y="356" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="10">Serverless API</text>
+  <rect x="281" y="370" width="55" height="18" rx="4" fill="#f59e0b" fill-opacity="0.1" stroke="#f59e0b" stroke-width="0.5"/>
+  <text x="308" y="383" text-anchor="middle" fill="#fbbf24" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600">Edge</text>
+  <rect x="344" y="370" width="55" height="18" rx="4" fill="#f59e0b" fill-opacity="0.1" stroke="#f59e0b" stroke-width="0.5"/>
+  <text x="371" y="383" text-anchor="middle" fill="#fbbf24" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600">Functions</text>
+
+  <!-- Box 7: OpenAI -->
+  <rect x="490" y="290" width="205" height="130" rx="8" fill="#1e1e3a" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="490" y="290" width="205" height="30" rx="8" fill="#f59e0b" fill-opacity="0.12"/>
+  <rect x="490" y="312" width="205" height="8" fill="#1e1e3a"/>
+  <text x="506" y="311" fill="#fcd34d" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700">OpenAI</text>
+  <text x="506" y="340" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="10">Image generation</text>
+  <text x="506" y="356" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="10">DALL-E API</text>
+  <rect x="506" y="370" width="70" height="18" rx="4" fill="#f59e0b" fill-opacity="0.1" stroke="#f59e0b" stroke-width="0.5"/>
+  <text x="541" y="383" text-anchor="middle" fill="#fbbf24" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600">GPT + DALL-E</text>
+
+  <!-- Box 8: Resend -->
+  <rect x="715" y="290" width="205" height="130" rx="8" fill="#1e1e3a" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="715" y="290" width="205" height="30" rx="8" fill="#f59e0b" fill-opacity="0.12"/>
+  <rect x="715" y="312" width="205" height="8" fill="#1e1e3a"/>
+  <text x="731" y="311" fill="#fcd34d" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700">Resend</text>
+  <text x="731" y="340" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="10">Email notifications</text>
+  <text x="731" y="356" fill="#94a3b8" font-family="system-ui, -apple-system, sans-serif" font-size="10">Build completion alerts</text>
+  <rect x="731" y="370" width="50" height="18" rx="4" fill="#f59e0b" fill-opacity="0.1" stroke="#f59e0b" stroke-width="0.5"/>
+  <text x="756" y="383" text-anchor="middle" fill="#fbbf24" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="600">SMTP</text>
+
+  <!-- Footer -->
+  <text x="480" y="476" text-anchor="middle" fill="#64748b" font-family="system-ui, -apple-system, sans-serif" font-size="10">repo-explainer architecture  |  github.com/ruvnet/Ruv-Explainer</text>
+  <line x1="60" y1="460" x2="900" y2="460" stroke="#6c3ce0" stroke-opacity="0.15" stroke-width="1"/>
+
+  <!-- Legend -->
+  <rect x="680" y="468" width="8" height="8" rx="2" fill="#6c3ce0" fill-opacity="0.4"/>
+  <text x="694" y="476" fill="#64748b" font-family="system-ui, -apple-system, sans-serif" font-size="9">Internal</text>
+  <rect x="740" y="468" width="8" height="8" rx="2" fill="#f59e0b" fill-opacity="0.4"/>
+  <text x="754" y="476" fill="#64748b" font-family="system-ui, -apple-system, sans-serif" font-size="9">External</text>
+  <circle cx="800" cy="472" r="4" fill="#10b981" fill-opacity="0.6"/>
+  <text x="810" y="476" fill="#64748b" font-family="system-ui, -apple-system, sans-serif" font-size="9">Active</text>
+</svg>

@@ -35,10 +35,11 @@
 
         <form class="hero-input-wrap" id="createForm" onsubmit="return false;">
           <input type="url" id="repoUrl" placeholder="https://github.com/owner/repo" required autocomplete="off" spellcheck="false" />
+          <input type="email" id="submitterEmail" placeholder="Email for notification (optional)" autocomplete="email" spellcheck="false" />
           <button type="submit" class="btn btn-primary">Build Explainer</button>
         </form>
         <p class="hero-hint">Paste any public repo URL &middot; credits the repo author &middot; all output is public</p>
-        <div class="create-output" id="createOutput" style="display:none;max-width:640px;margin:20px auto 0;"><div class="output-header"><h3 id="outputTitle">Building&hellip;</h3><p id="outputDesc"></p></div><div class="output-steps" id="outputSteps"></div></div>
+        <div class="create-output" id="createOutput" style="display:none;max-width:680px;margin:20px auto 0;"><div class="output-header"><h3 id="outputTitle">Building&hellip;</h3><p id="outputDesc"></p></div><div class="output-steps" id="outputSteps"></div></div>
       </div>
     </section>
 
