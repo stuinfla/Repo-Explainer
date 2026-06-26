@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 470" width="980" height="470" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1430"/>
+      <stop offset="1" stop-color="#0e0a1f"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2147"/>
+      <stop offset="1" stop-color="#221a3c"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#b59cff"/>
+    </marker>
+  </defs>
+  <rect width="980" height="470" rx="16" fill="url(#bg)"/>
+  <text x="490" y="40" text-anchor="middle" fill="#f4f0ff" font-size="22" font-weight="700">The Repo-Primer Pipeline</text>
+  <text x="490" y="64" text-anchor="middle" fill="#a99fd0" font-size="13">One under-documented repo in &#8594; two approachable, proven-good artifacts out</text>
+
+  <!-- Stage 1: upstream repo -->
+  <rect x="36" y="150" width="150" height="150" rx="12" fill="url(#card)" stroke="#4a3d78" stroke-width="1.5"/>
+  <text x="111" y="205" text-anchor="middle" fill="#ffd8a8" font-size="30">&#128193;</text>
+  <text x="111" y="240" text-anchor="middle" fill="#f4f0ff" font-size="14" font-weight="600">Upstream repo</text>
+  <text x="111" y="260" text-anchor="middle" fill="#a99fd0" font-size="11">@ruvnet's dense,</text>
+  <text x="111" y="276" text-anchor="middle" fill="#a99fd0" font-size="11">powerful "power tool"</text>
+
+  <!-- Stage 2: build -->
+  <rect x="262" y="120" width="200" height="210" rx="12" fill="url(#card)" stroke="#4a3d78" stroke-width="1.5"/>
+  <text x="362" y="150" text-anchor="middle" fill="#b59cff" font-size="13" font-weight="700">BUILD</text>
+  <text x="362" y="184" text-anchor="middle" fill="#f4f0ff" font-size="12">1. Ingest the repo tree</text>
+  <text x="362" y="208" text-anchor="middle" fill="#f4f0ff" font-size="12">2. Build the 384-dim</text>
+  <text x="362" y="224" text-anchor="middle" fill="#f4f0ff" font-size="12">RVF / HNSW KB</text>
+  <text x="362" y="248" text-anchor="middle" fill="#f4f0ff" font-size="12">3. Author the</text>
+  <text x="362" y="264" text-anchor="middle" fill="#f4f0ff" font-size="12">explainer site</text>
+  <text x="362" y="288" text-anchor="middle" fill="#f4f0ff" font-size="12">4. NotebookLM studio</text>
+  <text x="362" y="312" text-anchor="middle" fill="#a99fd0" font-size="11">(structure-aware, image-first)</text>
+
+  <!-- Stage 3: gates -->
+  <rect x="538" y="120" width="190" height="210" rx="12" fill="url(#card)" stroke="#6b5ca8" stroke-width="2"/>
+  <text x="633" y="150" text-anchor="middle" fill="#7fe3b0" font-size="13" font-weight="700">5 QUALITY GATES</text>
+  <text x="633" y="180" text-anchor="middle" fill="#f4f0ff" font-size="12">A &#183; KB answers</text>
+  <text x="633" y="204" text-anchor="middle" fill="#f4f0ff" font-size="12">B &#183; comprehension + felt</text>
+  <text x="633" y="228" text-anchor="middle" fill="#f4f0ff" font-size="12">C &#183; consistency + dry-run</text>
+  <text x="633" y="252" text-anchor="middle" fill="#f4f0ff" font-size="12">D &#183; studio graded</text>
+  <text x="633" y="276" text-anchor="middle" fill="#f4f0ff" font-size="12">E &#183; visuals graded</text>
+  <text x="633" y="306" text-anchor="middle" fill="#7fe3b0" font-size="11" font-weight="600">each &#8805; 95 &#8594; done = proven-good</text>
+
+  <!-- Stage 4: outputs -->
+  <rect x="804" y="120" width="148" height="100" rx="12" fill="url(#card)" stroke="#4a3d78" stroke-width="1.5"/>
+  <text x="878" y="150" text-anchor="middle" fill="#ffd8a8" font-size="22">&#127760;</text>
+  <text x="878" y="178" text-anchor="middle" fill="#f4f0ff" font-size="12" font-weight="600">Explainer site</text>
+  <text x="878" y="196" text-anchor="middle" fill="#a99fd0" font-size="10.5">(for humans)</text>
+
+  <rect x="804" y="232" width="148" height="100" rx="12" fill="url(#card)" stroke="#4a3d78" stroke-width="1.5"/>
+  <text x="878" y="262" text-anchor="middle" fill="#7fe3b0" font-size="22">&#128230;</text>
+  <text x="878" y="290" text-anchor="middle" fill="#f4f0ff" font-size="12" font-weight="600">Smart zip</text>
+  <text x="878" y="308" text-anchor="middle" fill="#a99fd0" font-size="10.5">(for your AI)</text>
+
+  <!-- arrows -->
+  <line x1="188" y1="225" x2="258" y2="225" stroke="#b59cff" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="464" y1="225" x2="534" y2="225" stroke="#b59cff" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="730" y1="190" x2="800" y2="170" stroke="#b59cff" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="730" y1="260" x2="800" y2="282" stroke="#b59cff" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <text x="490" y="400" text-anchor="middle" fill="#a99fd0" font-size="12">Evergreen: a cron poll rebuilds only when the upstream repo's commit SHA moves &#8212; never a stale primer.</text>
+  <text x="490" y="424" text-anchor="middle" fill="#a99fd0" font-size="12">Then deploy public to Vercel and verify the live site returns HTTP 200.</text>
+</svg>

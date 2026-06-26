@@ -25,16 +25,37 @@
   var outputDesc = document.getElementById("outputDesc");
   var outputSteps = document.getElementById("outputSteps");
 
+  function addStep(text, status) {
+    var div = document.createElement("div");
+    div.className = "output-step " + (status || "");
+    var iconChar = "&#9675;";
+    if (status === "active") iconChar = "&#9654;";
+    if (status === "done") iconChar = "&#10003;";
+    if (status === "error") iconChar = "&#10007;";
+    div.innerHTML = '<span class="output-step-icon">' + iconChar + "</span>" + text;
+    outputSteps.appendChild(div);
+    return div;
+  }
+
+  function markStep(el, status) {
+    el.className = "output-step " + status;
+    var icon = el.querySelector(".output-step-icon");
+    if (status === "done") icon.innerHTML = "&#10003;";
+    else if (status === "error") icon.innerHTML = "&#10007;";
+    else if (status === "active") icon.innerHTML = "&#9654;";
+  }
+
   if (form) {
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       var url = document.getElementById("repoUrl").value.trim();
       if (!url) return;
 
-      // Parse the GitHub URL
       var match = url.match(/github\.com\/([^\/]+)\/([^\/\?\#]+)/);
       if (!match) {
-        alert("Please enter a valid GitHub repository URL (e.g., https://github.com/owner/repo)");
+        alert(
+          "Please enter a valid GitHub repository URL (e.g., https://github.com/owner/repo)"
+        );
         return;
       }
 
@@ -42,65 +63,159 @@
       var repo = match[2].replace(/\.git$/, "");
       var fullName = owner + "/" + repo;
 
+      // Disable the form while processing
+      var submitBtn = form.querySelector('button[type="submit"]');
+      var urlInput = document.getElementById("repoUrl");
+      submitBtn.disabled = true;
+      urlInput.disabled = true;
+
+      // Show the output panel
       output.style.display = "block";
       outputTitle.textContent = "Building explainer for " + fullName;
-      outputDesc.textContent = "Analyzing repository structure and generating a visual walkthrough...";
-
-      var steps = [
-        { text: "Fetching repository metadata from GitHub", delay: 800 },
-        { text: "Reading README and documentation", delay: 1600 },
-        { text: "Analyzing file structure and languages", delay: 2400 },
-        { text: "Identifying key components and architecture", delay: 3200 },
-        { text: "Generating 7-section explainer structure", delay: 4000 },
-        { text: "Building visual walkthrough page", delay: 5000 },
-        { text: "Verifying all links are public", delay: 5800 },
-      ];
-
+      outputDesc.textContent = "";
       outputSteps.innerHTML = "";
-      steps.forEach(function (step) {
-        var div = document.createElement("div");
-        div.className = "output-step";
-        div.innerHTML = '<span class="output-step-icon">&#9675;</span>' + step.text;
-        outputSteps.appendChild(div);
-      });
-
-      // Animate steps
-      var allStepEls = outputSteps.querySelectorAll(".output-step");
-      steps.forEach(function (step, i) {
-        setTimeout(function () {
-          if (i > 0) {
-            allStepEls[i - 1].className = "output-step done";
-            allStepEls[i - 1].querySelector(".output-step-icon").innerHTML = "&#10003;";
-          }
-          allStepEls[i].className = "output-step active";
-          allStepEls[i].querySelector(".output-step-icon").innerHTML = "&#9654;";
-        }, step.delay);
-      });
-
-      // Final state
-      setTimeout(function () {
-        var last = allStepEls[allStepEls.length - 1];
-        last.className = "output-step done";
-        last.querySelector(".output-step-icon").innerHTML = "&#10003;";
-
-        outputTitle.textContent = "Explainer ready for " + fullName;
-        outputDesc.innerHTML =
-          'To generate the full explainer, clone the <a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener">Ruv-Explainer</a> pipeline and run it locally with this repo as a target. ' +
-          'Or open an <a href="https://github.com/stuinfla/Ruv-Explainer/issues/new?title=Explainer+request:+' +
-          encodeURIComponent(fullName) +
-          '&body=Please+build+an+explainer+for+https://github.com/' +
-          encodeURIComponent(fullName) +
-          '" target="_blank" rel="noopener">issue on GitHub</a> to request one.';
-      }, 6600);
 
       // Scroll output into view
       setTimeout(function () {
         output.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }, 200);
+      }, 100);
+
+      // Step 1: Validating
+      var stepValidate = addStep("Validating repository...", "active");
+
+      fetch("/api/build", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url }),
+      })
+        .then(function (res) {
+          return res.json().then(function (data) {
+            return { status: res.status, data: data };
+          });
+        })
+        .then(function (result) {
+          var data = result.data;
+
+          if (data.error) {
+            markStep(stepValidate, "error");
+            outputTitle.textContent = "Request failed";
+            outputDesc.textContent = data.error;
+            submitBtn.disabled = false;
+            urlInput.disabled = false;
+            return;
+          }
+
+          // Validation passed
+          markStep(stepValidate, "done");
+
+          // Step 2: Creating request
+          var stepCreate = addStep("Creating explainer request...", "active");
+
+          // Small delay so the user sees the transition
+          setTimeout(function () {
+            markStep(stepCreate, "done");
+
+            // Step 3: Done
+            addStep("Request submitted!", "done");
+
+            outputTitle.textContent = "Explainer requested for " + (data.repoName || fullName);
+
+            if (data.issueUrl) {
+              outputDesc.innerHTML =
+                "Your request has been submitted and is being tracked." +
+                "<br><br>" +
+                '<a href="' + data.issueUrl + '" target="_blank" rel="noopener" ' +
+                'style="color:#6c3ce0;font-weight:600;">View your request on GitHub &rarr;</a>' +
+                "<br><br>" +
+                "The pipeline will ingest the repo, build the knowledge base, author the explainer, " +
+                "generate studio media, and run 5 quality gates. Estimated time: 5-10 minutes." +
+                "<br>" +
+                "When complete, you will get:" +
+                "<br>" +
+                "&#8226; A live explainer page on its own Vercel URL<br>" +
+                "&#8226; A GitHub repo you control (the original author is invited as collaborator)<br>" +
+                "&#8226; A downloadable smart zip with the knowledge base + studio media";
+            } else {
+              var msg = data.message || "Your request has been received and will be processed.";
+              outputDesc.innerHTML =
+                msg +
+                "<br><br>" +
+                "The pipeline will ingest the repo, build the knowledge base, author the explainer, " +
+                "generate studio media, and run 5 quality gates. Estimated time: 5-10 minutes." +
+                "<br>" +
+                "When complete, you will get:" +
+                "<br>" +
+                "&#8226; A live explainer page on its own Vercel URL<br>" +
+                "&#8226; A GitHub repo you control (the original author is invited as collaborator)<br>" +
+                "&#8226; A downloadable smart zip with the knowledge base + studio media";
+            }
+
+            submitBtn.disabled = false;
+            urlInput.disabled = false;
+          }, 400);
+        })
+        .catch(function () {
+          markStep(stepValidate, "error");
+          outputTitle.textContent = "Request failed";
+          outputDesc.textContent =
+            "Could not reach the server. Please check your connection and try again.";
+          submitBtn.disabled = false;
+          urlInput.disabled = false;
+        });
     });
   }
 
-  /* --- 3. Intersection Observer for scroll animations --------------------- */
+  /* --- 3. Transformation pipeline animation ------------------------------ */
+  (function initTransformAnim() {
+    var before = document.getElementById("taBefore");
+    var after  = document.getElementById("taAfter");
+    var pipeline = document.getElementById("taPipeline");
+    if (!before || !after || !pipeline) return;
+
+    var steps = pipeline.querySelectorAll(".ta-step");
+    var played = false;
+
+    function runAnimation() {
+      if (played) return;
+      played = true;
+
+      pipeline.classList.add("active");
+      before.classList.add("animating");
+
+      steps.forEach(function (step, i) {
+        setTimeout(function () {
+          if (i > 0) {
+            steps[i - 1].classList.remove("active");
+            steps[i - 1].classList.add("done");
+          }
+          step.classList.add("active");
+        }, 600 + i * 700);
+      });
+
+      var totalTime = 600 + steps.length * 700;
+      setTimeout(function () {
+        steps[steps.length - 1].classList.remove("active");
+        steps[steps.length - 1].classList.add("done");
+        after.classList.add("revealed");
+      }, totalTime);
+    }
+
+    if ("IntersectionObserver" in window) {
+      var animObs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            runAnimation();
+            animObs.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.3 });
+      animObs.observe(pipeline);
+    } else {
+      runAnimation();
+    }
+  })();
+
+  /* --- 4. Intersection Observer for scroll animations --------------------- */
   if ("IntersectionObserver" in window) {
     var observer = new IntersectionObserver(
       function (entries) {
