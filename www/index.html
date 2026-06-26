@@ -3,623 +3,252 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GitHub Repo Explainer — Turn any repo into a visual walkthrough</title>
-  <meta name="description" content="Turn any complex GitHub repository into a beautiful, plain-language explainer page anyone can understand. Free, open-source pipeline." />
-  <meta name="color-scheme" content="dark" />
-
+  <title>Repo Explainer — Turn any GitHub repo into a visual walkthrough</title>
+  <meta name="description" content="Turn any complex GitHub repository into a beautiful, visual explainer page + AI knowledge base. Free, open-source, quality-gated." />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="GitHub Repo Explainer" />
-  <meta property="og:description" content="Turn any complex GitHub repository into a beautiful, plain-language explainer anyone can understand." />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <meta property="og:title" content="Repo Explainer — Visual walkthroughs for GitHub repos" />
+  <meta property="og:description" content="Paste a GitHub URL. Get a visual explainer + AI knowledge base. Free." />
+  <meta property="og:image" content="assets/img/hero-showcase.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-
-  <!-- ===================== NAV ===================== -->
   <header class="site-nav">
     <div class="container nav-inner">
-      <a class="logo" href="#top">
-        <span class="logo-icon" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <polygon points="14,2 26,14 14,26 2,14" fill="url(#prism-grad)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-            <line x1="14" y1="2" x2="8" y2="26" stroke="#ff6b6b" stroke-width="1.5" opacity="0.8"/>
-            <line x1="14" y1="2" x2="11" y2="26" stroke="#ffd93d" stroke-width="1.5" opacity="0.8"/>
-            <line x1="14" y1="2" x2="14" y2="26" stroke="#6bcb77" stroke-width="1.5" opacity="0.8"/>
-            <line x1="14" y1="2" x2="17" y2="26" stroke="#4d96ff" stroke-width="1.5" opacity="0.8"/>
-            <line x1="14" y1="2" x2="20" y2="26" stroke="#9b59b6" stroke-width="1.5" opacity="0.8"/>
-            <defs><linearGradient id="prism-grad" x1="0" y1="0" x2="28" y2="28"><stop offset="0%" stop-color="rgba(255,255,255,0.15)"/><stop offset="100%" stop-color="rgba(255,255,255,0.05)"/></linearGradient></defs>
-          </svg>
-        </span>
-        Repo Explainer
-      </a>
-      <nav class="nav-links" aria-label="Main navigation">
-        <a href="#how">How it works</a>
-        <a href="#gallery">Gallery</a>
-        <a href="#create">Create yours</a>
-        <a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener" class="nav-gh">GitHub</a>
-      </nav>
+      <a class="logo" href="#top"><span class="logo-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#6c3ce0"/><line x1="16" y1="4" x2="10" y2="28" stroke="#ff6b6b" stroke-width="2" opacity="0.9"/><line x1="16" y1="4" x2="13" y2="28" stroke="#ffd93d" stroke-width="2" opacity="0.9"/><line x1="16" y1="4" x2="16" y2="28" stroke="#6bcb77" stroke-width="2" opacity="0.9"/><line x1="16" y1="4" x2="19" y2="28" stroke="#4d96ff" stroke-width="2" opacity="0.9"/><line x1="16" y1="4" x2="22" y2="28" stroke="#9b59b6" stroke-width="2" opacity="0.9"/></svg></span> Repo Explainer</a>
+      <nav class="nav-links"><a href="#what-you-get">What you get</a><a href="#examples">Examples</a><a href="#pipeline">Pipeline</a><a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener" class="nav-gh">GitHub</a></nav>
     </div>
   </header>
 
   <main id="top">
-
-    <!-- ===================== HERO ===================== -->
+    <!-- ==================== HERO — visual-first, dark cinematic ==================== -->
     <section class="hero">
-      <div class="container">
-        <div class="hero-badge">Open Source &middot; Free to Use</div>
-        <h1>
-          Turn any GitHub repo into<br />
-          <span class="gradient-text">a visual explainer</span>
-        </h1>
-        <p class="hero-sub">
-          Complex code repos are hard to understand. Dense READMEs, technical
-          jargon, no visuals. <strong>Repo Explainer</strong> takes any GitHub
-          repository and produces a beautiful, plain-language walkthrough that
-          anyone can understand &mdash; in minutes.
-        </p>
-        <div class="hero-actions">
-          <a href="#create" class="btn btn-primary">Create an Explainer</a>
-          <a href="#gallery" class="btn btn-secondary">See Examples</a>
-        </div>
-        <div class="hero-stats">
-          <div class="stat">
-            <span class="stat-num">5</span>
-            <span class="stat-label">Live explainers</span>
-          </div>
-          <div class="stat">
-            <span class="stat-num">7</span>
-            <span class="stat-label">Sections per page</span>
-          </div>
-          <div class="stat">
-            <span class="stat-num">100%</span>
-            <span class="stat-label">Public &amp; free</span>
-          </div>
-        </div>
+      <div class="hero-visual">
+        <img src="assets/img/hero-showcase.png" alt="Five beautifully designed explainer pages floating in 3D space — dark themes, prismatic light, gold typography, cinematic depth." class="hero-bg-img" loading="eager" />
+        <div class="hero-overlay"></div>
       </div>
+      <div class="container hero-content">
+        <div class="hero-badge">Open Source &middot; Free &middot; No Login</div>
+        <h1>You built something amazing.<br /><span class="gradient-text">Help people understand it.</span></h1>
+        <p class="hero-sub">Your GitHub repo is powerful &mdash; but the README assumes expertise. <strong>Repo Explainer</strong> turns it into a visual walkthrough anyone can understand, plus an AI knowledge base that makes your assistant an instant expert.</p>
 
-      <!-- animated prism -->
-      <div class="hero-prism" aria-hidden="true">
-        <div class="prism-beam prism-beam-in"></div>
-        <div class="prism-shape">
-          <svg viewBox="0 0 200 200" width="200" height="200">
-            <polygon points="100,20 180,170 20,170" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
-          </svg>
-        </div>
-        <div class="prism-rays">
-          <div class="ray ray-1"></div>
-          <div class="ray ray-2"></div>
-          <div class="ray ray-3"></div>
-          <div class="ray ray-4"></div>
-          <div class="ray ray-5"></div>
+        <form class="hero-input-wrap" id="createForm" onsubmit="return false;">
+          <input type="url" id="repoUrl" placeholder="https://github.com/owner/repo" required autocomplete="off" spellcheck="false" />
+          <input type="email" id="submitterEmail" placeholder="Email for notification (optional)" autocomplete="email" spellcheck="false" />
+          <button type="submit" class="btn btn-primary">Build Explainer</button>
+        </form>
+        <p class="hero-hint">Paste any public repo URL &middot; credits the repo author &middot; all output is public</p>
+        <div class="create-output" id="createOutput" style="display:none;max-width:680px;margin:20px auto 0;"><div class="output-header"><h3 id="outputTitle">Building&hellip;</h3><p id="outputDesc"></p></div><div class="output-steps" id="outputSteps"></div></div>
+      </div>
+    </section>
+
+    <!-- ==================== PROOF — real screenshots row ==================== -->
+    <section class="proof-strip">
+      <div class="container">
+        <p class="proof-label">Built with Repo Explainer</p>
+        <div class="proof-scroll">
+          <a href="https://metaharness-explainer.vercel.app" target="_blank" rel="noopener" class="proof-thumb"><img src="assets/img/screenshots/metaharness.png" alt="MetaHarness" loading="eager" /><span>MetaHarness</span></a>
+          <a href="https://photonlayer-explainer.vercel.app" target="_blank" rel="noopener" class="proof-thumb"><img src="assets/img/screenshots/photonlayer.png" alt="PhotonLayer" loading="eager" /><span>PhotonLayer</span></a>
+          <a href="https://ruvn-explainer.vercel.app" target="_blank" rel="noopener" class="proof-thumb"><img src="assets/img/screenshots/ruvn.png" alt="ruvn" loading="eager" /><span>ruvn</span></a>
+          <a href="https://ruqu-explainer.vercel.app" target="_blank" rel="noopener" class="proof-thumb"><img src="assets/img/screenshots/ruqu.png" alt="ruqu" loading="eager" /><span>ruqu</span></a>
+          <a href="https://agentic-qe-explainer.vercel.app" target="_blank" rel="noopener" class="proof-thumb"><img src="assets/img/screenshots/agentic-qe.png" alt="Agentic QE" loading="eager" /><span>Agentic QE</span></a>
         </div>
       </div>
     </section>
 
-    <!-- ===================== THE PROBLEM ===================== -->
-    <section class="problem">
+    <!-- ==================== WHAT YOU GET: Two Hero Artifacts ==================== -->
+    <section class="transform-section" id="what-you-get">
       <div class="container">
-        <div class="split">
-          <div class="split-left">
-            <div class="problem-card problem-before">
-              <div class="problem-label">Before</div>
-              <div class="problem-content">
-                <div class="fake-readme">
-                  <div class="fake-line w80"></div>
-                  <div class="fake-line w60"></div>
-                  <div class="fake-line w90"></div>
-                  <div class="fake-line w40"></div>
-                  <div class="fake-line w70"></div>
-                  <div class="fake-code">
-                    <div class="fake-line w50 code"></div>
-                    <div class="fake-line w80 code"></div>
-                    <div class="fake-line w30 code"></div>
-                  </div>
-                  <div class="fake-line w60"></div>
-                  <div class="fake-line w85"></div>
-                </div>
-                <p class="problem-caption">
-                  Dense README. Walls of jargon. Code before context.
-                  A newcomer opens the tab&hellip; and closes it.
-                </p>
-              </div>
-            </div>
-          </div>
-          <div class="split-arrow" aria-hidden="true">
-            <svg width="48" height="48" viewBox="0 0 48 48">
-              <circle cx="24" cy="24" r="22" fill="rgba(255,158,44,0.1)" stroke="rgba(255,158,44,0.3)" stroke-width="1.5"/>
-              <path d="M18 24 L30 24 M26 18 L32 24 L26 30" stroke="#ff9e2c" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div class="split-right">
-            <div class="problem-card problem-after">
-              <div class="problem-label">After</div>
-              <div class="problem-content">
-                <div class="fake-explainer">
-                  <div class="fake-hero-img"></div>
-                  <div class="fake-title"></div>
-                  <div class="fake-lede w90"></div>
-                  <div class="fake-lede w70"></div>
-                  <div class="fake-sections">
-                    <div class="fake-section open">
-                      <div class="fake-section-head">01 &mdash; Why it was built</div>
-                    </div>
-                    <div class="fake-section">
-                      <div class="fake-section-head">02 &mdash; What problem</div>
-                    </div>
-                    <div class="fake-section">
-                      <div class="fake-section-head">03 &mdash; How it works</div>
-                    </div>
-                    <div class="fake-section">
-                      <div class="fake-section-head">04 &mdash; Get started</div>
-                    </div>
-                  </div>
-                </div>
-                <p class="problem-caption">
-                  A visual walkthrough. Plain language. Clear sections.
-                  The newcomer <em>gets it</em> &mdash; and wants to try it.
-                </p>
-              </div>
-            </div>
-          </div>
+        <div class="section-label">What You Get</div>
+        <h2>Two artifacts, both quality-gated</h2>
+        <p class="section-sub">Every repo produces a <strong>website</strong> that teaches you, and a <strong>smart zip</strong> that teaches your AI. Neither is optional. Both pass 5 quality gates before shipping.</p>
+
+        <!-- The dual-hero image from the README -->
+        <div style="margin:40px auto;max-width:960px;">
+          <img src="assets/img/dual-hero-output.png" alt="Two hero outputs: an explainer website for humans on the left, and a drop-in smart zip with two halves (for-humans and for-ai) on the right." style="width:100%;border-radius:var(--radius);box-shadow:var(--shadow-lg);border:1px solid var(--border);" loading="lazy" />
+        </div>
+
+        <!-- The dual-hero SVG diagram -->
+        <div style="margin:40px auto;max-width:960px;">
+          <img src="assets/img/dual-hero.svg" alt="Diagram: the explainer website (for a curious human) shows captivating hero, 7 sections, before/after persona, use-cases, friendly art. The smart zip (for your AI) contains for-humans half (primer + NotebookLM studio) and for-ai half (RVF KB + MCP server)." style="width:100%;border-radius:var(--radius);box-shadow:var(--shadow-lg);border:1px solid var(--border);" loading="lazy" />
+        </div>
+
+        <div class="feature-grid" style="margin-top:40px;">
+          <div class="feature-card"><h3>The Explainer Website</h3><p>7 structured sections answering the questions newcomers actually ask: <em>Why built? What problem? Why now? How it works? What solved looks like? How to implement? How to start?</em> Opens with visuals, not walls of text.</p></div>
+          <div class="feature-card"><h3>for-humans/ half</h3><p>A written guide + <strong>Google NotebookLM studio</strong>: an audio walkthrough you can listen to, an explainer video, a slide deck, and a written report. The fastest way to understand any project &mdash; each notebook is public.</p></div>
+          <div class="feature-card"><h3>for-ai/ half</h3><p>A <strong>searchable vector knowledge base</strong> built from every file in the repo &mdash; runs locally on your machine, no API keys needed. Plus a command-line tool and a <strong>Model Context Protocol (MCP) server</strong> so your AI assistant can answer questions from the real source code.</p></div>
+          <div class="feature-card"><h3>Audio &amp; Video Studio</h3><p>Every explainer includes a <strong>public Google NotebookLM notebook</strong> with an audio walkthrough, explainer video, slide deck, and written report. One link opens all the media &mdash; play the audio first, it's the fastest way in.</p></div>
+          <div class="feature-card"><h3>Visual-first design</h3><p>Every section opens with a friendly illustration AND an accurate architecture diagram. Two tiers of visual: an approachable on-ramp for newcomers + technical precision for engineers.</p></div>
+          <div class="feature-card"><h3>All links public</h3><p>Every URL opens without login. No gated downloads, no auth walls, no Vercel lock-in. The zip, the site, the repo, the studio &mdash; all freely available.</p></div>
         </div>
       </div>
     </section>
 
-    <!-- ===================== HOW IT WORKS ===================== -->
-    <section class="how" id="how">
+    <!-- ==================== ANIMATED TRANSFORMATION ==================== -->
+    <section class="transform-anim-section" id="transform">
       <div class="container">
-        <div class="section-label">How it works</div>
-        <h2>Three inputs, one beautiful output</h2>
-        <p class="section-sub">
-          Point it at any public GitHub repo. It reads the code, the docs,
-          and the structure &mdash; then produces a self-contained explainer
-          page with clear visuals, plain-language sections, and public links.
-        </p>
+        <div class="section-label">See the Transformation</div>
+        <h2>From dense README to visual explainer</h2>
+        <p class="section-sub">Watch a real GitHub repo go through the Repo Explainer pipeline and come out as a rich, visual companion page.</p>
 
-        <div class="steps">
-          <div class="step">
-            <div class="step-num">1</div>
-            <div class="step-icon">
-              <svg width="48" height="48" viewBox="0 0 48 48">
-                <rect x="8" y="8" width="32" height="32" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
-                <path d="M18 20 C18 18, 20 16, 24 16 C28 16, 30 18, 30 20 C30 22, 28 23, 26 24 L26 26" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
-                <circle cx="26" cy="30" r="1.5" fill="currentColor"/>
-              </svg>
+        <div class="transform-anim" id="transformAnim">
+          <!-- Left: the GitHub repo -->
+          <a href="https://github.com/ruvnet/agent-harness-generator" target="_blank" rel="noopener" class="ta-card ta-before" id="taBefore">
+            <div class="ta-label">GitHub Repo</div>
+            <img src="assets/img/screenshots/github-before.png" alt="Dense GitHub README — walls of text" loading="lazy" />
+          </a>
+
+          <!-- Center: the pipeline processor -->
+          <div class="ta-pipeline" id="taPipeline">
+            <div class="ta-prism">
+              <svg viewBox="0 0 80 90" class="ta-prism-svg"><polygon points="40,5 75,85 5,85" fill="none" stroke="#6c3ce0" stroke-width="2.5"/><polygon points="40,5 75,85 5,85" fill="url(#prismGrad)" opacity="0.3"/><defs><linearGradient id="prismGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6c3ce0"/><stop offset="0.5" stop-color="#f59e0b"/><stop offset="1" stop-color="#10b981"/></linearGradient></defs></svg>
+              <span class="ta-prism-label">Repo Explainer</span>
             </div>
-            <h3>Pick a repo</h3>
-            <p>
-              Paste any public GitHub URL. The pipeline reads the file tree,
-              README, docs, and source code &mdash; respecting
-              <code>.gitignore</code> and submodule boundaries.
-            </p>
+            <div class="ta-steps">
+              <div class="ta-step" data-step="0"><span class="ta-dot"></span>Ingest repo</div>
+              <div class="ta-step" data-step="1"><span class="ta-dot"></span>Build knowledge base</div>
+              <div class="ta-step" data-step="2"><span class="ta-dot"></span>Author explainer site</div>
+              <div class="ta-step" data-step="3"><span class="ta-dot"></span>Generate studio media</div>
+              <div class="ta-step" data-step="4"><span class="ta-dot"></span>Run 5 quality gates</div>
+              <div class="ta-step" data-step="5"><span class="ta-dot"></span>Deploy &amp; verify</div>
+            </div>
           </div>
 
-          <div class="step">
-            <div class="step-num">2</div>
-            <div class="step-icon">
-              <svg width="48" height="48" viewBox="0 0 48 48">
-                <polygon points="24,6 42,36 6,36" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                <line x1="24" y1="6" x2="15" y2="36" stroke="#ff6b6b" stroke-width="1.5" opacity="0.7"/>
-                <line x1="24" y1="6" x2="24" y2="36" stroke="#6bcb77" stroke-width="1.5" opacity="0.7"/>
-                <line x1="24" y1="6" x2="33" y2="36" stroke="#4d96ff" stroke-width="1.5" opacity="0.7"/>
-              </svg>
-            </div>
-            <h3>It builds the explainer</h3>
-            <p>
-              The pipeline generates 7 sections: <em>Why built, What problem,
-              Why now, How it works, What solved looks like, How to implement,
-              How to start</em> &mdash; plus use cases and a get-started guide.
-            </p>
-          </div>
-
-          <div class="step">
-            <div class="step-num">3</div>
-            <div class="step-icon">
-              <svg width="48" height="48" viewBox="0 0 48 48">
-                <rect x="6" y="10" width="36" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="2"/>
-                <rect x="10" y="14" width="28" height="6" rx="2" fill="currentColor" opacity="0.2"/>
-                <rect x="10" y="24" width="18" height="3" rx="1" fill="currentColor" opacity="0.15"/>
-                <rect x="10" y="30" width="24" height="3" rx="1" fill="currentColor" opacity="0.1"/>
-                <circle cx="36" cy="32" r="8" fill="none" stroke="#6bcb77" stroke-width="2"/>
-                <path d="M33 32 L35.5 34.5 L39 29" stroke="#6bcb77" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <h3>Share publicly</h3>
-            <p>
-              The result is a standalone HTML page. Every link is public &mdash;
-              GitHub, npm, releases. No login walls, no gated downloads. Deploy
-              anywhere or host on GitHub Pages.
-            </p>
-          </div>
+          <!-- Right: the explainer page -->
+          <a href="https://metaharness-explainer.vercel.app" target="_blank" rel="noopener" class="ta-card ta-after" id="taAfter">
+            <div class="ta-label ta-label-done">Visual Explainer</div>
+            <img src="assets/img/screenshots/metaharness.png" alt="MetaHarness explainer — warm visuals, rich hero, approachable design" loading="lazy" />
+          </a>
         </div>
+
+        <p class="ta-caption">Click either screenshot to visit the live page. The entire process takes 5&ndash;10 minutes per repo.</p>
       </div>
     </section>
 
-    <!-- ===================== WHAT YOU GET ===================== -->
-    <section class="features">
+    <!-- ==================== GALLERY ==================== -->
+    <section class="features" id="examples">
       <div class="container">
-        <div class="section-label">What you get</div>
-        <h2>Every explainer includes</h2>
+        <div class="section-label">Live Examples</div>
+        <h2>Explainers we've built</h2>
+        <p class="section-sub">Click any card to visit the live explainer. Each started as a dense GitHub repo.</p>
 
-        <div class="feature-grid">
-          <div class="feature-card">
-            <div class="feature-icon" aria-hidden="true">
-              <svg width="32" height="32" viewBox="0 0 32 32"><rect x="4" y="4" width="24" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 14 L16 10 L22 14 L22 22 L10 22 Z" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="1.5"/></svg>
-            </div>
-            <h3>Visual-first design</h3>
-            <p>Each section opens with a visual before any text. Diagrams, illustrations, and clear typography make complex ideas approachable.</p>
-          </div>
-
-          <div class="feature-card">
-            <div class="feature-icon" aria-hidden="true">
-              <svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 16 L16 12 L20 16 L16 20 Z" fill="currentColor" opacity="0.3"/><circle cx="16" cy="16" r="3" fill="currentColor"/></svg>
-            </div>
-            <h3>Plain language</h3>
-            <p>No jargon walls. Technical terms are defined inline. Written for someone who has never seen the repo before.</p>
-          </div>
-
-          <div class="feature-card">
-            <div class="feature-icon" aria-hidden="true">
-              <svg width="32" height="32" viewBox="0 0 32 32"><path d="M8 8 L16 4 L24 8 L24 20 L16 24 L8 20 Z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16 4 L16 24" stroke="currentColor" stroke-width="1" opacity="0.3"/><path d="M8 8 L16 12 L24 8" stroke="currentColor" stroke-width="1" opacity="0.3"/><path d="M16 12 L16 24" stroke="currentColor" stroke-width="1" opacity="0.3"/></svg>
-            </div>
-            <h3>7 structured sections</h3>
-            <p>A proven arc: Why built, What problem, Why now, How it works, What solved looks like, How to implement, How to start.</p>
-          </div>
-
-          <div class="feature-card">
-            <div class="feature-icon" aria-hidden="true">
-              <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="6" width="20" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 16 L15 19 L21 13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <h3>All links public</h3>
-            <p>Every link goes to a public URL: GitHub, npm, releases. No auth walls, no gated downloads, no Vercel lock-in.</p>
-          </div>
-
-          <div class="feature-card">
-            <div class="feature-icon" aria-hidden="true">
-              <svg width="32" height="32" viewBox="0 0 32 32"><circle cx="10" cy="16" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="22" cy="16" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M14 16 L18 16" stroke="currentColor" stroke-width="1.5"/></svg>
-            </div>
-            <h3>Proper attribution</h3>
-            <p>Credits the actual repo authors and contributors. If it's not your project, the explainer says so clearly.</p>
-          </div>
-
-          <div class="feature-card">
-            <div class="feature-icon" aria-hidden="true">
-              <svg width="32" height="32" viewBox="0 0 32 32"><path d="M4 22 L10 16 L16 20 L22 10 L28 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="16" r="2" fill="currentColor"/><circle cx="16" cy="20" r="2" fill="currentColor"/><circle cx="22" cy="10" r="2" fill="currentColor"/></svg>
-            </div>
-            <h3>Use-case gallery</h3>
-            <p>Real scenarios showing how the tool is used. Not abstract features — concrete examples with commands and expected output.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===================== GALLERY ===================== -->
-    <section class="gallery" id="gallery">
-      <div class="container">
-        <div class="section-label">Gallery</div>
-        <h2>Live explainers</h2>
-        <p class="section-sub">
-          Each of these started as a dense, hard-to-parse GitHub repo.
-          Now they&rsquo;re approachable visual walkthroughs anyone can read.
-        </p>
-
-        <div class="gallery-grid">
-          <div class="gallery-card">
-            <div class="gallery-preview">
-              <div class="gallery-preview-inner">
-                <div class="preview-bar">
-                  <span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span>
-                  <span class="preview-url">metaharness-explainer.vercel.app</span>
-                </div>
-                <div class="preview-body">
-                  <div class="preview-hero-block"></div>
-                  <div class="preview-title-line"></div>
-                  <div class="preview-text-line w80"></div>
-                  <div class="preview-text-line w60"></div>
-                  <div class="preview-section-block"></div>
-                  <div class="preview-section-block"></div>
-                </div>
-              </div>
-            </div>
-            <div class="gallery-info">
-              <h3>MetaHarness</h3>
-              <p>A factory that mints your own branded AI agent from any repo.</p>
-              <div class="gallery-meta">
-                <span>by <a href="https://github.com/ruvnet" target="_blank" rel="noopener">@ruvnet</a></span>
-              </div>
-              <div class="gallery-links">
-                <a href="https://metaharness-explainer.vercel.app" target="_blank" rel="noopener" class="btn btn-sm">Live explainer</a>
-                <a href="https://github.com/ruvnet/agent-harness-generator" target="_blank" rel="noopener" class="btn btn-sm btn-ghost">Source repo</a>
-              </div>
-            </div>
-          </div>
-
-          <div class="gallery-card">
-            <div class="gallery-preview">
-              <div class="gallery-preview-inner">
-                <div class="preview-bar">
-                  <span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span>
-                  <span class="preview-url">photonlayer-explainer.vercel.app</span>
-                </div>
-                <div class="preview-body">
-                  <div class="preview-hero-block" style="background: linear-gradient(135deg, #1a1a2e, #16213e);"></div>
-                  <div class="preview-title-line"></div>
-                  <div class="preview-text-line w70"></div>
-                  <div class="preview-text-line w85"></div>
-                  <div class="preview-section-block"></div>
-                  <div class="preview-section-block"></div>
-                </div>
-              </div>
-            </div>
-            <div class="gallery-info">
-              <h3>PhotonLayer</h3>
-              <p>Deterministic optical-AI: a learned phase mask shapes light to compute answers.</p>
-              <div class="gallery-meta">
-                <span>by <a href="https://github.com/ruvnet" target="_blank" rel="noopener">@ruvnet</a></span>
-              </div>
-              <div class="gallery-links">
-                <a href="https://photonlayer-explainer.vercel.app" target="_blank" rel="noopener" class="btn btn-sm">Live explainer</a>
-                <a href="https://github.com/ruvnet/PhotonLayer" target="_blank" rel="noopener" class="btn btn-sm btn-ghost">Source repo</a>
-              </div>
-            </div>
-          </div>
-
-          <div class="gallery-card">
-            <div class="gallery-preview">
-              <div class="gallery-preview-inner">
-                <div class="preview-bar">
-                  <span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span>
-                  <span class="preview-url">ruqu-explainer.vercel.app</span>
-                </div>
-                <div class="preview-body">
-                  <div class="preview-hero-block" style="background: linear-gradient(135deg, #0f2027, #203a43);"></div>
-                  <div class="preview-title-line"></div>
-                  <div class="preview-text-line w90"></div>
-                  <div class="preview-text-line w50"></div>
-                  <div class="preview-section-block"></div>
-                  <div class="preview-section-block"></div>
-                </div>
-              </div>
-            </div>
-            <div class="gallery-info">
-              <h3>ruqu</h3>
-              <p>A fast quantum-computing simulator in Rust + WebAssembly.</p>
-              <div class="gallery-meta">
-                <span>by <a href="https://github.com/ruvnet" target="_blank" rel="noopener">@ruvnet</a></span>
-              </div>
-              <div class="gallery-links">
-                <a href="https://ruqu-explainer.vercel.app" target="_blank" rel="noopener" class="btn btn-sm">Live explainer</a>
-                <a href="https://github.com/ruvnet/ruqu" target="_blank" rel="noopener" class="btn btn-sm btn-ghost">Source repo</a>
-              </div>
-            </div>
-          </div>
-
-          <div class="gallery-card">
-            <div class="gallery-preview">
-              <div class="gallery-preview-inner">
-                <div class="preview-bar">
-                  <span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span>
-                  <span class="preview-url">ruvn-explainer.vercel.app</span>
-                </div>
-                <div class="preview-body">
-                  <div class="preview-hero-block" style="background: linear-gradient(135deg, #1a1206, #2c2418);"></div>
-                  <div class="preview-title-line"></div>
-                  <div class="preview-text-line w75"></div>
-                  <div class="preview-text-line w65"></div>
-                  <div class="preview-section-block"></div>
-                  <div class="preview-section-block"></div>
-                </div>
-              </div>
-            </div>
-            <div class="gallery-info">
-              <h3>ruvn</h3>
-              <p>An AI research engine that turns questions into graded, cited evidence dossiers.</p>
-              <div class="gallery-meta">
-                <span>by <a href="https://github.com/ruvnet" target="_blank" rel="noopener">@ruvnet</a></span>
-              </div>
-              <div class="gallery-links">
-                <a href="https://ruvn-explainer.vercel.app" target="_blank" rel="noopener" class="btn btn-sm">Live explainer</a>
-                <a href="https://github.com/ruvnet/ruvn" target="_blank" rel="noopener" class="btn btn-sm btn-ghost">Source repo</a>
-              </div>
-            </div>
-          </div>
-
-          <div class="gallery-card gallery-card-new">
-            <div class="gallery-preview">
-              <div class="gallery-preview-inner">
-                <div class="preview-bar">
-                  <span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span>
-                  <span class="preview-url">explainer-agentic-qe</span>
-                </div>
-                <div class="preview-body">
-                  <div class="preview-hero-block" style="background: linear-gradient(135deg, #16120e, #241d15);"></div>
-                  <div class="preview-title-line"></div>
-                  <div class="preview-text-line w85"></div>
-                  <div class="preview-text-line w55"></div>
-                  <div class="preview-section-block"></div>
-                  <div class="preview-section-block"></div>
-                </div>
-              </div>
-            </div>
-            <div class="gallery-info">
-              <span class="gallery-new-badge">New</span>
-              <h3>Agentic QE Fleet</h3>
-              <p>AI-powered quality engineering with 60 agents, 75 skills, 11 platforms.</p>
-              <div class="gallery-meta">
-                <span>by <a href="https://github.com/proffesor-for-testing" target="_blank" rel="noopener">@proffesor-for-testing</a></span>
-              </div>
-              <div class="gallery-links">
-                <a href="https://github.com/proffesor-for-testing/agentic-qe" target="_blank" rel="noopener" class="btn btn-sm btn-ghost">Source repo</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ===================== CREATE YOUR OWN ===================== -->
-    <section class="create" id="create">
-      <div class="container">
-        <div class="section-label">Create your own</div>
-        <h2>Explain any GitHub repo</h2>
-        <p class="section-sub">
-          Enter a public GitHub repository URL and the pipeline will build
-          a visual explainer page for it. Every link in the output is public
-          and freely accessible.
-        </p>
-
-        <div class="create-form-wrap">
-          <form class="create-form" id="createForm" onsubmit="return false;">
-            <div class="input-group">
-              <label for="repoUrl" class="sr-only">GitHub repository URL</label>
-              <div class="input-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 20 20"><path d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.604-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0110 4.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C17.138 18.163 20 14.418 20 10c0-5.523-4.477-10-10-10z" fill="currentColor"/></svg>
-              </div>
-              <input
-                type="url"
-                id="repoUrl"
-                placeholder="https://github.com/owner/repo"
-                required
-                autocomplete="off"
-                spellcheck="false"
-              />
-              <button type="submit" class="btn btn-primary" id="createBtn">
-                Build Explainer
-              </button>
-            </div>
-            <label for="submitterEmail" class="sr-only">Email for notification (optional)</label>
-            <input
-              type="email"
-              id="submitterEmail"
-              class="create-email"
-              placeholder="Email for notification (optional)"
-              autocomplete="email"
-              spellcheck="false"
-            />
-            <p class="input-hint">
-              Paste any public GitHub repo URL. The explainer will reference the
-              repo author, not you, unless you <em>are</em> the author.
-              Add an email and we'll notify you when your live site is ready.
-            </p>
-          </form>
-
-          <div class="create-output" id="createOutput" style="display:none;">
-            <div class="output-header">
-              <h3 id="outputTitle">Building explainer&hellip;</h3>
-              <p id="outputDesc"></p>
-            </div>
-            <div class="output-steps" id="outputSteps"></div>
-          </div>
-        </div>
-
-        <div class="create-manual">
-          <h3>Or build it yourself</h3>
-          <p>
-            The Repo Explainer is an open-source pipeline you can run locally.
-            Clone the repo, configure a target, and the pipeline produces the
-            same quality-gated output.
-          </p>
-          <pre class="code-block"><code>git clone https://github.com/stuinfla/Ruv-Explainer.git
-cd Ruv-Explainer
-# See START-HERE.md for the full guide</code></pre>
-          <a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener" class="btn btn-secondary" style="margin-top:16px;">
-            View on GitHub
+        <div class="gallery-grid" style="margin-top:40px;">
+          <a href="https://metaharness-explainer.vercel.app" target="_blank" rel="noopener" class="gallery-card">
+            <div class="gallery-screenshot"><img src="assets/img/screenshots/metaharness.png" alt="MetaHarness explainer" loading="lazy" /></div>
+            <div class="gallery-info"><h3>MetaHarness</h3><p>Mints your own branded AI agent from any repo. By <strong>@ruvnet</strong>.</p><div class="gallery-links"><span class="btn btn-sm">Visit explainer</span></div></div>
+          </a>
+          <a href="https://photonlayer-explainer.vercel.app" target="_blank" rel="noopener" class="gallery-card">
+            <div class="gallery-screenshot"><img src="assets/img/screenshots/photonlayer.png" alt="PhotonLayer explainer" loading="lazy" /></div>
+            <div class="gallery-info"><h3>PhotonLayer</h3><p>Deterministic optical-AI: light computes the answer. By <strong>@ruvnet</strong>.</p><div class="gallery-links"><span class="btn btn-sm">Visit explainer</span></div></div>
+          </a>
+          <a href="https://ruvn-explainer.vercel.app" target="_blank" rel="noopener" class="gallery-card">
+            <div class="gallery-screenshot"><img src="assets/img/screenshots/ruvn.png" alt="ruvn explainer" loading="lazy" /></div>
+            <div class="gallery-info"><h3>ruvn</h3><p>AI research engine: graded, cited evidence dossiers. By <strong>@ruvnet</strong>.</p><div class="gallery-links"><span class="btn btn-sm">Visit explainer</span></div></div>
+          </a>
+          <a href="https://ruqu-explainer.vercel.app" target="_blank" rel="noopener" class="gallery-card">
+            <div class="gallery-screenshot"><img src="assets/img/screenshots/ruqu.png" alt="ruqu explainer" loading="lazy" /></div>
+            <div class="gallery-info"><h3>ruqu</h3><p>Quantum computing in your browser via Rust + WASM. By <strong>@ruvnet</strong>.</p><div class="gallery-links"><span class="btn btn-sm">Visit explainer</span></div></div>
+          </a>
+          <a href="https://agentic-qe-explainer.vercel.app" target="_blank" rel="noopener" class="gallery-card gallery-card-new">
+            <div class="gallery-screenshot"><img src="assets/img/screenshots/agentic-qe.png" alt="Agentic QE explainer" loading="lazy" /></div>
+            <div class="gallery-info"><span class="gallery-new-badge">New &mdash; not a Ruv project</span><h3>Agentic QE Fleet</h3><p>60 AI agents for quality engineering. By <strong>Dragan Spiridonov</strong>.</p><div class="gallery-links"><span class="btn btn-sm">Visit explainer</span></div></div>
           </a>
         </div>
       </div>
     </section>
 
-    <!-- ===================== PRINCIPLES ===================== -->
-    <section class="principles">
+    <!-- ==================== THE PIPELINE ==================== -->
+    <section class="how" id="pipeline">
       <div class="container">
-        <div class="section-label">Principles</div>
-        <h2>What makes a good explainer</h2>
-        <div class="principles-grid">
-          <div class="principle">
-            <div class="principle-num">01</div>
-            <h3>Image before text</h3>
-            <p>Every section opens with a visual. A diagram, a flow, an illustration. Words come second.</p>
-          </div>
-          <div class="principle">
-            <div class="principle-num">02</div>
-            <h3>Human problem first</h3>
-            <p>Start with the pain point a real person has. Then show how the tool fixes it. Features come last.</p>
-          </div>
-          <div class="principle">
-            <div class="principle-num">03</div>
-            <h3>Define terms inline</h3>
-            <p>If a reader might not know a word, explain it right there. No glossary at the bottom nobody reads.</p>
-          </div>
-          <div class="principle">
-            <div class="principle-num">04</div>
-            <h3>Honest limits stated</h3>
-            <p>Every tool has rough edges. Say what they are, plainly, without hedging. Trust is earned by candor.</p>
-          </div>
-          <div class="principle">
-            <div class="principle-num">05</div>
-            <h3>All links public</h3>
-            <p>Every URL goes to something anyone can open without logging in. No gated downloads, no auth walls.</p>
-          </div>
-          <div class="principle">
-            <div class="principle-num">06</div>
-            <h3>Credit the builder</h3>
-            <p>The explainer credits the repo author prominently. If it's not your project, say so on the first screen.</p>
+        <div class="section-label">The Pipeline</div>
+        <h2>How it works &mdash; the Repo-Primer Pipeline</h2>
+        <p class="section-sub">A repeatable recipe: ingest, build, gate, deploy. The same pipeline that built every explainer above.</p>
+
+        <!-- Pipeline SVG diagram from the README -->
+        <div class="diagram-dark" style="margin:40px auto;max-width:980px;">
+          <img src="assets/img/pipeline.svg" alt="The Repo-Primer Pipeline: upstream repo flows into a build stage (KB + site + studio), through 5 quality gates, producing an explainer site and a smart zip." style="width:100%;" loading="lazy" />
+        </div>
+
+        <div class="steps" style="margin-top:40px;">
+          <div class="step"><div class="step-num">1</div><h3>Ingest</h3><p>Read every file the author actually wrote. Skip third-party dependencies. Split content intelligently at function and section boundaries.</p></div>
+          <div class="step"><div class="step-num">2</div><h3>Build knowledge base</h3><p>Every file in the repo is read, chunked, and embedded into a searchable vector database &mdash; runs locally, no API keys required.</p></div>
+          <div class="step"><div class="step-num">3</div><h3>Author site</h3><p>Image-first explainer with dual-level visuals: friendly illustration + accurate SVG diagram in every section.</p></div>
+          <div class="step"><div class="step-num">4</div><h3>Build studio</h3><p>Google NotebookLM generates an audio walkthrough, video, slides, and written report &mdash; all public, one link opens everything.</p></div>
+          <div class="step"><div class="step-num">5</div><h3>Gate &amp; deploy</h3><p>Run all 5 quality checks. Deploy to its own GitHub repository + live website. Verify the site actually loads. Record the build journal.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 5 QUALITY GATES ==================== -->
+    <section class="transform-section">
+      <div class="container">
+        <div class="section-label">Quality System</div>
+        <h2>5 gates &mdash; "done" means proven-good</h2>
+        <p class="section-sub">"Done" never means "the files exist." It means every gate scored >=95, with evidence. The headline score is the <strong>lowest</strong> gate.</p>
+
+        <!-- Five-gates SVG diagram from the README -->
+        <div class="diagram-dark" style="margin:40px auto;max-width:980px;">
+          <img src="assets/img/five-gates.svg" alt="The 5-Gate Quality System: Gate A (KB answers), Gate B (comprehension + felt), Gate C (consistency), Gate D (studio graded), Gate E (visuals graded) — each scoring >=95, feeding a final done=proven-good checkpoint." style="width:100%;" loading="lazy" />
+        </div>
+
+        <div class="feature-grid" style="margin-top:40px;">
+          <div class="feature-card"><h3>A &mdash; Knowledge Base Answers</h3><p>Ask the knowledge base real questions and grade how well it retrieves the right passages and answers correctly from the source. <strong>Score must reach 95+</strong>.</p></div>
+          <div class="feature-card"><h3>B &mdash; Comprehension + Feel</h3><p>A reviewer walks the live site as a newcomer and answers three honest questions: <em>Does this impress me? Does it invite me in? Does it make me want to use it?</em> A "no" is a fail.</p></div>
+          <div class="feature-card"><h3>C &mdash; Consistency</h3><p>Every claim matches the real code. All 7 sections are present, at least 5 use-cases shown, every link works, and the download actually loads and returns a correct answer. Pass/fail.</p></div>
+          <div class="feature-card"><h3>D &mdash; Studio Graded</h3><p>The audio walkthrough and written report are transcribed and actually read &mdash; never assumed good. Graded for clarity, comfort, confidence, and completeness. <strong>Score must reach 95+</strong>.</p></div>
+          <div class="feature-card"><h3>E &mdash; Visuals Graded</h3><p>Every image is checked by an AI vision model. Must include both a friendly illustration for newcomers AND an accurate architecture diagram true to the source code. <strong>Score must reach 95+</strong>.</p></div>
+          <div class="feature-card"><h3>Weakest Link Wins</h3><p>Your overall score equals your <strong>lowest</strong> gate &mdash; no hiding behind averages. Standard bar is 98+; 95+ is acceptable under time pressure. Below that? Diagnose, fix, re-grade until it passes.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== BUILD YOUR OWN ==================== -->
+    <section class="how">
+      <div class="container">
+        <div class="section-label">Get Started</div>
+        <h2>Build your own</h2>
+        <div class="create-manual">
+          <h3>Clone the pipeline and run it</h3>
+          <p>The full Repo-Primer Pipeline is open source. Clone, configure a target, and the pipeline produces the same quality-gated output you see in every example above.</p>
+          <pre class="code-block"><code>git clone https://github.com/stuinfla/Ruv-Explainer.git
+cd Ruv-Explainer
+cat START-HERE.md    # orientation for contributors</code></pre>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:16px;">
+            <a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener" class="btn btn-primary">View on GitHub</a>
+            <a href="https://github.com/stuinfla/Ruv-Explainer/blob/main/START-HERE.md" target="_blank" rel="noopener" class="btn btn-secondary">Read START-HERE.md</a>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- ==================== PRINCIPLES ==================== -->
+    <section class="principles">
+      <div class="container">
+        <div class="section-label">Design Principles</div>
+        <h2>What makes a good explainer</h2>
+        <div class="principles-grid">
+          <div class="principle"><div class="principle-num">01</div><h3>Image before text</h3><p>Every section opens with a visual. The picture explains; the words add detail.</p></div>
+          <div class="principle"><div class="principle-num">02</div><h3>Human problem first</h3><p>Start with the pain. Then the fix. Features last.</p></div>
+          <div class="principle"><div class="principle-num">03</div><h3>Define terms inline</h3><p>If a reader might not know a word, explain it right there.</p></div>
+          <div class="principle"><div class="principle-num">04</div><h3>Honest limits</h3><p>Every tool has rough edges. Say so plainly.</p></div>
+          <div class="principle"><div class="principle-num">05</div><h3>All links public</h3><p>No login, no gated downloads, no auth walls.</p></div>
+          <div class="principle"><div class="principle-num">06</div><h3>Credit the builder</h3><p>Prominently attribute the repo author.</p></div>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <!-- ===================== FOOTER ===================== -->
   <footer>
     <div class="container">
       <div class="footer-grid">
-        <div class="footer-brand">
-          <a class="logo" href="#top">
-            <span class="logo-icon" aria-hidden="true">
-              <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-                <polygon points="14,2 26,14 14,26 2,14" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
-                <line x1="14" y1="2" x2="8" y2="26" stroke="#ff6b6b" stroke-width="1" opacity="0.6"/>
-                <line x1="14" y1="2" x2="14" y2="26" stroke="#6bcb77" stroke-width="1" opacity="0.6"/>
-                <line x1="14" y1="2" x2="20" y2="26" stroke="#4d96ff" stroke-width="1" opacity="0.6"/>
-              </svg>
-            </span>
-            Repo Explainer
-          </a>
-          <p>
-            Turn complex GitHub repos into approachable visual walkthroughs.
-            Open source, free to use.
-          </p>
-        </div>
-        <div class="footer-links">
-          <h4>Links</h4>
-          <a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener">GitHub repo</a>
-          <a href="https://github.com/stuinfla/Ruv-Explainer/blob/main/START-HERE.md" target="_blank" rel="noopener">Getting started</a>
-          <a href="https://github.com/stuinfla/Ruv-Explainer/issues" target="_blank" rel="noopener">Issues</a>
-        </div>
-        <div class="footer-links">
-          <h4>Explainers</h4>
-          <a href="https://metaharness-explainer.vercel.app" target="_blank" rel="noopener">MetaHarness</a>
-          <a href="https://photonlayer-explainer.vercel.app" target="_blank" rel="noopener">PhotonLayer</a>
-          <a href="https://ruqu-explainer.vercel.app" target="_blank" rel="noopener">ruqu</a>
-          <a href="https://ruvn-explainer.vercel.app" target="_blank" rel="noopener">ruvn</a>
-        </div>
+        <div class="footer-brand"><a class="logo" href="#top"><span class="logo-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#6c3ce0"/><line x1="16" y1="4" x2="10" y2="28" stroke="#ff6b6b" stroke-width="2" opacity="0.8"/><line x1="16" y1="4" x2="16" y2="28" stroke="#6bcb77" stroke-width="2" opacity="0.8"/><line x1="16" y1="4" x2="22" y2="28" stroke="#4d96ff" stroke-width="2" opacity="0.8"/></svg></span> Repo Explainer</a><p>Turn complex GitHub repos into visual walkthroughs + AI knowledge bases. Open source, free.</p></div>
+        <div class="footer-links"><h4>Links</h4><a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener">GitHub repo</a><a href="https://github.com/stuinfla/Ruv-Explainer/blob/main/START-HERE.md" target="_blank" rel="noopener">Getting started</a><a href="https://github.com/stuinfla/Ruv-Explainer/issues" target="_blank" rel="noopener">Issues</a></div>
+        <div class="footer-links"><h4>Live Explainers</h4><a href="https://metaharness-explainer.vercel.app" target="_blank" rel="noopener">MetaHarness</a><a href="https://photonlayer-explainer.vercel.app" target="_blank" rel="noopener">PhotonLayer</a><a href="https://ruqu-explainer.vercel.app" target="_blank" rel="noopener">ruqu</a><a href="https://ruvn-explainer.vercel.app" target="_blank" rel="noopener">ruvn</a><a href="https://agentic-qe-explainer.vercel.app" target="_blank" rel="noopener">Agentic QE</a></div>
       </div>
-      <div class="footer-bottom">
-        <p>
-          Built with the
-          <a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener">Ruv-Explainer</a>
-          Repo-Primer Pipeline.
-          The tools explained belong to their respective authors.
-        </p>
-      </div>
+      <div class="footer-bottom"><p>Built with the <a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener">Ruv-Explainer</a> Repo-Primer Pipeline. The tools explained belong to their respective authors.</p></div>
     </div>
   </footer>
-
   <script src="main.js" defer></script>
 </body>
 </html>
