@@ -68,10 +68,14 @@ jobs:
         run: |
           # Authenticated clone so private repos the token can access also work.
           # GH_PAT is a masked secret; the token never appears in logs.
+          # Auth via a TRANSIENT header (-c http.extraheader) so the token is
+          # NOT persisted into target-repo/.git/config — otherwise a later phase
+          # that reads/publishes the working tree could leak it into the KB/pack.
           # Uses pre-validated env vars (not ${{ }} interpolation) to avoid
           # any shell-injection surface from the dispatch inputs.
-          git clone --depth 1 \
-            "https://x-access-token:${GH_PAT}@github.com/${TARGET_OWNER}/${TARGET_REPO}.git" \
+          git -c http.extraheader="AUTHORIZATION: bearer ${GH_PAT}" \
+            clone --depth 1 \
+            "https://github.com/${TARGET_OWNER}/${TARGET_REPO}.git" \
             target-repo
           if [ ! -d "target-repo" ]; then
             echo "::error::Could not clone ${TARGET_OWNER}/${TARGET_REPO} — repo missing or token lacks access."
