@@ -67,9 +67,10 @@
 - [ ] (optional) video / slides — not started.
 
 ## 8 · Deploy  (D17 / X / INV-20)
-- [ ] public GitHub repo — **NOT DONE.** Site source lives in `ruv-explainer-agenticow/`; not yet pushed.
-- [ ] Vercel `--prod`, Deployment Protection OFF — **NOT DONE.**
-- [ ] PROVE-IT: `curl -sI <live-url>` → HTTP 200, publicly viewable — **NOT RUN** (nothing deployed).
+- [x] Site source pushed to branch `claude/agenticow-repo-explainer-c0t90b` in `ruv-explainer-agenticow/` (no standalone public repo — GitHub scope limited to `stuinfla/repo-explainer`).
+- [x] **Deployed to Netlify `--prod`** (not Vercel — this environment has no Vercel CLI/token; only `NETLIFY_AUTH_TOKEN` + Netlify MCP). Site `agenticow-explainer` (id `b4992549-aaf8-4e1f-b8b1-39e0e8c2ec6b`), deployId `6a41ded786ae4199e6bc411a`. **Live: https://agenticow-explainer.netlify.app**
+- [x] PROVE-IT: `curl -sI https://agenticow-explainer.netlify.app` → **HTTP 200**; title `agenticow — Git for Agent Memory`; grounded phrases present (Git for Agent Memory / 162 bytes / Sofia / ruvnet / 3d93dc3); `/assets/img/hero.png` → 200 (1.94 MB). Public, no auth wall.
+- Note: a true headless-browser screenshot of the live URL was blocked by the agent proxy (external HTTPS unreachable from Chromium here); appearance verified via local render of the byte-identical deployed files (desktop + mobile, no page errors, no horizontal overflow).
 
 ## 9 · Score + record  (I/INV-13)
 - **Final score: pending.** Gates A, B, C, D, E have not all been run; the headline score (lowest gate) cannot be computed yet. Status remains **in progress**.
