@@ -241,7 +241,30 @@
         </div>
       </div>
 
-      <p style="margin-top:20px;">Every one of those is the <em>same</em> root cause — copying a memory is expensive — and the <em>same</em> fix: branch it instead. A full copy at a million vectors is <em>"496&nbsp;MB and 67&nbsp;ms — every time."</em> agenticow makes it <em>"<strong>162 bytes and 0.47&nbsp;ms</strong>, flat."</em></p>
+      <h4>Wait — how do you even end up here?</h4>
+      <p>It's almost a rite of passage. You ship an agent with <strong>one shared memory</strong> and it works beautifully. Then real life shows up — usually within the first week or two of anything real:</p>
+      <ul>
+        <li>A <strong>second customer</strong> signs up, and their data can't be allowed to mingle with the first one's.</li>
+        <li>You want to <strong>try a big new import</strong> without risking the memory that already works.</li>
+        <li>A tool call goes sideways, and you wish you'd kept a <strong>restore point</strong> from five minutes ago.</li>
+        <li>You'd like to <strong>run a few experiments at once</strong> and keep whichever turns out best.</li>
+      </ul>
+      <p>None of these are exotic — they show up the moment <em>more than one person, or more than one experiment, touches the same agent.</em> For most teams that's not "someday," it's <strong>week two</strong>. And every single one of them needs the exact same thing underneath: a <strong>separate version of the memory</strong>. That's the fork in the road — and where the trouble starts.</p>
+
+      <h4>What people normally do about it — and why it quietly hurts</h4>
+      <table class="tbl">
+        <thead><tr><th>The usual workaround</th><th>What it quietly costs you</th></tr></thead>
+        <tbody>
+          <tr><td class="after">Cram everyone into <strong>one shared memory</strong></td><td class="before">No real isolation — one user's data bleeds into another's answers.</td></tr>
+          <tr><td class="after"><strong>Copy the whole index</strong> for each version</td><td class="before">Storage and time explode — about <strong>496&nbsp;MB and 67&nbsp;ms</strong> <em>each</em>, every time.</td></tr>
+          <tr><td class="after"><strong>Snapshot to disk</strong>, reload on failure</td><td class="before">Slow and coarse; you lose everything since the last snapshot.</td></tr>
+          <tr><td class="after">Play it safe and <strong>just don't experiment</strong></td><td class="before">The agent freezes in place and quietly stops getting better.</td></tr>
+        </tbody>
+      </table>
+
+      <p style="margin-top:20px;">Every one of those is the <em>same</em> root cause — copying a memory is expensive — and agenticow's answer is the <em>same</em> elegant move every time: <strong>don't copy it, branch it.</strong> One shared base, a weightless <strong>162-byte</strong> overlay per version — and isolation, instant rollback, diff, and merge all come along for free. The thing that was <em>"496&nbsp;MB and 67&nbsp;ms — every time"</em> becomes <em>"<strong>162 bytes and 0.47&nbsp;ms</strong>, flat."</em></p>
+
+      <div class="note"><span class="lab">…and it's deliberately easy to adopt</span>There's no new database to run and no migration. It's <strong>one <code class="inl">npm install agenticow</code></strong>, then a single <code class="inl">base.branch('name')</code> call — or the <code class="inl">agenticow branch</code> CLI with no code at all. <a href="#start">See how to start →</a></div>
 
       <div class="dual">
         <figure class="vfig">
