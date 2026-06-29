@@ -1,0 +1,843 @@
+/* ============================================================================
+   RUV-EXPLAINER — SHARED DESIGN SYSTEM (base stylesheet)
+   ----------------------------------------------------------------------------
+   ONE skeleton, distilled from the six bespoke example explainers
+   (ruvn · ruqu · photonlayer · rufield · agent-harness-generator · agentic-qe).
+
+   INVARIANTS (this file — identical every site): the responsive skeleton,
+   the spacing + fluid-type scales, accessibility (focus, contrast hooks,
+   landmarks, reduced-motion, alt-text slots), and every section ARCHETYPE
+   mapped to the comprehension arc (ADR-0005 D6).
+
+   EXPRESSION (per-repo): override ONLY the custom properties in the
+   "EXPRESSION KNOBS" block below (see theme-example.css). Never touch the
+   skeleton. A repo's whole art direction is ~12 variables.
+
+   Mobile-first (390 → 1440), dependency-free, WCAG 2.1 AA.
+   Updated: 2026-06-28
+   ============================================================================ */
+
+/* ============================================================================
+   1 · EXPRESSION KNOBS  — the ONLY things a per-repo theme overrides
+   ----------------------------------------------------------------------------
+   Defaults below are a neutral, premium "graphite + electric indigo" identity
+   that is deliberately none of the six examples — a clean starting point.
+   ============================================================================ */
+:root {
+  /* color-scheme drives native form/scrollbar theming; flip to "light" for a
+     warm-paper identity like ruvn. */
+  color-scheme: dark;
+
+  /* --- Substrate (page → raised surfaces → hairlines) --- */
+  --bg:        #0c0d12;   /* page floor */
+  --bg-2:      #101117;   /* raised plane / gradient foot */
+  --surface:   #15161f;   /* card / section body */
+  --surface-2: #1b1d28;   /* card header / inset / hover */
+  --ridge:     #2a2d3d;   /* hairline edges, embossed seams */
+
+  /* --- Ink (primary → faint). Keep AA contrast vs --surface. --- */
+  --ink:       #eef0fb;   /* primary text          (~16:1 on --bg) */
+  --ink-2:     #c4c8de;   /* secondary / body copy (~9:1)          */
+  --muted:     #8e93ad;   /* captions, meta        (~4.6:1 → AA)   */
+  --faint:     #61667f;   /* decorative labels only (NON-text)     */
+  --on-accent: #0a0a12;   /* text that sits ON an accent fill      */
+
+  /* --- Accents (the saturated identity) --- */
+  --accent:    #8b7bff;   /* primary accent  */
+  --accent-2:  #36d6c3;   /* secondary accent */
+  --accent-3:  #ff7bbd;   /* tertiary / micro-labels */
+  /* The signature gradient. Override to a metaphor: full spectrum, molten
+     metal, magenta→violet, etc. Defaults to accent → accent-2. */
+  --spectrum:  linear-gradient(96deg, var(--accent), var(--accent-2));
+
+  /* --- Semantic signal (status only — NOT the theme) --- */
+  --ok:   #56d4a0;
+  --warn: #f0b65a;
+  --bad:  #ff8a9b;
+
+  /* --- Type personality (display / body / mono). See pairings in the spec. --- */
+  --display: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sans:    "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Display character knobs (foundry caps vs editorial serif both fit). */
+  --display-weight: 700;
+  --display-case:   none;        /* set to `uppercase` for an industrial look */
+  --display-tracking: -0.015em;  /* set positive for condensed caps           */
+
+  /* --- Shape / motion --- */
+  --radius:   16px;
+  --radius-s: 10px;
+  --ease:     cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* --- Hero treatment knob: angle of the gradient headline span --- */
+  --hero-grad-angle: 96deg;
+}
+
+/* ============================================================================
+   2 · INVARIANTS — derived tokens, scales, skeleton (DO NOT override per-repo)
+   ============================================================================ */
+:root {
+  /* --- Lines + tinted fills, derived from the accent so themes stay cohesive */
+  --line:        color-mix(in srgb, var(--accent) 20%, transparent);
+  --line-strong: color-mix(in srgb, var(--accent) 36%, transparent);
+  --fill:        color-mix(in srgb, var(--accent) 10%, transparent);
+  --fill-2:      color-mix(in srgb, var(--accent-2) 12%, transparent);
+  --glass:       color-mix(in srgb, var(--surface) 62%, transparent);
+
+  /* --- Depth: soft shadow + emboss seam + accent glow --- */
+  --shadow:      0 22px 50px -28px rgba(0,0,0,0.78);
+  --shadow-deep: 0 40px 96px -42px rgba(0,0,0,0.88);
+  --emboss:      inset 0 1px 0 color-mix(in srgb, var(--ink) 7%, transparent),
+                 inset 0 -1px 0 rgba(0,0,0,0.40);
+  --glow:        0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent),
+                 0 16px 44px -18px color-mix(in srgb, var(--accent) 40%, transparent);
+
+  /* --- Layout rhythm --- */
+  --maxw:   1120px;
+  --measure: 68ch;                         /* max line length for body copy */
+  --gutter: clamp(1.25rem, 5vw, 3.5rem);   /* page side padding 20 → 56px   */
+
+  /* --- Fluid TYPE scale (390 → 1440). One source of truth. --- */
+  --step--2: clamp(0.69rem, 0.67rem + 0.11vw, 0.78rem);  /* 11 → 12.5  micro labels */
+  --step--1: clamp(0.83rem, 0.79rem + 0.18vw, 0.94rem);  /* 13 → 15    captions      */
+  --step-0:  clamp(1rem,    0.97rem + 0.16vw, 1.0625rem); /* 16 → 17    body         */
+  --step-1:  clamp(1.15rem, 1.06rem + 0.40vw, 1.35rem);   /* 18 → 21.5  lede         */
+  --step-2:  clamp(1.35rem, 1.15rem + 0.85vw, 1.85rem);   /* 21 → 30    h3           */
+  --step-3:  clamp(1.7rem,  1.32rem + 1.62vw, 2.6rem);    /* 27 → 42    h2           */
+  --step-4:  clamp(2.4rem,  1.66rem + 3.15vw, 4.4rem);    /* 38 → 70    h1           */
+
+  /* --- Fluid SPACE scale (t-shirt). Vertical rhythm + section padding. --- */
+  --space-2xs: 0.5rem;
+  --space-xs:  0.75rem;
+  --space-s:   1rem;
+  --space-m:   1.5rem;
+  --space-l:   2rem;
+  --space-xl:  clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+  --space-2xl: clamp(3rem, 2rem + 4.4vw, 5rem);
+  --space-3xl: clamp(4rem, 2.4rem + 7vw, 7.5rem);   /* hero / major section rhythm */
+  --section-gap: var(--space-l);                    /* gap between section cards   */
+
+  /* Sticky-header offset for anchored scrolling. */
+  --head-h: 64px;
+}
+
+/* ============================================================================
+   3 · RESET / BASE
+   ============================================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--head-h) + 1rem);
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--step-0);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Ambient field: two accent radials over a deep vertical gradient. Subtle —
+     it should read as light, not decoration. */
+  background-image:
+    radial-gradient(1100px 620px at 80% -8%,
+      color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%),
+    radial-gradient(900px 700px at -10% 6%,
+      color-mix(in srgb, var(--accent-2) 10%, transparent), transparent 55%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+  background-attachment: fixed;
+}
+
+img, svg, video { max-width: 100%; height: auto; display: block; }
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.18s var(--ease);
+}
+a:hover { color: var(--accent-2); }
+
+/* Accessible focus — visible 2px ring on every interactive element. */
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible,
+.dropzone:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 3px;
+  border-radius: var(--radius-s);
+}
+
+::selection { background: color-mix(in srgb, var(--accent) 32%, transparent); color: var(--ink); }
+
+code, kbd, pre, samp { font-family: var(--mono); }
+
+/* Skip link — first focusable element; jumps to <main id="top">. */
+.skip-link {
+  position: absolute; left: 0; top: 0; z-index: 100;
+  transform: translateY(-120%);
+  background: var(--accent); color: var(--on-accent);
+  font-family: var(--mono); font-size: var(--step--1); font-weight: 600;
+  padding: 10px 16px; border-radius: 0 0 var(--radius-s) 0;
+  transition: transform 0.18s var(--ease);
+}
+.skip-link:focus { transform: translateY(0); color: var(--on-accent); }
+
+/* ============================================================================
+   4 · LAYOUT SHELL + TYPE SYSTEM
+   ============================================================================ */
+.wrap { width: 100%; max-width: var(--maxw); margin-inline: auto; padding-inline: var(--gutter); }
+
+h1, h2, h3, h4 {
+  font-family: var(--display);
+  font-weight: var(--display-weight);
+  line-height: 1.04;
+  letter-spacing: var(--display-tracking);
+  text-transform: var(--display-case);
+  margin: 0 0 0.5em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+h1 { font-size: var(--step-4); line-height: 1.01; letter-spacing: calc(var(--display-tracking) - 0.005em); }
+h2 { font-size: var(--step-3); }
+h3 { font-size: var(--step-2); }
+h4 { font-size: var(--step-1); }
+
+p { margin: 0 0 1rem; max-width: var(--measure); color: var(--ink-2); text-wrap: pretty; }
+
+.eyebrow {
+  display: inline-block;
+  font-family: var(--mono); font-size: var(--step--2);
+  letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--accent-2); font-weight: 500; margin: 0 0 14px;
+}
+.mono   { font-family: var(--mono); }
+.lede   { font-size: var(--step-1); color: var(--ink); max-width: 64ch; line-height: 1.5; }
+.muted  { color: var(--muted); }
+.center { text-align: center; }
+
+ol, ul { margin: 0 0 1rem; padding-left: 1.4em; max-width: var(--measure); color: var(--ink-2); }
+li { margin: 0 0 0.55em; }
+li::marker { color: var(--accent); }
+li strong, p strong { color: var(--ink); }
+em { color: var(--ink); font-style: italic; }
+
+/* Gradient headline span — the hero's signature flourish. */
+.grad {
+  background: var(--spectrum);
+  background-size: 100%;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent;
+}
+
+/* A prismatic / signal hairline motif (optional divider). */
+.spec-line { height: 2px; width: 100%; border: 0; border-radius: 2px; background: var(--spectrum); opacity: 0.9; }
+
+/* Inline command / code chip. */
+code, .cmd {
+  font-family: var(--mono); font-size: 0.86em; color: var(--accent-2);
+  background: var(--fill-2);
+  border: 1px solid var(--line-strong); border-radius: 6px;
+  padding: 0.1em 0.45em;
+}
+
+/* Multi-line command / code well. */
+pre.code-block {
+  font-family: var(--mono); font-size: var(--step--1); line-height: 1.62;
+  color: var(--ink-2); background: var(--bg);
+  border: 1px solid var(--line-strong); border-left: 3px solid var(--accent);
+  border-radius: var(--radius-s);
+  padding: 16px 18px; margin: 0 0 1rem;
+  overflow-x: auto; box-shadow: var(--emboss); max-width: 74ch;
+}
+pre.code-block code {
+  background: none; border: 0; box-shadow: none; padding: 0;
+  font-size: inherit; color: inherit; white-space: pre;
+}
+pre.code-block .c { color: var(--faint); }                 /* comment       */
+pre.code-block .k { color: var(--accent); font-weight: 500; } /* keyword     */
+pre.code-block .s { color: var(--accent-2); }              /* string/flag   */
+
+/* Utilities. */
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.kbd {
+  font-family: var(--mono); font-size: 0.85em; color: var(--ink-2);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px;
+}
+
+/* ============================================================================
+   5 · PROVENANCE / ATTRIBUTION BAND  (recurring credit strip — top of page)
+   ============================================================================ */
+.prov-banner {
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--glass), transparent);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.prov-banner-inner {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 10px 26px; padding-block: 9px;
+}
+.prov-attr { margin: 0; max-width: none; font-size: var(--step--1); line-height: 1.5; color: var(--muted); }
+.prov-attr strong { color: var(--ink-2); font-weight: 600; }
+.prov-attr a { color: var(--accent-2); }
+.prov-live {
+  margin: 0; flex: 0 0 auto; white-space: nowrap;
+  font-family: var(--mono); font-size: var(--step--2); letter-spacing: 0.04em; color: var(--faint);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.prov-live code { color: var(--accent-2); background: var(--fill); padding: 0.08em 0.4em; border: 0; }
+.prov-dot {
+  color: var(--accent); font-size: 9px;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 85%, transparent));
+  animation: prov-pulse 2.6s var(--ease) infinite;
+}
+@keyframes prov-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.32; } }
+
+/* ============================================================================
+   6 · HEADER / NAV  (sticky, translucent)
+   ============================================================================ */
+.site-head {
+  position: sticky; top: 0; z-index: 40;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.site-head .wrap {
+  display: flex; align-items: center; justify-content: space-between;
+  height: var(--head-h); gap: 18px;
+}
+.brand {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: var(--display); font-weight: var(--display-weight); font-size: 1.2rem;
+  letter-spacing: var(--display-tracking); text-transform: var(--display-case); color: var(--ink);
+}
+.brand .logo, .brand svg { width: 28px; height: 28px; flex: none; }
+.nav-links { display: none; gap: 4px; }
+.nav-links a {
+  font-family: var(--mono); font-size: var(--step--2); letter-spacing: 0.04em;
+  color: var(--muted); padding: 7px 11px; border-radius: 7px;
+  transition: color 0.18s var(--ease), background 0.18s var(--ease);
+}
+.nav-links a:hover { color: var(--ink); background: var(--fill); }
+
+/* ============================================================================
+   7 · ARCHETYPE — HERO   · arc Q: "What world am I in?"
+   ============================================================================ */
+.hero { position: relative; overflow: hidden; padding: var(--space-3xl) 0 var(--space-xl); }
+.hero-grid { display: grid; grid-template-columns: 1fr; gap: var(--space-xl); align-items: center; }
+
+.hero h1 { margin: 0 0 0.35em; }
+.hero .lede { margin-top: var(--space-m); }
+
+/* Attribution lede — quiet credit block under the headline. */
+.attrib-lede {
+  margin: var(--space-m) 0 0; max-width: 60ch;
+  font-size: var(--step--1); line-height: 1.55; color: var(--ink-2);
+  padding: 12px 16px; border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-s) var(--radius-s) 0; background: var(--fill);
+}
+.attrib-lede strong { color: var(--ink); }
+.attrib-lede a { color: var(--accent-2); }
+
+.meta-row {
+  display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: var(--space-l);
+  font-family: var(--mono); font-size: var(--step--2); color: var(--faint); letter-spacing: 0.04em;
+}
+.meta-row b { color: var(--accent-2); font-weight: 500; }
+
+.cta-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: var(--space-l); }
+.cta {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--display); font-weight: 600; font-size: 1rem; letter-spacing: 0.01em;
+  text-transform: var(--display-case);
+  color: var(--on-accent);
+  background: var(--spectrum); background-size: 140%;
+  padding: 13px 24px; border: 1px solid transparent; border-radius: 12px; cursor: pointer;
+  box-shadow: var(--glow);
+  transition: transform 0.16s var(--ease), filter 0.16s var(--ease);
+}
+.cta:hover { transform: translateY(-2px); filter: brightness(1.07); color: var(--on-accent); }
+.cta.ghost {
+  background: transparent; color: var(--ink);
+  border-color: var(--line-strong); box-shadow: none;
+}
+.cta.ghost:hover { color: var(--accent-2); border-color: var(--accent-2); background: var(--fill); }
+
+/* Hero artwork (the raster metaphor — highest rung of the image ladder). */
+.hero-art {
+  margin: 0; position: relative; border-radius: var(--radius);
+  border: 1px solid var(--ridge); overflow: hidden; background: var(--surface);
+  box-shadow: var(--shadow-deep);
+}
+.hero-art img { width: 100%; }
+.hero-art figcaption {
+  font-family: var(--mono); font-size: var(--step--2); color: var(--muted);
+  padding: 8px 12px; border-top: 1px solid var(--ridge); background: var(--surface-2);
+}
+
+/* One-plain-sentence band — the bridge from hero into the arc. */
+.plainband {
+  margin-top: var(--space-xl); padding: clamp(20px, 4vw, 34px);
+  border-radius: var(--radius); border: 1px solid var(--line-strong);
+  background: linear-gradient(120deg, var(--fill), var(--fill-2));
+  box-shadow: var(--emboss);
+}
+.plainband p { margin: 0; max-width: none; font-size: var(--step-2); line-height: 1.4; color: var(--ink); }
+.plainband .q { color: var(--accent); font-weight: 600; }
+
+/* ============================================================================
+   8 · ARCHETYPE — SECTION SHELL  (native <details>, used by every arc step)
+   ----------------------------------------------------------------------------
+   Wraps: The Problem · What It Is · The Insight · How It Works · Use Cases ·
+   Get Started · The AI Pack. Each is a collapsible card whose <summary> shows
+   the section number, title, and the arc QUESTION it answers (.q).
+   ============================================================================ */
+.sections { padding: var(--space-2xl) 0 var(--space-3xl); }
+section { scroll-margin-top: calc(var(--head-h) + 1rem); }
+
+.section {
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--ridge); border-radius: var(--radius);
+  box-shadow: var(--shadow), var(--emboss);
+  margin: 0 0 var(--section-gap); overflow: hidden;
+}
+.section[open] { box-shadow: var(--shadow-deep), var(--emboss); border-color: var(--line-strong); }
+
+.section > summary {
+  list-style: none; cursor: pointer; user-select: none;
+  display: flex; align-items: baseline; gap: 16px;
+  padding: clamp(18px, 3vw, 26px) clamp(18px, 4vw, 34px);
+  transition: background 0.2s var(--ease);
+}
+.section > summary::-webkit-details-marker { display: none; }
+.section > summary:hover { background: var(--fill); }
+
+.section .num {
+  flex: 0 0 auto; padding-top: 0.35em;
+  font-family: var(--mono); font-size: var(--step--1); letter-spacing: 0.18em; color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.section .head-text { flex: 1 1 auto; min-width: 0; }
+.section .head-text h2 { margin: 0; font-size: clamp(1.3rem, 3vw, 2rem); }
+.section .head-text .q {            /* the arc question, in mono */
+  display: block; margin-top: 6px;
+  font-family: var(--mono); font-size: var(--step--1); letter-spacing: 0.02em; color: var(--muted);
+}
+.section .chev {
+  flex: 0 0 auto; align-self: center;
+  width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 1px solid var(--line-strong); color: var(--accent);
+  font-size: 13px; line-height: 1;
+  transition: transform 0.25s var(--ease), background 0.2s var(--ease);
+}
+.section[open] .chev { transform: rotate(90deg); background: var(--fill); }
+
+.section .body {
+  padding: 4px clamp(18px, 4vw, 34px) clamp(24px, 3vw, 32px);
+  border-top: 1px solid var(--line); margin-top: 2px;
+}
+.section .body > *:first-child { margin-top: var(--space-m); }
+.section .body h3 { margin: var(--space-l) 0 var(--space-2xs); }
+
+/* Lead-in paragraph that should read brighter than body copy. */
+.lead-in { font-size: var(--step-1); color: var(--ink); }
+
+/* ============================================================================
+   9 · CALLOUTS + THE-INSIGHT BAND   · arc Q: "Why is it elegant/clever?"
+   ============================================================================ */
+.note {
+  margin: var(--space-m) 0; padding: 13px 16px; max-width: 74ch;
+  border-left: 3px solid var(--accent-2);
+  border-radius: 0 var(--radius-s) var(--radius-s) 0;
+  background: var(--fill-2); color: var(--ink-2); font-size: var(--step--1);
+}
+.note.warn   { border-left-color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
+.note.honest { border-left-color: var(--accent-3); background: color-mix(in srgb, var(--accent-3) 10%, transparent); }
+.note .lab {
+  display: block; margin-bottom: 4px;
+  font-family: var(--mono); font-size: var(--step--2); font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-2);
+}
+.note.warn .lab   { color: var(--warn); }
+.note.honest .lab { color: var(--accent-3); }
+
+/* The "oh — that's clever" takeaway — a highlighted aha line. */
+.oh {
+  margin: var(--space-l) 0 var(--space-2xs); padding: 16px 20px; max-width: none;
+  border: 1px solid var(--line-strong); border-radius: var(--radius-s);
+  background: linear-gradient(96deg, var(--fill), var(--fill-2));
+  color: var(--ink); font-size: var(--step-1); line-height: 1.45;
+}
+.oh strong { color: var(--accent); }
+
+/* ============================================================================
+   10 · ARCHETYPE — FIGURE / IMAGE LADDER (D7)
+   ----------------------------------------------------------------------------
+   .figure  = single visual slot (raster OR svg). alt-text REQUIRED on <img>.
+   .dual    = a friendly raster on-ramp beside a technical SVG diagram.
+   .tier    = label marking a visual as friendly (illustrative) or tech (svg).
+   ============================================================================ */
+.figure {
+  margin: var(--space-m) 0 var(--space-2xs);
+  border: 1px solid var(--ridge); border-radius: var(--radius-s);
+  background: var(--surface-2); padding: 14px; box-shadow: var(--emboss);
+}
+.figure > img, .figure > svg { width: 100%; height: auto; display: block; border-radius: 7px; }
+.figure.diagram { background: var(--bg); }   /* SVG-on-dark plate */
+.figure figcaption {
+  margin-top: 11px; color: var(--muted); font-size: var(--step--1); line-height: 1.5;
+}
+.figure figcaption b { color: var(--ink-2); }
+
+.tier {
+  display: inline-flex; align-items: center; gap: 7px; margin-bottom: 10px;
+  font-family: var(--mono); font-size: var(--step--2); letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--faint);
+}
+.tier::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: currentColor; }
+.tier.friendly { color: var(--accent-3); }
+.tier.friendly::before { border-radius: 50%; }
+.tier.tech { color: var(--accent-2); }
+
+.dual { display: grid; grid-template-columns: 1fr; gap: 18px; margin: var(--space-l) 0; }
+
+/* ============================================================================
+   11 · COMPARISON TABLE  (before/after — supports What It Is / The Insight)
+   ============================================================================ */
+.tbl {
+  width: 100%; border-collapse: collapse; margin: var(--space-m) 0; font-size: var(--step--1);
+  border: 1px solid var(--line); border-radius: var(--radius-s); overflow: hidden;
+}
+.tbl th, .tbl td { padding: 12px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+.tbl thead th {
+  font-family: var(--mono); font-size: var(--step--2); letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted); background: var(--surface-2);
+}
+.tbl tbody tr:last-child td { border-bottom: 0; }
+.tbl td:first-child { font-weight: 600; color: var(--ink); }
+.tbl .before { color: var(--muted); }
+.tbl .after  { color: var(--ink); }
+.tbl .win    { color: var(--ok); font-weight: 600; }
+
+/* ============================================================================
+   12 · ARCHETYPE — GET STARTED  · arc Q: "How do I start?"  (numbered steps)
+   ============================================================================ */
+.steps { counter-reset: step; list-style: none; padding: 0; margin: var(--space-l) 0; display: grid; gap: 12px; }
+.steps li {
+  counter-increment: step; position: relative;
+  padding: 14px 16px 14px 58px;
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius-s);
+}
+.steps li::before {
+  content: counter(step); position: absolute; left: 14px; top: 13px;
+  width: 30px; height: 30px; border-radius: 9px;
+  display: grid; place-items: center;
+  font-family: var(--mono); font-weight: 600; font-size: 14px;
+  color: var(--on-accent); background: var(--spectrum);
+}
+.steps li strong { color: var(--ink); }
+
+/* Install / highlighted CTA block. */
+.install-block {
+  margin: var(--space-m) 0; padding: 20px 22px;
+  border: 1.5px solid var(--accent); border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--fill) 0%, var(--surface) 100%);
+  box-shadow: var(--glow), var(--emboss);
+}
+
+/* ============================================================================
+   13 · ARCHETYPE — USE-CASE GALLERY  · arc Q: "Could I use this?"
+   ----------------------------------------------------------------------------
+   Each case is its OWN collapsible <details> with its own visual.
+   ============================================================================ */
+.gallery { margin: var(--space-m) 0 var(--space-2xs); }
+.gallery .grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
+
+.case {
+  background: var(--surface-2); border: 1px solid var(--ridge);
+  border-radius: var(--radius-s); overflow: hidden; margin: 0 0 14px; box-shadow: var(--emboss);
+}
+.case[open] { border-color: var(--line-strong); box-shadow: var(--glow); }
+.case > summary {
+  list-style: none; cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 14px; padding: 16px 20px;
+  transition: background 0.18s var(--ease);
+}
+.case > summary::-webkit-details-marker { display: none; }
+.case > summary:hover { background: var(--fill); }
+.case .uc-num {
+  flex: 0 0 auto; width: 28px; height: 28px; border-radius: 8px;
+  display: grid; place-items: center;
+  font-family: var(--mono); font-size: var(--step--1); font-weight: 700;
+  color: var(--on-accent); background: var(--spectrum);
+}
+.case .uc-title { flex: 1 1 auto; font-family: var(--display); font-weight: 600; font-size: var(--step-1); color: var(--ink); }
+.case .uc-tag {
+  flex: 0 0 auto; font-family: var(--mono); font-size: var(--step--2);
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-2);
+}
+.case .chev {
+  flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center; border: 1px solid var(--line-strong);
+  color: var(--accent); font-size: 12px; transition: transform 0.25s var(--ease);
+}
+.case[open] .chev { transform: rotate(90deg); background: var(--fill); }
+.case .uc-body { padding: 2px 20px 22px; border-top: 1px solid var(--line); }
+.case .uc-body > *:first-child { margin-top: var(--space-m); }
+.case .uc-body p, .case pre.code-block { max-width: none; }
+.case dl { margin: var(--space-m) 0 0; }
+.case dt {
+  margin-top: 14px; font-family: var(--mono); font-size: var(--step--2);
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-2);
+}
+.case dt:first-child { margin-top: 0; }
+.case dd { margin: 5px 0 0; color: var(--ink-2); }
+
+/* ============================================================================
+   14 · ARCHETYPE — THE AI PACK / DUAL-OUTPUT  · arc Q: "(my AI gets it too)"
+   ----------------------------------------------------------------------------
+   The downloadable knowledge pack: a file tree + a drag-in dropzone + CTA.
+   This is the page-for-humans / KB-for-their-AI dual output.
+   ============================================================================ */
+.tree {
+  font-family: var(--mono); font-size: var(--step--1); line-height: 1.9;
+  background: var(--bg); border: 1px solid var(--ridge); border-radius: var(--radius);
+  padding: 18px 20px; margin: var(--space-m) 0; overflow-x: auto; box-shadow: var(--emboss);
+}
+.tree .d { color: var(--accent); }      /* directory */
+.tree .f { color: var(--accent-2); }     /* file      */
+.tree .cmt { color: var(--muted); }      /* annotation */
+.tree .heart { color: var(--accent-3); } /* the special "for-humans" half */
+
+.dl-cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: var(--space-m) 0; }
+.dl-cta .dl-meta { color: var(--muted); font-size: var(--step--1); }
+
+.dropzone {
+  display: block; margin: var(--space-m) 0 var(--space-2xs); text-align: center; text-decoration: none;
+  padding: clamp(26px, 5vw, 46px); cursor: pointer;
+  border: 2px dashed var(--line-strong); border-radius: var(--radius);
+  background: var(--fill); color: var(--ink);
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease),
+              transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.dropzone:hover { border-color: var(--accent); background: var(--fill-2); }
+.dropzone.is-dragover { border-color: var(--accent-2); transform: scale(1.01); box-shadow: var(--glow); }
+.dropzone .dz-icon { font-family: var(--display); font-weight: 700; font-size: 2rem; color: var(--accent-2); margin-bottom: 6px; line-height: 1; }
+.dropzone strong { color: var(--ink); font-size: var(--step-0); }
+.dropzone .dz-hint { font-family: var(--mono); font-size: var(--step--2); color: var(--muted); margin-top: 10px; }
+.dropzone .dz-status { font-family: var(--mono); font-size: var(--step--1); color: var(--accent-2); margin-top: 12px; min-height: 1.2em; }
+
+/* ============================================================================
+   15 · STUDIO (OPTIONAL / quarantined — INV-03). Re-packed on follow-up.
+   ============================================================================ */
+.studio-hero {
+  position: relative; overflow: hidden; margin: var(--space-l) 0;
+  padding: 26px 26px 22px; border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  background:
+    radial-gradient(120% 140% at 8% 0%, var(--fill), transparent 55%),
+    radial-gradient(120% 160% at 100% 100%, var(--fill-2), transparent 55%),
+    var(--surface);
+  box-shadow: var(--shadow);
+}
+.studio-hero::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--spectrum); }
+.studio-hero-kicker { position: relative; margin: 0 0 6px; font-family: var(--mono); font-size: var(--step--2); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-2); }
+.studio-hero-title { position: relative; margin: 0 0 8px; font-size: var(--step-2); color: var(--ink); }
+.studio-hero-sub { position: relative; margin: 0 0 16px; max-width: 62ch; color: var(--ink-2); }
+.studio-grid { display: grid; gap: 16px; margin: var(--space-m) 0 var(--space-2xs); grid-template-columns: 1fr; }
+.studio-card { margin: 0; padding: 14px; border-radius: var(--radius-s); background: var(--bg-2); border: 1px solid var(--line-strong); box-shadow: var(--emboss); }
+.studio-card video, .studio-card img { width: 100%; display: block; border-radius: 8px; }
+
+/* ============================================================================
+   16 · FOOTER
+   ============================================================================ */
+footer {
+  border-top: 1px solid var(--line); margin-top: var(--space-l);
+  padding: var(--space-2xl) 0 var(--space-3xl);
+  color: var(--faint); font-family: var(--mono); font-size: var(--step--1); letter-spacing: 0.02em;
+}
+footer a { color: var(--accent-2); }
+footer .credit { font-family: var(--sans); color: var(--muted); line-height: 1.7; max-width: 70ch; }
+footer .credit b { color: var(--ink); }
+footer .fine { margin-top: var(--space-l); padding-top: var(--space-m); border-top: 1px solid var(--line); color: var(--faint); }
+.stack-links {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 22px;
+  margin-bottom: var(--space-m); padding-bottom: var(--space-m); border-bottom: 1px solid var(--line);
+}
+.stack-links .stack-lead { color: var(--faint); text-transform: uppercase; letter-spacing: 0.1em; }
+
+/* ============================================================================
+   16b · EXPLAINER FOOTER  — the REQUIRED credit + CTA strip on EVERY explainer
+   ----------------------------------------------------------------------------
+   NON-NEGOTIABLE: every page the recipe builds ends with this exact component.
+   It is two lines, always, in this order:
+
+     line 1  "Built by Stuart Kerr at ISOvision.ai"
+              — "ISOvision.ai" links to  https://isovision.ai
+     line 2  CTA "Want an explainer for your own repo? Create one →"
+              — links to  https://repoexplainer.isovision.ai   (placeholder
+                landing URL — swap when the real landing page ships)
+
+   On-brand (pure tokens, no hard-coded colour), accessible (semantic
+   <footer role="contentinfo">, real <a> links, underlined credit link, AA
+   contrast via --muted/--ink-2/--accent-2, focus ring inherited from §3,
+   reduced-motion safe), and responsive (stacks at 390px, splits left/right
+   at 48em). The Assembly station (ADR-0005 S6) injects this verbatim.
+
+   ── REQUIRED MARKUP (drop verbatim at the end of <body> on every explainer) ──
+
+     <footer class="explainer-footer" role="contentinfo">
+       <div class="wrap explainer-footer-inner">
+         <p class="ef-credit">
+           Built by <strong>Stuart Kerr</strong> at
+           <a href="https://isovision.ai" rel="author">ISOvision.ai</a>
+         </p>
+         <a class="ef-cta" href="https://repoexplainer.isovision.ai">
+           <span class="ef-cta-lead">Want an explainer for your own repo?</span>
+           <strong>Create one</strong>
+           <span class="ef-arrow" aria-hidden="true">&rarr;</span>
+         </a>
+       </div>
+     </footer>
+   ============================================================================ */
+.explainer-footer {
+  border-top: 1px solid var(--line);
+  margin-top: var(--space-3xl);
+  padding-block: var(--space-xl);
+  background: linear-gradient(180deg, transparent, var(--bg-2));
+}
+.explainer-footer-inner {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: var(--space-m);
+}
+
+/* line 1 — the credit */
+.ef-credit {
+  margin: 0; max-width: none;
+  font-family: var(--sans); font-size: var(--step-0); line-height: 1.6;
+  color: var(--muted);
+}
+.ef-credit strong { color: var(--ink-2); font-weight: 600; }
+.ef-credit a {
+  color: var(--accent-2); font-weight: 600;
+  text-decoration: underline; text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--accent-2) 45%, transparent);
+  transition: color 0.18s var(--ease), text-decoration-color 0.18s var(--ease);
+}
+.ef-credit a:hover { color: var(--accent); text-decoration-color: currentColor; }
+
+/* line 2 — the "make your own" CTA */
+.ef-cta {
+  display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px 9px;
+  font-family: var(--display); font-weight: 600; font-size: var(--step-0);
+  letter-spacing: 0.005em; text-transform: var(--display-case);
+  color: var(--ink);
+  padding: 11px 18px; border-radius: 12px;
+  border: 1px solid var(--line-strong); background: var(--fill);
+  box-shadow: var(--emboss);
+  transition: transform 0.16s var(--ease), border-color 0.18s var(--ease),
+              background 0.18s var(--ease), box-shadow 0.18s var(--ease);
+}
+.ef-cta .ef-cta-lead { color: var(--muted); font-family: var(--sans); font-weight: 500; }
+.ef-cta strong { color: var(--accent-2); font-weight: 700; }
+.ef-cta .ef-arrow {
+  font-family: var(--mono); color: var(--accent);
+  transition: transform 0.18s var(--ease);
+}
+.ef-cta:hover {
+  transform: translateY(-2px); color: var(--ink);
+  border-color: var(--accent-2); background: var(--fill-2); box-shadow: var(--glow);
+}
+.ef-cta:hover strong { color: var(--accent); }
+.ef-cta:hover .ef-arrow { transform: translateX(4px); }
+
+@media (min-width: 48em) {
+  .explainer-footer-inner {
+    flex-direction: row; align-items: center; justify-content: space-between;
+    gap: var(--space-l);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ef-cta:hover { transform: none; }
+  .ef-cta:hover .ef-arrow { transform: none; }
+}
+
+/* ============================================================================
+   17 · RESPONSIVE — mobile-first; columns appear at breakpoints
+   ----------------------------------------------------------------------------
+   Base (≤ 47.99em / 390px target) = single column, nav hidden.
+   md 48em (768px)  = nav shows · hero 2-col · dual 2-col · steps 3-col
+   lg 64em (1024px) = wider hero ratio · gallery 2-col
+   ============================================================================ */
+@media (min-width: 48em) {
+  .nav-links { display: flex; }
+  .hero { padding-top: var(--space-3xl); }
+  .hero-grid { grid-template-columns: 1.05fr 0.95fr; gap: var(--space-2xl); }
+  .dual { grid-template-columns: 1fr 1fr; }
+  .steps { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 64em) {
+  .hero-grid { grid-template-columns: 1.12fr 0.88fr; }
+  .gallery .grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ============================================================================
+   18 · ACCESSIBILITY — reduced motion + forced-colors
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .cta:hover, .dropzone.is-dragover { transform: none; }
+}
+
+@media (forced-colors: active) {
+  .cta, .case[open], .section[open] { border: 1px solid CanvasText; }
+  .chev, .section .num { forced-color-adjust: auto; }
+}
+
+
+/* ── per-repo THEME (expression knobs only — skeleton untouched) ── */
+:root {
+  color-scheme: dark;
+  --bg: #060d0c;
+  --bg-2: #0a1413;
+  --surface: #0e1a18;
+  --surface-2: #122220;
+  --ridge: #1f3a35;
+  --ink: #eafff8;
+  --ink-2: #b9d8d0;
+  --muted: #7fa39a;
+  --faint: #50706a;
+  --on-accent: #04100d;
+  --accent: #3fe0c5;
+  --accent-2: #5cf28e;
+  --accent-3: #9d7bff;
+  --spectrum: linear-gradient(115deg, #9d7bff 0%, #4f8cff 24%, #3fe0c5 58%, #5cf28e 100%);
+  --ok: #5cf28e;
+  --warn: #ffd166;
+  --bad: #ff6b6b;
+  --radius: 16px;
+  --radius-s: 10px;
+  --display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --display-weight: 700;
+  --display-case: none;
+  --display-tracking: -0.02em;
+}

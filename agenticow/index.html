@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>agenticow — Git for agent memory</title>
+  <meta name="description" content="agenticow branches a vector memory copy-on-write, like Git: fork a million-vector base in ~0.5 ms and 162 bytes, query parent ∪ your edits, roll back instant…">
+  <meta name="author" content="Independent explainer for ruvnet's agenticow — built by Stuart Kerr at ISOvision.ai">
+  <link rel="canonical" href="https://agenticow-explainer.netlify.app/">
+  <meta name="theme-color" content="#3fe0c5">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="agenticow — Git for agent memory">
+  <meta property="og:description" content="Branch your agent's memory like Git — 0.5 ms, 162 bytes, any base size.">
+  <meta property="og:url" content="https://agenticow-explainer.netlify.app/">
+  <meta property="og:image" content="https://agenticow-explainer.netlify.app/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="agenticow — Git for agent memory">
+  <meta name="twitter:description" content="Branch your agent's memory like Git — 0.5 ms, 162 bytes, any base size.">
+  <meta name="twitter:image" content="https://agenticow-explainer.netlify.app/assets/social-card.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/favicon-512.png">
+  <link rel="icon" href="assets/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap">
+  <link rel="stylesheet" href="styles.css">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "agenticow",
+  "description": "agenticow branches a vector memory copy-on-write, like Git: fork a million-vector base in ~0.5 ms and 162 bytes, query parent ∪ your edits, roll back instant…",
+  "url": "https://agenticow-explainer.netlify.app/",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Cross-platform",
+  "image": "https://agenticow-explainer.netlify.app/assets/social-card.png",
+  "author": {
+    "@type": "Person",
+    "name": "ruvnet"
+  },
+  "codeRepository": "https://github.com/ruvnet/agenticow",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="prov-banner">
+    <div class="wrap prov-banner-inner">
+      <p class="prov-attr">An independent explainer for <strong>ruvnet</strong>'s <a href="https://github.com/ruvnet/agenticow" target="_blank" rel="noopener">agenticow</a> — built to help you actually implement it.</p>
+      <p class="prov-live"><span class="prov-dot" aria-hidden="true">&#9679;</span> source <code>github.com/ruvnet/agenticow</code></p>
+    </div>
+  </div>
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="#top" aria-label="agenticow explainer home">
+        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="3" y="3" width="26" height="26" rx="8" fill="none" stroke="var(--accent)" stroke-width="2"></rect>
+        <rect x="9" y="9" width="14" height="14" rx="4" fill="var(--accent-2)"></rect>
+        <circle cx="16" cy="16" r="3" fill="var(--on-accent)"></circle>
+      </svg>
+        <span>agenticow</span>
+      </a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#what-it-is">What it is</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#use-cases">Use cases</a>
+        <a href="#get-started">Get started</a>
+        <a href="#the-pack">AI pack</a>
+        <a href="https://github.com/ruvnet/agenticow" target="_blank" rel="noopener">GitHub &#8599;</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main">
+
+  <a id="top"></a>
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-grid">
+        <div>
+          <span class="eyebrow">Git for agent memory</span>
+          <h1>Branch a million-vector memory in <strong>0.5 ms</strong> and <strong>162 bytes</strong>.</h1>
+          <p class="lede">Every other vector store makes you <em>full-copy</em> the whole index to snapshot, fork, or checkpoint it. <strong>agenticow branches it copy-on-write — like Git.</strong> A branch is just your edits plus a pointer to the base, so creating one costs ~0.5 ms and 162 bytes whether the base holds ten thousand vectors or ten million.</p>
+          <p class="sub">Query a branch and you transparently see <code>parent ∪ your edits</code>, child wins on id collisions, deletes honored. Embedded, in-process, one <code>.rvf</code> file — no server.</p>
+          <p class="attrib-lede">An <strong>independent explainer</strong> for <strong>ruvnet</strong>'s <a href="https://github.com/ruvnet/agenticow" target="_blank" rel="noopener">agenticow</a> — built to take you from "never seen it" to "ready to implement".</p>
+          <div class="cta-row">
+          <a class="cta" href="#how-it-works">See how it works →</a>
+          <a class="cta ghost" href="https://github.com/ruvnet/agenticow" target="_blank" rel="noopener">Read the source ↗</a>
+          </div>
+        <div class="meta-row"><span><b>Branch create</b> ~0.5 ms · 162 B (flat to any base size)</span><span><b>Proven</b> 1,000 branches · recall@10 = 100% · 943× less disk</span><span><b>Install</b> npm install agenticow</span></div>
+        </div>
+        <figure class="hero-art">
+          <img src="assets/hero.png" alt="agenticow: A single glowing base-memory orb forking into a radiant DAG of weightless branches, bioluminescent teal-and-green with violet branch-nodes, on a deep optical-black substrate.">
+          <figcaption>A single glowing base-memory orb forking into a radiant DAG of weightless branches, bioluminescent teal-and-green with violet branch-nodes, on a deep optical-black substrate.</figcaption>
+        </figure>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="plainband"><p>In one sentence: agenticow turns a vector memory from a static database into a branchable runtime primitive — so a fleet of agents can fork, checkpoint, and roll back what they remember as cheaply as Git forks code.</p></div>
+    </div>
+  </section>
+    <div class="sections">
+      <div class="wrap">
+    <details class="section" id="problem" open>
+      <summary>
+        <span class="num">01</span>
+        <span class="head-text">
+          <h2>Snapshotting memory shouldn't cost a full copy</h2>
+          <span class="q">Why does this exist?</span>
+        </span>
+        <span class="chev" aria-hidden="true">&rsaquo;</span>
+      </summary>
+      <div class="body">
+      <p class="lead-in">Agents need memory that branches — constantly.</p>
+      <p>A per-user personalization layer. A sandbox to test a risky ingest. A checkpoint before a tool call. A thousand parallel experiments off one shared base. Every one of those is a <em>branch</em> of memory.</p>
+      <p>But with a normal vector DB, each branch is a <strong>full copy of the whole index</strong>. At 1,000,000 vectors that is <strong>496 MB and 67 ms — every single time.</strong> Want a branch per user? Multiply by your user count. Want to checkpoint before each risky step? Pay the full snapshot again. The cost scales with the <em>base</em>, not with what actually changed, so &quot;just branch it&quot; quietly becomes &quot;you can't afford to.&quot;</p>
+      <p>So teams don't branch. They mutate one shared memory in place, cross their fingers on a bad ingest, and have no clean way to roll back when an agent poisons it. The thing agents need most — cheap, isolated, reversible memory — is the thing the storage layer makes most expensive.</p>
+      
+      <figure class="figure">
+        <span class="tier friendly">The problem</span>
+        <img src="assets/problem.png" alt="agenticow: the problem" loading="lazy">
+      </figure>
+      
+      <p class="note honest"><span class="lab">The real cost</span>It isn't just disk. It's the <em>latency</em> of a 67 ms snapshot on the hot path, and the operational dread of having no undo for a memory your agents write to live.</p>
+      </div>
+    </details>
+
+    <details class="section" id="what-it-is" open>
+      <summary>
+        <span class="num">02</span>
+        <span class="head-text">
+          <h2>It branches the index, copy-on-write</h2>
+          <span class="q">What does it actually do?</span>
+        </span>
+        <span class="chev" aria-hidden="true">&rsaquo;</span>
+      </summary>
+      <div class="body">
+      <p class="lead-in">Here is the whole idea in one move: agenticow gives a vector memory the one thing Git gave source code — instant, near-free branching.</p>
+      <p>A branch records <strong>only its own edits</strong> plus a <strong>pointer to its parent</strong>. Nothing of the base is copied. Creating a branch is therefore <code>O(edits)</code> and <code>O(1)</code> in base size — <strong>162 bytes for an empty branch, ~0.5 ms, flat</strong> no matter how large the base.</p>
+      <p><strong>What that buys you:</strong> branching stops being a luxury you have to ration. A branch per user, a checkpoint before every risky tool call, a throwaway sandbox per experiment — each costs <strong>162 bytes instead of a full copy</strong>. The price stops scaling with how big your memory is and starts scaling with how little you actually changed, so the moves you used to avoid — isolate, checkpoint, undo — become ones you simply make.</p>
+      <p>The verbs are the ones you already know from Git — and they mean exactly what you'd expect:</p>
+      
+      <figure class="figure diagram">
+        <span class="tier tech">The big idea</span>
+        <img src="assets/big-idea.svg" alt="The big idea, contrasting two approaches. Old way: every other vector store snapshots a 1,000,000-vector, 496 MB base by full-copying it — 496 MB and 67 ms every single time, so 1,000 branches cost 484 GB. agenticow: copy-on-write — a branch holds only your edits plus a pointer to the base, so it costs 162 bytes and 0.5 ms flat, a query sees base union edits, and 1,000 branches cost about 10.5 MB total, 943 times less disk." loading="lazy">
+      </figure>
+      
+      <table class="tbl"><caption class="visually-hidden">agenticow verbs vs the full-copy world</caption>
+        <thead><tr><th>Operation</th><th>Normal vector DB</th><th>agenticow</th></tr></thead>
+        <tbody>
+        <tr><td><code>branch</code> / <code>fork</code></td><td>full copy of the index</td><td>162 B + your edits, ~0.5 ms</td></tr>
+        <tr><td><code>checkpoint</code></td><td>periodic full snapshot</td><td>162 B + edits-since</td></tr>
+        <tr><td><code>rollback</code></td><td>re-ingest + re-index from backup</td><td>drop the branch, ~0.5 ms</td></tr>
+        <tr><td><code>diff</code> / <code>promote</code></td><td>— (no concept of it)</td><td>replay vetted edits into the base</td></tr>
+        <tr><td><code>query</code></td><td>one index</td><td>parent ∪ edits, child wins, masked, re-ranked</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </details>
+
+    <details class="section" id="the-insight" open>
+      <summary>
+        <span class="num">03</span>
+        <span class="head-text">
+          <h2>The clever move: point at the base, never copy it</h2>
+          <span class="q">Why is it so elegant?</span>
+        </span>
+        <span class="chev" aria-hidden="true">&rsaquo;</span>
+      </summary>
+      <div class="body">
+      <p class="lead-in">The whole library turns on one idea — and it is the same idea that makes Git fast.</p>
+      <p>A branch is a <em>delta plus a parent pointer</em>. Because nothing is duplicated, create cost is decoupled from base size — that is the entire 83×-faster / 3000×-smaller headline.</p>
+      <p>Reads stay exact without ever materializing the union. A <code>query(q, k)</code> walks the lineage chain <code>child → … → base</code>, asks <strong>each store with its own native index</strong>, then <strong>merges</strong>: the child wins on any id collision, anything the branch tombstoned is <strong>masked</strong>, and the survivors are <strong>re-ranked by exact distance</strong>. You get the true <code>parent ∪ edits</code> top-K — no full copy ever existed.</p>
+      
+      <figure class="figure diagram">
+        <span class="tier tech">The aha</span>
+        <img src="assets/insight.svg" alt="The clever move. On the write path a branch stores only its edits plus a pointer to its parent (branch C to branch B to base), so create cost is O(edits) and O(1) in base size — 162 bytes and 0.5 ms regardless of base size. On the read path a query asks every store down the chain (C, B, A, base), then merges them so the child wins on id collisions, tombstoned ids are masked, and results are re-ranked by exact distance — returning the true parent-union-edits top-K." loading="lazy">
+      </figure>
+      <p class="oh">Oh — branching is free because a branch isn't a copy of the base, it's a <em>diff against it</em>. The base is read through a pointer, so 162 bytes buys you a whole independent memory.</p>
+      </div>
+    </details>
+
+    <details class="section" id="how-it-works" open>
+      <summary>
+        <span class="num">04</span>
+        <span class="head-text">
+          <h2>How it's built</h2>
+          <span class="q">How is it built?</span>
+        </span>
+        <span class="chev" aria-hidden="true">&rsaquo;</span>
+      </summary>
+      <div class="body">
+      <p class="lead-in">A small, honest package over a real vector engine.</p>
+      <p>agenticow is a single npm package (Node ≥ 18, ESM) with <strong>one</strong> external dependency: <code>@ruvector/rvf-node</code>, ruvector's RVF format with its <code>RvfDatabase</code> (HNSW index, <code>.rvf</code> files, and the shipped <code>derive()</code> primitive). The whole public surface — <code>open</code>, <code>openBase</code>, and the <code>AgenticMemory</code> class with its Git-like verbs — lives in <code>src/index.js</code>, typed in <code>src/index.d.ts</code>, with a CLI in <code>bin/agenticow.js</code>.</p>
+      <p>The <strong>architecture</strong> (left) shows the layers: CLI and API both call the copy-on-write core, which walks a lineage chain of delta stores built on RVF. The <strong>data flow</strong> (right) shows a branch's lifecycle: fork → mutate → verify → promote-or-rollback. agenticow implements the exact read-through merge in this wrapper; a native ANN query that <em>spans</em> the COW boundary (<code>fork({ nativeAnn: true })</code>, recall@10 ≈ 1.0) ships for linux-x64 today and degrades gracefully to the exact path everywhere else.</p>
+      <div class="dual">
+      <figure class="figure diagram">
+        <span class="tier tech">Architecture</span>
+        <img src="assets/architecture.svg" alt="agenticow architecture: a single npm package with one external dependency. The CLI (bin/agenticow.js) and the API (open/openBase) both call into the AgenticMemory copy-on-write core in src/index.js, which exposes branch, fork, checkpoint, rollback, diff, promote, ingest, query and lineage. AgenticMemory walks a lineage chain where each node is a delta plus a parent pointer, built on @ruvector/rvf-node (RvfDatabase, HNSW, .rvf files and the derive() COW primitive)." loading="lazy">
+        <figcaption>Architecture — modules, components and how they depend on each other.</figcaption>
+      </figure>
+      <figure class="figure diagram">
+        <span class="tier tech">Data flow</span>
+        <img src="assets/flow.svg" alt="agenticow data flow: from a shared base.rvf that is never mutated, fork() creates a branch in about 0.5 ms and 162 bytes. Into that isolated branch you ingest vectors, query with an exact read-through (parent union edits, child wins, tombstones masked, re-ranked), then an external deterministic verifier (a test, regex or distance threshold) decides the outcome. On PASS you promote() the vetted edits into the base; on FAIL you rollback() and drop the branch, leaving the base untouched with blast radius zero." loading="lazy">
+        <figcaption>Data flow — how a request moves through the system at runtime.</figcaption>
+      </figure>
+      </div>
+      </div>
+    </details>
+
+    <details class="section" id="use-cases" open>
+      <summary>
+        <span class="num">05</span>
+        <span class="head-text">
+          <h2>Where this earns its keep</h2>
+          <span class="q">Could I use this?</span>
+        </span>
+        <span class="chev" aria-hidden="true">&rsaquo;</span>
+      </summary>
+      <div class="body">
+      <p class="lead-in">Here is what branchable memory changes <strong>for you</strong>, concretely. Say you give each of 1,000 users their own agent off one shared base. The normal way, that is <strong>1,000 full copies of the index — 9.69 GB</strong> — so you ration personalization or quietly drop it. With agenticow it is <strong>1,000 branches at 162 bytes each — ~10.5 MB total, 943× less disk</strong> — and every user still queries the whole base <em>plus</em> their own private edits (recall@10 = 100% in the acceptance test, ~0.49 ms per fork). The same move covers you when an ingest is risky — sandbox it in a branch and drop it on a bad result, so your real memory never sees it — and when a long run can crash — checkpoint before each step and rewind in half a millisecond. One paradigm, three runnable examples in the repo: <strong>branch → mutate → externally verify → promote or discard.</strong></p>
+      
+      <figure class="figure">
+        <span class="tier friendly">In the real world</span>
+        <img src="assets/useCase.png" alt="agenticow in use" loading="lazy">
+      </figure>
+      <div class="gallery"><div class="grid">
+      <details class="case" open>
+        <summary>
+          <span class="uc-num">1</span>
+          <span class="uc-title">Parallel agents share one base memory</span>
+          <span class="uc-tag">personalization</span>
+          <span class="chev" aria-hidden="true">&rsaquo;</span>
+        </summary>
+        <div class="uc-body">
+          <p><strong>For you:</strong> one shared base, a branch per user/account/tenant — personalization without the memory explosion. Private edits stay isolated; storage is delta-only. The acceptance test forks <strong>1,000 branches off one base — recall@10 = 100%, ~0.49 ms/fork, 10.5 MB total vs 9.69 GB for 1,000 full copies (943× less disk).</strong></p>
+          <pre class="code-block"><code>const base = open('kb.rvf', { dimension: 1536 });
+const userMem = base.fork(`user-${userId}`);
+userMem.ingest([{ id, vector }]);   // private to this user
+userMem.query(q, 10);                // reads through to the base</code></pre>
+        </div>
+      </details>
+      <details class="case" open>
+        <summary>
+          <span class="uc-num">2</span>
+          <span class="uc-title">Roll back a poisoned or hallucinated branch</span>
+          <span class="uc-tag">safety</span>
+          <span class="chev" aria-hidden="true">&rsaquo;</span>
+        </summary>
+        <div class="uc-body">
+          <p><strong>For you:</strong> a kill-switch for bad memory. An untrusted batch lands in an isolated fork, never the base. A deterministic checker (a distance probe, <strong>not</strong> a cheap LM judging itself) gates it. Exploit detected → <code>rollback()</code> in ~1 ms and <strong>0 vectors ever reached the base</strong>. Clean → <code>promote()</code> the vetted delta.</p>
+          <pre class="code-block"><code>const sandbox = base.fork('untrusted-doc');
+sandbox.ingest(docEmbedding, { text });
+const hit = sandbox.query(injectionSig, { topK: 3 });
+if (hit[0].distance &lt; 0.02) sandbox.rollback(); // discard
+else                        sandbox.promote();  // merge</code></pre>
+        </div>
+      </details>
+      <details class="case" open>
+        <summary>
+          <span class="uc-num">3</span>
+          <span class="uc-title">Zero-cost checkpointing before risky steps</span>
+          <span class="uc-tag">recovery</span>
+          <span class="chev" aria-hidden="true">&rsaquo;</span>
+        </summary>
+        <div class="uc-body">
+          <p><strong>For you:</strong> crash recovery without a re-ingest. Checkpoint memory before each risky tool call (162 bytes each). When step 31 crashes, roll back to the last good checkpoint in ~0.5 ms — earlier steps are <strong>not</strong> replayed.</p>
+          <pre class="code-block"><code>const ck = mem.checkpoint('step-30');
+// ... step 31 crashes ...
+mem.rollback(ck.id);   // resume from step 30, instantly</code></pre>
+        </div>
+      </details>
+      </div></div>
+      </div>
+    </details>
+
+    <details class="section" id="get-started" open>
+      <summary>
+        <span class="num">06</span>
+        <span class="head-text">
+          <h2>Start in under a minute</h2>
+          <span class="q">How do I start?</span>
+        </span>
+        <span class="chev" aria-hidden="true">&rsaquo;</span>
+      </summary>
+      <div class="body">
+      <p class="lead-in">That's the whole model. One install, an API that reads like Git, and you can branch, checkpoint, and roll back agent memory in your own code in the next five minutes. Node ≥ 18, ESM.</p>
+      <div class="install-block"><pre class="code-block"><code>npm install agenticow</code></pre></div>
+      <ol class="steps">
+        <li><strong>Open a base memory.</strong> <code>const base = open('memory.rvf', { dimension: 1536 })</code> then <code>base.ingest([{ id, vector }])</code>.</li>
+        <li><strong>Branch it for an agent.</strong> <code>const agent = base.branch('agent-a')</code> — ~0.5 ms / 162 B — then <code>agent.ingest(...)</code>, isolated from the base.</li>
+        <li><strong>Query the read-through.</strong> <code>agent.query(queryVector, 10)</code> returns <code>parent ∪ edits</code>, child winning on id collisions, tombstones masked.</li>
+        <li><strong>Checkpoint and roll back.</strong> <code>const ck = agent.checkpoint('clean')</code>; after a bad ingest, <code>agent.rollback(ck.id)</code> — the poison is gone, clean memory intact.</li>
+        <li><strong>Or drive it from the CLI.</strong> <code>agenticow demo</code> runs an end-to-end walkthrough; <code>agenticow bench</code> and <code>agenticow acceptance</code> reproduce the headline numbers yourself.</li>
+      </ol>
+      </div>
+    </details>
+
+    <details class="section" id="the-pack" open>
+      <summary>
+        <span class="num">07</span>
+        <span class="head-text">
+          <h2>Hand your AI the same understanding</h2>
+          <span class="q">Does my AI get it too?</span>
+        </span>
+        <span class="chev" aria-hidden="true">&rsaquo;</span>
+      </summary>
+      <div class="body">
+      <p class="lead-in">This page explains agenticow to <strong>you</strong>. The knowledge pack explains it to <strong>your agent</strong> — a real RVF vector KB of the source plus an MCP server, so your AI can search agenticow's code, API, and docs exactly the way this page was grounded.</p>
+      <div class="tree" style="white-space:pre"><span class="cmt"># agenticow-knowledge-pack.zip</span>
+<span class="d">for-ai/</span>            <span class="cmt"># wire this into your agent</span>
+  <span class="f">agenticow-kb.rvf</span>            <span class="cmt"># 384-dim vector brain (semantic search)</span>
+  <span class="f">agenticow-kb.passages.jsonl</span> <span class="cmt"># full passage text (search returns TEXT)</span>
+  <span class="f">agenticow-symbols.json</span>      <span class="cmt"># exact public API</span>
+  <span class="f">agenticow-dep-graph.json</span>    <span class="cmt"># what depends on what</span>
+  <span class="f">agenticow-entrypoints.json</span>  <span class="cmt"># build / test / run commands</span>
+  <span class="f">ask-kb.mjs</span> · <span class="f">kb-mcp-server.mjs</span>  <span class="cmt"># CLI + MCP search server</span>
+<span class="d heart">for-humans/</span>        <span class="cmt"># read first</span>
+  <span class="f heart">agenticow-primer.md</span>      <span class="cmt"># the human orientation</span></div>
+      <div class="dl-cta"><a class="cta" href="agenticow-knowledge-pack.zip" download>Download the agenticow knowledge pack</a><span class="dl-meta">RVF vector KB + MCP server — drop it into your own agent.</span></div>
+      <a class="dropzone" href="agenticow-knowledge-pack.zip" download><span class="dz-icon" aria-hidden="true">&darr;</span><strong>Give your AI the same understanding</strong><span class="dz-hint">agenticow-knowledge-pack.zip</span></a>
+      </div>
+    </details>
+      </div>
+    </div>
+  </main>
+
+  <footer class="explainer-footer" role="contentinfo">
+    <div class="wrap explainer-footer-inner">
+      <p class="ef-credit">
+        Built by <strong>Stuart Kerr</strong> at
+        <a href="https://isovision.ai" rel="author">ISOvision.ai</a>
+      </p>
+      <a class="ef-cta" href="https://repoexplainer.isovision.ai">
+        <span class="ef-cta-lead">Want an explainer for your own repo?</span>
+        <strong>Create one</strong>
+        <span class="ef-arrow" aria-hidden="true">&rarr;</span>
+      </a>
+    </div>
+  </footer>
+</body>
+</html>

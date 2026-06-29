@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 495 656" width="495" height="656" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">agenticow - Process / Data Flow</title>
+  <desc id="diagram-desc">agenticow data flow: from a shared base.rvf that is never mutated, fork() creates a branch in about 0.5 ms and 162 bytes. Into that isolated branch you ingest vectors, query with an exact read-through (parent union edits, child wins, tombstones masked, re-ranked), then an external deterministic verifier (a test, regex or distance threshold) decides the outcome. On PASS you promote() the vetted edits into the base; on FAIL you rollback() and drop the branch, leaving the base untouched with blast radius zero.</desc>
+  <defs>
+    <style>
+      .bg { fill: #0e1a18; stroke: #1f3a35; stroke-width: 1.5px; }
+      .ln { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 17px; font-weight: 500; fill: #eafff8; white-space: pre; }
+      .hd { fill: #3fe0c5; font-weight: 700; }
+    </style>
+  </defs>
+  <rect class="bg" x="1" y="1" width="493" height="654" rx="10"/>
+  <text class="ln hd" x="28" y="48" xml:space="preserve">agenticow — Process / Data flow</text>
+  <text class="ln" x="28" y="73" xml:space="preserve">one branch: spawn → verify → keep / discard</text>
+  <text class="ln" x="28" y="98" xml:space="preserve"></text>
+  <text class="ln" x="28" y="123" xml:space="preserve">   base.rvf   (shared, never mutated)</text>
+  <text class="ln" x="28" y="148" xml:space="preserve">       │</text>
+  <text class="ln" x="28" y="173" xml:space="preserve">       │  [1] fork()   ~0.5 ms · 162 B</text>
+  <text class="ln" x="28" y="198" xml:space="preserve">       ▼</text>
+  <text class="ln" x="28" y="223" xml:space="preserve">  ┌────────────────────────────────┐</text>
+  <text class="ln" x="28" y="248" xml:space="preserve">  │ branch  (delta only)           │</text>
+  <text class="ln" x="28" y="273" xml:space="preserve">  │ [2] ingest(vectors)            │</text>
+  <text class="ln" x="28" y="298" xml:space="preserve">  │ [3] query(q,k) read-through:   │</text>
+  <text class="ln" x="28" y="323" xml:space="preserve">  │     parent ∪ edits, child wins │</text>
+  <text class="ln" x="28" y="348" xml:space="preserve">  │     tombstones masked, re-rank │</text>
+  <text class="ln" x="28" y="373" xml:space="preserve">  │ [4] external verifier          │</text>
+  <text class="ln" x="28" y="398" xml:space="preserve">  │     (test / regex / distance)  │</text>
+  <text class="ln" x="28" y="423" xml:space="preserve">  └────────────────────────────────┘</text>
+  <text class="ln" x="28" y="448" xml:space="preserve">              │</text>
+  <text class="ln" x="28" y="473" xml:space="preserve">       PASS ──┴── FAIL</text>
+  <text class="ln" x="28" y="498" xml:space="preserve">        │           │</text>
+  <text class="ln" x="28" y="523" xml:space="preserve">        ▼           ▼</text>
+  <text class="ln" x="28" y="548" xml:space="preserve">   promote()    rollback()</text>
+  <text class="ln" x="28" y="573" xml:space="preserve">   edits→base   drop branch</text>
+  <text class="ln" x="28" y="598" xml:space="preserve">   base+delta   base untouched</text>
+  <text class="ln" x="28" y="623" xml:space="preserve">                (blast radius 0)</text>
+</svg>

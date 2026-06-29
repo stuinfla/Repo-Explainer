@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 526 406" width="526" height="406" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">agenticow - The Insight</title>
+  <desc id="diagram-desc">The clever move. On the write path a branch stores only its edits plus a pointer to its parent (branch C to branch B to base), so create cost is O(edits) and O(1) in base size — 162 bytes and 0.5 ms regardless of base size. On the read path a query asks every store down the chain (C, B, A, base), then merges them so the child wins on id collisions, tombstoned ids are masked, and results are re-ranked by exact distance — returning the true parent-union-edits top-K.</desc>
+  <defs>
+    <style>
+      .bg { fill: #0e1a18; stroke: #1f3a35; stroke-width: 1.5px; }
+      .ln { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 17px; font-weight: 500; fill: #eafff8; white-space: pre; }
+      .hd { fill: #3fe0c5; font-weight: 700; }
+    </style>
+  </defs>
+  <rect class="bg" x="1" y="1" width="524" height="404" rx="10"/>
+  <text class="ln hd" x="28" y="48" xml:space="preserve">The aha — a branch is a delta + a pointer</text>
+  <text class="ln" x="28" y="73" xml:space="preserve"></text>
+  <text class="ln" x="28" y="98" xml:space="preserve">  WRITE path            READ  query(q,k)</text>
+  <text class="ln" x="28" y="123" xml:space="preserve">  ──────────            ──────────────────</text>
+  <text class="ln" x="28" y="148" xml:space="preserve">  branch C  edits  ───▸  ask C   (newest)</text>
+  <text class="ln" x="28" y="173" xml:space="preserve">     │ parent ptr  ───▸  ask B</text>
+  <text class="ln" x="28" y="198" xml:space="preserve">  branch B  edits  ───▸  ask A</text>
+  <text class="ln" x="28" y="223" xml:space="preserve">     │ parent ptr  ───▸  ask base</text>
+  <text class="ln" x="28" y="248" xml:space="preserve">  base   shared index</text>
+  <text class="ln" x="28" y="273" xml:space="preserve">                        merge ▸ child wins</text>
+  <text class="ln" x="28" y="298" xml:space="preserve">  create = O(edits)     ▸ tombstones masked</text>
+  <text class="ln" x="28" y="323" xml:space="preserve">  O(1) in base size     ▸ re-rank by distance</text>
+  <text class="ln" x="28" y="348" xml:space="preserve">  → 162 B / 0.5 ms      → exact parent ∪ edits</text>
+  <text class="ln" x="28" y="373" xml:space="preserve">    any base size         top-K</text>
+</svg>

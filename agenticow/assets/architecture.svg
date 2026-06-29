@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 424 806" width="424" height="806" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">agenticow - Architecture</title>
+  <desc id="diagram-desc">agenticow architecture: a single npm package with one external dependency. The CLI (bin/agenticow.js) and the API (open/openBase) both call into the AgenticMemory copy-on-write core in src/index.js, which exposes branch, fork, checkpoint, rollback, diff, promote, ingest, query and lineage. AgenticMemory walks a lineage chain where each node is a delta plus a parent pointer, built on @ruvector/rvf-node (RvfDatabase, HNSW, .rvf files and the derive() COW primitive).</desc>
+  <defs>
+    <style>
+      .bg { fill: #0e1a18; stroke: #1f3a35; stroke-width: 1.5px; }
+      .ln { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: 17px; font-weight: 500; fill: #eafff8; white-space: pre; }
+      .hd { fill: #3fe0c5; font-weight: 700; }
+    </style>
+  </defs>
+  <rect class="bg" x="1" y="1" width="422" height="804" rx="10"/>
+  <text class="ln hd" x="28" y="48" xml:space="preserve">agenticow — Architecture</text>
+  <text class="ln" x="28" y="73" xml:space="preserve">1 npm package · 1 external dep</text>
+  <text class="ln" x="28" y="98" xml:space="preserve"></text>
+  <text class="ln" x="28" y="123" xml:space="preserve">  ┌────────────────────────────────┐</text>
+  <text class="ln" x="28" y="148" xml:space="preserve">  │ CLI   bin/agenticow.js         │</text>
+  <text class="ln" x="28" y="173" xml:space="preserve">  │ API   open() · openBase()      │</text>
+  <text class="ln" x="28" y="198" xml:space="preserve">  └────────────────────────────────┘</text>
+  <text class="ln" x="28" y="223" xml:space="preserve">          │  both call into</text>
+  <text class="ln" x="28" y="248" xml:space="preserve">          ▼</text>
+  <text class="ln" x="28" y="273" xml:space="preserve">  ┌────────────────────────────────┐</text>
+  <text class="ln" x="28" y="298" xml:space="preserve">  │ AgenticMemory  (src/index.js)  │</text>
+  <text class="ln" x="28" y="323" xml:space="preserve">  │ the copy-on-write core         │</text>
+  <text class="ln" x="28" y="348" xml:space="preserve">  │ · branch · fork · checkpoint   │</text>
+  <text class="ln" x="28" y="373" xml:space="preserve">  │ · rollback · diff · promote    │</text>
+  <text class="ln" x="28" y="398" xml:space="preserve">  │ · ingest · query · lineage     │</text>
+  <text class="ln" x="28" y="423" xml:space="preserve">  └────────────────────────────────┘</text>
+  <text class="ln" x="28" y="448" xml:space="preserve">          │  walks the chain</text>
+  <text class="ln" x="28" y="473" xml:space="preserve">          ▼</text>
+  <text class="ln" x="28" y="498" xml:space="preserve">  ┌────────────────────────────────┐</text>
+  <text class="ln" x="28" y="523" xml:space="preserve">  │ Lineage chain                  │</text>
+  <text class="ln" x="28" y="548" xml:space="preserve">  │ child → … → base               │</text>
+  <text class="ln" x="28" y="573" xml:space="preserve">  │ node = delta + parent pointer  │</text>
+  <text class="ln" x="28" y="598" xml:space="preserve">  └────────────────────────────────┘</text>
+  <text class="ln" x="28" y="623" xml:space="preserve">          │  built on</text>
+  <text class="ln" x="28" y="648" xml:space="preserve">          ▼</text>
+  <text class="ln" x="28" y="673" xml:space="preserve">  ┌────────────────────────────────┐</text>
+  <text class="ln" x="28" y="698" xml:space="preserve">  │ @ruvector/rvf-node             │</text>
+  <text class="ln" x="28" y="723" xml:space="preserve">  │ RvfDatabase · HNSW · .rvf      │</text>
+  <text class="ln" x="28" y="748" xml:space="preserve">  │ derive() COW primitive         │</text>
+  <text class="ln" x="28" y="773" xml:space="preserve">  └────────────────────────────────┘</text>
+</svg>

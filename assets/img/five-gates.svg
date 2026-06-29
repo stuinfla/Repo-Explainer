@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 430" width="980" height="430" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="gbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#101826"/>
+      <stop offset="1" stop-color="#0a1019"/>
+    </linearGradient>
+    <linearGradient id="gate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#15324a"/>
+      <stop offset="1" stop-color="#102539"/>
+    </linearGradient>
+    <marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#5fd0a0"/>
+    </marker>
+  </defs>
+  <rect width="980" height="430" rx="16" fill="url(#gbg)"/>
+  <text x="490" y="42" text-anchor="middle" fill="#eaf6ff" font-size="22" font-weight="700">The 5-Gate Self-Evaluating Quality System</text>
+  <text x="490" y="66" text-anchor="middle" fill="#8fb6cf" font-size="13">"Done" never means "files exist." It means proven-good, with evidence.</text>
+
+  <!-- five gates in a row -->
+  <g>
+    <rect x="40" y="120" width="150" height="170" rx="12" fill="url(#gate)" stroke="#2c6b8f" stroke-width="1.5"/>
+    <text x="115" y="150" text-anchor="middle" fill="#5fd0a0" font-size="26" font-weight="800">A</text>
+    <text x="115" y="180" text-anchor="middle" fill="#eaf6ff" font-size="13" font-weight="600">KB answers</text>
+    <text x="115" y="210" text-anchor="middle" fill="#a9c8db" font-size="11">Query the real</text>
+    <text x="115" y="226" text-anchor="middle" fill="#a9c8db" font-size="11">.rvf; grade on</text>
+    <text x="115" y="242" text-anchor="middle" fill="#a9c8db" font-size="11">tuned + held-out</text>
+    <text x="115" y="258" text-anchor="middle" fill="#a9c8db" font-size="11">questions</text>
+    <text x="115" y="282" text-anchor="middle" fill="#5fd0a0" font-size="11" font-weight="700">&#8805; 95</text>
+
+    <rect x="206" y="120" width="150" height="170" rx="12" fill="url(#gate)" stroke="#2c6b8f" stroke-width="1.5"/>
+    <text x="281" y="150" text-anchor="middle" fill="#5fd0a0" font-size="26" font-weight="800">B</text>
+    <text x="281" y="180" text-anchor="middle" fill="#eaf6ff" font-size="13" font-weight="600">Comprehension</text>
+    <text x="281" y="198" text-anchor="middle" fill="#eaf6ff" font-size="13" font-weight="600">+ felt</text>
+    <text x="281" y="224" text-anchor="middle" fill="#a9c8db" font-size="11">A reviewer walks</text>
+    <text x="281" y="240" text-anchor="middle" fill="#a9c8db" font-size="11">the live site &#8212;</text>
+    <text x="281" y="256" text-anchor="middle" fill="#a9c8db" font-size="11">"do I want this?"</text>
+    <text x="281" y="282" text-anchor="middle" fill="#5fd0a0" font-size="11" font-weight="700">&#8805; 95</text>
+
+    <rect x="372" y="120" width="150" height="170" rx="12" fill="url(#gate)" stroke="#2c6b8f" stroke-width="1.5"/>
+    <text x="447" y="150" text-anchor="middle" fill="#5fd0a0" font-size="26" font-weight="800">C</text>
+    <text x="447" y="180" text-anchor="middle" fill="#eaf6ff" font-size="13" font-weight="600">Consistency</text>
+    <text x="447" y="206" text-anchor="middle" fill="#a9c8db" font-size="11">No invented APIs;</text>
+    <text x="447" y="222" text-anchor="middle" fill="#a9c8db" font-size="11">all 7 stages;</text>
+    <text x="447" y="238" text-anchor="middle" fill="#a9c8db" font-size="11">links resolve;</text>
+    <text x="447" y="254" text-anchor="middle" fill="#a9c8db" font-size="11">drop-in dry-run</text>
+    <text x="447" y="282" text-anchor="middle" fill="#5fd0a0" font-size="11" font-weight="700">pass / fail</text>
+
+    <rect x="538" y="120" width="150" height="170" rx="12" fill="url(#gate)" stroke="#2c6b8f" stroke-width="1.5"/>
+    <text x="613" y="150" text-anchor="middle" fill="#5fd0a0" font-size="26" font-weight="800">D</text>
+    <text x="613" y="180" text-anchor="middle" fill="#eaf6ff" font-size="13" font-weight="600">Studio graded</text>
+    <text x="613" y="206" text-anchor="middle" fill="#a9c8db" font-size="11">Transcribe the</text>
+    <text x="613" y="222" text-anchor="middle" fill="#a9c8db" font-size="11">NotebookLM audio</text>
+    <text x="613" y="238" text-anchor="middle" fill="#a9c8db" font-size="11">+ report; does it</text>
+    <text x="613" y="254" text-anchor="middle" fill="#a9c8db" font-size="11">teach a beginner?</text>
+    <text x="613" y="282" text-anchor="middle" fill="#5fd0a0" font-size="11" font-weight="700">&#8805; 95</text>
+
+    <rect x="704" y="120" width="150" height="170" rx="12" fill="url(#gate)" stroke="#2c6b8f" stroke-width="1.5"/>
+    <text x="779" y="150" text-anchor="middle" fill="#5fd0a0" font-size="26" font-weight="800">E</text>
+    <text x="779" y="180" text-anchor="middle" fill="#eaf6ff" font-size="13" font-weight="600">Visuals graded</text>
+    <text x="779" y="206" text-anchor="middle" fill="#a9c8db" font-size="11">Vision-check every</text>
+    <text x="779" y="222" text-anchor="middle" fill="#a9c8db" font-size="11">image: friendly</text>
+    <text x="779" y="238" text-anchor="middle" fill="#a9c8db" font-size="11">on-ramp AND</text>
+    <text x="779" y="254" text-anchor="middle" fill="#a9c8db" font-size="11">accurate diagram</text>
+    <text x="779" y="282" text-anchor="middle" fill="#5fd0a0" font-size="11" font-weight="700">&#8805; 95</text>
+  </g>
+
+  <!-- final gate -->
+  <rect x="868" y="120" width="76" height="170" rx="12" fill="#123b2a" stroke="#5fd0a0" stroke-width="2"/>
+  <text x="906" y="190" text-anchor="middle" fill="#7fe3b0" font-size="22">&#10003;</text>
+  <text x="906" y="220" text-anchor="middle" fill="#eaf6ff" font-size="11" font-weight="600">DONE</text>
+  <text x="906" y="238" text-anchor="middle" fill="#a9c8db" font-size="10">proven-</text>
+  <text x="906" y="252" text-anchor="middle" fill="#a9c8db" font-size="10">good</text>
+
+  <!-- arrows between gates -->
+  <line x1="190" y1="205" x2="204" y2="205" stroke="#5fd0a0" stroke-width="2" marker-end="url(#arrow2)"/>
+  <line x1="356" y1="205" x2="370" y2="205" stroke="#5fd0a0" stroke-width="2" marker-end="url(#arrow2)"/>
+  <line x1="522" y1="205" x2="536" y2="205" stroke="#5fd0a0" stroke-width="2" marker-end="url(#arrow2)"/>
+  <line x1="688" y1="205" x2="702" y2="205" stroke="#5fd0a0" stroke-width="2" marker-end="url(#arrow2)"/>
+  <line x1="854" y1="205" x2="866" y2="205" stroke="#5fd0a0" stroke-width="2" marker-end="url(#arrow2)"/>
+
+  <text x="490" y="350" text-anchor="middle" fill="#8fb6cf" font-size="12.5">The headline 0&#8211;100 score is the LOWEST gate &#8212; a primer is only as done as its weakest gate.</text>
+  <text x="490" y="376" text-anchor="middle" fill="#8fb6cf" font-size="12.5">Any gate below bar &#8594; diagnose &#8594; fix &#8594; re-grade. Standard bar &#8805; 98; &#8805; 95 acceptable under time pressure.</text>
+  <text x="490" y="402" text-anchor="middle" fill="#7fe3b0" font-size="12.5" font-weight="600">This is the cure for the un-graded-KB / 4&#8211;5-regeneration failure.</text>
+</svg>

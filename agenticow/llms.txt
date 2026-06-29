@@ -1,0 +1,18 @@
+# agenticow
+
+> Branch your agent's memory like Git — 0.5 ms, 162 bytes, any base size.
+
+agenticow branches a vector memory copy-on-write, like Git: fork a million-vector base in ~0.5 ms and 162 bytes, query parent ∪ your edits, roll back instant…
+
+This is an independent, art-directed explainer for ruvnet's agenticow — it takes a newcomer from "never seen it" to "ready to implement", grounded in a real RVF knowledge base of the source.
+
+## What it is
+agenticow: A luminous version-control graph grown from living memory — a bright base "trunk" of vectors that forks into a fan of gossamer-thin branches, each a near-weightless copy-on-write delta. Git's branch/checkpoint/rollback graph, rendered as a bioluminescent root system.
+
+## For your AI
+A downloadable knowledge pack (RVF vector KB + MCP server) ships with this page so your agent can search the source too: https://agenticow-explainer.netlify.app/agenticow-knowledge-pack.zip
+
+## Links
+- Live explainer: https://agenticow-explainer.netlify.app/
+- Source repository: https://github.com/ruvnet/agenticow
+- AI knowledge pack: https://agenticow-explainer.netlify.app/agenticow-knowledge-pack.zip
