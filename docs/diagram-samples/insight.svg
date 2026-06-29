@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 462 134" width="462" height="134" role="img" aria-labelledby="d-title d-desc">
+  <title id="d-title">demorepo — The clever bit</title>
+  <desc id="d-desc">demorepo — The clever bit: Copy-on-write → branch → no full copy</desc>
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
+      <polygon class="ah" points="0 0, 9 3.5, 0 7" fill="#555555"/>
+    </marker>
+    <style>
+      .box { fill: #f8f9fa; stroke: #333333; stroke-width: 1.5px; }
+      .lbl { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; font-weight: 500; fill: #1a1a1a; }
+      .sub { font-size: 11px; font-weight: 400; opacity: .8; }
+      .arr { stroke: #555555; stroke-width: 1.5px; fill: none; }
+      .band { font-family: system-ui, sans-serif; font-size: 11px; font-weight: 700; fill: #4a90d9; letter-spacing: .04em; }
+      .ttl { font-family: system-ui, sans-serif; font-size: 15px; font-weight: 700; fill: #1a1a1a; }
+      @media (prefers-color-scheme: dark) {
+        .box { fill: #2d333b; stroke: #768390; }
+        .lbl { fill: #e6edf3; }
+        .arr { stroke: #768390; }
+        .ah  { fill: #768390; }
+        .ttl { fill: #e6edf3; }
+        .band { fill: #6cb6ff; }
+      }
+    </style>
+  </defs>
+  <text class="ttl" x="231" y="40" text-anchor="middle">demorepo — The clever bit</text>
+  <line class="arr" x1="159" y1="85" x2="186" y2="85" marker-end="url(#ah)"/>
+  <line class="arr" x1="283" y1="85" x2="310" y2="85" marker-end="url(#ah)"/>
+  <g><rect class="box" x="26" y="62" width="133" height="46" rx="5"/><text class="lbl" x="92.5" y="85" text-anchor="middle" dominant-baseline="middle">Copy-on-write</text></g>
+  <g><rect class="box" x="187" y="62" width="96" height="46" rx="5"/><text class="lbl" x="235" y="85" text-anchor="middle" dominant-baseline="middle">branch</text></g>
+  <g><rect class="box" x="311" y="62" width="125" height="46" rx="5"/><text class="lbl" x="373.5" y="85" text-anchor="middle" dominant-baseline="middle">no full copy</text></g>
+</svg>

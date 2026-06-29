@@ -1,10 +1,15 @@
 # Repo Explainer (Recipe) — Domain-Driven Design Model
 
-**Version:** 1.1.0
+**Version:** 1.2.0
 **Created:** 2026-06-28
-**Updated:** 2026-06-28 (ADR-0005 alignment: local-render quality gate before deploy; primer +
+**Updated:** 2026-06-29 (v1.2.0 — quality-bar reconciliation + implementation-experience, owner-signed:
+the ≥95-on-every-axis floor → the exemplar-anchored bar `meanScore` ≥ 90 AND `headlineScore` (MIN) ≥ 85;
+a new five-question binary **operator qualitative gate** (the owner's words, all must be YES); a new
+scored axis **A6 Implementation-confidence**; invariants **INV-18 ArchitectureAndFlowRequired** + **INV-19
+ImplementationExperiencePresent**. Iteration over a few revs is expected by design.) Prior 1.1.0
+(2026-06-28): ADR-0005 alignment — local-render quality gate before deploy; primer +
 structured-extraction outputs + studio-less make-dropin in the pack; embed-block prerequisite;
-build-time image probe + raster-size wording)
+build-time image probe + raster-size wording.
 **Status:** Accepted — authoritative for the converged "one-brain skill" architecture.
 **Paired ADR:** `docs/adr/0005-skill-based-explainer-recipe.md` (the converged decision).
 **Supersedes (the pipeline approach only):** the multi-phase GitHub-Actions / `scripts/phase*.mjs`
@@ -174,7 +179,7 @@ is the trunk. This triangle is the anti-brittleness architecture made concrete.
 | **llms.txt** | The machine-readable summary shipped at site root so AI crawlers + retrieval find and represent the explainer correctly. Part of the SEOSurface. |
 | **RepoSEO** | GitHub **topics** + a strong **description** set on the ExplainerRepo (via API). The build also **suggests** topic/description improvements for the TargetRepo (in the README PR or the notify email) — never sets them directly. |
 | **ReadmePR** | The OPTIONAL Publishing-context concern (Station 8b): an offer to enhance the TargetRepo's README via `~/.claude/skills/readme-enhance` — an architectural explanation + the shared 11a SVG diagrams + an explainer badge — delivered ONLY as a **pull request** on the source repo (never a direct push). Off the critical path; never blocks the core. |
-| **RefineLoop** | The Quality context's back-edge: grade → if any criterion < 95 on either device, name the exact weakness → refine just that → re-render → re-score → repeat until MIN ≥ 95. |
+| **RefineLoop** | The Quality context's back-edge: grade → if any axis is below the bar on either device (or any operator question is NO), name the exact weakness → refine just that → re-render → re-score → repeat until the bar is cleared (mean ≥ 90, min ≥ 85, five operator YES). |
 | **Three Eyes** | The mandatory triple verification on the actual pixels: (1) the vision model, (2) the operator (Claude), (3) the owner — all three see the same mobile + desktop screenshots. |
 | **DeploymentURL / LiveURL** | The deployed URL of the Page. LiveURL is whatever resolves unauthenticated at Notify. |
 | **StudioQuarantine** | The boundary isolating any long-async optional step (e.g. NotebookLM studio assets). It is optional and never blocks the core (INV-03). |
@@ -204,7 +209,7 @@ orchestrates them; the `Build` aggregate sequences them.
         ▼
    [Quality]  ⟲ RefineRequested (back-edge to Authoring/Visual/Assembly)
         │  render LIVE · screenshot 390 + 1440 · dual-gate · two eyes (vision + operator)
-        │  ──QualityGraded── (min ≥ 95 both devices) ──BuildPassed──▶
+        │  ──QualityGraded── (mean≥90, min≥85, 5 operator YES) ──BuildPassed──▶
         ▼
    [Publishing] ──Deployed──▶ [Notification] ──Notified──▶ (done)
 ```
@@ -298,10 +303,11 @@ assembled site (live pixels, **not** a deployed URL; there is **no pre-quality d
 full-page screenshots, and runs the **dual-gate** vision scoring (A1–A5 substance, B1–B5 craft)
 as a harsh critic. The gate also judges the **SocialCard** and the **SVG diagrams** for delight +
 craft (they fall under B4 polish / B5 imagery craft), and an **SEO-presence check** joins the
-per-station cues (§12.3). Produces a `Scorecard` (`QualityGraded`). If any criterion < 95 on either
-device, it emits `RefineRequested` naming the exact weakness and loops (Station 7). It is the
-**completion authority**: only this context can emit `BuildPassed`, and only when MIN ≥ 95 on
-both devices with the vision-model + operator (two eyes) agreeing; the owner is the post-delivery
+per-station cues (§12.3). Produces a `Scorecard` (`QualityGraded`). If any axis is below the bar on either
+device (or any operator question is NO), it emits `RefineRequested` naming the exact weakness and loops
+(Station 7). It is the **completion authority**: only this context can emit `BuildPassed`, and only when
+**mean ≥ 90 AND min axis ≥ 85 AND all five operator questions YES** on both devices with the vision-model
++ operator (two eyes) agreeing; the owner is the post-delivery
 **third eye** (§6.8 / §12.4), not a precondition of this S7 gate.
 
 ### 6.7 Publishing
@@ -344,7 +350,7 @@ run the core (or dispatch a job whose only step runs the core)".
 | Visual | Assembly | Published Language. `ImageLadder` + favicon paths. |
 | Assembly | Quality | Published Language. The once-rendered Page for LIVE grading. |
 | Quality | Authoring/Visual/Assembly | **Refine back-edge** (`RefineRequested`, conformist: they fix exactly what Quality names). |
-| Quality | Publishing | Gatekeeper. Only `BuildPassed` (MIN ≥ 95) opens this edge. |
+| Quality | Publishing | Gatekeeper. Only `BuildPassed` (mean ≥ 90, min ≥ 85, five operator YES) opens this edge. |
 | Publishing | Notification | Customer-Supplier. Outcome supplied; result returned + emailed. |
 | GitHub API | Understanding/Publishing | ACL (clone, repo create, invite, set topics/description, open README PR on the source repo — 8b). |
 | Image engine (gpt-image-2 primary → gpt-image-1 fallback) | Visual | ACL (ImageGenerationACL — **gpt-image-2 is the VERIFIED primary**: `GET /v1/models/gpt-image-2` → HTTP 200 on 2026-06-28; `gpt-image-1` is the fallback used only if a build-time probe of gpt-image-2 (at Station 4) fails; per ADR-0005 D7 / Station 4 / Appendix image-engine row). |
@@ -365,11 +371,12 @@ lifecycle and is the only object permitted to mutate it.
    touch it (P4/P5). This is the consistency boundary.
 2. **Station ordering is the aggregate's responsibility.** It advances only on a satisfied
    checkpoint cue + a published domain event (§11). No cue → no advance (INV-04).
-3. **Completion is gated by the `Scorecard`.** A `Scorecard` is per-device, and its
-   `headlineScore` is the MIN of that device's ten criteria (A1–A5/B1–B5; §8.5). The aggregate
-   holds two — mobile and desktop — and cannot reach `Passed` unless **both Scorecards'
-   `headlineScore` are ≥ 95** — see INV-05. This binds the mission (§0) into the type system:
-   "done" is a number, not a vibe.
+3. **Completion is gated by the `Scorecard`.** A `Scorecard` is per-device; its `meanScore` is the
+   mean and its `headlineScore` the MIN of that device's eleven axes (A1–A6/B1–B5; §8.5), and it carries
+   the five binary `operatorQuestions`. The aggregate holds two — mobile and desktop — and cannot reach
+   `Passed` unless **both Scorecards have `meanScore` ≥ 90 AND `headlineScore` ≥ 85 AND all five
+   `operatorQuestions` true** — see INV-05. This binds the mission (§0) into the type system: "done" is
+   a number AND five honest yeses, not a vibe.
 4. **The refine loop is internal to the aggregate.** `RefineRequested` re-opens an earlier slot
    (content / visuals / page) and re-enters Quality; it does not create a new Build (state
    machine §10).
@@ -459,6 +466,7 @@ Scorecard {
     A3_cluelessToConvinced: Score   // zero-knowledge → why → examples → "oh, cool"
     A4_usefulnessToMe:      Score   // explicitly answers "how is this useful to YOU"
     A5_arcCompleteness:     Score   // never-seen → ready-to-implement
+    A6_implementationConfidence: Score // knows what to run + what they'll SEE + steps + what's next (INV-19)
   }
   gateB: {  // craft — "did someone who gives a shit make this?"
     B1_typographyHierarchy: Score   // intentional, ranked vs jangly
@@ -467,13 +475,24 @@ Scorecard {
     B4_strengthPolish:      Score   // cohesive/deliberate vs generic AI slop
     B5_imageryCraft:        Score   // beautiful + explanatory + high→low vs pretty-but-useless
   }
+  operatorQuestions: {  // five YES/NO, the owner's words — ALL must be true (binary gate)
+    believeIUnderstand:     bool      // "Would this make me believe I understand this?"
+    approachable:           bool      // "Would this make it approachable?"
+    explainsToNovice:       bool      // "Would this explain it for somebody who doesn't understand it?"
+    architectureConfidence: bool      // "Would it give me confidence I understand the architecture?"
+    makesMeSmile:           bool      // "Does it make me smile — 'oh, that's cool'?"
+  }
   rationales: Map<criterion, string>  // each cites what the vision model SAW
-  headlineScore: int                  // = MIN across all 10 criteria (only as good as worst line)
-  passed: bool                        // headlineScore >= 95
+  meanScore: int                      // = MEAN across all 11 scored axes (A1–A6 + B1–B5)
+  headlineScore: int                  // = MIN across all 11 axes — the anti-slop floor (worst line)
+  passed: bool                        // meanScore >= 90 AND headlineScore >= 85 AND all operatorQuestions true
 }
 ```
 A Build holds **two** Scorecards (one per device); it passes only when BOTH `passed` are true.
-`Score` ∈ [0,100]. `headlineScore` is the MINIMUM, never the mean — see §12 / INV-05.
+`Score` ∈ [0,100]. The bar (owner-signed 2026-06-29) is **`meanScore` ≥ 90 AND `headlineScore` (the
+MIN — the anti-slop floor) ≥ 85 AND all five `operatorQuestions` true** — anchored to the owner's own
+example sites (~88 headline / ~92 mean); a literal "95 on every axis" is unreachable by an honest grader
+and would reject those exemplars. See §12 / INV-05.
 
 ### 8.6 BuildContext  ← the one in-memory contract
 The single object the Brain owns; one slot per station; the death of string-coupled markers (P5).
@@ -519,7 +538,7 @@ forms. **Never show a low-level detail before the high-level frame that makes it
 | Why is it elegant/clever? | The insight | Conceptual diagram of the ONE clever move (the "aha") | **SVG** (ascii-to-svg) |
 | How is it built / works? | How it works | Architecture/flow diagram — descend ONE level, clean+labeled | **SVG** (ascii-to-svg) |
 | Could I use this? | Use cases | A scenario picture — someone like the reader succeeding | **raster** (gpt-image-2) |
-| How do I start? | Get started | A quickstart visual — path to first run (flow) | **SVG** (ascii-to-svg) |
+| How do I start? (what will I SEE?) | Get started | Quickstart — the command, what the run looks like, the steps, what you get, what's next (INV-19) | **SVG** (ascii-to-svg) |
 | (my AI gets it too) | The pack | The dual-output diagram (page for humans, KB for their AI) | **SVG** (ascii-to-svg) |
 
 **Medium rule (11a):** structural/explanatory rungs (big-idea, insight, architecture, flow,
@@ -543,7 +562,7 @@ altitude sequence is monotonic; a rung that breaks the order fails B5 and trigge
 | SEO present | title · meta · canonical · JSON-LD · sitemap.xml · robots.txt · llms.txt always present | — |
 | Ships social card | OG + Twitter meta · 1200×630 card · full favicon set always present | — |
 | Structural diagrams | the structural rungs are SVG (ascii-to-svg), shared page + README | — |
-| Passes the gate | MIN ≥ 95 both devices (social card + SVGs judged too) | — |
+| Passes the gate | mean ≥ 90, min ≥ 85, five operator YES, both devices (social card + SVGs judged too) | — |
 | Metaphor | — | prism / dossier / orb … |
 | Palette · Type | — | fitted to the metaphor |
 | Layout rhythm | — | composed from archetypes |
@@ -572,11 +591,11 @@ checkpoint cue is satisfied with positive evidence (fail loud, never silent — 
 | 4 | `Visualizing` | Every raster rung valid + HTTP 200 (gpt-image-2, the verified primary); every structural rung valid SVG (ascii-to-svg, xmllint-clean); each answers its arc question at the right altitude. |
 | 5 | `Brand & Social` | Full favicon set (hero-derived) + a designed 1200×630 social card (tagline baked in) + OG/Twitter meta ready. |
 | 6 | `Assembling` | Page rendered once; zero dangling refs/tokens; pack opens, KB loads, search returns hits; SEO surface present (title · meta · canonical · JSON-LD · sitemap.xml · robots.txt · llms.txt) + social/favicon links wired. |
-| 7 | `QualityRefining` ⟲ | Every criterion ≥ 95 on BOTH devices, social card + SVGs judged too (else loop). |
+| 7 | `QualityRefining` ⟲ | mean ≥ 90 AND min axis ≥ 85 AND all five operator questions YES, on BOTH devices, social card + SVGs judged too (else loop). |
 | 8 | `Publishing` | Live URL 200 unauthenticated; repo public; owner invited; GitHub topics + description set. |
 | 8b | `ReadmePR` (optional) | If accepted: a PR is opened on the SOURCE repo (architectural explanation + shared SVGs + explainer badge); never a direct push; NEVER blocks the core. |
 | 9 | `Notifying` | Inline result returned AND email send confirmed (SMTP 250). |
-| ✓ | `Passed` (terminal) | MIN ≥ 95 both devices; vision-model + operator agree; live + delivered. |
+| ✓ | `Passed` (terminal) | mean ≥ 90 + min ≥ 85 + five operator YESes, both devices; vision-model + operator agree; live + delivered. |
 | ✗ | `Failed` (terminal) | A cue failed; reason surfaced inline + by email; never silent. |
 
 ### 10.2 Transitions
@@ -618,11 +637,11 @@ Assembling
 QualityRefining   [LOOP — the back-edge]
   (renders the assembled page LIVE in a real browser — Playwright against the LOCALLY-served
    assembled site (live pixels), NOT a deployed URL; no deploy happens until S8 — see §12.1)
-  -- QualityGraded(min >= 95 both devices, two eyes: vision + operator) == BuildPassed --> Publishing
+  -- QualityGraded(mean>=90 AND min>=85 AND 5 operator-YES, both devices, two eyes: vision + operator) == BuildPassed --> Publishing
   -- RefineRequested(criterion C, device D, "what it saw") -->
         re-open the smallest responsible slot (content | visuals | page),
         apply the named fix, re-render, re-score, --> QualityRefining   [loop back]
-  -- RefineLimitExceeded (cannot reach 95) --> Failed (FLAG honestly; never ship slop)
+  -- RefineLimitExceeded (cannot reach the bar) --> Failed (FLAG honestly; never ship slop)
 
 Publishing
   -- Deployed (live 200 unauth; repo public; owner invited; topics + description set) --> Notifying
@@ -661,8 +680,9 @@ all results land in their `BuildContext` slot (P5).
 `QualityRefining` is the only state with a self-edge. `RefineRequested` carries `(criterion,
 device, what-it-saw)` and re-opens the **smallest** slot that can fix it — a B1 typography miss
 re-opens `page`; an A4 "not useful to me" miss re-opens `content`; a B5 altitude miss re-opens
-`visuals`. Re-render → re-score (locally, no deploy). The loop exits only on MIN ≥ 95 both devices, or
-fails honestly at the refine limit. This is the mission's minimum bar made executable.
+`visuals`. Re-render → re-score (locally, no deploy). The loop exits only when the bar is cleared on both
+devices (mean ≥ 90, min ≥ 85, five operator YES), or fails honestly at the refine limit. This is the
+mission's minimum bar made executable.
 
 ---
 
@@ -681,7 +701,7 @@ Each carries its BuildId and the StationEvidence that proves its checkpoint cue.
 | **PageAssembled** | Assembly | Page (zero dangling refs) incl. SEO surface (title/meta/canonical/JSON-LD/sitemap/robots/llms.txt) + social/favicon links, AIKnowledgePack (opens/loads/searches) | QualityRefining |
 | **QualityGraded** | Quality | two Scorecards (mobile + desktop), per-criterion rationales | (decision) |
 | **RefineRequested** | Quality | criterion, device, "what it saw", target slot to re-open | QualityRefining (loop) |
-| **BuildPassed** | Quality | MIN ≥ 95 both devices; two-eye (vision + operator) attestation | Publishing |
+| **BuildPassed** | Quality | mean ≥ 90, min ≥ 85, five operator YES, both devices; two-eye (vision + operator) attestation | Publishing |
 | **Deployed** | Publishing | explainerRepoUrl, liveUrl, http200-unauth, ownerInvited, repoTopics + description set | Notifying |
 | **Notified** | Notification | inlineReturned, SMTP 250, payload (URL + repo + pack + scorecard + screenshots + social-card preview + any source-repo SEO suggestions) | Passed |
 
@@ -719,6 +739,8 @@ pixels — not on "code passed."
 - **A3 Clueless→convinced** — zero knowledge → why it matters → real examples → "oh, cool".
 - **A4 Usefulness-to-ME** — explicitly answers "how is this useful to YOU" (cures engineer-blindness).
 - **A5 Completeness of the arc** — never-seen → ready to implement.
+- **A6 Implementation confidence** — the reader knows exactly what to run, what they'll SEE, the steps,
+  what they get, and what's next; a bare "just run this" fails (INV-19).
 
 **Gate B — "Did someone who gives a shit make this?" (craft / anti-slop)**
 - **B1 Typography & hierarchy** — intentional, readable, ranked vs jangly.
@@ -729,6 +751,12 @@ pixels — not on "code passed."
   **This includes the SVG diagrams (ascii-to-svg, crisp + labeled) AND the 1200×630 social card
   (delight + on-brand + tagline legible)** — both are judged here, not waved through.
 
+**Operator qualitative gate — five YES/NO questions (the owner's words), ALL must be YES.** Independent
+of the 0–100 axes, the operator (looking at the real screenshots) must answer YES to every one or the
+build loops: (1) *Would this make me believe I understand this?* (2) *Would this make it approachable?*
+(3) *Would this explain it for somebody who doesn't understand it?* (4) *Would it give me confidence I
+understand the architecture?* (5) *Does it make me smile — "oh, that's cool"?* A single NO is a fail.
+
 Two gates exist because "they don't get it" (substance) and "jangly AI slop" (craft) are
 **different failures**; a page can fully pass one and fail the other.
 
@@ -737,29 +765,35 @@ postcondition at Assembly (S6: title · meta · canonical · JSON-LD · sitemap.
 llms.txt · OG/Twitter · favicon links) and at Publish (S8: GitHub topics + description). A missing
 SEO element fails the station cue (INV-04 / INV-13), exactly like any other loud postcondition.
 
-### 12.3 The floor and the headline (INV-05)
-- **Floor:** every criterion ≥ **95** on **BOTH** mobile AND desktop. Non-negotiable.
-- **Headline score = the MINIMUM** across all criteria — the page is only as good as its worst
-  line. The mean is never used.
-- Below 95 on anything → the gate **names the exact weakness** (which criterion, which device,
-  what it saw) → `RefineRequested` → refine just that → re-render → re-score → **LOOP** until
-  MIN ≥ 95.
-- If a repo genuinely cannot reach 95, the Build **FLAGS honestly** and fails — it never ships
+### 12.3 The bar and the loop — exemplar-anchored (INV-05; owner-signed 2026-06-29)
+- **Bar:** on **BOTH** devices, `meanScore` ≥ **90** AND `headlineScore` (the MIN) ≥ **85** AND all five
+  `operatorQuestions` **true**. Anchored to the owner's own praised example sites (~88 headline / ~92
+  mean on the honest grader); a literal "95 on every axis" is mathematically unreachable by an honest
+  harsh critic and would reject even those exemplars.
+- **`headlineScore` = the MINIMUM** across all eleven axes — the **anti-slop floor**: a single slop axis
+  (a raw-ASCII diagram, a pretty-but-empty image) scores ≈50 and fails the whole build via the ≥85 minimum.
+- **`meanScore` = the MEAN** across all eleven axes — the "overall as good as the examples" measure.
+- Below the bar on any axis, OR any operator question NO → the gate **names the exact weakness** (which
+  criterion / which question, which device, what it saw) → `RefineRequested` → refine just that →
+  re-render → re-score → **LOOP** until it clears. **Iterating over a few revs is expected, not a failure.**
+- If a repo genuinely cannot reach the bar, the Build **FLAGS honestly** and fails — it never ships
   slop and calls it done (the mission's hard line).
 
 ### 12.4 Three eyes on the actual pixels (across the lifecycle)
 1. **The vision model** scores each criterion with a written rationale citing what it sees (S7).
-2. **The operator (Claude)** views the same screenshots before declaring done (S7).
+2. **The operator (Claude)** views the same screenshots and must answer **YES to all five qualitative
+   questions** (believe-I-understand · approachable · explains-to-a-novice · architecture-confidence ·
+   makes-me-smile) before declaring done (S7).
 3. **The owner** is the **post-delivery third eye**: at Notify (S9, §6.8) they receive the **same**
    `Scorecard` + the mobile AND desktop screenshots the gate used, and judge by eye. This is
    structurally downstream of `BuildPassed` (S7) and Publishing (S8) — the owner cannot attest at
    the moment `BuildPassed` is emitted. **Owner rejection re-opens a refine/rebuild** (the same
    back-edge as `RefineRequested`), so the third eye closes across the lifecycle.
 
-The **S7 gate** (`BuildPassed`) requires **two eyes** — vision model + operator — plus MIN ≥ 95 on
-both devices. "Done" across the full lifecycle = real screenshots, ≥ 95 on every line of both
-rubrics, both devices, **all three eyes agree** (owner included, post-delivery). See INV-05 and §7
-rule 3.
+The **S7 gate** (`BuildPassed`) requires **two eyes** — vision model + operator — plus **mean ≥ 90 AND
+min axis ≥ 85 AND all five operator questions YES** on both devices. "Done" across the full lifecycle =
+real screenshots, the bar cleared on both devices with all five operator yeses, both pre-ship eyes agree,
+and **the post-delivery third eye (the owner) does not reject.** See INV-05 and §7 rule 3.
 
 ---
 
@@ -770,13 +804,17 @@ These hold for every Build. The aggregate (§7) or a context boundary enforces e
 - **INV-01 — Build isolation.** Each Build is self-contained with its own per-build deploy target;
   Builds never share mutable state.
 - **INV-02 — Responsive-great-verified.** A Build passes only with both viewports (390 + 1440)
-  graded ≥ 95 on real screenshots.
+  clearing the bar (mean ≥ 90, min ≥ 85, five operator YES) on real screenshots.
 - **INV-03 — Quarantine of long-async/optional steps.** Studio (or any optional long-async step)
   is quarantined and optional; it NEVER blocks or sinks the core (StudioQuarantine).
 - **INV-04 — Never fail silently.** Every station has a loud postcondition (its checkpoint cue);
   any failure surfaces inline AND by email. A station that advances without evidence is a defect.
-- **INV-05 — Never ship below 95.** The dual-gate floor (MIN of A1–A5/B1–B5 ≥ 95 on BOTH devices,
-  three eyes) is the completion criterion. It is the literal gate on `Build.Passed`.
+- **INV-05 — Never ship below the exemplar bar.** The completion criterion (owner-signed 2026-06-29):
+  on BOTH devices, `meanScore` ≥ 90 AND `headlineScore` (MIN of the eleven A1–A6/B1–B5 axes) ≥ 85 AND
+  all five `operatorQuestions` true. Anchored to the owner's own example sites (~88 headline / ~92 mean);
+  a literal "95 on every axis" is unreachable by an honest grader and would reject those exemplars. The
+  ≥85 minimum is the anti-slop floor (a single slop axis ≈50 fails). It is the literal gate on
+  `Build.Passed`.
 - **INV-06 — Grounded-in-KB.** No claim without a KB source; all grounding flows through HNSW
   retrieval (`kb/ask-kb.mjs`) against the RVF KB. No invented claims; no flat-JSON embeddings.
 - **INV-07 — Ships-the-pack.** Every explainer includes the downloadable AIKnowledgePack — the
@@ -810,6 +848,17 @@ These hold for every Build. The aggregate (§7) or a context boundary enforces e
   primary** (`GET /v1/models/gpt-image-2` → HTTP 200, confirmed 2026-06-28); **`gpt-image-1` is the
   fallback ONLY**, used solely if a **build-time availability probe** of `gpt-image-2` (at Station 4)
   fails. The build never silently downgrades and never treats gpt-image-2 as unproven.
+- **INV-18 — ArchitectureAndFlowRequired.** Every explainer MUST ship BOTH (1) an **architecture diagram**
+  ("how is it constructed" — modules/components/dependencies, grounded in `kb/dep-graph.mjs` +
+  `kb/extract-symbols.mjs`) AND (2) a **process/data-flow diagram** ("how does it work" — the runtime
+  flow, grounded in `kb/entrypoints.mjs`), both as crisp `ascii-to-svg` structural SVGs. The quality gate
+  verifies BOTH are present AND **read clearly** on mobile + desktop; absent or muddy = fail/refine.
+  Grounded in REAL structure, never invented.
+- **INV-19 — ImplementationExperiencePresent.** The Get-Started section must show the **command**, **what
+  the reader will SEE when they run it**, the **step-by-step**, **what they get at the end**, **what's
+  next**, and the **prerequisites** — never a bare "just run this." Scored as **A6 Implementation-confidence**
+  and verified at Assembly. The explainer exists to drive adoption; a page that explains but leaves the
+  reader unsure what to do or what will happen has not done its job.
 
 ---
 
@@ -887,6 +936,6 @@ working KB engine the model wraps — no second implementation exists.
 ---
 
 *End of model. The through-line, start to finish: one Brain authors a bespoke, art-directed
-explainer; pure Tools do the mechanics; one `BuildContext` carries the work; the dual-gate QA at
-≥ 95 on both devices with three eyes is the definition of done. If a stranger doesn't smile,
-it isn't finished.*
+explainer; pure Tools do the mechanics; one `BuildContext` carries the work; the exemplar-anchored
+dual gate (mean ≥ 90, min ≥ 85, five operator YES) on both devices with three eyes is the definition of
+done. If a stranger doesn't smile, it isn't finished.*

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 134" width="520" height="134" role="img" aria-labelledby="d-title d-desc">
+  <title id="d-title">demorepo — How it works</title>
+  <desc id="d-desc">demorepo — How it works: Request → Router → Handler → Response</desc>
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
+      <polygon class="ah" points="0 0, 9 3.5, 0 7" fill="#555555"/>
+    </marker>
+    <style>
+      .box { fill: #f8f9fa; stroke: #333333; stroke-width: 1.5px; }
+      .lbl { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; font-weight: 500; fill: #1a1a1a; }
+      .sub { font-size: 11px; font-weight: 400; opacity: .8; }
+      .arr { stroke: #555555; stroke-width: 1.5px; fill: none; }
+      .band { font-family: system-ui, sans-serif; font-size: 11px; font-weight: 700; fill: #4a90d9; letter-spacing: .04em; }
+      .ttl { font-family: system-ui, sans-serif; font-size: 15px; font-weight: 700; fill: #1a1a1a; }
+      @media (prefers-color-scheme: dark) {
+        .box { fill: #2d333b; stroke: #768390; }
+        .lbl { fill: #e6edf3; }
+        .arr { stroke: #768390; }
+        .ah  { fill: #768390; }
+        .ttl { fill: #e6edf3; }
+        .band { fill: #6cb6ff; }
+      }
+    </style>
+  </defs>
+  <text class="ttl" x="260" y="40" text-anchor="middle">demorepo — How it works</text>
+  <line class="arr" x1="122" y1="85" x2="149" y2="85" marker-end="url(#ah)"/>
+  <line class="arr" x1="246" y1="85" x2="273" y2="85" marker-end="url(#ah)"/>
+  <line class="arr" x1="370" y1="85" x2="397" y2="85" marker-end="url(#ah)"/>
+  <g><rect class="box" x="26" y="62" width="96" height="46" rx="5"/><text class="lbl" x="74" y="85" text-anchor="middle" dominant-baseline="middle">Request</text></g>
+  <g><rect class="box" x="150" y="62" width="96" height="46" rx="5"/><text class="lbl" x="198" y="85" text-anchor="middle" dominant-baseline="middle">Router</text></g>
+  <g><rect class="box" x="274" y="62" width="96" height="46" rx="5"/><text class="lbl" x="322" y="85" text-anchor="middle" dominant-baseline="middle">Handler</text></g>
+  <g><rect class="box" x="398" y="62" width="96" height="46" rx="5"/><text class="lbl" x="446" y="85" text-anchor="middle" dominant-baseline="middle">Response</text></g>
+</svg>

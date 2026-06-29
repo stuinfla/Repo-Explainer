@@ -1,0 +1,13 @@
+{
+  "name": "@isovision/explainmyrepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Turn any GitHub repo into a bespoke, art-directed explainer site — for humans and their AI — in one command.",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
+}

@@ -9,7 +9,7 @@ description: >-
   deeply via a real RVF knowledge base, conceives a one-of-a-kind visual
   metaphor, authors the content along a comprehension arc grounded in the KB,
   generates feeling (raster) + structure (SVG) imagery, assembles one page,
-  grades it on real pixels to a 95-on-both-devices floor with a surgical refine
+  grades it on real pixels to the exemplar-anchored bar (mean >= 90, min >= 85, five operator-YES) with a surgical refine
   loop, ships a downloadable AI knowledge pack, and deploys to a live URL. Do
   NOT use for generic "build me a website" requests with no repo to explain.
 ---
@@ -50,11 +50,12 @@ Authoritative sources (read them if anything here is ambiguous):
    writes a placeholder, default asset, stub, or `TODO` to limp past a failure.
    You read the **exit code first**, then the JSON. A failed cue stops the build
    with an honest reason — never a stack trace, never a silent green.
-4. **Never ship below 95 (INV-05).** "Done" = every Gate-A and Gate-B criterion
-   **≥ 95 on BOTH mobile (390px) and desktop (1440px)**, the two pre-ship eyes
-   (vision model + you) agree, the page is live (200 unauthenticated), and the AI
-   pack ships. Below the floor: **refine, or flag honestly.** Never ship slop and
-   call it done.
+4. **Never ship below the exemplar bar (INV-05).** "Done" = on BOTH mobile (390px) and desktop
+   (1440px) the scorecard's **mean ≥ 90 AND min axis ≥ 85 AND all five operator questions YES**
+   (anchored to the owner's own example sites — a literal "95 on every axis" is unreachable by an
+   honest grader; a build that clears this bar is **reported as a normalized 95**). The two pre-ship
+   eyes (vision model + you) agree, the page is live (200 unauthenticated), and the AI pack ships.
+   Below the bar: **refine, or flag honestly.** Never ship slop and call it done.
 
 ---
 
@@ -317,35 +318,43 @@ parallel.
 
   **Gate A — "do they actually get it?" (substance, each 0–100):** A1 visual
   effectiveness · A2 storytelling · A3 clueless→convinced · A4 usefulness-to-ME ·
-  A5 arc completeness.
+  A5 arc completeness · A6 implementation-confidence (knows what to run, what they'll
+  SEE, the steps, what's next — INV-19).
   **Gate B — "did someone who gives a shit make this?" (craft / anti-slop, each
   0–100):** B1 typography & hierarchy · B2 alignment & grid · B3 spacing & rhythm ·
   B4 strength & polish (vs generic AI slop) · B5 imagery craft — **including the
   structural SVGs (crisp, legible, genuinely explanatory) and the 1200×630 social
   card (on-brand, inviting, tagline legible).**
 
-- **The floor + the loop (non-negotiable):**
-  - **FLOOR:** every criterion **≥ 95** on **BOTH** devices (10 criteria × 2
-    devices).
-  - **Headline score = the MINIMUM across all criteria** — never the mean. The page
-    is only as good as its worst line.
-  - **RUN THE REFINE LOOP:** any criterion below 95 → the gate **names the exact
-    weakness** (which criterion, which device, what it saw) → you **refine just
-    that, surgically** (a B1 typography miss re-opens `page`; an A4 "not useful to
-    me" miss re-opens `content`; a B5 altitude/diagram miss re-opens `visuals`) →
-    **re-assemble** (`assemble-page`) → **re-grade** (`quality-grade`) → **LOOP**
-    until the minimum is ≥ 95 on both devices. Touch **only** the named weakness —
-    never a broad reflow that could regress a passing criterion.
+  **The OPERATOR QUALITATIVE GATE — five YES/NO questions (the owner's words), ALL must be YES or you
+  loop:** (1) Would this make me believe I understand this? (2) Would this make it approachable?
+  (3) Would this explain it for somebody who doesn't understand it? (4) Would it give me confidence I
+  understand the architecture? (5) Does it make me smile — "oh, that's cool"? These are independent of
+  the numeric axes; a page can clear the numbers and still fail one of these.
+
+- **The bar + the loop (non-negotiable — iteration over a few revs is EXPECTED, not a failure):**
+  - **BAR:** on **BOTH** devices, **mean ≥ 90 AND min axis ≥ 85 AND all five operator questions YES**
+    (11 axes × 2 devices). The **min ≥ 85 is the anti-slop floor** — a single slop axis (a raw-ASCII
+    diagram, a pretty-but-empty image) scores ≈50 and fails the build. Anchored to the owner's own
+    example sites (~88 headline / ~92 mean); a build that clears the bar is reported as a normalized **95**.
+  - **`headlineScore` = the MINIMUM across all axes** (the anti-slop floor); **`meanScore` = the mean**
+    (the "as good as the examples" measure). Both gate; the mean is not ignored.
+  - **RUN THE REFINE LOOP:** any axis below the bar OR any operator NO → the gate **names the exact
+    weakness** (which criterion / which question, which device, what it saw) → you **refine just
+    that, surgically** (a B1 typography miss re-opens `page`; an A4 "not useful to me" miss re-opens
+    `content`; an A6 / B5 / diagram miss re-opens `visuals`) → **re-assemble** (`assemble-page`) →
+    **re-grade** (`quality-grade`) → **LOOP** until it clears on both devices. Touch **only** the named
+    weakness — never a broad reflow that could regress a passing axis.
   - If the grader returns malformed / missing / non-per-criterion scores, the gate
     **stops loud and does not pass** — a broken grader is never a silent green.
-- **Honesty escape hatch:** if a repo **genuinely** cannot reach 95 on some line,
+- **Honesty escape hatch:** if a repo **genuinely** cannot reach the bar on some axis,
   **flag it honestly** in the result and the email. **Never ship slop and call it
   done.** Two pre-ship eyes gate S7: the **vision model** and **you** (the
-  operator), viewing the **same screenshots**, both agreeing, MIN ≥ 95 on both
-  devices. The **owner is the post-delivery third eye** (S9) — owner rejection
-  re-opens this same surgical loop.
-- **Cue:** **every criterion ≥ 95 on BOTH devices**, or an honest flag. Only an
-  **already-great** page proceeds to deploy.
+  operator), viewing the **same screenshots**, both agreeing, with **mean ≥ 90, min ≥ 85, and all
+  five operator questions YES** on both devices. The **owner is the post-delivery third eye** (S9) —
+  owner rejection re-opens this same surgical loop.
+- **Cue:** **mean ≥ 90 AND min axis ≥ 85 AND all five operator questions YES on BOTH devices**, or an
+  honest flag. Only an **already-great** page proceeds to deploy.
 
 ### Station 8 — PUBLISH / DEPLOY (+ repo SEO) — the FIRST and only deploy
 - **Do:** Create the dedicated **explainer GitHub repo** (public), invite the owner
@@ -409,8 +418,9 @@ in its `BuildContext` slot.
 
 - **INV-04 Never-fail-silently** — every station has a loud cue; no placeholder,
   default, or stub past a failure.
-- **INV-05 Never-ship-below-95** — the dual-gate ≥ 95-on-both-devices floor IS the
-  completion criterion; below it, refine or flag honestly.
+- **INV-05 Never-ship-below-the-exemplar-bar** — on both devices, mean ≥ 90 AND min axis ≥ 85 AND all
+  five operator questions YES IS the completion criterion (a clearing build is reported as a normalized
+  95); below it, refine or flag honestly.
 - **INV-06 Grounded-in-KB** — no claim without a real RVF KB passage; never a JSON
   stand-in.
 - **INV-07 Ships-the-pack** — every explainer ships the downloadable AI pack
@@ -423,9 +433,12 @@ in its `BuildContext` slot.
 - **INV-18 Architecture + flow diagrams mandatory** — every explainer ships both
   an architecture diagram and a process/data-flow diagram, as crisp SVGs grounded
   in the repo's real structure; missing either means the build is not done.
+- **INV-19 Implementation-experience present** — the Get-Started section shows the command, what the
+  reader will SEE when they run it, the steps, what they get, what's next, and prerequisites — never a
+  bare "just run this." Scored as A6.
 - **Mandatory ISOvision footer** — the credit + "create one" CTA footer ships on
   every page, verbatim.
 
-**"Done" = real screenshots, ≥ 95 on every line of both rubrics on both devices,
-the two pre-ship eyes agree, the page is live, and the AI pack ships. If a stranger
-doesn't smile, it isn't finished.**
+**"Done" = real screenshots; on both devices mean ≥ 90, min axis ≥ 85, and all five operator questions
+YES (reported as a normalized 95); the two pre-ship eyes agree; the page is live; and the AI pack ships.
+If a stranger doesn't smile, it isn't finished.**

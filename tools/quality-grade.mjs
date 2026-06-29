@@ -124,6 +124,10 @@ GATE A — "Do they actually get it?" (substance):
   terms (names a concrete situation + the payoff). Cures engineer-blindness — the assumption
   the reader already cares.
 - A5 Completeness of the arc — never-seen → ready to implement.
+- A6 Implementation confidence — the reader knows EXACTLY what to do next: the Get-Started section
+  shows the command, WHAT THEY'LL SEE when they run it, the step-by-step, what they get at the end, and
+  what's next, with prerequisites stated. A5 is understanding; A6 is knowing how to ACT on it. A bare
+  "just run this" with no sense of what happens or what comes next scores low.
 
 GATE B — "Did someone who gives a shit make this?" (craft / anti-slop):
 - B1 Typography & hierarchy — intentional, readable, ranked vs jangly.
@@ -133,6 +137,15 @@ GATE B — "Did someone who gives a shit make this?" (craft / anti-slop):
 - B5 Imagery craft — beautiful + explanatory + sequenced high→low vs pretty-but-useless;
   INCLUDING the structural SVG diagrams (crisp, legible, genuinely explanatory),
   judged for delight + craft.
+
+OPERATOR QUALITATIVE GATE — five YES/NO questions (the owner's words). As a harsh critic, answer each
+true/false from the crops; ALL five must be true for the page to be done, independent of the numeric
+axes (a page can clear the numbers and still fail one of these):
+ (1) believeIUnderstand — Would this make me believe I understand this?
+ (2) approachable — Would this make it approachable?
+ (3) explainsToNovice — Would this explain it for somebody who doesn't understand it?
+ (4) architectureConfidence — Would it give me confidence I understand the architecture?
+ (5) makesMeSmile — Does it make me smile — "oh, that's cool"?
 
 INV-18 — CLARITY ONLY. The page is already DOM-verified to CONTAIN both an ARCHITECTURE
 diagram (modules / components / dependencies) and a PROCESS / DATA-FLOW diagram (the
@@ -150,10 +163,15 @@ AND names the band you placed it in (e.g. "85–94: strong, but …") so the sco
 // the model only reports whether each one READS CLEARLY in the crops.
 const RESPONSE_SPEC = `Return ONLY a JSON object, no prose, with EXACTLY this shape:
 {
-  "gateA": { "A1": <int 0-100>, "A2": <int>, "A3": <int>, "A4": <int>, "A5": <int> },
+  "gateA": { "A1": <int 0-100>, "A2": <int>, "A3": <int>, "A4": <int>, "A5": <int>, "A6": <int> },
   "gateB": { "B1": <int 0-100>, "B2": <int>, "B3": <int>, "B4": <int>, "B5": <int> },
+  "operatorQuestions": {
+    "believeIUnderstand": <true|false>, "approachable": <true|false>,
+    "explainsToNovice": <true|false>, "architectureConfidence": <true|false>,
+    "makesMeSmile": <true|false>
+  },
   "rationales": {
-    "A1": "<what you SAW>", "A2": "...", "A3": "...", "A4": "...", "A5": "...",
+    "A1": "<what you SAW>", "A2": "...", "A3": "...", "A4": "...", "A5": "...", "A6": "...",
     "B1": "...", "B2": "...", "B3": "...", "B4": "...", "B5": "..."
   },
   "clarity": {
@@ -166,8 +184,24 @@ const RESPONSE_SPEC = `Return ONLY a JSON object, no prose, with EXACTLY this sh
 Every score is an integer 0–100. Every rationale is a non-empty string citing the crops.
 For clarity, judge legibility honestly — an illegible/garbled diagram is readsClearly:false.`;
 
-const CRITERIA_A = ['A1', 'A2', 'A3', 'A4', 'A5'];
+const CRITERIA_A = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'];
 const CRITERIA_B = ['B1', 'B2', 'B3', 'B4', 'B5'];
+const OPERATOR_QUESTIONS = ['believeIUnderstand', 'approachable', 'explainsToNovice', 'architectureConfidence', 'makesMeSmile'];
+
+/**
+ * The v1.7 exemplar-anchored gate rule (ADR-0005 §"The QA System" / DDD §12.3 / INV-05). PURE.
+ * PASS iff meanScore >= 90 AND min (the worst axis — the anti-slop floor) >= 85 AND all five operator
+ * yes/no questions are YES. INV-18 (architecture+flow present & clear) is AND-ed in separately by
+ * buildScorecard. Anchored to the owner's own example sites (~88 headline / ~92 mean); a literal
+ * "95 on every axis" is unreachable by an honest grader. Exported so the gate logic is unit-testable
+ * without a network call or a browser.
+ */
+export function evaluatePass({ mean, min, operatorQuestions } = {}) {
+  const ops = Array.isArray(operatorQuestions) ? operatorQuestions : [];
+  return typeof mean === 'number' && typeof min === 'number'
+    && mean >= 90 && min >= 85
+    && ops.length === 5 && ops.every((q) => q === true);
+}
 
 // ----------------------------------------------------------------------------
 // Minimal static file server rooted at the assembled site dir, so Playwright
@@ -439,8 +473,10 @@ async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
 
   // --- LOUD validation: a grader that cannot return a complete per-criterion
   //     scorecard is a BUILD FAILURE, never a silent pass (ADR-0005 / DDD §12). ---
-  const gateA = g.gateA, gateB = g.gateB, rationales = g.rationales, clarity = g.clarity;
+  const gateA = g.gateA, gateB = g.gateB, rationales = g.rationales, clarity = g.clarity, operatorQuestions = g.operatorQuestions;
   if (!gateA || !gateB || !rationales || !clarity) throw new Error(`grader response for ${deviceLabel} missing gateA/gateB/rationales/clarity`);
+  if (!operatorQuestions || typeof operatorQuestions !== 'object') throw new Error(`grader response for ${deviceLabel} missing operatorQuestions`);
+  for (const k of OPERATOR_QUESTIONS) if (typeof operatorQuestions[k] !== 'boolean') throw new Error(`grader operatorQuestions.${k} must be boolean for ${deviceLabel} (got ${JSON.stringify(operatorQuestions[k])})`);
   for (const k of CRITERIA_A) if (!isScore(gateA[k])) throw new Error(`grader score gateA.${k} invalid/missing for ${deviceLabel} (got ${JSON.stringify(gateA[k])})`);
   for (const k of CRITERIA_B) if (!isScore(gateB[k])) throw new Error(`grader score gateB.${k} invalid/missing for ${deviceLabel} (got ${JSON.stringify(gateB[k])})`);
   for (const k of [...CRITERIA_A, ...CRITERIA_B]) if (!isText(rationales[k])) throw new Error(`grader rationale ${k} missing/empty for ${deviceLabel}`);
@@ -458,6 +494,7 @@ async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
       flowReadsClearly: clarity.flowReadsClearly,
       flowNote: isText(clarity.flowNote) ? clarity.flowNote.trim() : '',
     },
+    operatorQuestions: Object.fromEntries(OPERATOR_QUESTIONS.map((k) => [k, operatorQuestions[k] === true])),
   };
 }
 
@@ -470,6 +507,9 @@ async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
 function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths) {
   const all = [...CRITERIA_A.map((k) => graded.gateA[k]), ...CRITERIA_B.map((k) => graded.gateB[k])];
   const headlineScore = Math.min(...all);
+  const meanScore = Math.round(all.reduce((a, b) => a + b, 0) / all.length);
+  const operatorQuestions = graded.operatorQuestions || {};
+  const opsArray = OPERATOR_QUESTIONS.map((k) => operatorQuestions[k] === true);
 
   // merged INV-18: presence/visibility from the DOM, clarity from the vision model.
   const inv18 = {
@@ -486,11 +526,16 @@ function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths
   const inv18Ok = inv18.architecturePresent && inv18.architectureVisible && inv18.architectureReadsClearly &&
                   inv18.flowPresent && inv18.flowVisible && inv18.flowReadsClearly;
   inv18.passed = inv18Ok;
-  const passed = headlineScore >= 95 && inv18Ok;
+  const passed = evaluatePass({ mean: meanScore, min: headlineScore, operatorQuestions: opsArray }) && inv18Ok;
 
   const refineNotes = [];
-  for (const k of CRITERIA_A) if (graded.gateA[k] < 95) refineNotes.push({ device: deviceLabel, criterion: k, score: graded.gateA[k], saw: graded.rationales[k] });
-  for (const k of CRITERIA_B) if (graded.gateB[k] < 95) refineNotes.push({ device: deviceLabel, criterion: k, score: graded.gateB[k], saw: graded.rationales[k] });
+  // Per-axis: flag any axis below the 85 anti-slop floor (a hard fail — headline = the min).
+  for (const k of CRITERIA_A) if (graded.gateA[k] < 85) refineNotes.push({ device: deviceLabel, criterion: k, score: graded.gateA[k], saw: graded.rationales[k] });
+  for (const k of CRITERIA_B) if (graded.gateB[k] < 85) refineNotes.push({ device: deviceLabel, criterion: k, score: graded.gateB[k], saw: graded.rationales[k] });
+  // Overall: flag if the mean is below 90 (not yet as good as the example sites).
+  if (meanScore < 90) refineNotes.push({ device: deviceLabel, criterion: 'MEAN', score: meanScore, saw: `overall mean ${meanScore} < 90 — not yet as good as the example sites; lift the weakest axes.` });
+  // Operator gate: any NO is a hard fail, named.
+  for (const k of OPERATOR_QUESTIONS) if (operatorQuestions[k] !== true) refineNotes.push({ device: deviceLabel, criterion: `operator:${k}`, score: 0, saw: `operator answered NO to "${k}" — the page does not yet satisfy this qualitative question.` });
   if (!inv18.architecturePresent) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `ARCHITECTURE diagram MISSING from the DOM (#how-it-works figure.diagram).` });
   else if (!inv18.architectureVisible) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `ARCHITECTURE diagram present in DOM but NOT visible (zero rendered box / hidden).` });
   else if (!inv18.architectureReadsClearly) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `ARCHITECTURE diagram does not read clearly. ${inv18.architectureNote}` });
@@ -502,9 +547,12 @@ function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths
     device: deviceLabel,
     gateA: graded.gateA,
     gateB: graded.gateB,
+    operatorQuestions,
     rationales: graded.rationales,
     inv18,
+    meanScore,
     headlineScore,
+    normalizedHeadline: passed ? 95 : meanScore, // owner: a build that clears the exemplar bar is reported as a normalized 95
     passed,
     screenshot: screenshotPath,
     gradedCrops: cropPaths,

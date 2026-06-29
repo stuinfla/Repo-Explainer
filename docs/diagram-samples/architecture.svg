@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 607 416" width="607" height="416" role="img" aria-labelledby="d-title d-desc">
+  <title id="d-title">demorepo — Architecture</title>
+  <desc id="d-desc">demorepo — Architecture: server, cli ↓ core, store ↓ utils, types ↓ express, zod</desc>
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
+      <polygon class="ah" points="0 0, 9 3.5, 0 7" fill="#555555"/>
+    </marker>
+    <style>
+      .box { fill: #f8f9fa; stroke: #333333; stroke-width: 1.5px; }
+      .lbl { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; font-weight: 500; fill: #1a1a1a; }
+      .sub { font-size: 11px; font-weight: 400; opacity: .8; }
+      .arr { stroke: #555555; stroke-width: 1.5px; fill: none; }
+      .band { font-family: system-ui, sans-serif; font-size: 11px; font-weight: 700; fill: #4a90d9; letter-spacing: .04em; }
+      .ttl { font-family: system-ui, sans-serif; font-size: 15px; font-weight: 700; fill: #1a1a1a; }
+      @media (prefers-color-scheme: dark) {
+        .box { fill: #2d333b; stroke: #768390; }
+        .lbl { fill: #e6edf3; }
+        .arr { stroke: #768390; }
+        .ah  { fill: #768390; }
+        .ttl { fill: #e6edf3; }
+        .band { fill: #6cb6ff; }
+      }
+    </style>
+  </defs>
+  <text class="ttl" x="303.5" y="40" text-anchor="middle">demorepo — Architecture</text>
+  <line class="arr" x1="369.5" y1="108" x2="369.5" y2="155" marker-end="url(#ah)"/>
+  <line class="arr" x1="369.5" y1="202" x2="369.5" y2="249" marker-end="url(#ah)"/>
+  <line class="arr" x1="369.5" y1="296" x2="369.5" y2="343" marker-end="url(#ah)"/>
+  <text class="band" x="26" y="85" dominant-baseline="middle">APPS / ENTRY</text>
+  <g><rect class="box" x="218.5" y="62" width="137" height="46" rx="5"/><text class="lbl" x="287" y="80" text-anchor="middle" dominant-baseline="middle">server</text><text class="lbl sub" x="287" y="97" text-anchor="middle" dominant-baseline="middle">uses 2 internal</text></g>
+  <g><rect class="box" x="383.5" y="62" width="137" height="46" rx="5"/><text class="lbl" x="452" y="80" text-anchor="middle" dominant-baseline="middle">cli</text><text class="lbl sub" x="452" y="97" text-anchor="middle" dominant-baseline="middle">uses 1 internal</text></g>
+  <text class="band" x="26" y="179" dominant-baseline="middle">CORE</text>
+  <g><rect class="box" x="158" y="156" width="204" height="46" rx="5"/><text class="lbl" x="260" y="174" text-anchor="middle" dominant-baseline="middle">core</text><text class="lbl sub" x="260" y="191" text-anchor="middle" dominant-baseline="middle">2 dependents · 18 symbols</text></g>
+  <g><rect class="box" x="390" y="156" width="191" height="46" rx="5"/><text class="lbl" x="485.5" y="174" text-anchor="middle" dominant-baseline="middle">store</text><text class="lbl sub" x="485.5" y="191" text-anchor="middle" dominant-baseline="middle">1 dependent · 9 symbols</text></g>
+  <text class="band" x="26" y="273" dominant-baseline="middle">FOUNDATION</text>
+  <g><rect class="box" x="202" y="250" width="197" height="46" rx="5"/><text class="lbl" x="300.5" y="268" text-anchor="middle" dominant-baseline="middle">utils</text><text class="lbl sub" x="300.5" y="285" text-anchor="middle" dominant-baseline="middle">2 dependents · 7 symbols</text></g>
+  <g><rect class="box" x="427" y="250" width="110" height="46" rx="5"/><text class="lbl" x="482" y="268" text-anchor="middle" dominant-baseline="middle">types</text><text class="lbl sub" x="482" y="285" text-anchor="middle" dominant-baseline="middle">1 dependent</text></g>
+  <text class="band" x="26" y="367" dominant-baseline="middle">EXTERNAL</text>
+  <g><rect class="box" x="301" y="344" width="137" height="46" rx="5"/><text class="lbl" x="369.5" y="362" text-anchor="middle" dominant-baseline="middle">express, zod</text><text class="lbl sub" x="369.5" y="379" text-anchor="middle" dominant-baseline="middle">2 external deps</text></g>
+</svg>

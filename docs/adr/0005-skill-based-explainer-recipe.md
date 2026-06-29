@@ -1,7 +1,19 @@
 # ADR-0005: The Skill-Based Explainer Recipe — One Brain, Three Doors
 
-Updated: 2026-06-29 02:00:00 EDT | Version 1.6.0
+Updated: 2026-06-29 10:40:00 EDT | Version 1.7.0
 Created: 2026-06-28 00:00:00 EDT
+
+> **v1.7.0 (2026-06-29) — quality-bar reconciliation + implementation-experience.** Owner-signed
+> changes to the gate: (1) the literal "≥95 on every axis" floor is replaced by the
+> **exemplar-anchored bar — mean ≥ 90 AND minimum axis ≥ 85 on both devices** — because an honest
+> harsh grader puts the owner's own praised example sites at ~88 headline / ~92 mean, so a 95-on-every-
+> axis floor is mathematically unreachable and would reject those exemplars; the **min ≥ 85 is the
+> anti-slop floor** (a raw-ASCII diagram or pretty-but-empty image scores ≈50 and fails the build).
+> (2) A new **operator qualitative gate** — five YES/NO questions (the owner's words), all must be YES.
+> (3) A new scored axis **A6 Implementation-confidence** + invariant **INV-19 ImplementationExperiencePresent**
+> (Get-Started must show the command, what you'll SEE, the steps, the outcome, and what's next).
+> (4) **INV-18 ArchitectureAndFlowRequired** is now formally registered (DDD §13). Iteration over a
+> few revs is expected by design.
 
 **Status:** Accepted.
 
@@ -274,7 +286,7 @@ makes it legible.**
 | Why is it elegant/clever? | The insight | Conceptual diagram of the ONE clever move (the "aha") |
 | How is it built / works? | How it works | Architecture/flow diagram — descend **ONE** level, clean + labeled |
 | Could I use this? | Use cases | A scenario picture — someone like the reader succeeding |
-| How do I start? | Get started | A quickstart visual — path to first run |
+| How do I start? (and what will I SEE?) | Get started | A quickstart visual — the command, what the run looks like, the steps, what you get, what's next (INV-19) |
 | (my AI gets it too) | The pack | The dual-output diagram (page for humans, KB for their AI) |
 
 ### D7 — The image ladder: beautiful AND explanatory, high → low (raster feeling + vector structure)
@@ -410,7 +422,11 @@ stations in order, filling `BuildContext` slot by slot; the tools do the mechani
   traceable to a passage retrieved via `kb/ask-kb.mjs`.
 - **Tool:** `tools/ask-kb` for grounding retrieval; authoring itself is judgment.
 - **Cue:** **all arc questions answered, zero placeholder text, every claim traceable** to a KB
-  source (INV-06, Grounded-in-KB). No "lorem", no "TODO", no invented capabilities.
+  source (INV-06, Grounded-in-KB). No "lorem", no "TODO", no invented capabilities. **The Get-Started
+  section is a hard sub-cue (INV-19, ImplementationExperiencePresent): it must show the command, what
+  the reader will SEE when they run it, the step-by-step, what they get at the end, what's next, and the
+  prerequisites — never a bare "just run this."** A page that explains but leaves the reader unsure what
+  to do or what will happen fails A6.
 
 ### Station 4 — VISUALIZE (raster feeling + vector structure)
 - **Precondition (model-ID probe — fail loud).** Before generating anything, probe the **primary
@@ -517,8 +533,9 @@ stations in order, filling `BuildContext` slot by slot; the tools do the mechani
   rationale. **Loud-fail postcondition:** malformed, missing, or non-per-criterion scores → **stop,
   do not pass** — a grader that cannot return a complete per-criterion scorecard is a build failure,
   never a silent pass), `tools/refine` (judgment-driven: fix the *named* weakness only).
-- **Cue:** **every criterion ≥ 95 on BOTH devices.** If a repo genuinely cannot reach 95, **flag it
-  honestly** — never ship slop and call it done (INV-05, INV-02).
+- **Cue:** on BOTH devices, **mean ≥ 90 AND min axis ≥ 85 AND all five operator qualitative questions
+  YES** (§"The QA System"). If a repo genuinely cannot reach the bar, **flag it honestly** — never ship
+  slop and call it done (INV-05, INV-02). Iteration is expected: loop until it clears.
 
 ### Station 8 — PUBLISH / DEPLOY (+ repo SEO)
 - **Do:** Create the dedicated **explainer GitHub repo** (the owner is invited as a collaborator),
@@ -594,6 +611,11 @@ build can pass one while failing the other.
 - **A4 — Usefulness-to-ME:** explicitly answers "how is this useful to **YOU**" (cures
   engineer-blindness — the assumption the reader already cares).
 - **A5 — Completeness of the arc:** never-seen → ready to implement.
+- **A6 — Implementation confidence:** the reader knows **exactly what to do next**. The Get-Started
+  section shows the command, **what they'll SEE when they run it**, the step-by-step, what they get at
+  the end, and what's next — with prerequisites stated. A5 ("ready to implement") is *understanding*;
+  A6 is *knowing how to act on it.* A bare "just run this," with no sense of what happens or what comes
+  next, fails A6 (INV-19).
 
 ### Gate B — "Did someone who gives a shit make this?" (craft / anti-slop) — each criterion 0–100
 
@@ -605,34 +627,55 @@ build can pass one while failing the other.
   **including the structural SVG diagrams (crisp, legible, genuinely explanatory) and the 1200×630
   social card (on-brand, inviting, tagline legible)**, both judged for delight + craft.
 
-### The floor and the loop (non-negotiable)
+### The bar and the loop (non-negotiable — iteration is EXPECTED, not a failure)
 
-- **FLOOR:** every criterion **≥ 95** on **BOTH** mobile **AND** desktop. Ten criteria × two devices.
-- **Headline score = the MINIMUM across all criteria** — the page is only as good as its worst line.
-- **Refine loop:** any criterion below 95 → the gate **names the exact weakness** (which criterion,
-  which device, what the model *saw*) → the brain **refines just that** → **re-render** → **re-score**
-  → **LOOP** until the minimum is ≥ 95. Refinement is surgical: touch only the named weakness, never
-  a broad reflow that could regress a passing criterion.
-- **Honesty escape hatch:** if a repo genuinely cannot reach 95 on some line, **flag it honestly** in
-  the result and the email. **Never ship slop and call it done** (INV-02, INV-05).
+The gate is a **loop you are expected to go around more than once.** A first pass rarely passes; that
+is the design. Going through a few revs to get there **is the point of the process** — it is how a
+build iterates to genuinely high quality. The page is **done** only when, on **BOTH** devices, **all**
+of the following hold at once:
+
+- **NUMERIC BAR — anchored to the owner's own praised examples (owner-signed 2026-06-29):** the
+  scorecard's **mean ≥ 90 AND its minimum axis ≥ 85.** This is pinned to the level of the six
+  `ruv-explainer-*` example sites (~88 headline / ~92 mean on the honest grader). A literal "95 on
+  every axis" is mathematically unreachable by an honest harsh critic — it would reject even those
+  exemplars — so the bar is **"at least as good as the examples,"** not impossible perfection. **The
+  minimum-axis ≥ 85 is the anti-slop floor: a single slop axis — a raw-ASCII diagram, a pretty-but-
+  empty image — scores ≈50 and fails the whole build,** exactly as it must.
+- **OPERATOR QUALITATIVE GATE — five YES/NO questions, ALL must be YES (verbatim, the owner's words).**
+  The operator, looking at the real screenshots, must be able to answer YES to every one:
+  1. **Would this make me believe I understand this?**
+  2. **Would this make it approachable?**
+  3. **Would this explain it for somebody who doesn't understand it?**
+  4. **Would it give me confidence I understand the architecture?**
+  5. **Does it make me smile — "oh, that's cool"?**
+  A single NO is a fail: name what's missing, refine, re-render, re-grade. The numeric bar and these
+  five questions are **independent gates — both must pass.** A page can clear the numbers and still
+  fail a question (and vice-versa); neither is waved through.
+- **THE REFINE LOOP.** Any axis below the bar OR any operator NO → the gate **names the exact weakness**
+  (which criterion / which question, which device, what was seen) → the brain **refines just that** (an
+  A4 "not useful to me" reopens `content`; an A6 / B5 / diagram miss reopens `visuals`; a B1 typography
+  miss reopens `page`) → **re-render → re-grade → LOOP.** Refinement is surgical — touch only the named
+  weakness, never a broad reflow that regresses a passing axis.
+- **Honesty escape hatch:** if a repo genuinely cannot reach the bar on some axis, **flag it honestly**
+  in the result and the email. **Never ship slop and call it done** (INV-02, INV-05).
 
 ### Three sets of eyes on the actual pixels — every time
 
-1. **The vision model** scores each criterion with a **written rationale citing what it SEES**.
-2. **The operator (Claude)** views the **same screenshots** before declaring the gate passed.
+1. **The vision model** scores each criterion 0–100 with a **written rationale citing what it SEES**.
+2. **The operator (Claude)** views the **same screenshots** and must answer **YES to all five
+   qualitative questions** above **before** declaring the gate passed — a real read, not a glance.
 3. **The owner** receives the **scorecard + the mobile AND desktop screenshots** (at Station 9) and
    judges by eye.
 
-**What gates Station 7 are the two eyes that see the pixels before ship** — the vision model **and**
-the operator — **both agreeing**, with the **MINIMUM across all criteria ≥ 95 on both devices**. That
-is `BuildPassed`; the owner does **not** gate S7 (they have not seen it yet). The **owner is the
+**What gates Station 7 are the two pre-ship eyes** — the vision model **and** the operator — **both
+agreeing**, with **mean ≥ 90 AND min axis ≥ 85 on both devices AND all five operator questions YES.**
+That is `BuildPassed`; the owner does **not** gate S7 (they have not seen it yet). The **owner is the
 post-delivery third eye**: they see the result at Station 9, and an **owner rejection re-opens the
-same surgical refine / rebuild back-edge** (re-render → re-score → re-deliver) — it reopens the loop,
-it does not block the original gate.
+same surgical refine / rebuild back-edge** — it reopens the loop, it does not block the original gate.
 
-"**Done**" = real screenshots, **≥ 95 on every line of both rubrics on both devices, the two pre-ship
-eyes (vision + operator) agree, and the post-delivery third eye (the owner) does not reject.** Anything
-less is not done.
+"**Done**" = real screenshots; on both devices **mean ≥ 90, min axis ≥ 85, and all five operator
+questions answered YES**; the two pre-ship eyes agree; and the post-delivery third eye (the owner)
+does not reject. Anything less is not done — and getting there over a few revs is expected.
 
 ---
 
@@ -642,24 +685,30 @@ These are always-true properties, enforced in code (design system + tools) and a
 (`docs/ddd/repo-explainer-recipe-domain.md`) models them as first-class domain concepts.
 
 > **This register is an intentional subset.** INV-01..08 below are the eight cross-cutting invariants
-> and match the DDD §13 numbering **exactly**. The DDD §13 carries the **full INV-01..17 set**: it
+> and match the DDD §13 numbering **exactly**. The DDD §13 carries the **full INV-01..19 set**: it
 > elevates to numbered invariants four PLUS additions — **INV-13 SEO-present, INV-14 ships-social-card,
 > INV-15 structural-diagrams-as-SVG, INV-17 verified-image-primary** — plus brain/tools-split,
 > render-once, arc-altitude, and idempotency. This ADR carries those four-plus as **narrative
 > decisions** (D4 brain/tools-split + render-once, D6 arc-altitude, D7 verified-image-primary + SVG,
-> Station 5/6 SEO + social card), not as numbered invariants. **Cross-references to INV-09..17 resolve
-> in the DDD §13**, not here.
+> Station 5/6 SEO + social card), not as numbered invariants. **Cross-references to INV-09..19 resolve
+> in the DDD §13**, not here — including **INV-18 ArchitectureAndFlowRequired** (architecture + flow
+> diagrams mandatory, Station 4) and **INV-19 ImplementationExperiencePresent** (the Get-Started
+> experience, Station 3 / A6).
 
 - **INV-01 — Build isolation.** Each build is self-contained with its own per-build deploy target;
   builds never collide.
-- **INV-02 — Responsive-great-verified.** The page passes **both** viewports at **≥ 95** on real
-  screenshots — verified, not assumed.
+- **INV-02 — Responsive-great-verified.** The page clears the bar on **both** viewports (mean ≥ 90,
+  min axis ≥ 85, and all five operator questions YES) on real screenshots — verified, not assumed.
 - **INV-03 — Async steps never block the core.** Studio / long-async steps are quarantined and
   optional; the core ship is independent of them.
 - **INV-04 — Never fail silently.** Every station has a **loud postcondition** (its cue). A station
   that cannot record evidence has not passed.
-- **INV-05 — Never ship below 95.** The dual-gate ≥ 95-on-both-devices floor **is** the completion
-  criterion. Below it, either refine or flag honestly — never ship-and-claim.
+- **INV-05 — Never ship below the exemplar bar.** "Done" = on BOTH devices the scorecard's **mean ≥ 90
+  AND its minimum axis ≥ 85** (anchored to the owner's own praised example sites at ~88 headline / ~92
+  mean; a literal "95 on every axis" is unreachable by an honest grader and would reject those
+  exemplars) **AND** the operator answers YES to all five qualitative questions (§"The QA System"). A
+  single slop axis (≈50) fails hard via the ≥85 minimum. Below the bar: refine and re-grade (iteration
+  is expected), or flag honestly. Never ship-and-claim.
 - **INV-06 — Grounded-in-KB.** No claim without a KB source. The KB is the **real RVF store**, never
   a JSON stand-in.
 - **INV-07 — Ships-the-pack.** Every explainer includes the downloadable AI knowledge pack built by
@@ -742,8 +791,9 @@ These are always-true properties, enforced in code (design system + tools) and a
   pure independently-testable tools. The failure mode that killed generation 2 cannot recur.
 - **A real shared design system** (`assets/design-system/`) — invariants guaranteed once, so judgment
   is spent on art direction, not on re-earning responsive/accessible basics each build.
-- **A genuine quality bar** — the dual-gate ≥ 95-on-both-devices floor with a surgical refine loop
-  and three sets of eyes on real pixels. "Done" means a stranger smiles.
+- **A genuine quality bar** — the exemplar-anchored dual gate (mean ≥ 90, min axis ≥ 85, and the five
+  operator questions YES on both devices) with a surgical refine loop and three sets of eyes on real
+  pixels. "Done" means a stranger smiles.
 - **The AI pack always ships** — `kb/make-dropin.mjs` output (with `.passages.jsonl`) is a hard
   deliverable, so every explainer hands the reader's *AI* a working, searchable KB too.
 - **Three doors, one brain** — plugin (first), npx CLI, and hosted website all run the identical
@@ -783,4 +833,4 @@ These are always-true properties, enforced in code (design system + tools) and a
 | Built stores today | `kb/stores/{photonlayer,ruqu,ruvn,agent-harness-generator}/` |
 | Example sites (gen-1) | `ruv-explainer-{photonlayer,ruqu,ruvn,agent-harness-generator,rufield}/` **plus `explainer-agentic-qe/`** (a sixth explainer-family dir) — each a bespoke `styles.css`, zero shared tokens. (`www/styles.css` is the hosted-door stylesheet, not an example site.) |
 | Superseded ADRs | `docs/adr/0002-repo-explainer-architecture.md`, `0003-async-build-and-real-quality-gates.md`, `0004-cloud-build-engine.md`, `0004a-gap-resolutions.md` (pipeline approach) |
-| Companion DDD | `docs/ddd/repo-explainer-recipe-domain.md` (Build aggregate, BuildContext, the dual-gate + 95 floor + three eyes as first-class domain concepts) |
+| Companion DDD | `docs/ddd/repo-explainer-recipe-domain.md` (Build aggregate, BuildContext, the dual-gate + exemplar bar (mean≥90/min≥85) + five operator questions + three eyes as first-class domain concepts) |
