@@ -295,6 +295,20 @@ code.inl { font-size: .9em; background: var(--panel-3); padding: 1.5px 6px; bord
 .ba .card p { font-size: 14px; margin: 0; color: var(--ink-2); }
 .ba .arrow { align-self: center; color: var(--base-2); font-size: 26px; }
 
+/* ---- "Ways it bites you" — without/with pain cards ------------------------ */
+.pains { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 22px 0 6px; }
+@media (max-width: 760px) { .pains { grid-template-columns: 1fr; } }
+.pain { border: 1px solid var(--line); border-radius: 14px; background: var(--bg-2); padding: 18px; }
+.pain .sit { display: flex; gap: 11px; align-items: flex-start; margin: 0 0 13px; }
+.pain .sit .pn { font-family: var(--mono); font-size: 12px; color: var(--on-accent); background: var(--branch-grad); border-radius: 7px; padding: 4px 8px; flex: none; line-height: 1; margin-top: 2px; }
+.pain .sit h5 { font-family: var(--display); font-weight: 600; font-size: 16.5px; color: var(--ink); margin: 0; line-height: 1.3; }
+.pain .row { display: flex; gap: 10px; font-size: 14px; margin: 10px 0 0; }
+.pain .row .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 6px; flex: none; height: fit-content; margin-top: 2px; }
+.pain .row.without .tag { color: var(--rose); border: 1px solid rgba(255,107,138,.42); }
+.pain .row.with .tag { color: var(--mint); border: 1px solid rgba(52,232,160,.42); }
+.pain .row p { margin: 0; color: var(--ink-2); }
+.pain .row.with p strong { color: var(--ink); }
+
 /* ---- Use-case gallery ----------------------------------------------------- */
 .gallery-intro { margin-bottom: 18px; }
 .uc { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); margin-bottom: 14px; overflow: hidden; }

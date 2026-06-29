@@ -6,10 +6,19 @@
 <title>agenticow — Git for Agent Memory</title>
 <meta name="description" content="agenticow is 'Git for Agent Memory': instead of copying an AI agent's entire vector memory to snapshot, fork, or checkpoint it, agenticow branches it — copy-on-write, like Git — so a fork, checkpoint, or rollback costs ~162 bytes and ~0.47 ms, flat. A plain-English explainer of Reuven Cohen's (@ruvnet) agenticow.">
 <meta name="author" content="Explainer for agenticow by Reuven Cohen / @ruvnet">
+<meta property="og:site_name" content="agenticow explainer">
 <meta property="og:title" content="agenticow — Git for Agent Memory">
-<meta property="og:description" content="Branch an agent's vector memory copy-on-write — fork, checkpoint, and roll back in ~162 bytes and ~0.47 ms, flat, no matter how big the memory is. 83× faster, 3000× smaller snapshots.">
+<meta property="og:description" content="Your AI agent's memory, branched like Git. Give every user their own private memory, save a checkpoint before a risky step, and undo a bad one — in ~162 bytes and ~0.47 ms, instead of copying the whole thing.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="/assets/img/hero.png">
+<meta property="og:url" content="https://agenticow-explainer.netlify.app/">
+<meta property="og:image" content="https://agenticow-explainer.netlify.app/assets/img/og-card.png">
+<meta property="og:image:width" content="1536">
+<meta property="og:image:height" content="1024">
+<meta property="og:image:alt" content="A glowing violet base node branching into mint copies — copy-on-write, like Git — beside a friendly cow mascot.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="agenticow — Git for Agent Memory">
+<meta name="twitter:description" content="Branch your AI agent's memory like Git: a private copy per user, an instant checkpoint, a one-step undo — for ~162 bytes instead of copying the whole memory.">
+<meta name="twitter:image" content="https://agenticow-explainer.netlify.app/assets/img/og-card.png">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/styles.css">
 </head>
@@ -196,25 +205,43 @@
       <span class="s-num">02</span>
       <span class="s-head">
         <span class="s-q">Q2 · What problem does it solve?</span>
-        <h2 class="s-title">Agents need memory that branches — but every vector DB makes you full-copy it</h2>
-        <p class="s-sub">A per-user layer, a risky-ingest sandbox, a checkpoint before a tool call, a thousand parallel experiments… each one is a whole copy.</p>
+        <h2 class="s-title">Every AI agent needs a memory. The trouble starts when you need more than one version of it.</h2>
+        <p class="s-sub">The natural fix — copy the memory — is so expensive that most people quietly stop doing the safe, smart things. That avoidance is the real cost.</p>
       </span>
       <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
     </summary>
     <div class="s-body">
-      <p class="lead-in">The README puts it plainly: <em>"Agents need memory that branches: a per-user personalization layer, a sandbox to test a risky ingest, a checkpoint before a tool call, a thousand parallel experiments off one shared base. With a normal vector DB each of those is a <strong>full copy</strong> of the whole index."</em></p>
+      <p class="lead-in">Start from the very beginning. An AI agent's <strong>memory</strong> is just everything it has been given and has learned — your documents, your corrections, what's happened so far. One memory, shared by everyone using it, is fine… until the day you need <strong>a second version of it</strong>: a private memory for one customer, a safe place to test a risky new batch of documents, or a "save point" you can return to if something goes wrong.</p>
 
-      <table class="tbl">
-        <thead><tr><th>What you actually want</th><th>What a normal vector DB forces</th></tr></thead>
-        <tbody>
-          <tr><td class="after"><strong>A private memory per user</strong></td><td class="before">A full copy of the index for every user — hundreds of MB each.</td></tr>
-          <tr><td class="after"><strong>A sandbox for a risky import</strong></td><td class="before">Copy the whole base first, or risk poisoning production memory.</td></tr>
-          <tr><td class="after"><strong>A checkpoint before a tool call</strong></td><td class="before">Snapshot = another full copy of everything.</td></tr>
-          <tr><td class="after"><strong>1,000 parallel experiments</strong></td><td class="before">1,000 full copies — <em>"496 MB and 67 ms — every time."</em></td></tr>
-        </tbody>
-      </table>
+      <p>The obvious way to make a second version is to <strong>copy the memory</strong>. And that's the trap. An agent's memory is big — so copying it is like <strong>photocopying an entire filing cabinet just to jot one note on one page</strong>, or duplicating a 50&nbsp;GB video game every single time you want a save point. It's so slow and so wasteful that, in practice, people just <em>don't</em> — and then they live with the consequences of <em>not</em> having separate versions.</p>
 
-      <p>agenticow makes each of those <em>"<strong>162 bytes and 0.47 ms</strong>, flat."</em> The thing that was a budget-buster becomes near-free.</p>
+      <div class="note"><span class="lab">The core problem in one line</span>It's not that copying memory is impossible — it's that it's expensive enough that you <strong>avoid the safe, smart things</strong> (per-user privacy, save-points, sandboxing, experiments). agenticow makes a separate version cost <strong>162 bytes</strong> instead of hundreds of megabytes — so you simply stop having to choose.</div>
+
+      <h4>Four ways this quietly bites you — and how agenticow fixes each</h4>
+      <div class="pains">
+        <div class="pain">
+          <div class="sit"><span class="pn">1</span><h5>Everyone's data ends up in one shared brain</h5></div>
+          <div class="row without"><span class="tag">Without</span><p>You'd love to give each customer their own private memory, but a full copy per customer costs hundreds of MB each — unaffordable. So you cram everyone into <em>one</em> shared memory, and one customer's private notes start surfacing in another customer's answers.</p></div>
+          <div class="row with"><span class="tag">With</span><p>Each customer gets their own <strong>branch</strong> — 162 bytes, instant. Private and isolated by construction. The repo measured <strong>0 leaks across 1,000 customers</strong>.</p></div>
+        </div>
+        <div class="pain">
+          <div class="sit"><span class="pn">2</span><h5>You're afraid to teach it anything new</h5></div>
+          <div class="row without"><span class="tag">Without</span><p>You want to feed the agent a big new batch of documents to make it smarter — but if the batch is messy and makes it <em>worse</em>, there's no clean undo. You'd be rebuilding from a backup and losing work. So you play it safe and the agent stays frozen.</p></div>
+          <div class="row with"><span class="tag">With</span><p>Drop a <strong>checkpoint</strong>, feed in the new docs, and if it's bad, <strong>roll back in about half a millisecond</strong>. Experimenting is finally safe, so the agent keeps getting better.</p></div>
+        </div>
+        <div class="pain">
+          <div class="sit"><span class="pn">3</span><h5>One bad document poisons the whole memory</h5></div>
+          <div class="row without"><span class="tag">Without</span><p>The agent ingests a document from somewhere you don't fully trust — a web page, a user upload. If it's malicious or garbage, it's now blended into the real memory, quietly corrupting answers, and pulling it back out cleanly is a nightmare.</p></div>
+          <div class="row with"><span class="tag">With</span><p>Ingest it into a <strong>throwaway branch</strong> first, inspect it, and if it's bad, discard the branch — the repo's red-team run reports <strong>0 vectors ever reached the real memory</strong> (rolled back in 1.1&nbsp;ms).</p></div>
+        </div>
+        <div class="pain">
+          <div class="sit"><span class="pn">4</span><h5>You can only afford to try once</h5></div>
+          <div class="row without"><span class="tag">Without</span><p>You'd like to try 100 different ways of organizing the memory and keep whichever works best. But each attempt is a full copy — 100× the storage and time — so you try one or two and settle for "good enough."</p></div>
+          <div class="row with"><span class="tag">With</span><p>100 branches cost about <strong>16&nbsp;KB total</strong>. Try them all in parallel, keep the winner, and throw the rest away <strong>for free</strong>.</p></div>
+        </div>
+      </div>
+
+      <p style="margin-top:20px;">Every one of those is the <em>same</em> root cause — copying a memory is expensive — and the <em>same</em> fix: branch it instead. A full copy at a million vectors is <em>"496&nbsp;MB and 67&nbsp;ms — every time."</em> agenticow makes it <em>"<strong>162 bytes and 0.47&nbsp;ms</strong>, flat."</em></p>
 
       <div class="dual">
         <figure class="vfig">
