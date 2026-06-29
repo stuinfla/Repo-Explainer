@@ -109,4 +109,55 @@
       });
     });
   });
+
+  /* ---- 6. Lightbox: click any diagram/illustration to view it large ------ */
+  var zoomables = document.querySelectorAll(".svgwrap svg, .vbody img");
+  if (zoomables.length) {
+    var lb = document.createElement("div");
+    lb.className = "lightbox";
+    lb.setAttribute("hidden", "");
+    var closeBtn = document.createElement("button");
+    closeBtn.className = "lb-close";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.textContent = "×";
+    var stage = document.createElement("div");
+    stage.className = "lb-stage";
+    var cap = document.createElement("p");
+    cap.className = "lb-cap";
+    lb.appendChild(closeBtn); lb.appendChild(stage); lb.appendChild(cap);
+    document.body.appendChild(lb);
+
+    function closeLb() {
+      lb.setAttribute("hidden", "");
+      stage.innerHTML = "";
+      cap.textContent = "";
+      document.body.style.overflow = "";
+    }
+    function openLb(node, caption) {
+      stage.innerHTML = "";
+      var clone = node.cloneNode(true);
+      clone.removeAttribute("width");
+      clone.removeAttribute("height");
+      stage.appendChild(clone);
+      cap.textContent = caption || "";
+      lb.removeAttribute("hidden");
+      document.body.style.overflow = "hidden";
+    }
+
+    Array.prototype.forEach.call(zoomables, function (el) {
+      el.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var fig = el.closest("figure");
+        var capEl = fig ? fig.querySelector(".vcap") : null;
+        openLb(el, capEl ? capEl.textContent : "");
+      });
+    });
+    // Click the backdrop (or close button) to dismiss; clicks on the artwork do not.
+    lb.addEventListener("click", closeLb);
+    stage.addEventListener("click", function (e) { e.stopPropagation(); });
+    closeBtn.addEventListener("click", function (e) { e.stopPropagation(); closeLb(); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !lb.hasAttribute("hidden")) closeLb();
+    });
+  }
 })();

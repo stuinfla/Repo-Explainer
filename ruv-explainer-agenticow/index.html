@@ -545,7 +545,7 @@
       <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
     </summary>
     <div class="s-body">
-      <p class="gallery-intro lead-in">Open any card to see the situation, the exact command, what it does, and a diagram of what happens. (All eight map to scripts in <code class="inl">examples/</code>, per <code class="inl">examples/README.md</code>.)</p>
+      <p class="gallery-intro lead-in">This is the fun part: <strong>half a dozen or so real examples of how you actually use this</strong> — to make your agent (sorry in advance) <em>udderly</em> more efficient. Open any card for the situation, the exact command, what it does, and a diagram of what happens. (Every one maps to a script in <code class="inl">examples/</code>, per <code class="inl">examples/README.md</code>.)</p>
 
       <div class="dual">
         <figure class="vfig">
@@ -556,22 +556,22 @@
         <figure class="vfig">
           <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M6 6v8"/></svg> Technical view — how the 8 demos relate</figcaption>
           <div class="svgwrap">
-            <svg viewBox="0 0 560 180" role="img" aria-label="The eight demos grouped: fan out, isolate, time-travel, merge, and verify.">
-              <g font-family="JetBrains Mono, monospace" font-size="8.5">
-                <rect x="12" y="20" width="168" height="46" rx="9" fill="#0e1d16" stroke="#34e8a0"/>
-                <text x="96" y="38" text-anchor="middle" fill="#34e8a0">FAN OUT</text>
-                <text x="96" y="52" text-anchor="middle" fill="#8aa394">1 parallel · 2 multi-tenant</text>
-                <rect x="192" y="20" width="168" height="46" rx="9" fill="#0e1d16" stroke="#ff6b8a"/>
-                <text x="276" y="38" text-anchor="middle" fill="#ff6b8a">ISOLATE &amp; REWIND</text>
-                <text x="276" y="52" text-anchor="middle" fill="#8aa394">3 red-team · 4 time-travel</text>
-                <rect x="372" y="20" width="176" height="46" rx="9" fill="#0e1d16" stroke="#9b8cff"/>
-                <text x="460" y="38" text-anchor="middle" fill="#b3a6ff">MERGE</text>
-                <text x="460" y="52" text-anchor="middle" fill="#8aa394">5 A/B+promote · 6 compliance</text>
-                <rect x="192" y="92" width="168" height="40" rx="9" fill="#0a160f" stroke="#2fd6c6"/>
-                <text x="276" y="110" text-anchor="middle" fill="#2fd6c6">VERIFY</text>
-                <text x="276" y="124" text-anchor="middle" fill="#8aa394">7 bench · 8 acceptance (8/8)</text>
+            <svg viewBox="0 0 480 232" role="img" aria-label="The eight demos grouped into four families: fan out, isolate and rewind, merge, and verify — all built on one cheap copy-on-write branch.">
+              <g font-family="JetBrains Mono, monospace">
+                <rect x="10" y="16" width="222" height="72" rx="11" fill="#0e1d16" stroke="#34e8a0"/>
+                <text x="121" y="47" text-anchor="middle" font-size="14" fill="#34e8a0">FAN OUT</text>
+                <text x="121" y="69" text-anchor="middle" font-size="10.5" fill="#8aa394">1 parallel · 2 multi-tenant</text>
+                <rect x="248" y="16" width="222" height="72" rx="11" fill="#0e1d16" stroke="#ff6b8a"/>
+                <text x="359" y="47" text-anchor="middle" font-size="14" fill="#ff6b8a">ISOLATE &amp; REWIND</text>
+                <text x="359" y="69" text-anchor="middle" font-size="10.5" fill="#8aa394">3 red-team · 4 time-travel</text>
+                <rect x="10" y="100" width="222" height="72" rx="11" fill="#0e1d16" stroke="#9b8cff"/>
+                <text x="121" y="131" text-anchor="middle" font-size="14" fill="#b3a6ff">MERGE</text>
+                <text x="121" y="153" text-anchor="middle" font-size="10.5" fill="#8aa394">5 A/B + promote · 6 compliance</text>
+                <rect x="248" y="100" width="222" height="72" rx="11" fill="#0a160f" stroke="#2fd6c6"/>
+                <text x="359" y="131" text-anchor="middle" font-size="14" fill="#2fd6c6">VERIFY</text>
+                <text x="359" y="153" text-anchor="middle" font-size="10.5" fill="#8aa394">7 bench · 8 acceptance (8/8)</text>
               </g>
-              <text x="280" y="160" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#5d7567">all built on one primitive: a cheap copy-on-write branch</text>
+              <text x="240" y="208" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" fill="#5d7567">all built on one primitive: a cheap copy-on-write branch</text>
             </svg>
           </div>
           <figcaption class="vcap">The eight demos in four groups: fan out, isolate &amp; rewind, merge, and verify — every one built on the same cheap copy-on-write branch.</figcaption>

@@ -364,6 +364,38 @@ code.inl { font-size: .9em; background: var(--panel-3); padding: 1.5px 6px; bord
 .muted { color: var(--muted); }
 .kbd { font-family: var(--mono); font-size: .85em; background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
 
+/* ---- Click-to-enlarge: every diagram/illustration is zoomable ------------- */
+.svgwrap, .vbody { position: relative; }
+.svgwrap svg, .vbody img { cursor: zoom-in; }
+.svgwrap::after, .vbody::after {
+  content: "⤢ enlarge"; position: absolute; top: 8px; right: 10px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .04em; color: var(--ink);
+  background: rgba(8,18,14,.78); border: 1px solid var(--line-strong); border-radius: 7px;
+  padding: 3px 8px; opacity: 0; transition: opacity .15s var(--ease); pointer-events: none;
+}
+.svgwrap:hover::after, .vbody:hover::after { opacity: 1; }
+
+.lightbox {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+  padding: 5vh 4vw; background: rgba(5,12,9,.93); backdrop-filter: blur(9px); cursor: zoom-out;
+}
+.lightbox[hidden] { display: none; }
+.lightbox .lb-stage {
+  background: var(--bg-2); border: 1px solid var(--line-strong); border-radius: 16px;
+  padding: 24px; box-shadow: var(--shadow-deep); display: flex;
+  max-width: 96vw; max-height: 84vh; cursor: default;
+}
+.lightbox .lb-stage svg { width: min(92vw, 1200px); height: auto; max-height: 78vh; }
+.lightbox .lb-stage img { max-width: 92vw; max-height: 78vh; width: auto; height: auto; border-radius: 10px; }
+.lightbox .lb-cap { font-family: var(--sans); font-size: 13.5px; color: var(--ink-2); max-width: 760px; text-align: center; margin: 0; cursor: default; }
+.lightbox .lb-close {
+  position: fixed; top: 18px; right: 22px; width: 42px; height: 42px; border-radius: 11px;
+  border: 1px solid var(--line-strong); background: var(--panel); color: var(--ink);
+  font-size: 23px; line-height: 1; cursor: pointer; display: grid; place-items: center;
+}
+.lightbox .lb-close:hover { background: var(--panel-2); color: var(--mint); }
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
