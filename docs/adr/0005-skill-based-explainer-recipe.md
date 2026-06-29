@@ -1,6 +1,6 @@
 # ADR-0005: The Skill-Based Explainer Recipe — One Brain, Three Doors
 
-Updated: 2026-06-28 21:30:00 EDT | Version 1.3.0
+Updated: 2026-06-29 01:00:00 EDT | Version 1.5.0
 Created: 2026-06-28 00:00:00 EDT
 
 **Status:** Accepted.
@@ -216,16 +216,27 @@ BuildContext {
   content:     { sections: { hero, problem, whatItIs, insight, howItWorks,
                              useCases, getStarted, pack }, citations[] }  // S3
   visuals:     ImageLadder  // { id, role, prompt, file, dims, status } per arc question  // S4
-  favicon:     { sourceImage, files[] }                                  // S5
+  brand:       { faviconSet, appleTouchIcon,
+                 socialCard: { px, url },         // the 1200×630 S5 card (tagline baked in)
+                 og, twitter }                                           // S5 (mirrors DDD §8.6 brand slot)
   site:        { dir, html, css, tokensUsed, packZipPath }               // S6
   scorecard:   Scorecard  // gateA[A1..A5], gateB[B1..B5], per-device, per-iteration  // S7
   publish:     { repoUrl, liveUrl, ownerInvited }                        // S8
+  readmePr:    { url, declined } | null                                  // S8b (optional — offered; null when declined)
   notify:      { emailSent, smtpCode }                                   // S9
 }
 ```
 
 Each station has a **loud postcondition** (the "cue"). A station that cannot record its evidence has
 not passed (INV-04, Never-Fail-Silently).
+
+> **One contract, two views.** This shape is **illustrative**; it and the DDD's `BuildContext`
+> (`docs/ddd/repo-explainer-recipe-domain.md` §8.6) are **the same single contract** modelled under
+> two naming conventions — the ADR names slots by station artefact (`repo`/`kb`/`brief`/`content`/
+> `visuals`/`brand`/`site`/`scorecard`/`publish`/`readmePr`/`notify`), the DDD names them by domain
+> concern (`validation`/`understanding`/`page`+`pack`/`deployment`/`readmePr`/`notification`). Neither
+> adds nor drops data versus the other; the `brand` slot and the optional `readmePr?` slot above exist
+> in both.
 
 ### D5 — Authoring model: "concept-then-render" (the decided fork)
 
@@ -341,6 +352,14 @@ stations in order, filling `BuildContext` slot by slot; the tools do the mechani
 > **deploys an already-great page**. QUALITY (S7) therefore precedes PUBLISH/DEPLOY (S8). "Render the
 > LIVE page" means a real browser rendering the real assembled page — live pixels — not the
 > production URL.
+>
+> **This ADR is canonical on how the gate gets its pixels.** There is **no pre-grade ("scratch")
+> deploy** and **no `gradingDeploy` `BuildContext` slot**: the page is rendered **once** (D4) and
+> graded on a **locally-served Playwright render** of the assembled site. The **only** deploy is the
+> single Station 8 deploy of the already-passed page. Any DDD modelling of an earlier grading-deploy
+> (a `gradingDeploy` slot, a transient scratch LIVE URL, a per-iteration re-deploy) is **superseded by
+> this render-once / judge-before-deploy decision** and must conform — where the DDD conflicts, this
+> ADR governs.
 
 ### Station 0 — VALIDATE
 - **Do:** Parse the repo URL; confirm the repo is reachable. Support private repos and the owner's
@@ -502,8 +521,11 @@ stations in order, filling `BuildContext` slot by slot; the tools do the mechani
   *GitHub is the new AI-world social media* — and **prepare suggested topic/description improvements
   for the SOURCE repo** (offered, never forced — delivered in the Station 8b README PR and/or the
   Station 9 email).
-- **Tools:** `tools/publish-repo`, `tools/deploy` (pure wrappers over `gh` + Vercel; per-build
-  project so builds never collide), `tools/repo-seo` (pure: sets the explainer-repo topics +
+- **Tools:** `tools/publish-repo`, `tools/deploy` (pure wrapper over `gh` + the deploy provider —
+  **default Netlify**, chosen for its clean auto `{repo}-explainer.netlify.app` URL with **zero DNS
+  work** and first-class git-connected auto-deploy so the owner's later edits redeploy themselves;
+  the adapter is **provider-agnostic**, so Vercel is a one-line swap-in and there is no lock-in; a
+  **per-build site** so builds never collide), `tools/repo-seo` (pure: sets the explainer-repo topics +
   description via the GitHub API; emits the source-repo suggestions).
 - **Cue:** **live URL returns 200 unauthenticated**, the **repo is public**, the **owner is invited**,
   and the **explainer repo has topics + a description set** (verified via the GitHub API).
@@ -591,11 +613,20 @@ build can pass one while failing the other.
 ### Three sets of eyes on the actual pixels — every time
 
 1. **The vision model** scores each criterion with a **written rationale citing what it SEES**.
-2. **The operator (Claude)** views the **same screenshots** before declaring done.
-3. **The owner** receives the **scorecard + the mobile AND desktop screenshots** and judges by eye.
+2. **The operator (Claude)** views the **same screenshots** before declaring the gate passed.
+3. **The owner** receives the **scorecard + the mobile AND desktop screenshots** (at Station 9) and
+   judges by eye.
 
-"**Done**" = real screenshots, **≥ 95 on every line of both rubrics, on both devices, and all three
-eyes agree.** Anything less is not done.
+**What gates Station 7 are the two eyes that see the pixels before ship** — the vision model **and**
+the operator — **both agreeing**, with the **MINIMUM across all criteria ≥ 95 on both devices**. That
+is `BuildPassed`; the owner does **not** gate S7 (they have not seen it yet). The **owner is the
+post-delivery third eye**: they see the result at Station 9, and an **owner rejection re-opens the
+same surgical refine / rebuild back-edge** (re-render → re-score → re-deliver) — it reopens the loop,
+it does not block the original gate.
+
+"**Done**" = real screenshots, **≥ 95 on every line of both rubrics on both devices, the two pre-ship
+eyes (vision + operator) agree, and the post-delivery third eye (the owner) does not reject.** Anything
+less is not done.
 
 ---
 
@@ -603,6 +634,15 @@ eyes agree.** Anything less is not done.
 
 These are always-true properties, enforced in code (design system + tools) and at the gate. The DDD
 (`docs/ddd/repo-explainer-recipe-domain.md`) models them as first-class domain concepts.
+
+> **This register is an intentional subset.** INV-01..08 below are the eight cross-cutting invariants
+> and match the DDD §13 numbering **exactly**. The DDD §13 carries the **full INV-01..17 set**: it
+> elevates to numbered invariants four PLUS additions — **INV-13 SEO-present, INV-14 ships-social-card,
+> INV-15 structural-diagrams-as-SVG, INV-17 verified-image-primary** — plus brain/tools-split,
+> render-once, arc-altitude, and idempotency. This ADR carries those four-plus as **narrative
+> decisions** (D4 brain/tools-split + render-once, D6 arc-altitude, D7 verified-image-primary + SVG,
+> Station 5/6 SEO + social card), not as numbered invariants. **Cross-references to INV-09..17 resolve
+> in the DDD §13**, not here.
 
 - **INV-01 — Build isolation.** Each build is self-contained with its own per-build deploy target;
   builds never collide.

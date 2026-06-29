@@ -1,8 +1,10 @@
 # Repo Explainer (Recipe) — Domain-Driven Design Model
 
-**Version:** 1.0.0
+**Version:** 1.1.0
 **Created:** 2026-06-28
-**Updated:** 2026-06-28
+**Updated:** 2026-06-28 (ADR-0005 alignment: local-render quality gate before deploy; primer +
+structured-extraction outputs + studio-less make-dropin in the pack; embed-block prerequisite;
+build-time image probe + raster-size wording)
 **Status:** Accepted — authoritative for the converged "one-brain skill" architecture.
 **Paired ADR:** `docs/adr/0005-skill-based-explainer-recipe.md` (the converged decision).
 **Supersedes (the pipeline approach only):** the multi-phase GitHub-Actions / `scripts/phase*.mjs`
@@ -63,10 +65,14 @@ phases 3–6 hard-exited without it), it never shipped the KB pack, and it faile
 workflow validation on every push.
 
 **P3 — Reuse the real KB engine.** The working KB engine already exists and is wrapped, not
-rebuilt: `kb/build-kb.mjs` (builds the RVF KB), `kb/ask-kb.mjs` (HNSW retrieval CLI),
-`kb/make-dropin.mjs` (assembles the downloadable AI pack), `kb/kb-mcp-server.mjs` (MCP server
-over the KB). The duplicate `scripts/phase2-build-kb.mjs` and the `scripts/knowledge-pack-assets/` fork
-are deleted. The Understanding context's tools are thin wrappers over these four files.
+rebuilt: `kb/build-kb.mjs` (builds the RVF KB), the structured-extraction scripts
+`kb/extract-symbols.mjs` / `kb/dep-graph.mjs` / `kb/entrypoints.mjs` (+ `kb/index-primer.mjs`),
+`kb/ask-kb.mjs` (HNSW retrieval CLI), `kb/make-dropin.mjs` (assembles the downloadable AI pack),
+`kb/kb-mcp-server.mjs` (MCP server over the KB). The duplicate `scripts/phase2-build-kb.mjs` and the
+`scripts/knowledge-pack-assets/` fork are deleted. The Understanding/Assembly tools are thin wrappers
+over these files — reused as-is save **one** acknowledged change: the pack builder is invoked with a
+`--no-studio` relaxation of `make-dropin.mjs`'s studio guard (§6.5), so a studio-less ship does not
+throw.
 
 **P4 — Brain = judgment, Tools = mechanics (strict split).** The Brain decides: understand,
 conceive, author, judge quality. Tools execute mechanics: embed, call the image API, screenshot,
@@ -153,7 +159,7 @@ is the trunk. This triangle is the anti-brittleness architecture made concrete.
 | **TargetOwner** | The GitHub user/org that owns the TargetRepo. Invited as a collaborator on the ExplainerRepo (best-effort). |
 | **ExplainerRepo** | The new repo created to host the explainer. Distinct from TargetRepo — never conflate. |
 | **RVF KB** | The RuVector/RVF binary vector knowledge base built from the TargetRepo by `kb/build-kb.mjs`. The ONLY knowledge artifact; all grounding flows through HNSW retrieval against it (never invented claims, never flat JSON). |
-| **AIKnowledgePack** | The downloadable "for-AI" bundle assembled by `kb/make-dropin.mjs`: the `.rvf` binary, its `.passages.jsonl` sidecar, the `ask-kb.mjs` search CLI, and the `kb-mcp-server.mjs` MCP server. Every explainer ships one (INV-07). |
+| **AIKnowledgePack** | The downloadable bundle assembled by the **studio-less** `kb/make-dropin.mjs` (§6.5). Its **for-AI** half: the `.rvf` binary (+ `.rvf.idmap.json` + `.rvf.embed.json`), the `.passages.jsonl` sidecar, the `.ids.json` index, the **three structured indexes** `<slug>-symbols.json` / `<slug>-dep-graph.json` / `<slug>-entrypoints.json` (without them three of the MCP server's four tools return nothing), the `ask-kb.mjs` search CLI, and the `kb-mcp-server.mjs` MCP server. Its **for-humans** half: the authored **`<slug>-primer.md`** (a hard `make-dropin` line-79 `must()` prerequisite). Every explainer ships one (INV-07). |
 | **ArtDirectionBrief** | Value object (§8.1): the conceived, repo-specific creative direction — metaphor, palette, type personality, layout rhythm, hero concept, copy voice. The output of CONCEIVE. |
 | **ComprehensionArc** | Value object (§8.2): the ordered sequence of reader questions that drives BOTH section order and image order. |
 | **ImageLadder** | Value object (§8.3): the ordered set of rungs, each bound to one arc question, ordered high-level → low-level (altitude descends). Each rung is rendered by one of two media: **structural/explanatory rungs as SVG** (big-idea, the "aha" insight, architecture, flow — authored as ASCII then converted by `ascii-to-svg`), **emotional/illustrative rungs as raster** (hero, problem, scenario — via gpt-image-2). |
@@ -205,8 +211,18 @@ orchestrates them; the `Build` aggregate sequences them.
 
 ### 6.2 Understanding / KB
 Validates the URL and reachability (Station 0), clones the TargetRepo, and builds the **RVF KB**
-via `kb/build-kb.mjs` (Station 1). The Brain reads the repo deeply and confirms the KB can answer
-"what is this repo?" correctly and names the repo correctly. Publishes `RepoUnderstood` with a
+via `kb/build-kb.mjs` (Station 1). Each explainer target MUST register an explicit **`embed` block**
+in `kb/kb.config.mjs` so build-kb writes the canonical un-suffixed `<slug>-kb.rvf` — on the bare
+MiniLM default it writes `<slug>-kb.`**`small`**`.rvf`, which `kb/make-dropin.mjs` (it globs
+`<slug>-kb.rvf`) cannot find (per ADR-0005 D3 / Appendix). Station 1 then runs the
+**structured-extraction build step** (`kb/extract-symbols.mjs` / `kb/dep-graph.mjs` /
+`kb/entrypoints.mjs` → `<slug>-symbols.json` / `<slug>-dep-graph.json` / `<slug>-entrypoints.json`)
+— these are **prerequisites of the Station 6 pack**, read by the MCP server's `lookup_symbol` /
+`get_dep_graph` / `get_entrypoints` tools. The Brain reads the repo deeply, confirms the KB can
+answer "what is this repo?" correctly and names the repo correctly, and **authors the for-humans
+`<slug>-primer.md`** (a top-down orientation; a **hard Station-6 prerequisite** — `kb/make-dropin.mjs`
+line 79 `must()`s it and throws `missing: <slug>-primer.md` if absent), after which
+`kb/index-primer.mjs` indexes that authored primer into the store. Publishes `RepoUnderstood` with a
 **KB handle** (path + passage count) into `BuildContext.understanding`. Downstream grounding uses
 `kb/ask-kb.mjs` (HNSW retrieval) only — no invented claims (INV-06). Because the KB exists after
 Station 1, the AIKnowledgePack build can start here and overlap Conceive + Author (§10.3).
@@ -232,16 +248,16 @@ Produces the `ImageLadder` + hero (Station 4) across **two media**, by altitude/
   problem, scenario). **Image engine: `gpt-image-2` is the VERIFIED PRIMARY** — confirmed in this
   project on 2026-06-28 via `GET https://api.openai.com/v1/models/gpt-image-2` → HTTP 200
   `{id: gpt-image-2, owned_by: system}` (per ADR-0005 **D7** / **Station 4 (VISUALIZE)** / the
-  Appendix image-engine row). Generate at **quality `high`**, **hero 1536×1024**, **diagrams /
+  Appendix image-engine row). Generate at **quality `high`**, **hero 1536×1024**, **raster
   section images 1024×1024** (gpt-image-2 valid sizes: `1024×1024`, `1024×1536`, `1536×1024`,
-  `auto`). **`gpt-image-1` is the FALLBACK ONLY**, used solely if a runtime availability probe of
-  `gpt-image-2` fails. Station 4 probes `gpt-image-2` at run time (`GET /v1/models/gpt-image-2`)
-  and proceeds against it on 200 (the expected, verified path); on a probe failure it falls back
-  loud to `gpt-image-1` — it never silently downgrades.
+  `auto`). **`gpt-image-1` is the FALLBACK ONLY**, used solely if a **build-time availability
+  probe** of `gpt-image-2` fails. Station 4 runs the **build-time availability probe**
+  (`GET /v1/models/gpt-image-2`) and proceeds against it on 200 (the expected, verified path); on a
+  probe failure it falls back loud to `gpt-image-1` — it never silently downgrades.
 
 The two media split cleanly: **`ascii-to-svg` = structure/explanation; gpt-image-2 = feeling/
 metaphor.** Raster rungs generate in parallel; the favicon **set** and the **social card** are
-derived from the hero identity at **Station 5 (Brand & Social, §6.5)**. Each rung must be valid +
+derived from the hero identity at **Station 5 (Brand & Social)**, modeled in this §6.4. Each rung must be valid +
 HTTP 200 (raster) or valid SVG (xmllint-clean), and answer its assigned arc question at the right
 altitude (§9). Imagery must be BOTH beautiful AND explanatory — never pretty-but-useless, never
 geeky-low-level-first. Publishes `VisualsGenerated` into `BuildContext.visuals` (raster rungs +
@@ -249,8 +265,14 @@ svg rungs) and seeds `BuildContext.brand` from the hero.
 
 ### 6.5 Assembly
 Renders the **Page once** from the `DesignSystem` + the `ArtDirectionBrief` + content + the
-`ImageLadder` (raster rungs + SVG rungs) (Station 6), and builds the **AIKnowledgePack** via
-`kb/make-dropin.mjs`. Assembly also bakes in two REQUIRED surfaces and wires them into `<head>`:
+`ImageLadder` (raster rungs + SVG rungs) (Station 6), and builds the **AIKnowledgePack** via the
+**studio-less variant** of `kb/make-dropin.mjs`. (`make-dropin.mjs` as it stands carries a hard
+studio guard — lines 78–92 — that throws *"Refusing to build a studio-less drop-in"* unless studio
+media exists; because this model ships **studio-less first** (INV-03), the pack builder is invoked
+with a `--no-studio` relaxation of that guard. This is the **one** acknowledged change to the
+otherwise-reused engine; studio media, when it later exists, is re-packed on the studio follow-up.
+Mirrors ADR-0005 Station 6, jointly satisfying INV-03 + INV-07.) Assembly also bakes in two REQUIRED
+surfaces and wires them into `<head>`:
 - **SEO surface (11c).** `<title>`, meta description, canonical URL, semantic HTML, JSON-LD
   `schema.org SoftwareApplication`, plus root-level `sitemap.xml`, `robots.txt`, and **`llms.txt`**
   (machine-readable summary for AI crawlers). Premise: GitHub/the open web is the new AI-world
@@ -261,13 +283,18 @@ Renders the **Page once** from the `DesignSystem` + the `ArtDirectionBrief` + co
   tagline drives `og:description` and the card copy.
 
 The checkpoint cue is sharp: zero dangling refs/tokens; the pack opens, the KB loads, search
-returns hits; **and the SEO presence check passes** (title + meta description + canonical + JSON-LD
-+ `sitemap.xml` + `robots.txt` + `llms.txt` + OG/Twitter meta + favicon links all present). Publishes
-`PageAssembled` into `BuildContext.page` (incl. `seo`) / `BuildContext.pack`. No string markers are
-matched here — the component system consumes typed slots from `BuildContext`.
+returns real passage TEXT; **the MCP server's `lookup_symbol` / `get_entrypoints` / `get_dep_graph`
+each return real data** (proving the three structured JSONs shipped); **the authored
+`<slug>-primer.md` is present in the pack's `for-humans/` half**; **and the SEO presence check
+passes** (title + meta description + canonical + JSON-LD + `sitemap.xml` + `robots.txt` + `llms.txt`
++ OG/Twitter meta + favicon links all present). Publishes `PageAssembled` into `BuildContext.page`
+(incl. `seo`) / `BuildContext.pack`. No string markers are matched here — the component system
+consumes typed slots from `BuildContext`.
 
 ### 6.6 Quality (the heart — §12)
-Renders the **LIVE** Page (after a real deploy) at 390px (mobile) and 1440px (desktop), takes
+Renders the assembled Page **LIVE** in a real browser — Playwright against the **locally-served**
+assembled site (live pixels, **not** a deployed URL; there is **no pre-quality deploy**) — at
+390px (mobile) and 1440px (desktop), takes
 full-page screenshots, and runs the **dual-gate** vision scoring (A1–A5 substance, B1–B5 craft)
 as a harsh critic. The gate also judges the **SocialCard** and the **SVG diagrams** for delight +
 craft (they fall under B4 polish / B5 imagery craft), and an **SEO-presence check** joins the
@@ -283,8 +310,9 @@ Page to its own URL, and sets **RepoSEO** on the ExplainerRepo — GitHub **topi
 **description** (via API), so the repo itself is discoverable (Station 8). Checkpoint cue: the
 LiveURL returns 200 **unauthenticated**; repo is public; owner invited; **topics + description
 set**. Publishes `Deployed` into `BuildContext.deployment` (incl. `repoTopics/description`).
-(Quality drives an earlier deploy so it can screenshot the LIVE page; Publishing is the final,
-public one.)
+(Quality grades the page on a LOCAL Playwright render of the assembled site — so Publishing is the
+**FIRST and only** deploy, of an already-passed page: QUALITY (S7) precedes PUBLISH (S8), per
+ADR-0005.)
 
 **Station 8b — README PR (OPTIONAL, 11b).** If accepted, Publishing also offers to enhance the
 **TargetRepo**'s README via `~/.claude/skills/readme-enhance` — a clear architectural explanation
@@ -319,7 +347,7 @@ run the core (or dispatch a job whose only step runs the core)".
 | Quality | Publishing | Gatekeeper. Only `BuildPassed` (MIN ≥ 95) opens this edge. |
 | Publishing | Notification | Customer-Supplier. Outcome supplied; result returned + emailed. |
 | GitHub API | Understanding/Publishing | ACL (clone, repo create, invite, set topics/description, open README PR on the source repo — 8b). |
-| Image engine (gpt-image-2 primary → gpt-image-1 fallback) | Visual | ACL (ImageGenerationACL — **gpt-image-2 is the VERIFIED primary**: `GET /v1/models/gpt-image-2` → HTTP 200 on 2026-06-28; `gpt-image-1` is the fallback used only if a runtime probe of gpt-image-2 fails; per ADR-0005 D7 / Station 4 / Appendix image-engine row). |
+| Image engine (gpt-image-2 primary → gpt-image-1 fallback) | Visual | ACL (ImageGenerationACL — **gpt-image-2 is the VERIFIED primary**: `GET /v1/models/gpt-image-2` → HTTP 200 on 2026-06-28; `gpt-image-1` is the fallback used only if a build-time probe of gpt-image-2 (at Station 4) fails; per ADR-0005 D7 / Station 4 / Appendix image-engine row). |
 | ascii-to-svg skill | Visual | ACL (the structural-rung SVG renderer, `~/.claude/skills/ascii-to-svg`; ASCII → xmllint-clean SVG; shared by Page + README PR). |
 | Playwright + Vision model | Quality | ACL (ScreenshotGradeACL). |
 | RuVector / RVF (`kb/*`) | Understanding/Assembly | ACL (the four `kb/` scripts). |
@@ -463,11 +491,10 @@ BuildContext {
   page:           Page                                     // Station 6 (incl. seo: SEOSurface +
                                                            //   social meta wired into <head>)
   pack:           AIKnowledgePack                          // Station 6 (overlaps from S1)
-  scorecard:      Scorecard[]                              // Station 7 (mobile + desktop, history)
-  gradingDeploy:  { url, http200 }                         // Station 7 (transient scratch LIVE URL
-                                                           //   for screenshot/grade + each refine
-                                                           //   re-deploy; distinct from `deployment`)
-  deployment:     { explainerRepoUrl, liveUrl, http200,   // Station 8 (the final PUBLIC deploy)
+  scorecard:      Scorecard[]                              // Station 7 (mobile + desktop, history;
+                                                           //   graded on a LOCAL Playwright render
+                                                           //   of the assembled site — no deploy)
+  deployment:     { explainerRepoUrl, liveUrl, http200,   // Station 8 (the FIRST + only deploy)
                     repoTopics[], repoDescription }        //   RepoSEO on the ExplainerRepo
   readmePr?:      { prUrl | "declined", svgsShared[],     // Station 8b (OPTIONAL; never blocks core)
                     sourceRepoSeoSuggested }
@@ -539,7 +566,7 @@ checkpoint cue is satisfied with positive evidence (fail loud, never silent — 
 | # | State (Station) | Checkpoint cue (loud postcondition) |
 |---|---|---|
 | 0 | `Validating` | URL parsed; TargetRepo reachable (incl. private/own, authenticated) — or stop with a clear reason. |
-| 1 | `Understanding` | `kb/build-kb.mjs` wrote the RVF KB; it answers "what is this repo?" correctly; repo named correctly. |
+| 1 | `Understanding` | `kb/build-kb.mjs` wrote the canonical `<slug>-kb.rvf` (explicit `embed` block set — not `.small.rvf`); it answers "what is this repo?" correctly; repo named correctly; the three structured JSONs (`-symbols.json` / `-dep-graph.json` / `-entrypoints.json`) exist; **the authored `<slug>-primer.md` exists** (without it the S6 pack builder hard-fails at its line-79 `must()`). |
 | 2 | `Conceiving` | `ArtDirectionBrief` is specific to THIS repo; the metaphor fits. |
 | 3 | `Authoring` | All arc questions answered; zero placeholder text; every claim traceable to a KB passage. |
 | 4 | `Visualizing` | Every raster rung valid + HTTP 200 (gpt-image-2, the verified primary); every structural rung valid SVG (ascii-to-svg, xmllint-clean); each answers its arc question at the right altitude. |
@@ -577,7 +604,7 @@ Visualizing
         ascii-to-svg; all on-altitude) --> Brand & Social
   -- AllImagesFailed --> Failed
         (single rung soft-fail: regenerate that rung; never sink the Build)
-        (gpt-image-2 runtime-probe fail: fall back loud to gpt-image-1; never silent)
+        (gpt-image-2 build-time-probe fail: fall back loud to gpt-image-1; never silent)
 
 Brand & Social
   -- BrandAssembled (full favicon set + 1200×630 social card + OG/Twitter meta) --> Assembling
@@ -589,12 +616,12 @@ Assembling
   -- AssemblyFailed --> Failed
 
 QualityRefining   [LOOP — the back-edge]
-  (renders the LIVE page to the transient `gradingDeploy` scratch URL — distinct from the
-   Station-8 `deployment` slot; each refine re-deploys to it — see §12.1)
+  (renders the assembled page LIVE in a real browser — Playwright against the LOCALLY-served
+   assembled site (live pixels), NOT a deployed URL; no deploy happens until S8 — see §12.1)
   -- QualityGraded(min >= 95 both devices, two eyes: vision + operator) == BuildPassed --> Publishing
   -- RefineRequested(criterion C, device D, "what it saw") -->
         re-open the smallest responsible slot (content | visuals | page),
-        apply the named fix, re-render, re-deploy, --> QualityRefining   [loop back]
+        apply the named fix, re-render, re-score, --> QualityRefining   [loop back]
   -- RefineLimitExceeded (cannot reach 95) --> Failed (FLAG honestly; never ship slop)
 
 Publishing
@@ -634,7 +661,7 @@ all results land in their `BuildContext` slot (P5).
 `QualityRefining` is the only state with a self-edge. `RefineRequested` carries `(criterion,
 device, what-it-saw)` and re-opens the **smallest** slot that can fix it — a B1 typography miss
 re-opens `page`; an A4 "not useful to me" miss re-opens `content`; a B5 altitude miss re-opens
-`visuals`. Re-render → re-deploy → re-score. The loop exits only on MIN ≥ 95 both devices, or
+`visuals`. Re-render → re-score (locally, no deploy). The loop exits only on MIN ≥ 95 both devices, or
 fails honestly at the refine limit. This is the mission's minimum bar made executable.
 
 ---
@@ -672,14 +699,15 @@ the `RefineRequested` loop are the spine of completion. The rendered **result** 
 pixels — not on "code passed."
 
 ### 12.1 How a grade is produced
-1. A real deploy puts the Page on a **transient scratch LIVE URL** held in
-   `BuildContext.gradingDeploy` (Quality drives this earlier deploy so it can screenshot the live
-   page, not a local render); each refine iteration re-deploys to this same scratch target. This
-   slot is **distinct from `BuildContext.deployment`** (the Station-8 public deploy). Publishing
-   then **provisions a fresh PUBLIC deploy** (new ExplainerRepo + its own URL) for the final
-   result — it does not promote the scratch target — so the public URL is clean and owner-visible.
-2. **Playwright** loads the live page at **390px (mobile)** and **1440px (desktop)** and takes
-   **full-page** screenshots.
+1. The gate renders and judges the Page on **real pixels served LOCALLY** — Playwright drives a
+   real browser against the **assembled site** (live pixels: a real browser rendering the real
+   assembled page), **NOT** a deployed production URL. There is **no pre-quality deploy**: QUALITY
+   (S7) precedes PUBLISH/DEPLOY (S8), and only an **already-passed** page is ever deployed. Each
+   refine iteration re-renders locally and re-grades — nothing is deployed in the loop. Publishing
+   (S8) is then the **FIRST and only** deploy: it provisions the PUBLIC deploy (new ExplainerRepo +
+   its own URL) for the already-great page, recorded in `BuildContext.deployment`.
+2. **Playwright** loads the locally-served page at **390px (mobile)** and **1440px (desktop)** and
+   takes **full-page** screenshots.
 3. A **vision model**, prompted as a **harsh critic**, scores each criterion 0–100 **with a
    written rationale citing what it SEES**, producing one `Scorecard` per device.
 
@@ -751,8 +779,11 @@ These hold for every Build. The aggregate (§7) or a context boundary enforces e
   three eyes) is the completion criterion. It is the literal gate on `Build.Passed`.
 - **INV-06 — Grounded-in-KB.** No claim without a KB source; all grounding flows through HNSW
   retrieval (`kb/ask-kb.mjs`) against the RVF KB. No invented claims; no flat-JSON embeddings.
-- **INV-07 — Ships-the-pack.** Every explainer includes the downloadable AIKnowledgePack
-  (`.rvf` + `.passages.jsonl` + `ask-kb.mjs` + `kb-mcp-server.mjs`) built by `kb/make-dropin.mjs`.
+- **INV-07 — Ships-the-pack.** Every explainer includes the downloadable AIKnowledgePack — the
+  for-AI half (`.rvf` + `.passages.jsonl` + `.ids.json` + the three structured indexes
+  `<slug>-symbols.json` / `<slug>-dep-graph.json` / `<slug>-entrypoints.json` so all four MCP tools
+  return data, + `ask-kb.mjs` + `kb-mcp-server.mjs`) AND the for-humans half (the authored
+  `<slug>-primer.md`) — built by the **studio-less** variant of `kb/make-dropin.mjs` (§6.5).
 - **INV-08 — One-source-of-truth.** All three adapters call the identical Brain/Skill; no adapter
   contains explainer logic of its own.
 - **INV-09 — Brain/Tools split.** Tools are pure, receive only their args, return
@@ -777,8 +808,8 @@ These hold for every Build. The aggregate (§7) or a context boundary enforces e
   a direct push. It is quarantined (INV-03) and NEVER blocks, gates, or sinks the core.
 - **INV-17 — VerifiedImagePrimary.** Raster generation uses **`gpt-image-2` as the verified
   primary** (`GET /v1/models/gpt-image-2` → HTTP 200, confirmed 2026-06-28); **`gpt-image-1` is the
-  fallback ONLY**, used solely if a runtime probe of `gpt-image-2` fails. The build never silently
-  downgrades and never treats gpt-image-2 as unproven.
+  fallback ONLY**, used solely if a **build-time availability probe** of `gpt-image-2` (at Station 4)
+  fails. The build never silently downgrades and never treats gpt-image-2 as unproven.
 
 ---
 
@@ -822,11 +853,15 @@ tools/                                   ← pure tools (mechanics only)
 assets/design-system/                    ← the DesignSystem (tokens + components + skeleton
                                             + SEO head + social/favicon meta)
 
-kb/                                       ← REUSED, NOT REBUILT (P3)
-  build-kb.mjs        → Understanding (Station 1): builds the RVF KB
+kb/                                       ← REUSED, NOT REBUILT (P3) — one guard change (§6.5)
+  build-kb.mjs        → Understanding (Station 1): builds the RVF KB (canonical .rvf via embed block)
+  extract-symbols.mjs → Station 1: writes <slug>-symbols.json     (pack prerequisite)
+  dep-graph.mjs       → Station 1: writes <slug>-dep-graph.json   (pack prerequisite)
+  entrypoints.mjs     → Station 1: writes <slug>-entrypoints.json (pack prerequisite)
+  index-primer.mjs    → Station 1: indexes the authored <slug>-primer.md into the store
   ask-kb.mjs          → grounding retrieval (INV-06)
-  make-dropin.mjs     → Assembly (Station 6): builds the AIKnowledgePack (INV-07)
-  kb-mcp-server.mjs   → the MCP server shipped inside the pack
+  make-dropin.mjs     → Assembly (Station 6): builds the AIKnowledgePack via its --no-studio variant (INV-07)
+  kb-mcp-server.mjs   → the MCP server shipped inside the pack (4 tools; 3 read the structured JSONs)
 
 www/                                      ← thin website door (validate → run core)
 
@@ -839,11 +874,11 @@ DELETED (retired with the pipeline, P2):
 **Externals:** raster generation uses **`gpt-image-2` as the VERIFIED PRIMARY** — confirmed in
 this project on 2026-06-28 via `GET https://api.openai.com/v1/models/gpt-image-2` → HTTP 200
 `{id: gpt-image-2, owned_by: system}` (per ADR-0005 **D7** / **Station 4 (VISUALIZE)** / the
-Appendix image-engine row). Generate at **quality `high`**, **hero 1536×1024**, **diagrams /
+Appendix image-engine row). Generate at **quality `high`**, **hero 1536×1024**, **raster
 section images 1024×1024** (gpt-image-2 valid sizes: `1024×1024`, `1024×1536`, `1536×1024`,
-`auto`). **`gpt-image-1` is the FALLBACK ONLY**, used solely if a runtime availability probe of
-`gpt-image-2` fails — the build never makes gpt-image-1 the default and never treats gpt-image-2
-as unproven. Structural/explanatory rungs are **not** raster at all: they render as SVG via the
+`auto`). **`gpt-image-1` is the FALLBACK ONLY**, used solely if a **build-time availability probe**
+(at Station 4) of `gpt-image-2` fails — the build never makes gpt-image-1 the default and never
+treats gpt-image-2 as unproven. Structural/explanatory rungs are **not** raster at all: they render as SVG via the
 `ascii-to-svg` skill (`~/.claude/skills/ascii-to-svg`). The optional README PR (8b) uses
 `readme-enhance` (`~/.claude/skills/readme-enhance`). QA screenshots via **Playwright** at 390px +
 1440px; grading by a **vision model** as a harsh critic. The four `kb/*.mjs` files are the real,
