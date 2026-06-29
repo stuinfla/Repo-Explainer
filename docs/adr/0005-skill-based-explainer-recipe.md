@@ -1,6 +1,6 @@
 # ADR-0005: The Skill-Based Explainer Recipe — One Brain, Three Doors
 
-Updated: 2026-06-29 01:00:00 EDT | Version 1.5.0
+Updated: 2026-06-29 02:00:00 EDT | Version 1.6.0
 Created: 2026-06-28 00:00:00 EDT
 
 **Status:** Accepted.
@@ -424,10 +424,16 @@ stations in order, filling `BuildContext` slot by slot; the tools do the mechani
     1536×1024; raster sections 1024×1024** (valid `gpt-image-2` sizes: `1024×1024`, `1024×1536`,
     `1536×1024`, `auto`).
   - **Vector SVG via the `ascii-to-svg` skill** (`~/.claude/skills/ascii-to-svg`) for the *structural*
-    rungs — the big-idea diagram, the "aha" insight, the architecture / how-it-works diagram, and any
-    flow: author the ASCII, then convert to crisp accessible SVGs. **These SVGs are emitted once and
-    reused by both the page and the README** (Station 8b). This is **REQUIRED**, not optional —
-    structural rungs ship as vector, never raster.
+    rungs — the big-idea diagram (*"what does it do"*), the "aha" insight, and **two diagrams that are
+    MANDATORY on every explainer (INV-18 — the three questions every developer asks):**
+    1. an **ARCHITECTURE diagram** (*"how is it constructed"* — modules / components / dependencies), and
+    2. a **PROCESS / DATA-FLOW diagram** (*"how does it work"* — the runtime flow).
+    Both are **grounded in the repo's REAL structure, not invented**: the architecture diagram is built
+    from `kb/dep-graph.mjs` + `kb/extract-symbols.mjs`, the flow from `kb/entrypoints.mjs`. Author the
+    ASCII, then convert to crisp accessible SVGs. **These SVGs are emitted once and reused by both the
+    page and the README** (Station 8b). This is **REQUIRED**, not optional — structural rungs ship as
+    vector, never raster, and the gate (Station 7) **fails/refines** if either the architecture diagram
+    or the flow diagram is missing or does not read clearly on **both** devices.
 - **Tools:** `tools/generate-image` (pure: prompt + dims + engine → image file or **loud** failure; no
   silent placeholder), `tools/ascii-to-svg` (wraps the `ascii-to-svg` skill: ASCII diagram → accessible
   SVG; pure, **loud-fail** on malformed output).
