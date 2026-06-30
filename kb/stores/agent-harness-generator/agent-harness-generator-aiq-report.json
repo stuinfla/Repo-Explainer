@@ -1,0 +1,336 @@
+{
+  "target": "agent-harness-generator",
+  "judge": "claude-opus-4-1",
+  "seed": 19,
+  "generated": "2026-06-19T22:35:10.214Z",
+  "composite": 95,
+  "weakestDimension": "what-it-is",
+  "pass": true,
+  "questionsFile": "/Users/stuartkerr/Code/Ruv-Explainer/kb/questions/agent-harness-generator.aiq.jsonl",
+  "dimensionsScored": 8,
+  "dimensionsTotal": 8,
+  "perDimension": [
+    {
+      "id": 1,
+      "key": "onboarding",
+      "name": "Onboarding (install/build/run/test)",
+      "n": 3,
+      "score": 96
+    },
+    {
+      "id": 2,
+      "key": "what-it-is",
+      "name": "What it is + problem it solves",
+      "n": 3,
+      "score": 95
+    },
+    {
+      "id": 3,
+      "key": "architecture",
+      "name": "Architecture (components + relations)",
+      "n": 3,
+      "score": 95
+    },
+    {
+      "id": 4,
+      "key": "capabilities",
+      "name": "Capabilities (features/commands/API)",
+      "n": 3,
+      "score": 96
+    },
+    {
+      "id": 5,
+      "key": "usage",
+      "name": "Usage (functions + signatures + example)",
+      "n": 3,
+      "score": 95
+    },
+    {
+      "id": 6,
+      "key": "best-practices",
+      "name": "Best practices / patterns / gotchas",
+      "n": 3,
+      "score": 96
+    },
+    {
+      "id": 7,
+      "key": "deep-dive",
+      "name": "Deep-dive (3 random buried files)",
+      "n": 3,
+      "score": 96
+    },
+    {
+      "id": 8,
+      "key": "extensibility",
+      "name": "Extensibility (safe modification)",
+      "n": 3,
+      "score": 95
+    }
+  ],
+  "perQuestion": [
+    {
+      "dimension": "onboarding",
+      "query": "I just got this repo. How do I install, scaffold a harness, build it, and run its tests from scratch? Give me the exact commands.",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides exact commands for install (npm install), scaffold (npx metaharness), build (npm run build), and test (npm test/npm run test) with complete workflow details.",
+      "top1": "PRIMER#7-how-do-i-start-the-fastest-end-to-end",
+      "contextChars": 30579
+    },
+    {
+      "dimension": "onboarding",
+      "query": "What is the fastest way to see metaharness actually produce a harness, with the least setup?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides complete instructions including the wizard command, direct scaffold command with flags, and post-generation steps.",
+      "top1": "docs/adrs/ADR-041-metaharness-as-program-synthesis.md",
+      "contextChars": 19704
+    },
+    {
+      "dimension": "onboarding",
+      "query": "How do I scaffold a coding harness for Claude Code in one command and then check it is healthy?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides the exact command to scaffold (npx metaharness) and the doctor command to check health, with full implementation details.",
+      "top1": "examples-packages/claude-code/package.json",
+      "contextChars": 27650
+    },
+    {
+      "dimension": "what-it-is",
+      "query": "What is metaharness and what specific problem does it solve for me?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive information about what MetaHarness is (a CLI/Studio that generates AI agent harnesses from repos) and the specific problem it solves (avoiding forking ruflo, providing ownership, maintaining upgrade paths).",
+      "top1": "docs/adrs/ADR-041-metaharness-as-program-synthesis.md",
+      "contextChars": 17332
+    },
+    {
+      "dimension": "what-it-is",
+      "query": "Why would I use metaharness instead of forking ruflo, and what do I actually own after generating?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive information about why to use metaharness instead of forking ruflo and what you own after generation, including specific details from ADR-016 and the PRIMER.",
+      "top1": "docs/adrs/ADR-016-migration-for-ruflo-users.md",
+      "contextChars": 17358
+    },
+    {
+      "dimension": "what-it-is",
+      "query": "What does 'the harness is the product, not the generator' mean in metaharness?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides the exact quote and its meaning from the PRIMER document, explaining that the harness is the wrapper/product around the model, not the generator itself.",
+      "top1": "docs/adrs/ADR-035-product-naming.md",
+      "contextChars": 15810
+    },
+    {
+      "dimension": "architecture",
+      "query": "What packages make up metaharness and how do they relate? What is the three-layer model?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive details about MetaHarness's three-layer architecture, all package names, their relationships, and the dependency graph.",
+      "top1": "PRIMER#3-what-packages-make-up-metaharness",
+      "contextChars": 26348
+    },
+    {
+      "dimension": "architecture",
+      "query": "What is the kernel boundary and which packages are frozen vs free to change?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive details about the kernel boundary, frozen packages, and change rules from ADR-002 and supporting files.",
+      "top1": "PRIMER#3-what-packages-make-up-metaharness",
+      "contextChars": 36774
+    },
+    {
+      "dimension": "architecture",
+      "query": "If I change the kernel, what is the contract I must honor and what could break downstream?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive details about the kernel contract, breaking change rules, semver requirements, deprecation windows, and downstream impacts through multiple ADRs and source files.",
+      "top1": "PRIMER#8-how-do-i-extend-metaharness-safely-the-extension-points",
+      "contextChars": 36698
+    },
+    {
+      "dimension": "capabilities",
+      "query": "What can metaharness do? List the harness subcommands and what each does.",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive information about harness subcommands through imports, documentation, and test files showing all available commands and their purposes.",
+      "top1": "PRIMER#2-what-can-the-tool-do-to-a-repo",
+      "contextChars": 36683
+    },
+    {
+      "dimension": "capabilities",
+      "query": "What can the tool do to a repo before and during scaffolding — scoring, genome, mcp-scan, threat-model, router, Darwin?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive details about all six capabilities mentioned in the question through direct file content and structured artifacts.",
+      "top1": "PRIMER#2-what-can-the-tool-do-to-a-repo",
+      "contextChars": 36892
+    },
+    {
+      "dimension": "capabilities",
+      "query": "Which hosts can metaharness target and what are the main packages it ships?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context explicitly lists all 9 hosts and describes the main packages across the three-layer architecture with specific names.",
+      "top1": "PRIMER#3-what-packages-make-up-metaharness",
+      "contextChars": 37105
+    },
+    {
+      "dimension": "usage",
+      "query": "Show me how to define an agent, skill, and tool in code with the SDK — what are the functions and types and a real example?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides complete function signatures, types, and a real usage example showing how to define agents, skills, and tools with the SDK.",
+      "top1": "docs/adrs/ADR-062-example-pinecone.md",
+      "contextChars": 40319
+    },
+    {
+      "dimension": "usage",
+      "query": "What is the public API of the Router — how do I construct it, what does route() return, and what options does it take?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides Router's constructor via class definition, route() method signature in RouteResult interface, and RouterOptions interface with all fields.",
+      "top1": "packages/harness/src/router.ts",
+      "contextChars": 36709
+    },
+    {
+      "dimension": "usage",
+      "query": "What does a host adapter implement to turn a harness spec into config files? What is the function signature?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The HostAdapter interface definition and generateConfig signature are explicitly shown in packages/kernel-js/src/types.ts.",
+      "top1": "packages/create-agent-harness/src/host-config.ts",
+      "contextChars": 37309
+    },
+    {
+      "dimension": "best-practices",
+      "query": "Is metaharness production-ready? What are its honest limits and what should I treat with caution?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive coverage of production readiness status, performance limits, gotchas, and honest limitations from multiple PRIMER sections.",
+      "top1": "PRIMER#5-is-this-production-ready-maturity-and-honest-limits",
+      "contextChars": 18669
+    },
+    {
+      "dimension": "best-practices",
+      "query": "What are the performance budgets and the native vs WASM kernel tradeoff I should know about?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive details on performance budgets (≤90s, ≤5s, ≤10MB) and native vs WASM tradeoffs (3-5x speed difference, fallback behavior, determinism).",
+      "top1": "PRIMER#9-performance-and-gotchas-running-the-generator",
+      "contextChars": 18597
+    },
+    {
+      "dimension": "best-practices",
+      "query": "What are the gotchas around Codex trusted projects, Hermes thinking blocks, and the smoke gate?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive details about all three gotchas: Codex trusted projects, Hermes thinking blocks, and the smoke gate.",
+      "top1": "docs/adrs/ADR-029-cross-language-invariants.md",
+      "contextChars": 22757
+    },
+    {
+      "dimension": "extensibility",
+      "query": "How do I add a new host to metaharness? Which interface do I implement and which reference adapter should I copy?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides the HostAdapter interface, reference adapter (host-claude-code), and explicit instructions in PRIMER#8 on how to add a new host.",
+      "top1": "docs/adrs/ADR-045-cli-scaffold-host-adapter-wiring.md",
+      "contextChars": 44488
+    },
+    {
+      "dimension": "extensibility",
+      "query": "How do I add or modify a template, and what is the scaffold/render pipeline that turns a template into a harness?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides complete details on template modification (renderer.ts, walker.ts), the scaffold/render pipeline (walkTemplate→render→writeAtomic), and template structure (ADR-003).",
+      "top1": "PRIMER#4-how-does-the-composer-scaffold-a-harness",
+      "contextChars": 46460
+    },
+    {
+      "dimension": "extensibility",
+      "query": "How do I add a new vertical pack and a marketplace plugin safely without breaking the kernel API?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides complete information on adding vertical packs (ADR-013 structure, VerticalPack interface) and marketplace plugins (ADR-005 schema, kernelEngines requirement, registry entry building) without breaking the kernel API (ADR-002 boundary rules).",
+      "top1": "docs/adrs/ADR-013-vertical-packs-publishing.md",
+      "contextChars": 45845
+    },
+    {
+      "dimension": "deep-dive",
+      "query": "Explain specifically what the file packages/create-agent-harness/templates/vertical_support/.claude-plugin/plugin.json.tmpl does and the key symbols it defines. What is its responsibility within the crate?",
+      "generated": true,
+      "deepFile": "packages/create-agent-harness/templates/vertical_support/.claude-plugin/plugin.json.tmpl",
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides the complete file content showing it's a Claude plugin manifest template with all fields (name, version, description, author, license, categories, tags, homepage) and their template variable placeholders.",
+      "top1": "packages/create-agent-harness/templates/vertical_support/package.json.tmpl",
+      "contextChars": 16708
+    },
+    {
+      "dimension": "deep-dive",
+      "query": "Explain specifically what the file packages/darwin-mode/src/openrouter-mutator.ts does and the key symbols it defines (it defines OpenRouterMutatorOptions, MutatorTelemetry, OpenRouterMutator). What is its responsibility within the crate?",
+      "generated": true,
+      "deepFile": "packages/darwin-mode/src/openrouter-mutator.ts",
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides the complete file content, all three key symbols with their definitions, and explains its role as an OpenRouter-backed CodeGenerator for mutation.",
+      "top1": "packages/darwin-mode/README.md",
+      "contextChars": 27935
+    },
+    {
+      "dimension": "deep-dive",
+      "query": "Explain specifically what the file packages/create-agent-harness/templates/vertical_advertising/tsconfig.json.tmpl does and the key symbols it defines. What is its responsibility within the crate?",
+      "generated": true,
+      "deepFile": "packages/create-agent-harness/templates/vertical_advertising/tsconfig.json.tmpl",
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides the complete file content showing it's a TypeScript config template with all compiler options, include/exclude patterns, and its role as a template in the create-agent-harness package.",
+      "top1": "packages/create-agent-harness/templates/vertical_trading/tsconfig.json.tmpl",
+      "contextChars": 15523
+    }
+  ]
+}

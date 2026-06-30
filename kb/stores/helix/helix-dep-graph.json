@@ -1,0 +1,1358 @@
+{
+  "target": "helix",
+  "metaName": "helix (ruvnet)",
+  "generated": "2026-06-30T02:56:38.592Z",
+  "ecosystems": [
+    "rust"
+  ],
+  "componentCount": 27,
+  "internalEdgeCount": 46,
+  "externalDepCount": 12,
+  "nodes": [
+    {
+      "name": "helix-provenance",
+      "version": "0.1.2",
+      "description": "ADR-005: provenance records and retrieval-grounding enforcement for Helix",
+      "manifest": "crates/helix-provenance/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_provenance",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-numeric",
+      "version": "0.1.2",
+      "description": "ADR-007: deterministic numeric/trend engine for Helix (the LLM never does arithmetic)",
+      "manifest": "crates/helix-numeric/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_numeric",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "properties",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "engine",
+          "kinds": [
+            "bench"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-evidence",
+      "version": "0.1.2",
+      "description": "ADR-006: evidence tiering and explicit abstention policy for Helix",
+      "manifest": "crates/helix-evidence/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_evidence",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-escalation",
+      "version": "0.1.2",
+      "description": "ADR-009: red-flag escalation & clinician-in-the-loop registry for Helix",
+      "manifest": "crates/helix-escalation/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_escalation",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-pipeline",
+      "version": "0.1.2",
+      "description": "ADR-002/005: the grounded-answer pipeline wiring Helix's anti-hallucination crates",
+      "manifest": "crates/helix-pipeline/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_pipeline",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "pipeline",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-ontology",
+      "version": "0.1.2",
+      "description": "ADR-004: canonical ontology normalization (LOINC/RxNorm/SNOMED/ICD-10/UCUM) for Helix",
+      "manifest": "crates/helix-ontology/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_ontology",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "properties",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-verifier",
+      "version": "0.1.2",
+      "description": "ADR-008: independent verifier/critic that re-derives every claim from source before it reaches the user",
+      "manifest": "crates/helix-verifier/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_verifier",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-vault",
+      "version": "0.1.2",
+      "description": "ADR-001/013: user-owned, local-first encrypted vault boundary (XChaCha20-Poly1305) for Helix",
+      "manifest": "crates/helix-vault/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_vault",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "properties",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-score",
+      "version": "0.1.2",
+      "description": "ADR-016: transparent, decomposable, non-diagnostic 0-100 health score for Helix",
+      "manifest": "crates/helix-score/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_score",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-neural",
+      "version": "0.1.2",
+      "description": "Integration adapter: ruvnet/ruv-neural gamma-entrainment/EEG session evidence -> Helix ProvRecords (research-grade screening, not diagnosis)",
+      "manifest": "crates/helix-neural/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_neural",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-sensing",
+      "version": "0.1.2",
+      "description": "ADR-020: RuView WiFi-CSI contactless ambient sensing -> Helix ProvRecords + escalation screening flags",
+      "manifest": "crates/helix-sensing/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_sensing",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-genome",
+      "version": "0.1.2",
+      "description": "ADR-021: user-owned genome ingestion & pharmacogenomics (rvDNA backend) -> Helix ProvRecords + prescriber advisories",
+      "manifest": "crates/helix-genome/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_genome",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-ocr",
+      "version": "0.1.2",
+      "description": "ADR-022: OCR lab-document ingestion (RuVector OCR backend) -> gated, conservative-confidence ProvRecords",
+      "manifest": "crates/helix-ocr/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_ocr",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-retrieval",
+      "version": "0.1.2",
+      "description": "ADR-023: semantic retrieval contract over the health graph (RuVector HNSW/GraphRAG backend)",
+      "manifest": "crates/helix-retrieval/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_retrieval",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-cohort",
+      "version": "0.1.2",
+      "description": "ADR-024: privacy-preserving cohort feature extraction (federation primitive) — generalization + cell-suppression + differential privacy",
+      "manifest": "crates/helix-cohort/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_cohort",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-visual",
+      "version": "0.1.2",
+      "description": "ADR-025: visual RAG over medical documents/images (rupixel backend) — tile embeddings + MaxSim late interaction",
+      "manifest": "crates/helix-visual/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_visual",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "visual",
+          "kinds": [
+            "bench"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-llm",
+      "version": "0.1.2",
+      "description": "ADR-026: on-device LLM analyst — narrates grounded facts via a local-GPU model, with an anti-hallucination number-guard",
+      "manifest": "crates/helix-llm/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_llm",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "gpu_ollama",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-embed",
+      "version": "0.1.2",
+      "description": "ADR-027: learned MiniLM text embeddings (local GPU) wired into helix-retrieval",
+      "manifest": "crates/helix-embed/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_embed",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "gpu_embed",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-vision",
+      "version": "0.1.2",
+      "description": "ADR-028: learned visual encoder (local GPU) — layout-only vision captioning + MiniLM embedding for helix-visual",
+      "manifest": "crates/helix-vision/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_vision",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "gpu_vision",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-connect",
+      "version": "0.1.2",
+      "description": "ADR-029: live connector clients (FHIR/SMART + wearables) — transport-trait core with FHIR->ProvRecord parsing and the degradation ladder",
+      "manifest": "crates/helix-connect/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_connect",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-fed",
+      "version": "0.1.2",
+      "description": "ADR-030: federation transport — opt-in, DP-gated cohort contribution over the helix-cohort privacy primitive",
+      "manifest": "crates/helix-fed/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_fed",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-bioage",
+      "version": "0.1.2",
+      "description": "ADR-034: deterministic biological-age estimate (Levine PhenoAge) from routine labs — non-diagnostic",
+      "manifest": "crates/helix-bioage/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_bioage",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "nhanes_refranges",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "nhanes_validate",
+          "kinds": [
+            "example"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-focus",
+      "version": "0.1.2",
+      "description": "ADR-032: deterministic, non-diagnostic 'focus areas' selection from the user's own records",
+      "manifest": "crates/helix-focus/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_focus",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-timeline",
+      "version": "0.1.2",
+      "description": "ADR-031: longitudinal health-score timeline — deterministic, methodology-versioned, trend-first",
+      "manifest": "crates/helix-timeline/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_timeline",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-evolve",
+      "version": "0.1.2",
+      "description": "ADR-035: Darwin-style parameter evolution — tunes non-safety pipeline params against a labeled eval set; safety thresholds frozen",
+      "manifest": "crates/helix-evolve/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_evolve",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "evolve_demo",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "evolve_full",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "mimic_eval",
+          "kinds": [
+            "example"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-refranges",
+      "version": "0.1.2",
+      "description": "NHANES-derived population reference intervals — a labeled FALLBACK when a lab supplies no reference range",
+      "manifest": "crates/helix-refranges/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_refranges",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "helix-wasm",
+      "version": "0.1.2",
+      "description": "WASM binding exposing the Helix analytic pipeline to the web/mobile UI",
+      "manifest": "crates/helix-wasm/Cargo.toml",
+      "targets": [
+        {
+          "name": "helix_wasm",
+          "kinds": [
+            "cdylib",
+            "rlib"
+          ]
+        }
+      ],
+      "isLib": false,
+      "bins": [],
+      "ecosystem": "rust"
+    }
+  ],
+  "internalEdges": [
+    {
+      "from": "helix-evidence",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-pipeline",
+      "to": "helix-escalation",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-pipeline",
+      "to": "helix-evidence",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-pipeline",
+      "to": "helix-numeric",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-pipeline",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-verifier",
+      "to": "helix-evidence",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-verifier",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-vault",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-neural",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-sensing",
+      "to": "helix-escalation",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-sensing",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-genome",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-ocr",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-retrieval",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-embed",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-embed",
+      "to": "helix-retrieval",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-vision",
+      "to": "helix-embed",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-connect",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-fed",
+      "to": "helix-cohort",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-bioage",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-focus",
+      "to": "helix-numeric",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-focus",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-timeline",
+      "to": "helix-numeric",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-timeline",
+      "to": "helix-score",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-evolve",
+      "to": "helix-escalation",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-evolve",
+      "to": "helix-numeric",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-evolve",
+      "to": "helix-pipeline",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-evolve",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-refranges",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-bioage",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-connect",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-escalation",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-evidence",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-focus",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-genome",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-neural",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-numeric",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-ocr",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-ontology",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-pipeline",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-provenance",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-refranges",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-score",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-sensing",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-timeline",
+      "kind": "normal"
+    },
+    {
+      "from": "helix-wasm",
+      "to": "helix-visual",
+      "kind": "normal"
+    }
+  ],
+  "externalDeps": {
+    "helix-provenance": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-numeric": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "criterion",
+        "req": "^0.5",
+        "kind": "dev"
+      },
+      {
+        "name": "proptest",
+        "req": "^1",
+        "kind": "dev"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-evidence": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-escalation": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-pipeline": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-ontology": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "proptest",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-verifier": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-vault": [
+      {
+        "name": "chacha20poly1305",
+        "req": "^0.10",
+        "kind": "normal"
+      },
+      {
+        "name": "getrandom",
+        "req": "^0.2",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "zeroize",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "proptest",
+        "req": "^1",
+        "kind": "dev"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-score": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-neural": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "proptest",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-sensing": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "proptest",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-genome": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "proptest",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-ocr": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "proptest",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-retrieval": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "proptest",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-cohort": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "proptest",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-visual": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "criterion",
+        "req": "^0.5",
+        "kind": "dev"
+      },
+      {
+        "name": "image",
+        "req": "^0.25",
+        "kind": "dev"
+      }
+    ],
+    "helix-llm": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "ureq",
+        "req": "^2",
+        "kind": "normal"
+      }
+    ],
+    "helix-embed": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "ureq",
+        "req": "^2",
+        "kind": "normal"
+      }
+    ],
+    "helix-vision": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "ureq",
+        "req": "^2",
+        "kind": "normal"
+      }
+    ],
+    "helix-connect": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "proptest",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-fed": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "proptest",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-bioage": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-focus": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "proptest",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-timeline": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-evolve": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "helix-refranges": [],
+    "helix-wasm": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "wasm-bindgen",
+        "req": "^0.2",
+        "kind": "normal"
+      },
+      {
+        "name": "wasm-bindgen-test",
+        "req": "^0.3",
+        "kind": "dev"
+      }
+    ]
+  },
+  "externalDepNames": [
+    "chacha20poly1305",
+    "criterion",
+    "getrandom",
+    "image",
+    "proptest",
+    "serde",
+    "serde_json",
+    "thiserror",
+    "ureq",
+    "wasm-bindgen",
+    "wasm-bindgen-test",
+    "zeroize"
+  ]
+}

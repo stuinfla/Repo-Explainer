@@ -88,6 +88,11 @@
             runs your code. The AI model underneath stays the same &mdash; what you
             build and own is the wrapper around it.
           </p>
+          <p class="attrib-lede">
+            An <strong>independent explainer</strong> for <strong>Reuven Cohen</strong>&rsquo;s
+            (<a href="https://github.com/ruvnet" target="_blank" rel="noopener">@ruvnet</a>)
+            agent-harness-generator &mdash; built to help you actually adopt and implement his technology.
+          </p>
           <div class="meta-row" aria-hidden="true">
             <span>CLI&nbsp;<b>npx metaharness</b></span>
             <span>LIBRARY&nbsp;<b>@ruvnet/agent-harness-generator</b></span>
@@ -1545,7 +1550,7 @@ harness verify               # confirm the signed receipt is intact</code></pre>
 <figure class="figure diagram">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600" width="900" height="600" role="img" aria-labelledby="s09-title s09-desc" style="width:100%;height:auto;font-family:'IBM Plex Sans',sans-serif;">
   <title id="s09-title">The drop-in: one zip, two halves, three steps to wire it in</title>
-  <desc id="s09-desc">One download splits into two halves. The For-you half is a written primer to read and watch. The For-your-AI half is a searchable knowledge pack (an .rvf file plus a small MCP server). Wiring the AI half into Claude Code is three steps: unzip the kb folder, add a .mcp.json pointing at it, and paste a verification gate into CLAUDE.md so your AI answers from the real source instead of guessing.</desc>
+  <desc id="s09-desc">One download splits into two halves. The For-you half is a written primer plus a studio folder containing a NotebookLM audio overview (play this first) and a deep-dive report. The For-your-AI half is a searchable knowledge pack (an .rvf file plus a small MCP server). Wiring the AI half into Claude Code is three steps: unzip the kb folder, add a .mcp.json pointing at it, and paste a verification gate into CLAUDE.md so your AI answers from the real source instead of guessing.</desc>
 
   <defs>
     <marker id="s09-arrow" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
@@ -1579,12 +1584,13 @@ harness verify               # confirm the signed receipt is intact</code></pre>
   <g>
     <rect x="40" y="200" width="360" height="118" rx="14" fill="#221b14" stroke="#e0a96d" stroke-width="1.25"/>
     <text x="64" y="230" font-family="'IBM Plex Sans',sans-serif" font-size="16" font-weight="600" fill="#e0a96d">For you</text>
-    <text x="64" y="252" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#d6c5ac">A short written primer.</text>
+    <text x="64" y="252" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#d6c5ac">A primer &#8212; plus a studio/ folder to listen &amp; read.</text>
 
-    <rect x="64" y="266" width="148" height="34" rx="8" fill="#2a2018" stroke="#3a2f1f" stroke-width="1"/>
-    <text x="138" y="288" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#f3e9da">read</text>
-    <rect x="228" y="266" width="148" height="34" rx="8" fill="#2a2018" stroke="#3a2f1f" stroke-width="1"/>
-    <text x="302" y="288" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="13.5" fill="#f3e9da">watch</text>
+    <!-- highlighted: audio overview, play first -->
+    <rect x="64" y="266" width="186" height="34" rx="8" fill="#2a2018" stroke="#ff9e2c" stroke-width="1.5"/>
+    <text x="157" y="288" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11.5" fill="#ffb650">&#127911; audio overview</text>
+    <rect x="266" y="266" width="110" height="34" rx="8" fill="#2a2018" stroke="#3a2f1f" stroke-width="1"/>
+    <text x="321" y="288" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="11.5" fill="#f3e9da">&#128196; report</text>
   </g>
 
   <!-- FOR YOUR AI half -->
@@ -1647,24 +1653,46 @@ harness verify               # confirm the signed receipt is intact</code></pre>
   <rect x="40" y="540" width="820" height="42" rx="10" fill="#221b14" stroke="#3a2f1f" stroke-width="1.25"/>
   <text x="450" y="566" text-anchor="middle" font-family="'IBM Plex Sans',sans-serif" font-size="14" fill="#d6c5ac">Result: your AI answers from the <tspan font-weight="600" fill="#e0a96d">real source</tspan> &#8212; grounded, with citations &#8212; instead of guessing.</text>
 </svg>
-              <figcaption>The drop-in, step by step: one zip splits into for-humans/ (the primer you read) and for-ai/ (the knowledge pack your assistant searches), wired into Claude Code in three small steps &mdash; unzip, register a .mcp.json tool, add a CLAUDE.md gate.</figcaption>
+              <figcaption>The drop-in, step by step: one zip splits into for-humans/ (the primer you read, plus a studio/ folder with a 🎧 audio overview and 📄 report) and for-ai/ (the knowledge pack your assistant searches), wired into Claude Code in three small steps &mdash; unzip, register a .mcp.json tool, add a CLAUDE.md gate.</figcaption>
             </figure>
 <figure class="figure">
               <img src="assets/img/g5.png" width="1376" height="768"
                    alt="One zip file at the top splits into two equal panels: a left panel labelled For you showing a person reading and watching, and a right panel labelled For your AI showing a warm, searchable glowing brain with a magnifying glass." />
               <figcaption>
-                One zip, two halves: <code>for-humans/</code> (the primer you read)
+                One zip, two halves: <code>for-humans/</code> (the primer you read,
+                plus a <code>studio/</code> folder with a 🎧 audio overview and 📄 report)
                 and <code>for-ai/</code> (the knowledge pack your assistant searches).
               </figcaption>
             </figure>
             <p>
               Everything on this page also comes as <strong>one download with two
               halves</strong>. One half is <em>for you</em> &mdash; a short written
-              primer. The other half is <em>for your AI</em> &mdash; a small,
-              searchable knowledge pack your assistant can read so it can answer
-              questions about MetaHarness accurately, with sources, instead of
-              guessing.
+              primer, plus a <code>studio/</code> folder with a NotebookLM audio
+              overview and a deep-dive report. The other half is <em>for your AI</em>
+              &mdash; a small, searchable knowledge pack your assistant can read so it
+              can answer questions about MetaHarness accurately, with sources, instead
+              of guessing.
             </p>
+
+            <div class="studio-note" role="note">
+              <p class="studio-lead">Inside <code>for-humans/studio/</code> &mdash; start here</p>
+              <ul>
+                <li>
+                  <strong>&#127911; <code>metaharness-audio.m4a</code></strong> &mdash;
+                  a NotebookLM audio overview (~14 min). <strong>Play this first</strong> &mdash;
+                  it&rsquo;s the fastest way to absorb what MetaHarness is.
+                  <span class="studio-tag">~32 MB</span>
+                </li>
+                <li>
+                  <strong>&#128196; <code>metaharness-report.md</code></strong> &mdash;
+                  the written deep-dive briefing document the audio is based on.
+                </li>
+                <li>
+                  &#128221; <code>audio-overview-prompt.md</code> &mdash; the exact
+                  prompt that generated the audio, if you want to remix it.
+                </li>
+              </ul>
+            </div>
 
             <p>
               Wiring the AI half into Claude Code takes three small steps:
@@ -1727,7 +1755,7 @@ If the pack has no answer, say so plainly — do not invent one.</code></pre>
               <div class="dz-icon" aria-hidden="true">&#8659;</div>
               <div><strong>Download the drop-in</strong></div>
               <div class="dz-hint">
-                metaharness-dropin.zip &mdash; 3 MB &mdash; Gate A: 99.9&thinsp;/&thinsp;100 &mdash; ready now
+                metaharness-dropin.zip &mdash; 27 MB (incl. 🎧 audio overview) &mdash; Gate A: 99.9&thinsp;/&thinsp;100 &mdash; ready now
               </div>
               <p class="dz-status" id="dzStatus" role="status" aria-live="polite">Ready</p>
             </a>
@@ -1737,6 +1765,129 @@ If the pack has no answer, say so plainly — do not invent one.</code></pre>
       </div>
     </div>
   </main>
+
+  <!-- ===================== NOTEBOOKLM STUDIO ===================== -->
+  <section class="nlm-studio-wrap" aria-labelledby="nlm-studio-title">
+    <div class="wrap">
+      <div class="nlm-studio">
+        <span class="nlm-kicker">NotebookLM studio &middot; the same explainer, every format</span>
+        <h2 id="nlm-studio-title">Prefer to listen, watch, or skim? Take the studio tour.</h2>
+        <p class="nlm-lead">
+          We loaded everything about MetaHarness into a public Google
+          <strong>NotebookLM</strong> notebook and let it produce the same plain-language
+          story in a handful of formats &mdash; an audio overview, a short explainer video,
+          a slide deck, a one-glance infographic, and a written deep-dive. Same idea Maya
+          learned (an AI that <em>guesses</em> about your project vs. an assistant that
+          actually <em>knows</em> it, built in about a minute), in whatever form suits you.
+        </p>
+
+        <a
+          class="nlm-cta"
+          href="https://notebooklm.google.com/notebook/3cc18f99-ef82-457d-bd80-686238d0685a"
+          target="_blank" rel="noopener"
+        >
+          <span class="nlm-cta-play" aria-hidden="true">&#9654;</span>
+          Open the NotebookLM studio &mdash; audio, video, slides &amp; more
+        </a>
+
+        <div class="nlm-grid">
+
+          <!-- AUDIO -->
+          <div class="nlm-card">
+            <p class="nlm-card-tag">&#127911; Audio overview</p>
+            <h3>Listen (~14 min)</h3>
+            <p>
+              Two hosts walk through Maya&rsquo;s before&rarr;after in a friendly
+              back-and-forth. The fastest way to absorb what MetaHarness is.
+            </p>
+            <audio controls preload="none" src="studio/metaharness-audio.m4a">
+              Your browser can&rsquo;t play audio inline &mdash;
+              <a href="studio/metaharness-audio.m4a" download>download the audio overview</a>.
+            </audio>
+            <div class="nlm-actions">
+              <a href="studio/metaharness-audio.m4a" download>&#8659; Download .m4a (~32&nbsp;MB)</a>
+            </div>
+          </div>
+
+          <!-- VIDEO -->
+          <div class="nlm-card" id="nlm-video-card">
+            <p class="nlm-card-tag">&#127909; Explainer video</p>
+            <h3>Watch the short</h3>
+            <p>
+              A narrated explainer that draws the problem, the fix, and the one command
+              to start &mdash; built straight from the notebook.
+            </p>
+            <!-- NLM_VIDEO_MEDIA -->
+            <div class="nlm-actions">
+              <a
+                href="https://notebooklm.google.com/notebook/3cc18f99-ef82-457d-bd80-686238d0685a"
+                target="_blank" rel="noopener"
+              >&#9654; Watch in the notebook</a>
+              <!-- NLM_VIDEO_DOWNLOAD -->
+            </div>
+          </div>
+
+          <!-- SLIDES -->
+          <div class="nlm-card" id="nlm-slides-card">
+            <p class="nlm-card-tag">&#128202; Slide deck</p>
+            <h3>Skim the deck</h3>
+            <p>
+              A detailed deck you can page through &mdash; the whole MetaHarness story,
+              one slide at a time, ready to present or share.
+            </p>
+            <!-- NLM_SLIDES_DOWNLOAD -->
+            <div class="nlm-actions">
+              <a
+                href="https://notebooklm.google.com/notebook/3cc18f99-ef82-457d-bd80-686238d0685a"
+                target="_blank" rel="noopener"
+              >&#9654; Open in the notebook</a>
+              <!-- NLM_SLIDES_LINK -->
+            </div>
+          </div>
+
+          <!-- INFOGRAPHIC -->
+          <div class="nlm-card">
+            <p class="nlm-card-tag">&#128200; Infographic</p>
+            <h3>See it at a glance</h3>
+            <p>
+              One landscape image: the AI knowledge gap, Maya&rsquo;s story, and the
+              60-second fix &mdash; the whole idea in a single look.
+            </p>
+            <a class="nlm-media"
+               href="studio/metaharness-infographic.png" target="_blank" rel="noopener">
+              <img src="studio/metaharness-infographic.png" loading="lazy"
+                   alt="MetaHarness infographic: 'Give your AI the home-field advantage.' Shows the AI knowledge gap (a generic assistant guesses and makes errors, while MetaHarness builds a project-aware specialist with zero-trust, read-only analysis), Maya's story from the clean-up tax to a 60-second fix to one shared 'npx maya-shop' command for her whole team, and a 'Ready to start? npx metaharness' call to action." />
+            </a>
+            <div class="nlm-actions">
+              <a href="studio/metaharness-infographic.png" download>&#8659; Download .png</a>
+            </div>
+          </div>
+
+          <!-- REPORT -->
+          <div class="nlm-card">
+            <p class="nlm-card-tag">&#128196; Deep-dive report</p>
+            <h3>Read the briefing</h3>
+            <p>
+              The written briefing document the audio is based on &mdash; themes,
+              architecture, host support, and the honest beta caveats.
+            </p>
+            <div class="nlm-actions">
+              <a href="studio/metaharness-report.md" target="_blank" rel="noopener">&#128196; Read the report</a>
+              <a href="studio/metaharness-report.md" download>&#8659; Download .md</a>
+            </div>
+          </div>
+
+        </div>
+
+        <p class="nlm-note">
+          Built with Google NotebookLM from the same source material as this site &middot;
+          the notebook is public &mdash;
+          <a href="https://notebooklm.google.com/notebook/3cc18f99-ef82-457d-bd80-686238d0685a"
+             target="_blank" rel="noopener">open it</a> to chat with the sources directly.
+        </p>
+      </div>
+    </div>
+  </section>
 
   <!-- ===================== FOOTER ===================== -->
   <footer>
@@ -1749,7 +1900,7 @@ If the pack has no answer, say so plainly — do not invent one.</code></pre>
       </nav>
       <div>
         Explainer for <a href="https://github.com/ruvnet/agent-harness-generator">ruvnet/agent-harness-generator</a>
-        &middot; built with the Ruv-Explainer dual-half pipeline.
+        &middot; built with the <a href="https://github.com/stuinfla/Ruv-Explainer">Ruv-Explainer Repo-Primer Pipeline</a>.
       </div>
       <div class="prov">
         Honest limits, stated plainly: MetaHarness is <strong>v0.1.x beta</strong>

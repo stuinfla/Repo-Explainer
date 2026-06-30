@@ -83,7 +83,7 @@ const user = (process.env.SMTP_USER || process.env.GMAIL_USER || '').trim();
 const pass = (process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '');
 const host = (process.env.SMTP_HOST || 'smtp.gmail.com').trim();
 const port = Number(process.env.SMTP_PORT || 465);
-const fromName = (process.env.EMAIL_FROM_NAME || 'Repo Explainer').trim();
+const fromName = (process.env.EMAIL_FROM_NAME || 'explainmyrepo').trim();
 
 if (!to) fail('no recipient — set EMAIL_TO (or NOTIFY_TO / OWNER_EMAIL).');
 if (!user) fail('no SMTP user — set SMTP_USER (or GMAIL_USER).');
@@ -178,7 +178,7 @@ ${scoreRows ? `<h3 style="margin:16px 0 6px">Scorecard</h3>
 ${links.length ? `<h3 style="margin:20px 0 6px">Links</h3><ul style="margin:4px 0;padding-left:20px">${links.join('')}</ul>` : ''}
 ${seoBlock}
 ${attachments.length ? `<p style="margin:16px 0 0;color:#555">Mobile + desktop screenshots are attached.</p>` : ''}
-<p style="margin:24px 0 0;color:#999;font-size:12px">Sent by the repo-explainer recipe (Station 9).</p>
+<p style="margin:24px 0 0;color:#999;font-size:12px">Sent by the explainmyrepo recipe (Station 9).</p>
 </body></html>`;
 
 const subject = `Your repo explainer is ready${ctx.repo?.name ? ` — ${ctx.repo.name}` : ''}`;
@@ -247,7 +247,7 @@ function sendMail() {
 
     const steps = [
       { expect: '220', send: null }, // server greeting
-      { expect: '250', send: 'EHLO repo-explainer' },
+      { expect: '250', send: 'EHLO explainmyrepo' },
       { expect: '334', send: 'AUTH LOGIN' },
       { expect: '334', send: Buffer.from(user).toString('base64') },
       { expect: '235', send: Buffer.from(pass).toString('base64') },

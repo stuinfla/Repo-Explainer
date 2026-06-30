@@ -34,17 +34,19 @@ function done(outputs) { emit({ ok: true, outputs, error: null }); process.exit(
 
 // Run a kb/ engine script; child stdout + stderr are routed to OUR stderr (fd 2) so our stdout
 // stays a single clean JSON object. A non-zero child exit throws -> we fail loud.
-function runKbScript(script, args, timeout) {
+// extraEnv is merged into process.env — used to forward KB_REPO_DIR so all scripts index the
+// correct build-dir clone instead of the hardcoded repoDir in kb/kb.config.mjs (Blocker-1 fix).
+function runKbScript(script, args, timeout, extraEnv = {}) {
   const scriptPath = path.join(KB_DIR, script);
   if (!fs.existsSync(scriptPath)) fail(`kb engine script missing: ${path.relative(REPO_ROOT, scriptPath)}`);
   console.error(`[build-kb] run: node kb/${script} ${args.join(' ')}`);
   try {
     execFileSync(process.execPath, [scriptPath, ...args], {
-      cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 2, 2], timeout, maxBuffer: 64 * 1024 * 1024,
+      cwd: REPO_ROOT, env: { ...process.env, ...extraEnv }, stdio: ['ignore', 2, 2], timeout, maxBuffer: 64 * 1024 * 1024,
     });
   } catch (e) {
     const why = e && e.signal ? `timed out / killed (${e.signal})` : `exit ${e && e.status}`;
-    fail(`kb/${script} failed for target "${args[args.length - 1]}" (${why}) — is the target registered in kb/kb.config.mjs with an \`embed\` block and its repoDir pointing at the clone? (${e && e.message ? e.message.split('\n')[0] : ''})`);
+    fail(`kb/${script} failed for target "${args[args.length - 1]}" (${why}) — is the target registered in kb/kb.config.mjs with an \`embed\` block? (repoDir forwarded via KB_REPO_DIR: ${extraEnv.KB_REPO_DIR || 'not set'}) (${e && e.message ? e.message.split('\n')[0] : ''})`);
   }
 }
 
@@ -77,10 +79,13 @@ function main() {
   }
 
   // ---- run the real kb/ engine (build first, then the three structured extractors) ----
-  runKbScript('build-kb.mjs', ['--target', slug], 1_200_000);   // embeds every chunk; allow time
-  runKbScript('extract-symbols.mjs', [slug], 600_000);           // rustdoc-json can be slow
-  runKbScript('dep-graph.mjs', [slug], 300_000);
-  runKbScript('entrypoints.mjs', [slug], 300_000);
+  // Forward clonePath via KB_REPO_DIR so all four scripts index THIS build dir's clone,
+  // not the hardcoded repoDir in kb/kb.config.mjs (CONTRACT §b build-dir guarantee, Blocker-1 fix).
+  const kbEnv = { KB_REPO_DIR: clonePath };
+  runKbScript('build-kb.mjs', ['--target', slug], 1_200_000, kbEnv);   // embeds every chunk; allow time
+  runKbScript('extract-symbols.mjs', [slug], 600_000, kbEnv);           // rustdoc-json can be slow
+  runKbScript('dep-graph.mjs', [slug], 300_000, kbEnv);
+  runKbScript('entrypoints.mjs', [slug], 300_000, kbEnv);
 
   // ---- verify the real outputs exist (no fake KB, no silent partial) ----
   const storeDir = path.join(KB_DIR, 'stores', slug);

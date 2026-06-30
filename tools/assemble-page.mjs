@@ -171,7 +171,7 @@ function noteHtml(n) {
   return `\n      <p class="note${kind}">${lab}${inline(n.text)}</p>`;
 }
 function figureHtml(base, alt, caption, opts = {}) {
-  const cls = opts.diagram ? 'figure diagram' : 'figure';
+  const cls = opts.diagram ? (opts.concept ? 'figure diagram concept' : 'figure diagram') : 'figure';
   const tier = opts.tier ? `\n        <span class="tier ${opts.tier.cls}">${esc(opts.tier.label)}</span>` : '';
   const cap = caption ? `\n        <figcaption>${inline(caption)}</figcaption>` : '';
   return `\n      <figure class="${cls}">${tier}\n        <img src="assets/${esc(base)}" alt="${esc(alt)}" loading="lazy">${cap}\n      </figure>`;
@@ -255,9 +255,10 @@ function main() {
   const archFile = copyAsset(reqStr(arch.svgPath, 'visuals.architectureDiagram.svgPath'), buildDir, siteAssets, 'architecture diagram');
   const archAlt = reqStr(arch.altText, 'visuals.architectureDiagram.altText');
 
-  const flow = reqObj(visuals.flowDiagram, 'visuals.flowDiagram (MANDATORY)');
-  const flowFile = copyAsset(reqStr(flow.svgPath, 'visuals.flowDiagram.svgPath'), buildDir, siteAssets, 'flow diagram');
-  const flowAlt = reqStr(flow.altText, 'visuals.flowDiagram.altText');
+  // flow diagram is OPTIONAL — a pure library repo (no runtime entrypoints) has no flow; make-diagrams skips it there
+  const flow = (visuals.flowDiagram && typeof visuals.flowDiagram === 'object') ? visuals.flowDiagram : null;
+  const flowFile = (flow && flow.svgPath) ? copyAsset(reqStr(flow.svgPath, 'visuals.flowDiagram.svgPath'), buildDir, siteAssets, 'flow diagram') : null;
+  const flowAlt = flow ? (flow.altText || '') : '';
 
   // optional ladder rungs — rendered only when present (no silent placeholder; broken file = loud)
   const optDiagram = (d) => (d && d.svgPath) ? { file: copyAsset(d.svgPath, buildDir, siteAssets, 'diagram'), alt: d.altText || '' } : null;
@@ -429,7 +430,7 @@ ${jsonLdScript}
   out.push(sectionShell('whatItIs', '02', whatItIs, arcQ.whatItIs, [
     whatItIs.lead ? `<p class="lead-in">${inline(whatItIs.lead)}</p>` : '',
     paras(whatItIs.paragraphs),
-    bigIdea ? figureHtml(bigIdea.file, bigIdea.alt || `${repoName}: the whole idea in one picture`, whatItIs.figureCaption, { diagram: true, tier: { cls: 'tech', label: 'The big idea' } }) : '',
+    bigIdea ? figureHtml(bigIdea.file, bigIdea.alt || `${repoName}: the whole idea in one picture`, whatItIs.figureCaption, { diagram: true, concept: true, tier: { cls: 'tech', label: 'The big idea' } }) : '',
     tableHtml(whatItIs.table),
   ].filter(Boolean).join('\n      ')));
 
@@ -440,7 +441,7 @@ ${jsonLdScript}
   out.push(sectionShell('insight', '03', insight, arcQ.insight, [
     insight.lead ? `<p class="lead-in">${inline(insight.lead)}</p>` : '',
     paras(insight.paragraphs),
-    insightDia ? figureHtml(insightDia.file, insightDia.alt || `${repoName}: the one clever move`, insight.figureCaption, { diagram: true, tier: { cls: 'tech', label: 'The aha' } }) : '',
+    insightDia ? figureHtml(insightDia.file, insightDia.alt || `${repoName}: the one clever move`, insight.figureCaption, { diagram: true, concept: true, tier: { cls: 'tech', label: 'The aha' } }) : '',
     `<p class="oh">${inline(insight.oh)}</p>`,
   ].filter(Boolean).join('\n      ')));
 
@@ -450,11 +451,13 @@ ${jsonLdScript}
   out.push(sectionShell('howItWorks', '04', howItWorks, arcQ.howItWorks, [
     howItWorks.lead ? `<p class="lead-in">${inline(howItWorks.lead)}</p>` : '',
     paras(howItWorks.paragraphs),
-    `<div class="dual">${
-      figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, tier: { cls: 'tech', label: 'Architecture' } })
-    }${
-      figureHtml(flowFile, flowAlt, 'Data flow — how a request moves through the system at runtime.', { diagram: true, tier: { cls: 'tech', label: 'Data flow' } })
-    }\n      </div>`,
+    flowFile
+      ? `<div class="dual">${
+          figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, tier: { cls: 'tech', label: 'Architecture' } })
+        }${
+          figureHtml(flowFile, flowAlt, 'Data flow — how a request moves through the system at runtime.', { diagram: true, tier: { cls: 'tech', label: 'Data flow' } })
+        }\n      </div>`
+      : figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, tier: { cls: 'tech', label: 'Architecture' } }),
   ].filter(Boolean).join('\n      ')));
 
   // 5 · use cases  (collapsible cases + scenario raster)

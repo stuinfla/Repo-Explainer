@@ -1,0 +1,8 @@
+{
+  "builtAt": "2026-06-19",
+  "version": "v0.1.1",
+  "targetRepoSha": "5b5dd7247bd9e0f61bdce2fee6730692b9606977",
+  "embedder": "Xenova/bge-small-en-v1.5",
+  "dim": 384,
+  "gateA": { "score": 99.7, "heldout": 99.8, "passed": true, "date": "2026-06-19" }
+}

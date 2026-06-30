@@ -1,0 +1,300 @@
+{
+  "target": "photonlayer",
+  "metaName": "PhotonLayer",
+  "generated": "2026-06-19T21:42:08.918Z",
+  "ecosystems": [
+    "rust"
+  ],
+  "componentCount": 4,
+  "internalEdgeCount": 4,
+  "externalDepCount": 5,
+  "nodes": [
+    {
+      "name": "photonlayer-core",
+      "version": "0.1.0",
+      "description": "Deterministic optical-AI front end in pure Rust: a learned phase mask compresses light into task-useful sensor pixels.",
+      "manifest": "crates/photonlayer-core/Cargo.toml",
+      "targets": [
+        {
+          "name": "photonlayer_core",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "compression",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "hello_optics",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "propagation_modes",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "receipt",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "wavefront_focus",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "gradient_check",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "propagation_speedup",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "photonlayer-bench",
+      "version": "0.1.0",
+      "description": "PhotonLayer reproducible benchmarks + in-Rust mask learner and digital decoder (ADR-260 Phase 4)",
+      "manifest": "crates/photonlayer-bench/Cargo.toml",
+      "targets": [
+        {
+          "name": "photonlayer_bench",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "photonlayer-bench",
+          "kinds": [
+            "bin"
+          ]
+        },
+        {
+          "name": "differential_detection",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "gradient_training",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "learn_mask",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "mnist_compression",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "multiplane_cascade",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "optical_feature_extractor",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "privacy_probe",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "cascade_gradient_check",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "mnist_cascade_bench",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "mnist_differential_bench",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "mnist_gradient_bench",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "more_data_bench",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [
+        "photonlayer-bench"
+      ],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "photonlayer-wasm",
+      "version": "0.1.0",
+      "description": "PhotonLayer WASM bindings for browser optics playback and receipt verification (ADR-260 Phase 3)",
+      "manifest": "crates/photonlayer-wasm/Cargo.toml",
+      "targets": [
+        {
+          "name": "photonlayer_wasm",
+          "kinds": [
+            "cdylib",
+            "rlib"
+          ]
+        }
+      ],
+      "isLib": false,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "photonlayer-cli",
+      "version": "0.1.0",
+      "description": "PhotonLayer command-line studio: run simulations, demos (barcode, edge, privacy gate), benchmarks, and verify receipts (ADR-260)",
+      "manifest": "crates/photonlayer-cli/Cargo.toml",
+      "targets": [
+        {
+          "name": "photonlayer",
+          "kinds": [
+            "bin"
+          ]
+        }
+      ],
+      "isLib": false,
+      "bins": [
+        "photonlayer"
+      ],
+      "ecosystem": "rust"
+    }
+  ],
+  "internalEdges": [
+    {
+      "from": "photonlayer-bench",
+      "to": "photonlayer-core",
+      "kind": "normal"
+    },
+    {
+      "from": "photonlayer-wasm",
+      "to": "photonlayer-core",
+      "kind": "normal"
+    },
+    {
+      "from": "photonlayer-cli",
+      "to": "photonlayer-bench",
+      "kind": "normal"
+    },
+    {
+      "from": "photonlayer-cli",
+      "to": "photonlayer-core",
+      "kind": "normal"
+    }
+  ],
+  "externalDeps": {
+    "photonlayer-core": [
+      {
+        "name": "blake3",
+        "req": "^1.8",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2.0",
+        "kind": "normal"
+      }
+    ],
+    "photonlayer-bench": [
+      {
+        "name": "serde",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1.0",
+        "kind": "normal"
+      }
+    ],
+    "photonlayer-wasm": [
+      {
+        "name": "serde",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "wasm-bindgen",
+        "req": "^0.2",
+        "kind": "normal"
+      }
+    ],
+    "photonlayer-cli": [
+      {
+        "name": "serde",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1.0",
+        "kind": "normal"
+      }
+    ]
+  },
+  "externalDepNames": [
+    "blake3",
+    "serde",
+    "serde_json",
+    "thiserror",
+    "wasm-bindgen"
+  ]
+}

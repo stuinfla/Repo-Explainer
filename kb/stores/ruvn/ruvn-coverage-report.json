@@ -1,0 +1,122 @@
+{
+  "target": "ruvn",
+  "generated": "2026-06-19T21:50:27.519Z",
+  "pass": true,
+  "hardFail": false,
+  "checks": {
+    "coverageRatio": {
+      "value": 1,
+      "pass": true,
+      "hardFail": false,
+      "threshold": 0.92,
+      "indexed": 11,
+      "authored": 11
+    },
+    "perComponentMin": {
+      "pass": true,
+      "thin": [],
+      "threshold": 3
+    },
+    "passageRatio": {
+      "value": 4.09,
+      "pass": true,
+      "threshold": 4,
+      "distinctSourceFiles": 11,
+      "passages": 45
+    },
+    "spotCheck": {
+      "value": 1,
+      "pass": true,
+      "threshold": 0.8,
+      "hits": 11,
+      "of": 11
+    }
+  },
+  "sourceTypeCounts": {
+    "doc": 25,
+    "config": 1,
+    "src": 7,
+    "test": 2,
+    "(untagged)": 10
+  },
+  "summary": {
+    "authoredSourceFiles": 11,
+    "indexedAuthoredFiles": 11,
+    "coverage": 1,
+    "totalPassages": 45,
+    "distinctIndexedPaths": 39,
+    "passageRatio": 4.09,
+    "components": 0,
+    "thinComponents": 0
+  },
+  "notIndexedSample": [],
+  "perComponent": [],
+  "spotResults": [
+    {
+      "file": "src/agents/scout.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "src/agents/source-grader.ts"
+    },
+    {
+      "file": "src/agents/citer.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "src/agents/source-grader.ts"
+    },
+    {
+      "file": "__tests__/smoke.test.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "__tests__/smoke.test.ts"
+    },
+    {
+      "file": "src/agents/web-searcher.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "src/agents/web-searcher.ts"
+    },
+    {
+      "file": "src/agents/source-grader.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "src/agents/source-grader.ts"
+    },
+    {
+      "file": "bin/cli.js",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "bin/cli.js"
+    },
+    {
+      "file": "scripts/openrouter-validate.mjs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "scripts/openrouter-validate.mjs"
+    },
+    {
+      "file": "src/agents/fact-checker.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "src/agents/fact-checker.ts"
+    },
+    {
+      "file": "src/agents/synthesizer.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "src/agents/synthesizer.ts"
+    },
+    {
+      "file": "src/init.ts",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "src/agents/fact-checker.ts"
+    },
+    {
+      "file": "__tests__/openrouter.integration.test.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "__tests__/openrouter.integration.test.ts"
+    }
+  ]
+}

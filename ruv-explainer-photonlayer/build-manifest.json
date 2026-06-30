@@ -1,0 +1,11 @@
+{
+  "builtAt": "2026-06-19",
+  "sourceSha": "fe86c9fad9a1572ce46e337f118656961bdf4ebb",
+  "sourceShaShort": "fe86c9f",
+  "upstream": "https://github.com/ruvnet/PhotonLayer",
+  "author": "Reuven Cohen / @ruvnet",
+  "kb": {
+    "embedding": "Xenova/bge-small-en-v1.5 (384-dim)",
+    "gateA": { "tuned": 99.73, "heldout": 100.0 }
+  }
+}

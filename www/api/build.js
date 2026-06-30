@@ -38,7 +38,7 @@ function ghHeaders(token) {
     Accept: "application/vnd.github.v3+json",
     Authorization: "Bearer " + token,
     "Content-Type": "application/json",
-    "User-Agent": "repo-explainer-bot",
+    "User-Agent": "explainmyrepo-bot",
   };
 }
 
@@ -107,7 +107,7 @@ module.exports = async function handler(req, res) {
           error:
             "Couldn't find " +
             fullName +
-            ", or the Repo Explainer GitHub account doesn't have access to it. " +
+            ", or the explainmyrepo GitHub account doesn't have access to it. " +
             "Check the URL — and if it's a private repo, make sure it's owned by " +
             "or shared with that account.",
         })
@@ -153,7 +153,7 @@ module.exports = async function handler(req, res) {
       method: "POST",
       headers: ghHeaders(token),
       body: JSON.stringify({
-        description: "Repo Explainer build status: " + fullName,
+        description: "explainmyrepo build status: " + fullName,
         public: true,
         files: {
           "status.json": { content: JSON.stringify(statusPayload, null, 2) },

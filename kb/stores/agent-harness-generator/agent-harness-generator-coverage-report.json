@@ -1,0 +1,273 @@
+{
+  "target": "agent-harness-generator",
+  "generated": "2026-06-19T21:58:52.967Z",
+  "pass": true,
+  "hardFail": false,
+  "checks": {
+    "coverageRatio": {
+      "value": 0.9841,
+      "pass": true,
+      "hardFail": false,
+      "threshold": 0.92,
+      "indexed": 247,
+      "authored": 251
+    },
+    "perComponentMin": {
+      "pass": true,
+      "thin": [],
+      "threshold": 3
+    },
+    "passageRatio": {
+      "value": 10.54,
+      "pass": true,
+      "threshold": 4,
+      "distinctSourceFiles": 247,
+      "passages": 2603
+    },
+    "spotCheck": {
+      "value": 0.95,
+      "pass": true,
+      "threshold": 0.8,
+      "hits": 19,
+      "of": 20
+    }
+  },
+  "sourceTypeCounts": {
+    "doc": 1523,
+    "test": 291,
+    "example": 299,
+    "config": 56,
+    "src": 423,
+    "(untagged)": 11
+  },
+  "summary": {
+    "authoredSourceFiles": 251,
+    "indexedAuthoredFiles": 247,
+    "coverage": 0.9841,
+    "totalPassages": 2603,
+    "distinctIndexedPaths": 920,
+    "passageRatio": 10.54,
+    "components": 18,
+    "thinComponents": 0
+  },
+  "notIndexedSample": [
+    "crates/kernel/build.rs",
+    "crates/kernel-napi/build.rs",
+    "packages/create-agent-harness/templates/catalog.def.mjs",
+    "vitest.config.ts"
+  ],
+  "perComponent": [
+    {
+      "component": "packages/agent-harness-generator-lib",
+      "passages": 7,
+      "ok": true
+    },
+    {
+      "component": "packages/create-agent-harness",
+      "passages": 520,
+      "ok": true
+    },
+    {
+      "component": "packages/darwin-mode",
+      "passages": 193,
+      "ok": true
+    },
+    {
+      "component": "packages/harness",
+      "passages": 47,
+      "ok": true
+    },
+    {
+      "component": "packages/host-claude-code",
+      "passages": 10,
+      "ok": true
+    },
+    {
+      "component": "packages/host-codex",
+      "passages": 8,
+      "ok": true
+    },
+    {
+      "component": "packages/host-copilot",
+      "passages": 10,
+      "ok": true
+    },
+    {
+      "component": "packages/host-github-actions",
+      "passages": 14,
+      "ok": true
+    },
+    {
+      "component": "packages/host-hermes",
+      "passages": 10,
+      "ok": true
+    },
+    {
+      "component": "packages/host-openclaw",
+      "passages": 12,
+      "ok": true
+    },
+    {
+      "component": "packages/host-opencode",
+      "passages": 12,
+      "ok": true
+    },
+    {
+      "component": "packages/host-pi-dev",
+      "passages": 8,
+      "ok": true
+    },
+    {
+      "component": "packages/host-rvm",
+      "passages": 20,
+      "ok": true
+    },
+    {
+      "component": "packages/kernel-js",
+      "passages": 34,
+      "ok": true
+    },
+    {
+      "component": "packages/router",
+      "passages": 27,
+      "ok": true
+    },
+    {
+      "component": "packages/sdk",
+      "passages": 9,
+      "ok": true
+    },
+    {
+      "component": "packages/vertical-base",
+      "passages": 11,
+      "ok": true
+    },
+    {
+      "component": "packages/vertical-trading",
+      "passages": 6,
+      "ok": true
+    }
+  ],
+  "spotResults": [
+    {
+      "file": "packages/create-agent-harness/__tests__/plugin-init.test.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "packages/create-agent-harness/__tests__/plugin-init.test.ts"
+    },
+    {
+      "file": "packages/darwin-mode/__tests__/sandbox.test.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "packages/darwin-mode/src/repo_profiler.ts"
+    },
+    {
+      "file": "packages/darwin-mode/__tests__/perf/mapLimit.test.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "packages/darwin-mode/src/repo_profiler.ts"
+    },
+    {
+      "file": "packages/create-agent-harness/src/oia-manifest.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "packages/create-agent-harness/src/oia-manifest.ts"
+    },
+    {
+      "file": "crates/kernel/src/claims.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/kernel/src/claims.rs"
+    },
+    {
+      "file": "packages/darwin-mode/src/cli.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "packages/darwin-mode/src/cli.ts"
+    },
+    {
+      "file": "packages/darwin-mode/src/repo_profiler.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "packages/darwin-mode/src/repo_profiler.ts"
+    },
+    {
+      "file": "crates/kernel/build.rs",
+      "indexed": false,
+      "retrieved": false,
+      "top1": "docs/adrs/ADR-002-kernel-boundary.md"
+    },
+    {
+      "file": "packages/create-agent-harness/__tests__/repo-scorecard.test.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "packages/create-agent-harness/__tests__/repo-scorecard.test.ts"
+    },
+    {
+      "file": "packages/harness/src/consensus.ts",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "docs/USAGE.md"
+    },
+    {
+      "file": "examples/federation/federation.mjs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "examples/federation/federation.mjs"
+    },
+    {
+      "file": "packages/kernel-js/__tests__/memory-rvf.test.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "packages/kernel-js/__tests__/memory-rvf.test.ts"
+    },
+    {
+      "file": "packages/kernel-js/src/memory.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "packages/kernel-js/src/index.ts"
+    },
+    {
+      "file": "packages/harness/src/index.ts",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "docs/USAGE.md"
+    },
+    {
+      "file": "__tests__/harness-diag.test.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "__tests__/harness-diag.test.ts"
+    },
+    {
+      "file": "__tests__/harness-wizard.test.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "__tests__/harness-wizard.test.ts"
+    },
+    {
+      "file": "packages/create-agent-harness/src/federate.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "packages/create-agent-harness/src/index.ts"
+    },
+    {
+      "file": "packages/darwin-mode/__tests__/e2e/safety-invariant.e2e.test.ts",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "packages/darwin-mode/src/safety.ts"
+    },
+    {
+      "file": "packages/kernel-js/__tests__/dispatch.test.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "packages/kernel-js/src/index.ts"
+    },
+    {
+      "file": "__tests__/cli-flags-completions.test.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "__tests__/cli-flags-completions.test.ts"
+    }
+  ]
+}

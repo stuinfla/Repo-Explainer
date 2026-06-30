@@ -1,31 +1,61 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 462 134" width="462" height="134" role="img" aria-labelledby="d-title d-desc">
-  <title id="d-title">demorepo — The clever bit</title>
-  <desc id="d-desc">demorepo — The clever bit: Copy-on-write → branch → no full copy</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 538 538" width="538" height="538" role="img" aria-labelledby="d-title d-desc">
+  <title id="d-title">demorepo — The Insight</title>
+  <desc id="d-desc">The clever bit: Copy-on-write → branch → no full copy</desc>
+  <metadata><![CDATA[
+The clever bit
+Copy-on-write -> branch -> no full copy
+]]></metadata>
   <defs>
-    <marker id="ah" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
-      <polygon class="ah" points="0 0, 9 3.5, 0 7" fill="#555555"/>
-    </marker>
-    <style>
-      .box { fill: #f8f9fa; stroke: #333333; stroke-width: 1.5px; }
-      .lbl { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; font-weight: 500; fill: #1a1a1a; }
-      .sub { font-size: 11px; font-weight: 400; opacity: .8; }
-      .arr { stroke: #555555; stroke-width: 1.5px; fill: none; }
-      .band { font-family: system-ui, sans-serif; font-size: 11px; font-weight: 700; fill: #4a90d9; letter-spacing: .04em; }
-      .ttl { font-family: system-ui, sans-serif; font-size: 15px; font-weight: 700; fill: #1a1a1a; }
-      @media (prefers-color-scheme: dark) {
-        .box { fill: #2d333b; stroke: #768390; }
-        .lbl { fill: #e6edf3; }
-        .arr { stroke: #768390; }
-        .ah  { fill: #768390; }
-        .ttl { fill: #e6edf3; }
-        .band { fill: #6cb6ff; }
-      }
-    </style>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#0b1018"/><stop offset="0.55" stop-color="#0a0e15"/><stop offset="1" stop-color="#070a10"/>
+    </linearGradient>
+    <radialGradient id="spot" cx="0.5" cy="0.02" r="0.8">
+      <stop offset="0" stop-color="rgba(109,40,217,0.1)"/><stop offset="0.5" stop-color="rgba(109,40,217,0.025)"/><stop offset="1" stop-color="rgba(0,0,0,0)"/>
+    </radialGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="rgba(255,255,255,0.09)"/><stop offset="0.5" stop-color="rgba(255,255,255,0.015)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="rgba(255,255,255,0.014)"/>
+    </pattern>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="11"/></filter>
+    <filter id="glowS" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="cardSh" x="-40%" y="-50%" width="180%" height="210%">
+      <feDropShadow dx="0" dy="6" stdDeviation="11" flood-color="#000000" flood-opacity="0.34"/>
+    </filter>
   </defs>
-  <text class="ttl" x="231" y="40" text-anchor="middle">demorepo — The clever bit</text>
-  <line class="arr" x1="159" y1="85" x2="186" y2="85" marker-end="url(#ah)"/>
-  <line class="arr" x1="283" y1="85" x2="310" y2="85" marker-end="url(#ah)"/>
-  <g><rect class="box" x="26" y="62" width="133" height="46" rx="5"/><text class="lbl" x="92.5" y="85" text-anchor="middle" dominant-baseline="middle">Copy-on-write</text></g>
-  <g><rect class="box" x="187" y="62" width="96" height="46" rx="5"/><text class="lbl" x="235" y="85" text-anchor="middle" dominant-baseline="middle">branch</text></g>
-  <g><rect class="box" x="311" y="62" width="125" height="46" rx="5"/><text class="lbl" x="373.5" y="85" text-anchor="middle" dominant-baseline="middle">no full copy</text></g>
+  <rect x="0" y="0" width="538" height="538" fill="url(#bg)"/>
+  <rect x="0" y="0" width="538" height="538" fill="url(#spot)"/>
+  <rect x="0" y="0" width="538" height="538" fill="url(#grid)"/>
+  <g transform="translate(59.0,0.0)">
+<text x="210" y="44" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="13" font-weight="600" fill="#6d28d9" text-anchor="middle" letter-spacing="3">THE INSIGHT</text>
+  <text x="210" y="80" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="30" font-weight="800" fill="#6d28d9" text-anchor="middle" opacity="0.45" filter="url(#glowS)">The clever bit</text>
+<text x="210" y="80" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="30" font-weight="800" fill="#f1f5f9" text-anchor="middle">The clever bit</text>
+  <line x1="176" y1="98" x2="244" y2="98" stroke="#6d28d9" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
+  <line x1="210" y1="216" x2="210" y2="254" stroke="#3b5dc6" stroke-width="9" opacity="0.3" filter="url(#glow)" stroke-linecap="round"/>
+  <line x1="210" y1="216" x2="210" y2="254" stroke="#6c86d4" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M 205.7 246.1 L 210.0 254.0 L 214.3 246.1" fill="none" stroke="#6c86d4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="210" y1="344" x2="210" y2="382" stroke="#725c95" stroke-width="9" opacity="0.3" filter="url(#glow)" stroke-linecap="round"/>
+  <line x1="210" y1="344" x2="210" y2="382" stroke="#9585b0" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M 205.7 374.1 L 210.0 382.0 L 214.3 374.1" fill="none" stroke="#9585b0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="65" y="129" width="290" height="88" rx="22" fill="#6d28d9" opacity="0.250" filter="url(#glow)"/>
+  <rect x="70" y="140" width="280" height="78" rx="18" fill="rgba(44,16,87,0.85)"/>
+  <rect x="70" y="132" width="280" height="78" rx="18" fill="rgba(109,40,217,0.18)" stroke="rgba(109,40,217,0.42)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="70" y="132" width="280" height="78" rx="18" fill="url(#sheen)"/>
+  <path d="M 88 133.25 H 332" stroke="rgba(255,255,255,0.14)" stroke-width="1" fill="none" stroke-linecap="round"/>
+<text x="210" y="171" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="18.5" font-weight="700" fill="#f1f5f9" text-anchor="middle" dominant-baseline="central">Copy-on-write</text>
+  <rect x="65" y="257" width="290" height="88" rx="22" fill="#0891b2" opacity="0.250" filter="url(#glow)"/>
+  <rect x="70" y="268" width="280" height="78" rx="18" fill="rgba(3,58,71,0.85)"/>
+  <rect x="70" y="260" width="280" height="78" rx="18" fill="rgba(8,145,178,0.18)" stroke="rgba(8,145,178,0.42)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="70" y="260" width="280" height="78" rx="18" fill="url(#sheen)"/>
+  <path d="M 88 261.25 H 332" stroke="rgba(255,255,255,0.14)" stroke-width="1" fill="none" stroke-linecap="round"/>
+<text x="210" y="299" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="18.5" font-weight="700" fill="#f1f5f9" text-anchor="middle" dominant-baseline="central">branch</text>
+  <rect x="65" y="385" width="290" height="88" rx="22" fill="#db2777" opacity="0.250" filter="url(#glow)"/>
+  <rect x="70" y="396" width="280" height="78" rx="18" fill="rgba(88,16,48,0.85)"/>
+  <rect x="70" y="388" width="280" height="78" rx="18" fill="rgba(219,39,119,0.18)" stroke="rgba(219,39,119,0.42)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="70" y="388" width="280" height="78" rx="18" fill="url(#sheen)"/>
+  <path d="M 88 389.25 H 332" stroke="rgba(255,255,255,0.14)" stroke-width="1" fill="none" stroke-linecap="round"/>
+<text x="210" y="427" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="18.5" font-weight="700" fill="#f1f5f9" text-anchor="middle" dominant-baseline="central">no full copy</text>
+<text x="210" y="506" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="13" font-weight="400" fill="#7c8aa0" text-anchor="middle">copy-on-write  →  branch  →  no full copy</text>
+  </g>
 </svg>

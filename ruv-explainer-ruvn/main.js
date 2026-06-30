@@ -37,13 +37,19 @@
   var status = document.getElementById("dzStatus");
   if (!dz) return;
 
-  // Wires up to the real GitHub Release / downloads/ href when published.
+  // The drop-in Smart Zip ships alongside the site under downloads/.
   var DOWNLOAD_HREF = "downloads/ruvn-dropin.zip";
 
   function say(msg) { if (status) status.textContent = msg; }
 
   function activate() {
-    say("Drop-in Smart Zip not bundled yet — it publishes to the GitHub Release (" + DOWNLOAD_HREF + ").");
+    say("Downloading ruvn-dropin.zip … (unzip → cd for-ai → npm i → node ask-kb.mjs ruvn \"what does ruvn do\")");
+    var a = document.createElement("a");
+    a.href = DOWNLOAD_HREF;
+    a.download = "ruvn-dropin.zip";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   dz.addEventListener("click", activate);

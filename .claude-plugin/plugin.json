@@ -1,5 +1,5 @@
 {
-  "name": "repo-explainer",
+  "name": "explainmyrepo",
   "version": "0.1.0",
   "description": "Turn any GitHub repo into a beautiful, art-directed explainer site that takes a stranger from \"I've never seen this\" to \"oh, I get why this matters — and I'm ready to use it.\" One Claude Code skill (the brain) reads the repo, builds a real RVF vector knowledge base, conceives a bespoke visual metaphor, authors the comprehension arc, generates raster + SVG visuals, assembles a responsive page on a shared design system, grades it on real pixels against a dual quality gate (>=95 on mobile and desktop), deploys it to its own URL, and ships a downloadable AI knowledge pack so the reader's AI gets it too. Pure, independently-testable tools do the mechanics; one BuildContext carries the work.",
   "author": {

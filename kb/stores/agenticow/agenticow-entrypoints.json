@@ -1,0 +1,192 @@
+{
+  "target": "agenticow",
+  "metaName": "agenticow",
+  "generated": "2026-06-29T20:43:12.497Z",
+  "workspace": {
+    "kind": "npm",
+    "members": []
+  },
+  "components": [
+    {
+      "name": "agenticow",
+      "path": "",
+      "kind": "package",
+      "description": "Git for Agent Memory: Copy-On-Write vector branching for embedded multi-agent memory. Branch a base memory in ~0.5ms / 162 bytes regardless of base size — 83x faster, 3000x smaller than full-copy snapshots. Exact read-through queries (parent ∪ edits, child wins).",
+      "scripts": {
+        "bench": "node bench/bench.js",
+        "bench:ladder": "node bench/claim-ladder.js",
+        "acceptance": "node bench/acceptance.js",
+        "demo": "node bin/agenticow.js demo",
+        "examples": "for f in red-team-sandbox multi-persona-consensus time-travel-debug multi-tenant-saas personalization rollback-quarantine checkpointing git-workflow ab-branches parallel-agents promotion-pipeline compliance-lineage ab-at-scale parallel-selves memory-evolution simulated-org; do echo \"\\n══ $f ══\"; node examples/$f.mjs; done",
+        "examples:production": "for f in red-team-sandbox multi-persona-consensus time-travel-debug multi-tenant-saas; do echo \"\\n══ $f ══\"; node examples/$f.mjs; done",
+        "examples:platform": "for f in promotion-pipeline compliance-lineage ab-at-scale; do echo \"\\n══ $f ══\"; node examples/$f.mjs; done",
+        "examples:exotic": "for f in parallel-selves memory-evolution simulated-org; do echo \"\\n══ $f ══\"; node examples/$f.mjs; done",
+        "test": "node --test test/*.test.js"
+      },
+      "bins": [
+        "agenticow"
+      ],
+      "deps": [
+        "@ruvector/rvf-node"
+      ]
+    }
+  ],
+  "binaries": [
+    {
+      "name": "agenticow",
+      "component": "agenticow",
+      "path": "",
+      "kind": "npm-bin"
+    }
+  ],
+  "commands": [
+    {
+      "cmd": "npm run bench",
+      "raw": "node bench/bench.js",
+      "category": "bench",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run bench:ladder",
+      "raw": "node bench/claim-ladder.js",
+      "category": "bench",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run acceptance",
+      "raw": "node bench/acceptance.js",
+      "category": "bench",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run demo",
+      "raw": "node bin/agenticow.js demo",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run examples",
+      "raw": "for f in red-team-sandbox multi-persona-consensus time-travel-debug multi-tenant-saas personalization rollback-quarantine checkpointing git-workflow ab-branches parallel-agents promotion-pipeline compliance-lineage ab-at-scale parallel-selves memory-evolution simulated-org; do echo \"\\n══ $f ══\"; node examples/$f.mjs; done",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run examples:production",
+      "raw": "for f in red-team-sandbox multi-persona-consensus time-travel-debug multi-tenant-saas; do echo \"\\n══ $f ══\"; node examples/$f.mjs; done",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run examples:platform",
+      "raw": "for f in promotion-pipeline compliance-lineage ab-at-scale; do echo \"\\n══ $f ══\"; node examples/$f.mjs; done",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run examples:exotic",
+      "raw": "for f in parallel-selves memory-evolution simulated-org; do echo \"\\n══ $f ══\"; node examples/$f.mjs; done",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "node --test test/*.test.js",
+      "category": "test",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm install agenticow",
+      "category": "install",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm install @metaharness/jujutsu agenticow agentic-jujutsu",
+      "category": "install",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "node examples/personalization.mjs",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "node examples/rollback-quarantine.mjs",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "node examples/checkpointing.mjs",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "node examples/git-workflow.mjs",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "node examples/ab-branches.mjs",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "node examples/parallel-agents.mjs",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run examples",
+      "category": "run",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "node examples/red-team-sandbox.mjs",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "node examples/multi-persona-consensus.mjs",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "node examples/time-travel-debug.mjs",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "node examples/multi-tenant-saas.mjs",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    }
+  ],
+  "install": [
+    "npm install agenticow",
+    "npm install @metaharness/jujutsu agenticow agentic-jujutsu"
+  ],
+  "quickstart": [
+    "npm run examples"
+  ]
+}

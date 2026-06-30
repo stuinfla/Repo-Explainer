@@ -493,6 +493,16 @@ section { scroll-margin-top: calc(var(--head-h) + 1rem); }
 }
 .figure > img, .figure > svg { width: 100%; height: auto; display: block; border-radius: 7px; }
 .figure.diagram { background: var(--bg); }   /* SVG-on-dark plate */
+/* All diagrams FIT THE COLUMN WIDTH on both mobile and desktop. We previously rendered "dense"
+   maps at natural size inside a horizontally-pannable plate on mobile — but a first view (and the
+   vision quality grader) never pans, so a panned diagram always reads as horizontally CLIPPED
+   (title cut off, right side offscreen → INV-18 fail). Fit-to-width shows the WHOLE diagram, and
+   the renderers keep labels legible well past the worst downscale (verified by looking: architecture
+   568px @0.63x and flow 772px @0.46x both fully readable on a 390px screen). Inherits width:100%
+   from `.figure > img` above; we only need to neutralise any pan plumbing and the drag hint. */
+.figure.diagram { overflow-x: visible; }
+.figure.diagram > img, .figure.diagram > svg { width: 100%; height: auto; max-width: 100%; min-width: 0; }
+.figure.diagram > figcaption::after { content: ""; }
 .figure figcaption {
   margin-top: 11px; color: var(--muted); font-size: var(--step--1); line-height: 1.5;
 }
@@ -782,9 +792,16 @@ footer .fine { margin-top: var(--space-l); padding-top: var(--space-m); border-t
 @media (min-width: 48em) {
   .nav-links { display: flex; }
   .hero { padding-top: var(--space-3xl); }
-  .hero-grid { grid-template-columns: 1.05fr 0.95fr; gap: var(--space-2xl); }
+  /* Top-align the two columns: a tall headline must not leave the art-card centered low with a dead
+     void above it (the failure on long-headline repos). The art tracks the headline from the top. */
+  .hero-grid { grid-template-columns: 1.05fr 0.95fr; gap: var(--space-2xl); align-items: start; }
+  .hero-art { position: sticky; top: var(--space-l); align-self: start; }
   .dual { grid-template-columns: 1fr 1fr; }
-  .steps { grid-template-columns: repeat(3, 1fr); }
+  /* Paragraph-length sequential steps read best at 2 columns: ~60-char lines,
+     4 steps land as a clean 2x2 with no orphaned card, graceful for any count.
+     (repeat(3,1fr) forced columns too narrow -> 1-2 words/line + orphaned 4th.) */
+  .steps { grid-template-columns: 1fr 1fr; }
+  /* Diagrams already fit-to-width from the base rule (see §10); nothing device-specific to add. */
 }
 
 @media (min-width: 64em) {

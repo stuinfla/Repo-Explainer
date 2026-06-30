@@ -1,17 +1,28 @@
-# Binaries & bundles are NOT committed here [Constraint H] — they ship via GitHub Release.
-downloads/*.zip
-*.zip
-*.rvf
-*.rvf.lock
-*.embed.json
-*.passages.jsonl
+# Secrets — NEVER commit
+.env
+.env.*
+*.key
+*.pem
+*.p12
+memory.db
+*.db
+
+# Build targets / upstream clones / deploy state
+.targets/
+.vercel
+.vercel/
+node_modules/
+
+# KEEP the drop-in zip — it is served directly from the site (downloads/ruvn-dropin.zip),
+# and the NotebookLM studio media rides INSIDE that zip. Do NOT gitignore downloads/*.zip here.
 
 # Optional self-hosted fonts dropped in at build time (kept out of git).
 assets/fonts/*.woff2
 
+# studio/ holds local full-res NotebookLM masters (download staging only). The SERVED copies
+# live in assets/studio/ and the zip embeds from kb/stores/. Don't commit duplicate binaries.
+studio/
+
 # Tooling noise
-node_modules/
-.vercel
-.vercel/
 .DS_Store
 *.log

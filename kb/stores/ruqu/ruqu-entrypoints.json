@@ -1,0 +1,204 @@
+{
+  "target": "ruqu",
+  "metaName": "ruqu",
+  "generated": "2026-06-19T20:05:13.641Z",
+  "workspace": {
+    "kind": "mixed",
+    "members": [
+      "crates/ruqu-core",
+      "crates/ruqu-algorithms",
+      "crates/ruqu-exotic",
+      "crates/ruqu-wasm",
+      "crates/ruQu"
+    ]
+  },
+  "components": [
+    {
+      "name": "@ruvector/ruqu",
+      "path": "cli",
+      "kind": "package",
+      "description": "Quantum circuit simulator in WebAssembly + agent harness CLI — run state-vector simulation, Grover search, and QAOA MaxCut from your terminal. npx @ruvector/ruqu",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "init": "node ./bin/cli.js init",
+        "doctor": "node ./bin/cli.js doctor"
+      },
+      "bins": [
+        "ruqu"
+      ],
+      "deps": [
+        "@metaharness/kernel",
+        "@metaharness/host-claude-code"
+      ]
+    },
+    {
+      "name": "ruqu",
+      "path": "crates/ruQu",
+      "kind": "crate",
+      "description": "Classical nervous system for quantum machines - real-time coherence assessment via dynamic min-cut",
+      "bins": [
+        "ruqu_demo",
+        "ruqu_predictive_eval"
+      ],
+      "examples": []
+    },
+    {
+      "name": "ruqu-algorithms",
+      "path": "crates/ruqu-algorithms",
+      "kind": "crate",
+      "description": "Production-ready quantum algorithms in Rust - VQE for chemistry, Grover's search, QAOA optimization, Surface Code error correction",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "ruqu-core",
+      "path": "crates/ruqu-core",
+      "kind": "crate",
+      "description": "High-performance quantum circuit simulator in pure Rust - state-vector simulation with SIMD acceleration, noise models, and multi-threading",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "ruqu-exotic",
+      "path": "crates/ruqu-exotic",
+      "kind": "crate",
+      "description": "Experimental quantum-classical hybrid algorithms - quantum memory decay, interference search, reasoning error correction, swarm interference for AI systems",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "ruqu-wasm",
+      "path": "crates/ruqu-wasm",
+      "kind": "crate",
+      "description": "Run quantum simulations in the browser - WebAssembly bindings for quantum circuits with 25-qubit support, VQE, Grover, QAOA",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "@ruvector/ruqu-wasm",
+      "path": "npm/packages/ruqu-wasm",
+      "kind": "package",
+      "description": "Run quantum simulations in the browser - WebAssembly bindings for quantum circuits with 25-qubit support, VQE, Grover, QAOA",
+      "scripts": {},
+      "bins": [],
+      "deps": []
+    }
+  ],
+  "binaries": [
+    {
+      "name": "ruqu",
+      "component": "@ruvector/ruqu",
+      "path": "cli",
+      "kind": "npm-bin"
+    },
+    {
+      "name": "ruqu_demo",
+      "component": "ruqu",
+      "path": "crates/ruQu",
+      "kind": "rust-bin"
+    },
+    {
+      "name": "ruqu_predictive_eval",
+      "component": "ruqu",
+      "path": "crates/ruQu",
+      "kind": "rust-bin"
+    }
+  ],
+  "commands": [
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "cli/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run",
+      "category": "test",
+      "source": "cli/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run init",
+      "raw": "node ./bin/cli.js init",
+      "category": "run",
+      "source": "cli/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run doctor",
+      "raw": "node ./bin/cli.js doctor",
+      "category": "run",
+      "source": "cli/package.json",
+      "note": null
+    },
+    {
+      "cmd": "cargo add ruqu-core ruqu-algorithms",
+      "category": "install",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "wasm-pack build crates/ruqu-wasm --target web",
+      "category": "build",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --release",
+      "category": "build",
+      "source": "README.md",
+      "note": "native"
+    },
+    {
+      "cmd": "cargo test",
+      "category": "test",
+      "source": "README.md",
+      "note": "run the test suite"
+    },
+    {
+      "cmd": "npx @ruvector/ruqu simulate --qubits 4",
+      "category": "run",
+      "source": "README.md",
+      "note": "GHZ state-vector simulation"
+    },
+    {
+      "cmd": "npx @ruvector/ruqu grover --qubits 3 --target 5",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvector/ruqu qaoa --nodes 4",
+      "category": "run",
+      "source": "README.md",
+      "note": "QAOA MaxCut on a ring"
+    },
+    {
+      "cmd": "npx @ruvector/ruqu capabilities",
+      "category": "run",
+      "source": "README.md",
+      "note": "gates, algorithms, limits"
+    },
+    {
+      "cmd": "npx @ruvector/ruqu doctor",
+      "category": "run",
+      "source": "README.md",
+      "note": "verify the quantum WASM"
+    }
+  ],
+  "install": [
+    "cargo add ruqu-core ruqu-algorithms"
+  ],
+  "quickstart": [
+    "npm run init",
+    "npm run doctor",
+    "npx @ruvector/ruqu simulate --qubits 4",
+    "npx @ruvector/ruqu grover --qubits 3 --target 5",
+    "npx @ruvector/ruqu qaoa --nodes 4",
+    "npx @ruvector/ruqu capabilities",
+    "npx @ruvector/ruqu doctor"
+  ]
+}

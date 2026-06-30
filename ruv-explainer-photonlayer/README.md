@@ -35,5 +35,6 @@ npm run dev      # serves on http://localhost:4321
 
 - Source: <https://github.com/ruvnet/PhotonLayer> @ `fe86c9fad9a1572ce46e337f118656961bdf4ebb`
 - Live demo: <https://ruvnet.github.io/PhotonLayer/>
+- NotebookLM studio (public — audio · video · slides · infographic · report): <https://notebooklm.google.com/notebook/d97351e0-542f-4c80-9e56-19cb1dca04f5>
 - License (PhotonLayer): MIT © Ruvector
 - Updated: 2026-06-19

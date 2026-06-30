@@ -1,0 +1,7 @@
+{
+  "model": "Xenova/bge-small-en-v1.5",
+  "pooling": "cls",
+  "normalize": true,
+  "queryPrefix": "Represent this sentence for searching relevant passages: ",
+  "rankScale": 0.6
+}

@@ -31,10 +31,27 @@ The fastest way in is `npx metaharness` — either arg-driven
 is the same thing in the browser, 100% client-side, with no account and no
 hosted backend. (Source: README.md L93-108; docs/USAGE.md L24-34.)
 
+**Why metaharness instead of forking ruflo — and what you actually own.**
+MetaHarness exists because people fork ruflo to rebrand and trim it, and a fork
+is a one-way door: you inherit the whole codebase and lose the upstream upgrade
+path. Instead, metaharness *generates* a fresh package and **you own every file
+it emits** — open them, delete what you don't need, tune the prompts/agents/
+routing, and republish under your own name. Your users run `npx <your-name>`
+and never see the word "metaharness" (default branding is *powered-by*; pass
+`--branding=independence` to drop even that). The kernel stays an upgradeable
+npm dependency (`@metaharness/kernel`), so you get upstream fixes without a fork.
+If you already have a ruflo project, `create-agent-harness` can migrate it into a
+harness you own (ADR-016); for full kernel ownership there is *eject* mode
+(ADR-012). (Source: README.md L62-91; docs/adrs/ADR-016-migration-for-ruflo-users.md
+L23-65,L175-183; docs/adrs/ADR-015-naming-and-branding.md.)
+
 Also asked as: what is MetaHarness, what does metaharness produce, what does it
 turn a repo into, is the harness the model or a wrapper, do I need a MetaHarness
 account or a server, why a factory and not a framework, metaharness vs
-create-agent-harness CLI name. Keywords: agent harness, any repo, npm package,
+create-agent-harness CLI name, why use metaharness instead of forking ruflo,
+what do I own after generating, can I trim the files, do my users see metaharness,
+powered-by vs independence branding, migrate an existing ruflo project, eject for
+kernel ownership. Keywords: agent harness, any repo, npm package,
 scoped memory, safety policy, branded CLI, client-side, no account, no hosted
 backend, factory for agent frameworks, model is replaceable, harness is the
 product, wrapper around Claude or GPT, alias.
@@ -106,10 +123,31 @@ published library `@ruvnet/agent-harness-generator`), and `bench` (the DRACO
 benchmark). (Source: README.md L256-284; docs/ARCHITECTURE.md L5-40;
 `packages/` directory listing.)
 
+**The kernel contract (what you must honor if you change Layer 1).** Everything
+exported from `@metaharness/kernel` — its seven stable subpath exports (`/mcp`,
+`/hooks`, `/memory`, `/routing`, `/marketplace`, `/witness`, `/init`, plus
+`/hosts`) — is part of the kernel's **semver contract**, and in practice a
+*forever-promise*. The rule is strict: **minor/patch may only ADD to the
+surface, never change semantics; a breaking change (removed or renamed export, or
+a changed signature) requires a MAJOR-version bump of `@metaharness/kernel` AND
+six months of deprecation notice** on the old surface (ADR-002 §Surface freezes;
+ADR-012 §Deprecation lane). A public-API freeze test (`microsoft/api-extractor`
+over the generated `.d.ts`) runs on every release and fails the build unless a
+matching semver bump + PR override accompanies any surface change
+(`packages/kernel/test/api-surface.test.ts`). Downstream, ADR-008 (drift
+detection) and ADR-012 (eject/upgrade) propagate kernel majors into generated
+harnesses. So: changing the kernel safely = add-only on minor/patch, major + 6mo
+deprecation for anything breaking, and the TS types are auto-generated from the
+Rust source (no hand-written facade to drift). (Source:
+docs/adrs/ADR-002-kernel-boundary.md L212-262,L310; docs/adrs/ADR-012; docs/adrs/ADR-008-drift-detection.md.)
+
 Also asked as: what packages make up metaharness, what is the kernel and what is
 in it, what are the three layers, which host adapter packages exist, what does
 the kernel boundary forbid, which packages are user-facing, what does the model
-router package do, what kernel subsystems are bundled. Keywords: three-layer,
+router package do, what kernel subsystems are bundled, if I change the kernel
+what contract must I honor, what are the kernel breaking-change rules, the semver
+rule for the kernel, the 6-month deprecation window, the public-API freeze test,
+what could break downstream if I change the kernel. Keywords: three-layer,
 Kernel Adapter user-facing surface, @metaharness/kernel Rust wasm NAPI-RS,
 claims hooks intel mcp memory routing witness federation, host-claude-code
 host-codex host-pi-dev host-hermes host-openclaw host-rvm, router, darwin,
@@ -265,3 +303,165 @@ npx metaharness --wizard 4-question name template host description, --template
 --host npm install, harness doctor scaffold healthy, own trim tune prompts
 routing, harness validate release gate, npm publish --provenance, npx my-bot
 init never see the factory layer.
+
+## 8. How do I extend MetaHarness safely (the extension points)?
+
+MetaHarness has **four extension surfaces**, each with a stable contract. The
+golden rule comes from the kernel boundary (ADR-002): the **kernel is the only
+frozen API**. Anything `@metaharness/kernel` (and its subpath exports `/mcp`,
+`/hooks`, `/memory`, `/routing`, `/marketplace`, `/witness`, `/init`, `/hosts`)
+exports is semver-stable — a breaking change needs a **major bump + a 6-month
+deprecation window**. Everything else (templates, host adapters, verticals,
+plugins) is yours to extend as long as you don't break those contracts. (Source:
+docs/adrs/ADR-002-kernel-boundary.md; CONTRIBUTING.md.)
+
+**(a) Add a new host** (Claude Code, Codex, Copilot, Hermes, pi.dev, …). A host
+is a thin adapter that turns a `HarnessSpec` into that tool's native config
+files. Implement the kernel's contract — `HostAdapter` in
+`packages/kernel-js/src/types.ts` (line 43): `{ name, generateConfig(spec:
+HarnessSpec): Record<string,string> }`. Copy the reference adapter
+`packages/host-claude-code/src/index.ts` (it exports `settingsFor(spec)` →
+`ClaudeCodeSettings` and `hookHandlerFor(handler)` → `ClaudeHookHandler`), then
+new dir `packages/host-<name>/src/index.ts`. ADR-004 lists the per-host quirks
+(MCP stdio/http/none, native vs kernel-side hooks, thinking-block scrubbing for
+Hermes, Codex's "trusted project" gotcha). Don't change `HostAdapter` or
+`HarnessSpec` — those are kernel types. (Source:
+packages/kernel-js/src/types.ts L7-47; packages/host-claude-code/src/index.ts
+L23-77; docs/adrs/ADR-004-host-integration-model.md.)
+
+**(b) Add a new vertical pack** (a domain bundle of agents/skills/templates —
+e.g. trading, coding, legal). A vertical is published as its own npm package
+implementing `VerticalPack` in `packages/vertical-base/src/index.ts` (line 47):
+`{ manifest: VerticalManifest, templateRoot: string }`. The `manifest.json`
+(validated by `readVerticalManifest` / `validateVerticalManifest`) enumerates
+`files[]` (`TemplateFileEntry`: `{ src, dst, render }`) and `vars[]`
+(`TemplateVar`). Templates live under `templateRoot/`. The 20 built-in verticals
+sit in `packages/create-agent-harness/templates/vertical_<domain>/`. (Source:
+packages/vertical-base/src/index.ts L1-70; docs/adrs/ADR-005-marketplace-plugin-design.md.)
+
+**(c) Add or modify a template.** The generator renders a template tree into a
+harness through a fixed pipeline (all in `packages/create-agent-harness/src/`):
+`scaffold()` (index.ts:322) resolves the template dir via `templateDir()`
+(index.ts:202), `walkTemplate()` (walker.ts:39) walks it, `render()`
+(renderer.ts:32) substitutes Mustache-style `{{var}}` placeholders,
+`renameIdentifiers()` / `renameFileMap()` (rename.ts) rewrite names, and
+`writeAtomic()` (writer.ts) writes the result. Add a `.hbs`/template file under
+the right template dir; keep the `{{placeholder}}` set intact (the renamer +
+manifest depend on it). `emptyManifest()` (manifest.ts:46) records every emitted
+file with its SHA-256 for drift detection. (Source:
+packages/create-agent-harness/src/{index,walker,renderer,rename,writer,manifest}.ts;
+docs/adrs/ADR-003-generator-architecture.md.)
+
+**(d) Add a marketplace plugin.** A plugin is a **normal npm package** — you do
+NOT modify the kernel to add one. Declare `kernelEngines: "^1.0.0"` (the semver
+range of `@metaharness/kernel` the plugin needs — mirrors VS Code's
+`engines.vscode`; the kernel **rejects loading any plugin whose range doesn't
+match**, so this is the only "API" coupling) and export agents/skills/MCP-tools/
+hooks per the plugin manifest schema (ADR-005 §schema: `name`, `version`,
+`kernelEngines`, `checksum`, `provenance`, `exports`, `permissions`,
+`trustLevel`). Provenance is three-layered: npm SLSA-L2 attestation (`npm publish
+--provenance`) + an Ed25519 signature on the registry entry + an optional witness
+manifest. The plugin must pass its smoke test (`smokeStatus: "pass"`) before it
+can publish (ADR-009 Pillar 1). Because the coupling is purely the `kernelEngines`
+range, adding a plugin can NEVER break the kernel API — the kernel just declines
+to load anything out of range. There is no `kernel.addPlugin()` method to call;
+the concrete tooling lives generator-side: scaffold a plugin with
+`pluginInitCmd(args)` (`packages/create-agent-harness/src/plugin-init-cmd.ts`,
+returns `PluginInitResult`), and build/validate its registry entry with
+`buildRegistryEntry(input: RegistryEntryInput): RegistryEntry`
+(`packages/create-agent-harness/src/registry.ts`) — that `RegistryEntry` is the
+ADR-005 schema object (`name`, `version`, `kernelEngines`, `checksum`,
+`provenance`, `exports`, `permissions`, `trustLevel`). A **vertical pack is just a
+plugin with `type: "vertical-pack"`** — same publish flow, same `kernelEngines`
+rule, same schema (ADR-013 builds directly on ADR-005). (Source:
+docs/adrs/ADR-005-marketplace-plugin-design.md L47-88; docs/adrs/ADR-013-vertical-packs-publishing.md;
+docs/adrs/ADR-009-anti-slop.md; packages/create-agent-harness/src/{plugin-init-cmd,registry}.ts.)
+
+**Authoring agents/skills/tools in code:** use the typed builders in the SDK
+(`packages/sdk/src/index.ts`): `defineAgent()` → `AgentDef`, `defineSkill()` →
+`SkillDef`, `defineTool()` → `ToolDef`, `defineHarness()` → `HarnessDef`. They
+validate and freeze the definition. (Source: packages/sdk/src/index.ts L15-115.)
+
+**The stable-API rule (what NOT to break):** never remove/rename a kernel subpath
+export; never change the `HostAdapter`, `HarnessSpec`, `McpServerSpec`, or
+`HookSpec` signatures without a kernel major bump; never drop a composer stage or
+a `--host/--template/--agents` CLI flag; never change the manifest schema without
+updating drift detection (ADR-008). (Source: docs/adrs/ADR-002-kernel-boundary.md;
+docs/adrs/ADR-008-drift-detection.md; CONTRIBUTING.md.)
+
+Also asked as: how do I add a new host/adapter, where is the HostAdapter
+contract, how do I add a vertical pack, how do I add or change a template, how
+does the scaffold/composer pipeline render templates, where do I add a CLI
+subcommand, how do I publish a marketplace plugin, what is the stable kernel API
+I must not break, how do I author agents/skills/tools in code, what is safe vs
+unsafe to change, the extension points, the kernel boundary, the 6-month
+deprecation rule. Keywords: HostAdapter generateConfig HarnessSpec
+packages/kernel-js/src/types.ts, host-claude-code settingsFor hookHandlerFor,
+VerticalPack VerticalManifest vertical-base readVerticalManifest, scaffold
+templateDir walkTemplate render renameIdentifiers writeAtomic manifest SHA-256,
+ADR-002 kernel boundary semver major 6-month deprecation, ADR-003 composer
+pipeline, ADR-005 plugin provenance Ed25519, ADR-008 drift detection, ADR-009
+smoke gate, SDK defineAgent defineSkill defineTool defineHarness AgentDef
+SkillDef ToolDef HarnessDef, what not to break stable API.
+
+## 9. Performance and gotchas (running the generator)
+
+**Status: v0.1.x beta** — published and usable, release pipeline mature (the CI
+job matrix is green; releases are single-command), but treat the API as
+pre-1.0: only the latest `0.x` gets security fixes, and breaking changes can land
+between minors until 1.0. (Source: README.md; SECURITY.md.)
+
+**Performance budgets** (declared in ADR-003, enforced by ADR-007 CI guards):
+time-to-first-harness **≤90s** (typically 60–80s, mostly `npm` resolving the
+generated harness's deps), composer first paint **≤5s**, and the generated
+harness must be **≤10 MB** packed (pre-install). Larger harnesses just take
+longer to scaffold and install — there is no hard agent/skill/plugin count
+limit. (Source: docs/adrs/ADR-003-generator-architecture.md; docs/adrs/ADR-007-ci-guards.md.)
+
+**Native vs WASM kernel.** The Rust kernel ships as both a NAPI-RS native binary
+(per platform: `@metaharness/kernel-darwin-arm64`, `-linux-x64-gnu`, etc.) and a
+WASM fallback. `packages/kernel-js/src/index.ts` loads native if present, else
+WASM. Native is ~3–5× faster on hot paths (HNSW search, ONNX, large memory
+writes); WASM is deterministic and used for witness reproducibility. If no native
+binary exists for your platform (musl, exotic arch) it silently falls back to
+WASM — slower but correct. `harness diag`/`harness doctor` expose the backend and
+the fallback reason. (Source: packages/kernel-js/src/index.ts L36-86;
+docs/adrs/ADR-002-kernel-boundary.md.)
+
+**Footguns to know:**
+- **Codex "trusted project."** Codex ignores `.codex/config.toml` until you mark
+  the project trusted. The scaffold prints a reminder; there is no workaround.
+  (Source: docs/adrs/ADR-004-host-integration-model.md.)
+- **Hermes thinking blocks.** Hermes emits `<think>` and raw `<tool_call>` tags
+  that contaminate embeddings and trajectory replay; the adapter **must** scrub
+  them. Don't skip the scrub step when porting. (Source: ADR-004; packages/host-hermes/src/index.ts.)
+- **pi.dev has no MCP — by design.** Its extension API is in-process. If you need
+  MCP, pick Claude Code, Codex, or Hermes instead. (Source: ADR-004.)
+- **Plugin schema migrations are forever-promises.** Old clients must keep
+  reading old registry entries across an `N → N+1` schema bump; plan migrations
+  carefully. (Source: docs/adrs/ADR-005-marketplace-plugin-design.md.)
+- **Smoke gate is non-negotiable.** A plugin or harness that fails its smoke test
+  cannot publish (`smokeStatus: "pass"` is required). Run it locally first.
+  (Source: docs/adrs/ADR-009-anti-slop.md.)
+- **Marketplace offline → degraded mode.** If the IPFS registry (Pinata) is
+  unreachable, the harness boots without plugins rather than failing; the kernel
+  continues, cache TTL is 24h. (Source: ADR-005.)
+
+**Honest limits (what we don't yet guarantee):** witness key-rotation playbook is
+still v1 work, and native builds are not byte-reproducible (WASM is). The kernel
+crate is `#![forbid(unsafe_code)]` and releases are Ed25519-signed. (Source:
+SECURITY.md.)
+
+Also asked as: is metaharness production-ready, what are the performance budgets,
+how fast is time-to-first-harness, why is the generated harness slow to install,
+native vs wasm kernel performance, what happens with no native binary for my
+platform, what are the gotchas/footguns, the Codex trusted-project issue, the
+Hermes thinking-block scrubbing, why does pi.dev have no MCP, plugin schema
+migration pitfalls, the smoke gate, marketplace offline behavior, what are the
+honest limits, memory and time concerns. Keywords: v0.1.x beta pre-1.0 security
+latest 0.x, ADR-003 performance budget 90s 5s 10MB, ADR-007 CI guards, native
+NAPI-RS vs WASM 3-5x HNSW ONNX fallback harness diag doctor, Codex trusted
+project config.toml, Hermes think tool_call scrub embeddings, pi.dev no MCP
+in-process, ADR-005 plugin schema migration forever-promise, ADR-009 smoke gate
+smokeStatus pass, Pinata IPFS registry degraded mode 24h TTL, SECURITY.md witness
+key rotation reproducible builds forbid unsafe_code Ed25519.

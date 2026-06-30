@@ -161,8 +161,10 @@ function chunk(text) {
 function makeContext(target) {
   const repoDir = path.resolve(__dirname, target.repoDir);
   if (!fs.existsSync(repoDir)) {
-    throw new Error(`build-kb: repoDir not found for target "${target.slug}": ${repoDir} `
-      + '(run P0 clone into .targets/ first)');
+    const hint = process.env.KB_REPO_DIR
+      ? `(KB_REPO_DIR override: ${process.env.KB_REPO_DIR} — check that the clone path exists)`
+      : '(clone into .targets/ for direct use, or pass via tools/build-kb.mjs which sets KB_REPO_DIR)';
+    throw new Error(`build-kb: repoDir not found for target "${target.slug}": ${repoDir} ${hint}`);
   }
   const skip = new Set(target.scopeExclude || []);
 

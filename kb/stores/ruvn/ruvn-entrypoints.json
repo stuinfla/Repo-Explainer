@@ -1,0 +1,123 @@
+{
+  "target": "ruvn",
+  "metaName": "ruvn",
+  "generated": "2026-06-19T22:15:34.737Z",
+  "workspace": {
+    "kind": "npm",
+    "members": []
+  },
+  "components": [
+    {
+      "name": "@ruvnet/ruvn",
+      "path": "",
+      "kind": "package",
+      "description": "Gamma-entrainment protocol research agent — compare modalities/dosing, grade evidence, verify signed session bundles (ruv-neural)",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "init": "node ./bin/cli.js init",
+        "doctor": "node ./bin/cli.js doctor",
+        "validate:openrouter": "node scripts/openrouter-validate.mjs"
+      },
+      "bins": [
+        "ruvn"
+      ],
+      "deps": [
+        "@metaharness/kernel",
+        "@metaharness/host-claude-code",
+        "@metaharness/host-codex",
+        "@metaharness/host-pi-dev",
+        "@metaharness/host-hermes",
+        "@metaharness/host-openclaw",
+        "@metaharness/host-rvm",
+        "@metaharness/host-copilot",
+        "@metaharness/host-opencode",
+        "@metaharness/host-github-actions"
+      ]
+    }
+  ],
+  "binaries": [
+    {
+      "name": "ruvn",
+      "component": "@ruvnet/ruvn",
+      "path": "",
+      "kind": "npm-bin"
+    }
+  ],
+  "commands": [
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run",
+      "category": "test",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run init",
+      "raw": "node ./bin/cli.js init",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run doctor",
+      "raw": "node ./bin/cli.js doctor",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run validate:openrouter",
+      "raw": "node scripts/openrouter-validate.mjs",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm i -g @ruvnet/ruvn",
+      "category": "install",
+      "source": "README.md",
+      "note": "installs the `ruvn` command"
+    },
+    {
+      "cmd": "npm run validate:openrouter",
+      "category": "run",
+      "source": "README.md",
+      "note": "runs all 6 agents on a sample question"
+    },
+    {
+      "cmd": "npm install",
+      "category": "install",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "category": "build",
+      "source": "README.md",
+      "note": "TypeScript → dist"
+    },
+    {
+      "cmd": "npm test",
+      "category": "test",
+      "source": "README.md",
+      "note": "unit tests (+ OpenRouter integration if a key is present)"
+    }
+  ],
+  "install": [
+    "npm i -g @ruvnet/ruvn",
+    "npm install"
+  ],
+  "quickstart": [
+    "npm run init",
+    "npm run doctor",
+    "npm run validate:openrouter"
+  ]
+}

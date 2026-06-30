@@ -1,0 +1,1343 @@
+{
+  "target": "agent-harness-generator",
+  "metaName": "MetaHarness",
+  "generated": "2026-06-19T21:43:35.007Z",
+  "workspace": {
+    "kind": "mixed",
+    "members": [
+      "crates/kernel",
+      "crates/kernel-wasm",
+      "crates/kernel-napi",
+      "crates/template-catalog"
+    ]
+  },
+  "components": [
+    {
+      "name": "agent-harness-generator",
+      "path": "",
+      "kind": "crate",
+      "description": null,
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "@agent-harness-generator/web-ui",
+      "path": "apps/web-ui",
+      "kind": "package",
+      "description": "Browser-based generator UI for agent-harness-generator — scaffold harnesses + Claude skills/agents/commands, all client-side, deployable to GitHub Pages.",
+      "scripts": {
+        "dev": "vite",
+        "build": "tsc -b && vite build",
+        "preview": "vite preview",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "e2e": "playwright test",
+        "bench": "vite-node scripts/bench.mjs",
+        "shot": "node scripts/screenshot.mjs"
+      },
+      "bins": [],
+      "deps": [
+        "@huggingface/transformers",
+        "jszip",
+        "lucide-react",
+        "react",
+        "react-dom"
+      ]
+    },
+    {
+      "name": "@ruvnet/agent-harness-generator",
+      "path": "packages/agent-harness-generator-lib",
+      "kind": "package",
+      "description": "Library/core package for the Agent Harness Generator. Pair with `metaharness` for the CLI. Re-exports scaffold(), validate(), and the deterministic-analysis pipeline from `metaharness` so consumers can `import { scaffold } from '@ruvnet/agent-harness-generator'` without shelling out to the CLI.",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": [
+        "metaharness"
+      ]
+    },
+    {
+      "name": "@metaharness/bench",
+      "path": "packages/bench",
+      "kind": "package",
+      "description": "Benchmark harness for the kernel memory pipeline (vs Mem0 / ReasoningBank baseline shapes)",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "bench": "node ./dist/bin.js",
+        "bench:hosts": "node ./dist/host-bin.js",
+        "bench:draco": "node ./dist/draco/draco-bin.js",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": [
+        "@metaharness/kernel",
+        "@metaharness/host-claude-code",
+        "@metaharness/host-codex",
+        "@metaharness/host-pi-dev",
+        "@metaharness/host-hermes",
+        "@metaharness/host-openclaw",
+        "@metaharness/host-rvm",
+        "@metaharness/host-copilot",
+        "@metaharness/host-opencode",
+        "@metaharness/host-github-actions",
+        "@metaharness/router"
+      ]
+    },
+    {
+      "name": "metaharness",
+      "path": "packages/create-agent-harness",
+      "kind": "package",
+      "description": "MetaHarness — mint a custom AI agent harness from any repo. Browser Studio + `npx metaharness` CLI. Runs on Claude Code, Codex, pi.dev, Hermes, OpenClaw, RVM.",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit",
+        "gen:templates": "node scripts/gen-templates.mjs"
+      },
+      "bins": [
+        "metaharness",
+        "harness"
+      ],
+      "deps": [
+        "kolorist",
+        "prompts"
+      ]
+    },
+    {
+      "name": "@metaharness/darwin",
+      "path": "packages/darwin-mode",
+      "kind": "package",
+      "description": "An LLM supercharger and cost optimizer: keep your model frozen and evolve the harness around it so a cheap model performs like an expensive one — measurably better, far cheaper. Mutate→sandbox→score→archive; promote only safe, measured wins. Validated on real SWE-bench Lite (~$0.01/instance). Dependency-free (Node built-ins).",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [
+        "metaharness-darwin"
+      ],
+      "deps": []
+    },
+    {
+      "name": "@metaharness/harness",
+      "path": "packages/harness",
+      "kind": "package",
+      "description": "Algorithmic Agent Harness (ADR-047) — a deterministic control plane that wraps any model/tool/skill as a replaceable worker: utility-scored decisions, four-gate safety, hash-chained receipts, circuit-breaker recovery, adversarial verification, and a bandit agent pool. The model proposes, the harness decides, the algorithms verify.",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": []
+    },
+    {
+      "name": "@metaharness/host-claude-code",
+      "path": "packages/host-claude-code",
+      "kind": "package",
+      "description": "Claude Code host adapter for agent-harness-generator (MCP + hooks + .claude/settings.json)",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": [
+        "@metaharness/kernel"
+      ]
+    },
+    {
+      "name": "@metaharness/host-codex",
+      "path": "packages/host-codex",
+      "kind": "package",
+      "description": "OpenAI Codex CLI host adapter for agent-harness-generator (MCP via ~/.codex/config.toml)",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": [
+        "@metaharness/kernel"
+      ]
+    },
+    {
+      "name": "@metaharness/host-copilot",
+      "path": "packages/host-copilot",
+      "kind": "package",
+      "description": "GitHub Copilot (VSCode) host adapter for agent-harness-generator. Emits .vscode/mcp.json for the Copilot MCP client (ADR-032).",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": [
+        "@metaharness/kernel"
+      ]
+    },
+    {
+      "name": "@metaharness/host-github-actions",
+      "path": "packages/host-github-actions",
+      "kind": "package",
+      "description": "GitHub Actions host adapter for agent-harness-generator. Emits .github/workflows/<name>.yml + a composite action.yml for non-interactive CI/CD agent harnesses (ADR-033).",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": [
+        "@metaharness/kernel"
+      ]
+    },
+    {
+      "name": "@metaharness/host-hermes",
+      "path": "packages/host-hermes",
+      "kind": "package",
+      "description": "Hermes Agent (NousResearch) host adapter for agent-harness-generator (MCP + <think>/<tool_call> scrubbing)",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": [
+        "@metaharness/kernel"
+      ]
+    },
+    {
+      "name": "@metaharness/host-openclaw",
+      "path": "packages/host-openclaw",
+      "kind": "package",
+      "description": "OpenClaw (personal AI assistant) host adapter for agent-harness-generator (MCP via ~/.openclaw/openclaw.json + workspace skills)",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": [
+        "@metaharness/kernel"
+      ]
+    },
+    {
+      "name": "@metaharness/host-opencode",
+      "path": "packages/host-opencode",
+      "kind": "package",
+      "description": "OpenCode (sst/opencode) host adapter for agent-harness-generator. Emits .opencode/opencode.json (ADR-036).",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": [
+        "@metaharness/kernel"
+      ]
+    },
+    {
+      "name": "@metaharness/host-pi-dev",
+      "path": "packages/host-pi-dev",
+      "kind": "package",
+      "description": "pi.dev coding-agent host adapter for agent-harness-generator (Pi extension, no MCP by design)",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": [
+        "@metaharness/kernel"
+      ]
+    },
+    {
+      "name": "@metaharness/host-rvm",
+      "path": "packages/host-rvm",
+      "kind": "package",
+      "description": "RVM (Agentic Virtual Machine) host adapter for agent-harness-generator — hardware-isolated deployment via capability tokens",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": [
+        "@metaharness/kernel"
+      ]
+    },
+    {
+      "name": "@metaharness/kernel",
+      "path": "packages/kernel-js",
+      "kind": "package",
+      "description": "Cross-platform kernel for the agent-harness-generator — wasm primary, NAPI-RS native fallback",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "lint": "tsc --noEmit",
+        "build:wasm": "RUSTFLAGS= wasm-pack build ../../crates/kernel-wasm --target nodejs --release --out-dir ../../packages/kernel-js/pkg && rm -f pkg/.gitignore && node -e \"const f=require('fs');const j=require('./pkg/package.json');j.type='commonjs';f.writeFileSync('./pkg/package.json',JSON.stringify(j,null,2)+'\\n')\""
+      },
+      "bins": [],
+      "deps": [
+        "@ruvector/emergent-time"
+      ]
+    },
+    {
+      "name": "@metaharness/router",
+      "path": "packages/router",
+      "kind": "package",
+      "description": "Cost-optimal model router for AI agent harnesses — route each query to the cheapest model that's good enough (k-NN over labelled embeddings). The productized DRACO Phase-2 finding.",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": []
+    },
+    {
+      "name": "@metaharness/sdk",
+      "path": "packages/sdk",
+      "kind": "package",
+      "description": "Convenience helpers for harness authors — defineHarness, defineAgent, defineSkill, defineTool. Light wrappers around @metaharness/kernel.",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": [
+        "@metaharness/kernel"
+      ]
+    },
+    {
+      "name": "@metaharness/vertical-base",
+      "path": "packages/vertical-base",
+      "kind": "package",
+      "description": "Shared contract for @metaharness/vertical-* packs — VerticalPack interface, manifest schema, template-files protocol",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": []
+    },
+    {
+      "name": "@metaharness/vertical-trading",
+      "path": "packages/vertical-trading",
+      "kind": "package",
+      "description": "Trading harness vertical pack — paper-mode-default, circuit breakers, fractional-Kelly position sizing, 5-agent pipeline (market-watcher / signal-gen / risk-checker / executor / postmortem)",
+      "scripts": {
+        "build": "tsc",
+        "test": "vitest run --passWithNoTests",
+        "lint": "tsc --noEmit"
+      },
+      "bins": [],
+      "deps": [
+        "@metaharness/vertical-base"
+      ]
+    }
+  ],
+  "binaries": [
+    {
+      "name": "metaharness",
+      "component": "metaharness",
+      "path": "packages/create-agent-harness",
+      "kind": "npm-bin"
+    },
+    {
+      "name": "harness",
+      "component": "metaharness",
+      "path": "packages/create-agent-harness",
+      "kind": "npm-bin"
+    },
+    {
+      "name": "metaharness-darwin",
+      "component": "@metaharness/darwin",
+      "path": "packages/darwin-mode",
+      "kind": "npm-bin"
+    }
+  ],
+  "commands": [
+    {
+      "cmd": "npm run dev",
+      "raw": "vite",
+      "category": "run",
+      "source": "apps/web-ui/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc -b && vite build",
+      "category": "build",
+      "source": "apps/web-ui/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run preview",
+      "raw": "vite preview",
+      "category": "other",
+      "source": "apps/web-ui/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run",
+      "category": "test",
+      "source": "apps/web-ui/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test:watch",
+      "raw": "vitest",
+      "category": "test",
+      "source": "apps/web-ui/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run e2e",
+      "raw": "playwright test",
+      "category": "test",
+      "source": "apps/web-ui/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run bench",
+      "raw": "vite-node scripts/bench.mjs",
+      "category": "bench",
+      "source": "apps/web-ui/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run shot",
+      "raw": "node scripts/screenshot.mjs",
+      "category": "other",
+      "source": "apps/web-ui/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/agent-harness-generator-lib/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/agent-harness-generator-lib/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/agent-harness-generator-lib/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/bench/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/bench/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run bench",
+      "raw": "node ./dist/bin.js",
+      "category": "bench",
+      "source": "packages/bench/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run bench:hosts",
+      "raw": "node ./dist/host-bin.js",
+      "category": "bench",
+      "source": "packages/bench/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run bench:draco",
+      "raw": "node ./dist/draco/draco-bin.js",
+      "category": "bench",
+      "source": "packages/bench/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/bench/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/create-agent-harness/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/create-agent-harness/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/create-agent-harness/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run gen:templates",
+      "raw": "node scripts/gen-templates.mjs",
+      "category": "other",
+      "source": "packages/create-agent-harness/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/darwin-mode/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run",
+      "category": "test",
+      "source": "packages/darwin-mode/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/darwin-mode/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/harness/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run",
+      "category": "test",
+      "source": "packages/harness/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/harness/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/host-claude-code/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/host-claude-code/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/host-claude-code/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/host-codex/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/host-codex/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/host-codex/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/host-copilot/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/host-copilot/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/host-copilot/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/host-github-actions/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/host-github-actions/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/host-github-actions/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/host-hermes/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/host-hermes/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/host-hermes/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/host-openclaw/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/host-openclaw/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/host-openclaw/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/host-opencode/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/host-opencode/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/host-opencode/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/host-pi-dev/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/host-pi-dev/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/host-pi-dev/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/host-rvm/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/host-rvm/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/host-rvm/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/kernel-js/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run",
+      "category": "test",
+      "source": "packages/kernel-js/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/kernel-js/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:wasm",
+      "raw": "RUSTFLAGS= wasm-pack build ../../crates/kernel-wasm --target nodejs --release --out-dir ../../packages/kernel-js/pkg && rm -f pkg/.gitignore && node -e \"const f=require('fs');const j=require('./pkg/package.json');j.type='commonjs';f.writeFileSync('./pkg/package.json',JSON.stringify(j,null,2)+'\\n')\"",
+      "category": "build",
+      "source": "packages/kernel-js/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/router/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run",
+      "category": "test",
+      "source": "packages/router/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/router/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/sdk/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/sdk/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/sdk/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/vertical-base/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/vertical-base/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/vertical-base/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc",
+      "category": "build",
+      "source": "packages/vertical-trading/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run --passWithNoTests",
+      "category": "test",
+      "source": "packages/vertical-trading/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "packages/vertical-trading/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npx metaharness my-bot --template vertical:coding --host claude-code",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx metaharness --wizard",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx metaharness --list",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx metaharness my-bot --template vertical:coding",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test --workspace",
+      "category": "test",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo clippy --workspace --all-targets -- -D warnings",
+      "category": "other",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm install",
+      "category": "install",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:wasm",
+      "category": "build",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm test",
+      "category": "test",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/healthcheck.mjs",
+      "category": "other",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx metaharness my-bot",
+      "category": "run",
+      "source": "docs/USAGE.md",
+      "note": "arg-driven (default template + claude-code)"
+    },
+    {
+      "cmd": "npm run build",
+      "category": "build",
+      "source": "docs/USAGE.md",
+      "note": null
+    },
+    {
+      "cmd": "node packages/create-agent-harness/dist/bin.js my-bot",
+      "category": "other",
+      "source": "docs/USAGE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx metaharness my-bot --template vertical:devops",
+      "category": "run",
+      "source": "docs/USAGE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx metaharness my-bot \\",
+      "category": "run",
+      "source": "docs/USAGE.md",
+      "note": null
+    },
+    {
+      "cmd": "node ./dist/init.js",
+      "category": "run",
+      "source": "docs/USAGE.md",
+      "note": null
+    },
+    {
+      "cmd": "npm publish --provenance",
+      "category": "other",
+      "source": "docs/USAGE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx my-bot init",
+      "category": "run",
+      "source": "docs/USAGE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx metaharness --from-existing ./",
+      "category": "run",
+      "source": "docs/USAGE.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/dev-toolkit.mjs",
+      "category": "run",
+      "source": "CONTRIBUTING.md",
+      "note": "everything the repo offers, one screen"
+    },
+    {
+      "cmd": "node scripts/dev-toolkit.mjs --filter=release",
+      "category": "run",
+      "source": "CONTRIBUTING.md",
+      "note": "narrow to one topic"
+    },
+    {
+      "cmd": "node scripts/dev-toolkit.mjs --check-health",
+      "category": "run",
+      "source": "CONTRIBUTING.md",
+      "note": "verify the toolkit isn't broken"
+    },
+    {
+      "cmd": "node scripts/dev-toolkit.mjs --json",
+      "category": "run",
+      "source": "CONTRIBUTING.md",
+      "note": "machine-readable"
+    },
+    {
+      "cmd": "cargo fmt --all -- --check",
+      "category": "other",
+      "source": "CONTRIBUTING.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:napi",
+      "category": "build",
+      "source": "CONTRIBUTING.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run smoke",
+      "category": "run",
+      "source": "CONTRIBUTING.md",
+      "note": null
+    },
+    {
+      "cmd": "npx create-agent-harness my-bot",
+      "category": "run",
+      "source": "CHANGELOG.md",
+      "note": "arg-driven"
+    },
+    {
+      "cmd": "npx create-agent-harness --wizard",
+      "category": "run",
+      "source": "CHANGELOG.md",
+      "note": "iter 100 — interactive picker"
+    },
+    {
+      "cmd": "npx create-agent-harness --list",
+      "category": "run",
+      "source": "CHANGELOG.md",
+      "note": "browse all 19 templates"
+    },
+    {
+      "cmd": "node examples/quickstart/quickstart.mjs",
+      "category": "other",
+      "source": "CHANGELOG.md",
+      "note": null
+    },
+    {
+      "cmd": "node examples/federation/federation.mjs",
+      "category": "other",
+      "source": "CHANGELOG.md",
+      "note": null
+    },
+    {
+      "cmd": "node examples/host-tour/host-tour.mjs",
+      "category": "other",
+      "source": "CHANGELOG.md",
+      "note": null
+    },
+    {
+      "cmd": "node examples/education/education.mjs",
+      "category": "other",
+      "source": "CHANGELOG.md",
+      "note": null
+    },
+    {
+      "cmd": "npx create-agent-harness my-tutor --template vertical:education --host claude-code",
+      "category": "run",
+      "source": "CHANGELOG.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/release-notes.mjs --version=0.1.0 \\",
+      "category": "other",
+      "source": "CHANGELOG.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/preflight.mjs",
+      "category": "other",
+      "source": "docs/RELEASE.md",
+      "note": null
+    },
+    {
+      "cmd": "npm version --workspaces patch",
+      "category": "other",
+      "source": "docs/RELEASE.md",
+      "note": "patch bump for all"
+    },
+    {
+      "cmd": "npm view \"$pkg@latest\" version",
+      "category": "other",
+      "source": "docs/RELEASE.md",
+      "note": null
+    },
+    {
+      "cmd": "npm deprecate '@metaharness/kernel@0.1.1' 'broken — use 0.1.0'",
+      "category": "other",
+      "source": "docs/RELEASE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @metaharness/claude-code  my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Claude Code workspace + plugin"
+    },
+    {
+      "cmd": "npx @metaharness/codex        my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "OpenAI Codex"
+    },
+    {
+      "cmd": "npx @metaharness/hermes       my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Hermes cli-config"
+    },
+    {
+      "cmd": "npx @metaharness/pi-dev       my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "pi.dev AGENTS.md"
+    },
+    {
+      "cmd": "npx @metaharness/openclaw     my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "OpenClaw .openclaw/"
+    },
+    {
+      "cmd": "npx @metaharness/rvm          my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "RVM deployment partition"
+    },
+    {
+      "cmd": "npx @metaharness/copilot      my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "VSCode / Copilot mcp.json"
+    },
+    {
+      "cmd": "npx @metaharness/opencode     my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "OpenCode .opencode/"
+    },
+    {
+      "cmd": "npx @metaharness/github-actions my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "GitHub Actions CI/CD (non-interactive)"
+    },
+    {
+      "cmd": "npx @metaharness/devops          my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "incident response"
+    },
+    {
+      "cmd": "npx @metaharness/legal           my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "contract redline (drafts only)"
+    },
+    {
+      "cmd": "npx @metaharness/research        my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "multi-source dossier"
+    },
+    {
+      "cmd": "npx @metaharness/support         my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "customer support"
+    },
+    {
+      "cmd": "npx @metaharness/trading         my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "quant trading (paper-by-default)"
+    },
+    {
+      "cmd": "npx @metaharness/education       my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "tutor pod"
+    },
+    {
+      "cmd": "npx @metaharness/sales           my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "sales pipeline pod"
+    },
+    {
+      "cmd": "npx @metaharness/gaming          my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "game-design pod"
+    },
+    {
+      "cmd": "npx @metaharness/repo-maintainer my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "OSS repo maintainer"
+    },
+    {
+      "cmd": "npx @metaharness/coding          my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "engineering pod"
+    },
+    {
+      "cmd": "npx @metaharness/example-aws         my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "AWS (S3/EC2/Lambda/DynamoDB, dry-run)"
+    },
+    {
+      "cmd": "npx @metaharness/example-gcp         my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Google Cloud (Storage/BigQuery/Vertex)"
+    },
+    {
+      "cmd": "npx @metaharness/example-azure       my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Azure (ARM/Blob/Azure OpenAI)"
+    },
+    {
+      "cmd": "npx @metaharness/example-stripe      my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Stripe billing (TEST MODE by default)"
+    },
+    {
+      "cmd": "npx @metaharness/example-slack       my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Slack triage/notify (scoped tokens)"
+    },
+    {
+      "cmd": "npx @metaharness/example-github      my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "GitHub PR/issue automation (Octokit)"
+    },
+    {
+      "cmd": "npx @metaharness/example-twilio      my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Twilio SMS/voice (magic test numbers)"
+    },
+    {
+      "cmd": "npx @metaharness/example-datadog     my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Datadog incident triage (read-only)"
+    },
+    {
+      "cmd": "npx @metaharness/example-supabase    my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Supabase RLS-aware data agent"
+    },
+    {
+      "cmd": "npx @metaharness/example-huggingface my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Hugging Face discovery + inference"
+    },
+    {
+      "cmd": "npx @metaharness/example-pinecone    my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Pinecone RAG memory"
+    },
+    {
+      "cmd": "npx @metaharness/example-fhir        my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Health/FHIR (sandbox EHR; not a medical device)"
+    },
+    {
+      "cmd": "npx @metaharness/example-ads         my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Google/Meta Ads analysis (read-only)"
+    },
+    {
+      "cmd": "npx @metaharness/example-web3        my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "web3/viem (testnet read + simulate)"
+    },
+    {
+      "cmd": "npx @metaharness/example-iot         my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "IoT/MQTT telemetry (guarded actuation)"
+    },
+    {
+      "cmd": "npx @metaharness/example-nasa        my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "NASA imagery + orbital pass prediction"
+    },
+    {
+      "cmd": "npx @metaharness/example-qiskit      my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Quantum circuits (simulate, verify-first)"
+    },
+    {
+      "cmd": "npx @metaharness/example-bio         my-bot",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "Bioinformatics (NCBI/Ensembl lookup)"
+    },
+    {
+      "cmd": "npx harness doctor",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "health-check the scaffold"
+    },
+    {
+      "cmd": "npx harness validate",
+      "category": "run",
+      "source": "examples-packages/README.md",
+      "note": "full umbrella: doctor + verify + path-guard + mcp"
+    }
+  ],
+  "install": [
+    "npm install"
+  ],
+  "quickstart": [
+    "npm run dev",
+    "npx metaharness my-bot --template vertical:coding --host claude-code",
+    "npx metaharness --wizard",
+    "npx metaharness --list",
+    "npx metaharness my-bot --template vertical:coding",
+    "npx metaharness my-bot",
+    "npx metaharness my-bot --template vertical:devops",
+    "npx metaharness my-bot \\",
+    "node ./dist/init.js",
+    "npx my-bot init",
+    "npx metaharness --from-existing ./",
+    "node scripts/dev-toolkit.mjs"
+  ]
+}

@@ -1,0 +1,336 @@
+{
+  "target": "ruvn",
+  "judge": "claude-opus-4-1",
+  "seed": 19,
+  "generated": "2026-06-19T22:19:39.537Z",
+  "composite": 95,
+  "weakestDimension": "usage",
+  "pass": true,
+  "questionsFile": "/Users/stuartkerr/Code/Ruv-Explainer/kb/questions/ruvn.aiq.jsonl",
+  "dimensionsScored": 8,
+  "dimensionsTotal": 8,
+  "perDimension": [
+    {
+      "id": 1,
+      "key": "onboarding",
+      "name": "Onboarding (install/build/run/test)",
+      "n": 3,
+      "score": 98
+    },
+    {
+      "id": 2,
+      "key": "what-it-is",
+      "name": "What it is + problem it solves",
+      "n": 3,
+      "score": 98
+    },
+    {
+      "id": 3,
+      "key": "architecture",
+      "name": "Architecture (components + relations)",
+      "n": 3,
+      "score": 96
+    },
+    {
+      "id": 4,
+      "key": "capabilities",
+      "name": "Capabilities (features/commands/API)",
+      "n": 3,
+      "score": 98
+    },
+    {
+      "id": 5,
+      "key": "usage",
+      "name": "Usage (functions + signatures + example)",
+      "n": 3,
+      "score": 95
+    },
+    {
+      "id": 6,
+      "key": "best-practices",
+      "name": "Best practices / patterns / gotchas",
+      "n": 3,
+      "score": 95.3
+    },
+    {
+      "id": 7,
+      "key": "deep-dive",
+      "name": "Deep-dive (3 random buried files)",
+      "n": 3,
+      "score": 98
+    },
+    {
+      "id": 8,
+      "key": "extensibility",
+      "name": "Extensibility (safe modification)",
+      "n": 3,
+      "score": 96
+    }
+  ],
+  "perQuestion": [
+    {
+      "dimension": "onboarding",
+      "query": "I just got this repo. How do I install, run, and test ruvn from scratch, including running it with no install? Give me the exact commands.",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides all exact commands for install (npm i -g @ruvnet/ruvn), run (ruvn init, ruvn doctor), test (npm test), and no-install usage (npx @ruvnet/ruvn init).",
+      "top1": "PRIMER#7-how-do-i-install-and-use-it-end-to-end",
+      "contextChars": 24402
+    },
+    {
+      "dimension": "onboarding",
+      "query": "What is the fastest way to see ruvn actually do something, and what does `ruvn doctor` check?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides complete details on the fastest way to see ruvn work (npm install + ruvn init) and explicitly states what ruvn doctor checks (four PASS/FAIL checks: kernel loads, reports version, backend is native|wasm|js, host adapter has name).",
+      "top1": "PRIMER#7-how-do-i-install-and-use-it-end-to-end",
+      "contextChars": 16130
+    },
+    {
+      "dimension": "onboarding",
+      "query": "How do I validate ruvn end-to-end against a real model, and what env var do I need?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context explicitly shows `npm run validate:openrouter` command and `OPENROUTER_API_KEY` env var for end-to-end validation against real models.",
+      "top1": "PRIMER#7-how-do-i-install-and-use-it-end-to-end",
+      "contextChars": 16130
+    },
+    {
+      "dimension": "what-it-is",
+      "query": "What is ruvn and what specific problem does it solve for me?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive information about what ruvn is (research agent for graded/cited evidence dossiers) and the specific problem it solves (trust/defensibility in AI research by grading sources A-D and only using good ones).",
+      "top1": "README.md",
+      "contextChars": 14561
+    },
+    {
+      "dimension": "what-it-is",
+      "query": "Why would I use ruvn instead of just asking an AI a research question directly? What does it give me back?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive details about ruvn's value proposition over direct AI queries, including source grading, citation requirements, fact-checking pipeline, and the specific defensible dossier output format.",
+      "top1": "PRIMER#2-what-can-ruvn-do-for-you",
+      "contextChars": 14549
+    },
+    {
+      "dimension": "what-it-is",
+      "query": "What does a 'graded, cited evidence dossier' mean in ruvn, and what is ruvn explicitly NOT?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context explicitly defines 'graded, cited evidence dossier' and clearly states what ruvn is NOT (not a chatbot, not a hosted service, not a medical device, not a replacement for reading sources).",
+      "top1": "PRIMER#1-what-is-ruvn",
+      "contextChars": 14622
+    },
+    {
+      "dimension": "architecture",
+      "query": "What are the six agents in ruvn, in what order do they run, and how does information flow between them?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides complete information about all six agents, their execution order (scout → web-searcher → source-grader → synthesizer → fact-checker → citer), and how information flows sequentially between them.",
+      "top1": "PRIMER#3-what-is-ruvn-made-of-the-six-agents-and-nine-hosts",
+      "contextChars": 21384
+    },
+    {
+      "dimension": "architecture",
+      "query": "What does ruvn depend on (kernel, hosts), and how is the package structured? Which hosts does it support?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides complete information about ruvn's dependencies (@metaharness/kernel and 9 host adapters), package structure (single npm package with agents in src/agents/), and supported hosts (all 9 hosts listed with their config files).",
+      "top1": "PRIMER#3-what-is-ruvn-made-of-the-six-agents-and-nine-hosts",
+      "contextChars": 23814
+    },
+    {
+      "dimension": "architecture",
+      "query": "What does it mean that 'each agent only sees the previous agent's output', and why is the pipeline built that way?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context fully explains that 'each agent only sees the previous agent's output' means a linear pipeline forcing information through grading/verification gates, with complete architectural rationale.",
+      "top1": "PRIMER#4-how-the-pipeline-works-step-by-step",
+      "contextChars": 18683
+    },
+    {
+      "dimension": "capabilities",
+      "query": "What can ruvn do? List the pipeline stages and what each agent produces.",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides complete details about ruvn's capabilities, the six pipeline stages (scout → web-searcher → source-grader → synthesizer → fact-checker → citer), and what each agent produces.",
+      "top1": "PRIMER#2-what-can-ruvn-do-for-you",
+      "contextChars": 26178
+    },
+    {
+      "dimension": "capabilities",
+      "query": "How does ruvn grade sources — what do grades A, B, C, and D mean, and which grades is the synthesizer allowed to use?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides complete definitions of grades A/B/C/D and explicitly states the synthesizer uses only A/B sources.",
+      "top1": "PRIMER#2-what-can-ruvn-do-for-you",
+      "contextChars": 21704
+    },
+    {
+      "dimension": "capabilities",
+      "query": "Which CLI commands does ruvn expose and what does each do?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides complete details about all CLI commands (init, doctor, --version, --help) with their exact implementations and descriptions.",
+      "top1": "PRIMER#8-how-do-i-extend-ruvn-safely-the-extension-points",
+      "contextChars": 24753
+    },
+    {
+      "dimension": "usage",
+      "query": "Show me how to actually run a research question through ruvn end-to-end and what I get back. What is the real workflow?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides complete end-to-end workflow details: install via npm, run `ruvn init` to wire into Claude Code, ask Claude to run the pipeline, get back a cited markdown dossier with grades.",
+      "top1": "PRIMER#7-how-do-i-install-and-use-it-end-to-end",
+      "contextChars": 22267
+    },
+    {
+      "dimension": "usage",
+      "query": "What does each agent's SYSTEM_PROMPT instruct it to do, and what model tier runs each one?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides complete SYSTEM_PROMPT content and TIER values for all six agents through the symbols.json, which shows the exact exports from each agent file.",
+      "top1": "PRIMER#5-is-it-production-ready-scope-and-honest-limits",
+      "contextChars": 23788
+    },
+    {
+      "dimension": "usage",
+      "query": "How do I drive the CLI from code? What is the signature of the dispatcher and how do the tests call it?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context shows the complete `run(argv)` signature at bin/cli.js:53 and multiple test examples calling it with argv arrays.",
+      "top1": "__tests__/smoke.test.ts",
+      "contextChars": 28210
+    },
+    {
+      "dimension": "best-practices",
+      "query": "Is ruvn production-ready? What are its honest limits and scope?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive coverage of ruvn's production readiness (v0.1.1, early stage), honest limits (research tool not oracle, no medical advice, depends on host model), and scope (six-agent pipeline, graded citations, starting dossier to verify).",
+      "top1": "PRIMER#5-is-it-production-ready-scope-and-honest-limits",
+      "contextChars": 18225
+    },
+    {
+      "dimension": "best-practices",
+      "query": "What are the gotchas around cost and latency when running ruvn, and where does the web search actually happen?",
+      "generated": false,
+      "deepFile": null,
+      "score": 96,
+      "missing": "nothing",
+      "reason": "The context comprehensively answers all three parts: cost/latency gotchas (6 sequential model calls, sonnet/haiku tiers), and web search happens in the host's WebSearch/WebFetch tools, not ruvn itself.",
+      "top1": "PRIMER#9-cost-latency-and-gotchas-running-the-pipeline",
+      "contextChars": 18141
+    },
+    {
+      "dimension": "best-practices",
+      "query": "Why might my ruvn dossier come back empty or thin, and is that a bug?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive explanations for why dossiers might be empty/thin (grade quality caps, no A/B sources, host web tool issues) and explicitly states this is by design, not a bug.",
+      "top1": "README.md",
+      "contextChars": 15474
+    },
+    {
+      "dimension": "extensibility",
+      "query": "How do I add a new research agent to ruvn? What file does it go in, what does it export, and how do I keep the pipeline working?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides complete details: agents go in src/agents/<name>.ts, must export SYSTEM_PROMPT/NAME/TIER, and pipeline order must be maintained in CLAUDE.md/README.md.",
+      "top1": "PRIMER#8-how-do-i-extend-ruvn-safely-the-extension-points",
+      "contextChars": 24366
+    },
+    {
+      "dimension": "extensibility",
+      "query": "Where is the A/B/C/D grading rubric defined and how do I safely change it without breaking ruvn's trust guarantee?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides complete information about the A/B/C/D grading rubric location (CLAUDE.md and source-grader.ts) and explicit safety instructions for modification (keep both locations in sync, update synthesizer if loosening).",
+      "top1": "PRIMER#8-how-do-i-extend-ruvn-safely-the-extension-points",
+      "contextChars": 21270
+    },
+    {
+      "dimension": "extensibility",
+      "query": "How do I change which model tier an agent uses, and how do I add a new CLI subcommand or a new host?",
+      "generated": false,
+      "deepFile": null,
+      "score": 95,
+      "missing": "nothing",
+      "reason": "The context provides complete instructions for changing model tiers (edit TIER in agent files), adding CLI subcommands (modify bin/cli.js switch statement), and adding new hosts (add dependencies and config files).",
+      "top1": "PRIMER#8-how-do-i-extend-ruvn-safely-the-extension-points",
+      "contextChars": 28855
+    },
+    {
+      "dimension": "deep-dive",
+      "query": "Explain specifically what the file src/agents/web-searcher.ts does and the key symbols it defines (it defines SYSTEM_PROMPT, NAME, TIER). What is its responsibility within the crate?",
+      "generated": true,
+      "deepFile": "src/agents/web-searcher.ts",
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides the complete file content showing all three exported constants (SYSTEM_PROMPT, NAME, TIER) and their exact values, plus context from other agent files showing web-searcher's role in the multi-agent research system.",
+      "top1": "src/agents/web-searcher.ts",
+      "contextChars": 3983
+    },
+    {
+      "dimension": "deep-dive",
+      "query": "Explain specifically what the file src/agents/source-grader.ts does and the key symbols it defines (it defines SYSTEM_PROMPT, NAME, TIER). What is its responsibility within the crate?",
+      "generated": true,
+      "deepFile": "src/agents/source-grader.ts",
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides the complete file content showing all three exported symbols (SYSTEM_PROMPT, NAME, TIER) and clearly explains the source grader's role in evaluating search results by grade.",
+      "top1": "src/agents/source-grader.ts",
+      "contextChars": 4155
+    },
+    {
+      "dimension": "deep-dive",
+      "query": "Explain specifically what the file src/agents/scout.ts does and the key symbols it defines (it defines SYSTEM_PROMPT, NAME, TIER). What is its responsibility within the crate?",
+      "generated": true,
+      "deepFile": "src/agents/scout.ts",
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides the complete file content, all three exported symbols with their exact values, and enough surrounding agent files to understand scout's role as the initial query decomposer in the research pipeline.",
+      "top1": "src/agents/scout.ts",
+      "contextChars": 3955
+    }
+  ]
+}

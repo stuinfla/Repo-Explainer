@@ -1,0 +1,285 @@
+{
+  "target": "agenticow",
+  "metaName": "agenticow",
+  "generated": "2026-06-29T20:43:12.374Z",
+  "method": "source-scan",
+  "count": 24,
+  "byKind": {
+    "fn": 6,
+    "const": 4,
+    "interface": 11,
+    "type_alias": 1,
+    "class": 2
+  },
+  "byCrate": {
+    "examples/_shared.mjs": 6,
+    "src/index.d.ts": 15,
+    "src/index.js": 3
+  },
+  "symbols": [
+    {
+      "name": "rng",
+      "kind": "fn",
+      "signature": "export function rng(seed = 0x9e3779b9)",
+      "module": "examples::_shared.mjs",
+      "crate": "examples/_shared.mjs",
+      "doc": null,
+      "file": "examples/_shared.mjs",
+      "line": 13,
+      "source": "source-scan"
+    },
+    {
+      "name": "vecFactory",
+      "kind": "fn",
+      "signature": "export function vecFactory(dim, seed)",
+      "module": "examples::_shared.mjs",
+      "crate": "examples/_shared.mjs",
+      "doc": null,
+      "file": "examples/_shared.mjs",
+      "line": 23,
+      "source": "source-scan"
+    },
+    {
+      "name": "tmpdir",
+      "kind": "fn",
+      "signature": "export function tmpdir(tag)",
+      "module": "examples::_shared.mjs",
+      "crate": "examples/_shared.mjs",
+      "doc": null,
+      "file": "examples/_shared.mjs",
+      "line": 28,
+      "source": "source-scan"
+    },
+    {
+      "name": "ms",
+      "kind": "const",
+      "signature": "export const ms = (t0) => `${(performance.now() - t0).toFixed(3)} ms`;",
+      "module": "examples::_shared.mjs",
+      "crate": "examples/_shared.mjs",
+      "doc": null,
+      "file": "examples/_shared.mjs",
+      "line": 32,
+      "source": "source-scan"
+    },
+    {
+      "name": "kb",
+      "kind": "const",
+      "signature": "export const kb = (b) => `${(b / 1024).toFixed(1)} KB`;",
+      "module": "examples::_shared.mjs",
+      "crate": "examples/_shared.mjs",
+      "doc": null,
+      "file": "examples/_shared.mjs",
+      "line": 33,
+      "source": "source-scan"
+    },
+    {
+      "name": "mb",
+      "kind": "const",
+      "signature": "export const mb = (b) => `${(b / 1024 / 1024).toFixed(2)} MB`;",
+      "module": "examples::_shared.mjs",
+      "crate": "examples/_shared.mjs",
+      "doc": null,
+      "file": "examples/_shared.mjs",
+      "line": 34,
+      "source": "source-scan"
+    },
+    {
+      "name": "OpenOptions",
+      "kind": "interface",
+      "signature": "export interface OpenOptions",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 3,
+      "source": "source-scan"
+    },
+    {
+      "name": "MemoryDiff",
+      "kind": "interface",
+      "signature": "export interface MemoryDiff",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 16,
+      "source": "source-scan"
+    },
+    {
+      "name": "IngestResult",
+      "kind": "interface",
+      "signature": "export interface IngestResult",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 22,
+      "source": "source-scan"
+    },
+    {
+      "name": "QueryOptions",
+      "kind": "interface",
+      "signature": "export interface QueryOptions",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 28,
+      "source": "source-scan"
+    },
+    {
+      "name": "ForkOptions",
+      "kind": "interface",
+      "signature": "export interface ForkOptions",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 40,
+      "source": "source-scan"
+    },
+    {
+      "name": "QueryHit",
+      "kind": "interface",
+      "signature": "export interface QueryHit",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 51,
+      "source": "source-scan"
+    },
+    {
+      "name": "IngestPayload",
+      "kind": "interface",
+      "signature": "export interface IngestPayload",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 60,
+      "source": "source-scan"
+    },
+    {
+      "name": "QueryOptionsTopK",
+      "kind": "interface",
+      "signature": "export interface QueryOptionsTopK extends QueryOptions",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 67,
+      "source": "source-scan"
+    },
+    {
+      "name": "CheckpointDescriptor",
+      "kind": "interface",
+      "signature": "export interface CheckpointDescriptor",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 73,
+      "source": "source-scan"
+    },
+    {
+      "name": "LineageNode",
+      "kind": "interface",
+      "signature": "export interface LineageNode",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 80,
+      "source": "source-scan"
+    },
+    {
+      "name": "MemoryStatus",
+      "kind": "interface",
+      "signature": "export interface MemoryStatus",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 94,
+      "source": "source-scan"
+    },
+    {
+      "name": "IngestRecord",
+      "kind": "type_alias",
+      "signature": "export type IngestRecord = { id: number; vector: number[] | Float32Array; text?: string };",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 108,
+      "source": "source-scan"
+    },
+    {
+      "name": "AgenticMemory",
+      "kind": "class",
+      "signature": "export class AgenticMemory",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 110,
+      "source": "source-scan"
+    },
+    {
+      "name": "open",
+      "kind": "fn",
+      "signature": "export function open(filePath: string, opts?: OpenOptions): AgenticMemory;",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 140,
+      "source": "source-scan"
+    },
+    {
+      "name": "openBase",
+      "kind": "fn",
+      "signature": "export function openBase(filePath: string, opts?: OpenOptions): AgenticMemory;",
+      "module": "src::index.d.ts",
+      "crate": "src/index.d.ts",
+      "doc": null,
+      "file": "src/index.d.ts",
+      "line": 142,
+      "source": "source-scan"
+    },
+    {
+      "name": "AgenticMemory",
+      "kind": "class",
+      "signature": "export class AgenticMemory",
+      "module": "src::index.js",
+      "crate": "src/index.js",
+      "doc": null,
+      "file": "src/index.js",
+      "line": 89,
+      "source": "source-scan"
+    },
+    {
+      "name": "open",
+      "kind": "fn",
+      "signature": "export function open(filePath, opts)",
+      "module": "src::index.js",
+      "crate": "src/index.js",
+      "doc": null,
+      "file": "src/index.js",
+      "line": 646,
+      "source": "source-scan"
+    },
+    {
+      "name": "openBase",
+      "kind": "const",
+      "signature": "export const openBase = open;",
+      "module": "src::index.js",
+      "crate": "src/index.js",
+      "doc": "Alias of {@link open}. Provided so documented snippets that read `import { openBase } from 'agenticow'` run verbatim. Identical behavior. /",
+      "file": "src/index.js",
+      "line": 654,
+      "source": "source-scan"
+    }
+  ]
+}

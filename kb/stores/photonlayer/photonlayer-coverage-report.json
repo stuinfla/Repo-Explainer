@@ -1,0 +1,198 @@
+{
+  "target": "photonlayer",
+  "generated": "2026-06-19T22:17:28.137Z",
+  "pass": true,
+  "hardFail": false,
+  "checks": {
+    "coverageRatio": {
+      "value": 1,
+      "pass": true,
+      "hardFail": false,
+      "threshold": 0.92,
+      "indexed": 50,
+      "authored": 50
+    },
+    "perComponentMin": {
+      "pass": true,
+      "thin": [],
+      "threshold": 3
+    },
+    "passageRatio": {
+      "value": 4.98,
+      "pass": true,
+      "threshold": 4,
+      "distinctSourceFiles": 50,
+      "passages": 249
+    },
+    "spotCheck": {
+      "value": 1,
+      "pass": true,
+      "threshold": 0.8,
+      "hits": 20,
+      "of": 20
+    }
+  },
+  "sourceTypeCounts": {
+    "doc": 16,
+    "example": 35,
+    "config": 4,
+    "src": 146,
+    "test": 37,
+    "(untagged)": 11
+  },
+  "summary": {
+    "authoredSourceFiles": 50,
+    "indexedAuthoredFiles": 50,
+    "coverage": 1,
+    "totalPassages": 249,
+    "distinctIndexedPaths": 68,
+    "passageRatio": 4.98,
+    "components": 4,
+    "thinComponents": 0
+  },
+  "notIndexedSample": [],
+  "perComponent": [
+    {
+      "component": "crates/photonlayer-bench",
+      "passages": 114,
+      "ok": true
+    },
+    {
+      "component": "crates/photonlayer-cli",
+      "passages": 12,
+      "ok": true
+    },
+    {
+      "component": "crates/photonlayer-core",
+      "passages": 81,
+      "ok": true
+    },
+    {
+      "component": "crates/photonlayer-wasm",
+      "passages": 18,
+      "ok": true
+    }
+  ],
+  "spotResults": [
+    {
+      "file": "crates/photonlayer-bench/tests/mnist_differential_bench.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "crates/photonlayer-bench/src/mnist.rs"
+    },
+    {
+      "file": "crates/photonlayer-core/src/hash.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-core/src/hash.rs"
+    },
+    {
+      "file": "crates/photonlayer-bench/src/lib.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-bench/src/lib.rs"
+    },
+    {
+      "file": "crates/photonlayer-bench/src/verification.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-bench/src/verification.rs"
+    },
+    {
+      "file": "crates/photonlayer-core/src/field.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-core/src/field.rs"
+    },
+    {
+      "file": "crates/photonlayer-bench/src/learn.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-bench/src/learn.rs"
+    },
+    {
+      "file": "crates/photonlayer-cli/src/main.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-cli/Cargo.toml"
+    },
+    {
+      "file": "crates/photonlayer-bench/src/bin/bench.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-bench/src/baselines.rs"
+    },
+    {
+      "file": "crates/photonlayer-bench/tests/cascade_gradient_check.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "crates/photonlayer-bench/src/baselines.rs"
+    },
+    {
+      "file": "crates/photonlayer-core/examples/compression.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "crates/photonlayer-core/README.md"
+    },
+    {
+      "file": "crates/photonlayer-bench/tests/more_data_bench.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "crates/photonlayer-bench/src/baselines.rs"
+    },
+    {
+      "file": "crates/photonlayer-bench/examples/learn_mask.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "crates/photonlayer-bench/src/lib.rs"
+    },
+    {
+      "file": "crates/photonlayer-wasm/src/lib.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-wasm/src/lib.rs"
+    },
+    {
+      "file": "crates/photonlayer-core/src/receipt.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-core/src/receipt.rs"
+    },
+    {
+      "file": "crates/photonlayer-core/src/mask.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-core/src/mask.rs"
+    },
+    {
+      "file": "crates/photonlayer-core/examples/receipt.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-core/src/receipt.rs"
+    },
+    {
+      "file": "crates/photonlayer-bench/src/mnist_bench.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-bench/src/mnist.rs"
+    },
+    {
+      "file": "crates/photonlayer-core/src/config.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-core/src/config.rs"
+    },
+    {
+      "file": "crates/photonlayer-core/src/propagate.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-core/src/propagate.rs"
+    },
+    {
+      "file": "crates/photonlayer-bench/src/grad_adam.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/photonlayer-bench/src/grad_adam.rs"
+    }
+  ]
+}

@@ -38,8 +38,8 @@ import { execFileSync } from 'node:child_process';
 const TOOL = 'readme-enhance';
 const BRANCH = 'explainer/readme-enhancement';
 const SVG_DIR = 'docs/explainer';
-const MARK_START = '<!-- repo-explainer:start -->';
-const MARK_END = '<!-- repo-explainer:end -->';
+const MARK_START = '<!-- explainmyrepo:start -->';
+const MARK_END = '<!-- explainmyrepo:end -->';
 const TRUE_RE = /^(1|true|yes|on)$/i;
 
 // stdout carries ONLY the single JSON result object; all diagnostics go to stderr.
@@ -198,9 +198,9 @@ try {
   try {
     run('git', [
       '-C', clone,
-      '-c', 'user.name=repo-explainer',
-      '-c', 'user.email=repo-explainer@users.noreply.github.com',
-      'commit', '-m', 'docs: add repo-explainer architecture explainer + shared diagrams',
+      '-c', 'user.name=explainmyrepo',
+      '-c', 'user.email=explainmyrepo@users.noreply.github.com',
+      'commit', '-m', 'docs: add explainmyrepo architecture explainer + shared diagrams',
     ]);
   } catch (err) {
     if (!/nothing to commit/i.test(err.stderr || err.message)) throw err;

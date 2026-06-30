@@ -1,0 +1,34 @@
+{
+  "target": "chalk",
+  "metaName": "chalk",
+  "generated": "2026-06-30T05:32:33.603Z",
+  "ecosystems": [
+    "npm"
+  ],
+  "componentCount": 2,
+  "internalEdgeCount": 0,
+  "externalDepCount": 0,
+  "nodes": [
+    {
+      "name": "chalk",
+      "version": "5.6.2",
+      "description": "Terminal string styling done right",
+      "manifest": "package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "chalk",
+      "version": "5.6.2",
+      "description": "Terminal string styling done right",
+      "manifest": "package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [],
+  "externalDeps": {
+    "chalk": []
+  },
+  "externalDepNames": []
+}

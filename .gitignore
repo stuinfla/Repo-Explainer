@@ -23,3 +23,16 @@ node_modules/
 *.log
 *.zip
 ruvector.db
+
+# local agent DB + model cache + per-run build outputs (all regenerable, not source)
+agentdb.rvf
+agentdb.rvf.lock
+kb/models-cache/
+explainer-builds/
+
+# heavy regenerable studio media (NotebookLM-style audio/video overviews) — keep images, not these
+*.m4a
+*.mp4
+*.mov
+*.wav
+*.webm

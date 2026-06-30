@@ -153,6 +153,14 @@ p  { margin: 0 0 1rem; max-width: 68ch; color: var(--ink-2); }
 }
 .mono { font-family: var(--mono); }
 .lede { font-size: 1.18rem; color: var(--ink); max-width: 64ch; }
+.attrib-lede {
+  font-size: 0.95rem; line-height: 1.55; color: var(--ink-2); max-width: 64ch;
+  margin: 0 0 1rem; padding: 11px 16px; border-left: 3px solid var(--brass);
+  border-radius: 0 8px 8px 0; background: var(--fill-amber);
+}
+.attrib-lede strong { color: var(--ink); font-weight: 600; }
+.attrib-lede a { color: var(--brass); }
+.attrib-lede a:hover { color: var(--amber-hot); }
 .placeholder {
   color: var(--muted);
   font-style: italic;
@@ -198,6 +206,28 @@ pre.code-block code {
   max-width: 70ch;
 }
 .footnote-note small { color: var(--muted); line-height: 1.55; }
+
+/* ---- Studio callout (the 🎧 audio + 📄 report inside the zip) ------------- */
+.studio-note {
+  margin: 20px 0; padding: 16px 18px;
+  border: 2px solid var(--amber);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--fill-amber) 0%, var(--panel) 100%);
+  box-shadow: var(--glow-amber);
+  max-width: 70ch;
+}
+.studio-note .studio-lead {
+  margin: 0 0 8px; font-family: var(--display);
+  font-weight: 700; font-size: 1.05rem; color: var(--amber-hot);
+  letter-spacing: 0.01em;
+}
+.studio-note ul { margin: 0; padding-left: 0; list-style: none; max-width: none; }
+.studio-note li { margin: 6px 0; color: var(--ink-2); line-height: 1.5; }
+.studio-note li code { color: var(--amber-hot); }
+.studio-note .studio-tag {
+  font-family: var(--mono); font-size: 11px; color: var(--brass);
+  letter-spacing: 0.04em;
+}
 
 /* Browser Studio on-ramp block — §07 "recommended for beginners" callout */
 .browser-onramp {
@@ -555,6 +585,77 @@ code, .cmd {
 .dz-status {
   margin-top: 14px; font-family: var(--mono); font-size: 12.5px;
   color: var(--brass); min-height: 1.2em;
+}
+
+/* ---- NotebookLM Studio (the multi-format companion) ----------------------- */
+.nlm-studio {
+  margin: 40px 0 8px;
+  border: 2px solid var(--amber);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(120% 140% at 8% 0%, var(--fill-amber) 0%, transparent 60%),
+    linear-gradient(180deg, var(--panel-2) 0%, var(--bg-2) 100%);
+  box-shadow: var(--shadow-deep);
+  padding: clamp(22px, 4vw, 38px);
+}
+.nlm-studio .nlm-kicker {
+  display: inline-block;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--copper);
+  margin: 0 0 8px;
+}
+.nlm-studio h2 {
+  font-family: var(--display); font-weight: 800;
+  font-size: clamp(1.5rem, 3.4vw, 2.2rem); line-height: 1.05;
+  color: var(--ink); margin: 0 0 10px;
+}
+.nlm-studio .nlm-lead { max-width: 70ch; color: var(--ink-2); }
+.nlm-cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  margin: 14px 0 8px; padding: 14px 22px;
+  border-radius: 10px; border: 1px solid var(--amber);
+  background: linear-gradient(96deg, var(--amber-hot), var(--copper));
+  color: #1a120a; font-family: var(--display); font-weight: 800;
+  font-size: 1.05rem; letter-spacing: 0.01em; text-decoration: none;
+  box-shadow: var(--glow-amber);
+  transition: transform 0.15s var(--ease), filter 0.15s var(--ease);
+}
+.nlm-cta:hover { transform: translateY(-1px); filter: brightness(1.06); color: #160f08; }
+.nlm-cta .nlm-cta-play { font-size: 1.2rem; }
+.nlm-grid {
+  display: grid; gap: 14px; margin-top: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.nlm-card {
+  border: 1px solid var(--line-strong); border-radius: 12px;
+  background: linear-gradient(135deg, var(--fill-amber) 0%, var(--panel) 100%);
+  padding: 16px 18px 18px; display: flex; flex-direction: column;
+}
+.nlm-card .nlm-card-tag {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--amber-hot); margin: 0 0 6px;
+}
+.nlm-card h3 {
+  font-family: var(--display); font-weight: 700; font-size: 1.15rem;
+  color: var(--ink); margin: 0 0 6px;
+}
+.nlm-card p { font-size: 0.92rem; color: var(--ink-2); margin: 0 0 12px; max-width: none; }
+.nlm-card .nlm-media {
+  margin: 0 0 12px; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--line-strong); background: var(--bg);
+}
+.nlm-card .nlm-media img,
+.nlm-card .nlm-media video { display: block; width: 100%; height: auto; }
+.nlm-card .nlm-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 10px 16px; }
+.nlm-card .nlm-actions a {
+  font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.02em;
+  color: var(--brass); text-decoration: none; border-bottom: 1px solid transparent;
+}
+.nlm-card .nlm-actions a:hover { color: var(--amber-hot); border-bottom-color: var(--amber-hot); }
+.nlm-card audio { width: 100%; margin-top: 2px; }
+.nlm-note {
+  margin-top: 18px; font-family: var(--mono); font-size: 12px;
+  color: var(--muted); letter-spacing: 0.02em;
 }
 
 /* ---- Footer --------------------------------------------------------------- */

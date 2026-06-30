@@ -1,0 +1,336 @@
+{
+  "target": "photonlayer",
+  "judge": "claude-sonnet-4-5",
+  "seed": 7,
+  "generated": "2026-06-19T22:04:30.498Z",
+  "composite": 97.3,
+  "weakestDimension": "architecture",
+  "pass": true,
+  "questionsFile": "/Users/stuartkerr/Code/Ruv-Explainer/kb/questions/photonlayer.aiq.jsonl",
+  "dimensionsScored": 8,
+  "dimensionsTotal": 8,
+  "perDimension": [
+    {
+      "id": 1,
+      "key": "onboarding",
+      "name": "Onboarding (install/build/run/test)",
+      "n": 3,
+      "score": 98
+    },
+    {
+      "id": 2,
+      "key": "what-it-is",
+      "name": "What it is + problem it solves",
+      "n": 3,
+      "score": 98
+    },
+    {
+      "id": 3,
+      "key": "architecture",
+      "name": "Architecture (components + relations)",
+      "n": 3,
+      "score": 97.3
+    },
+    {
+      "id": 4,
+      "key": "capabilities",
+      "name": "Capabilities (features/commands/API)",
+      "n": 3,
+      "score": 98
+    },
+    {
+      "id": 5,
+      "key": "usage",
+      "name": "Usage (functions + signatures + example)",
+      "n": 3,
+      "score": 98
+    },
+    {
+      "id": 6,
+      "key": "best-practices",
+      "name": "Best practices / patterns / gotchas",
+      "n": 3,
+      "score": 98
+    },
+    {
+      "id": 7,
+      "key": "deep-dive",
+      "name": "Deep-dive (3 random buried files)",
+      "n": 3,
+      "score": 98
+    },
+    {
+      "id": 8,
+      "key": "extensibility",
+      "name": "Extensibility (safe modification)",
+      "n": 3,
+      "score": 98
+    }
+  ],
+  "perQuestion": [
+    {
+      "dimension": "onboarding",
+      "query": "I just got this repo. How do I install, build, run, and test PhotonLayer from scratch? Give me the exact commands.",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides exact install/build/run/test commands, workspace structure, crate dependencies, and multiple example commands with categories — a complete onboarding answer is trivially composable from the shown material.",
+      "top1": "PRIMER#7-how-do-i-install-and-run-it-end-to-end",
+      "contextChars": 26898
+    },
+    {
+      "dimension": "onboarding",
+      "query": "What is the fastest way to see PhotonLayer actually run something with no setup, and what is the first example I should run locally?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides the fastest no-setup path (live browser demo URL), the first local example to run (hello_optics with exact command), installation steps, and a complete examples ladder with descriptions and commands.",
+      "top1": "PRIMER#7-how-do-i-install-and-run-it-end-to-end",
+      "contextChars": 18475
+    },
+    {
+      "dimension": "onboarding",
+      "query": "How do I run PhotonLayer in a browser, and which crate provides the WebAssembly bindings?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context explicitly states photonlayer-wasm provides WebAssembly bindings and shows the exact wasm-pack build command and local server command to run the browser demo.",
+      "top1": "PRIMER#3-what-is-photonlayer-made-of-the-four-crates",
+      "contextChars": 17858
+    },
+    {
+      "dimension": "what-it-is",
+      "query": "What is PhotonLayer and what specific problem does it solve for me?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides complete, specific answers to what PhotonLayer is (deterministic optical-AI front end, learned phase mask system) and what problems it solves (data reduction, faster/cheaper decisions, privacy by physics, deterministic receipts), with concrete examples and benchmarks.",
+      "top1": "PRIMER#1-what-is-photonlayer",
+      "contextChars": 15117
+    },
+    {
+      "dimension": "what-it-is",
+      "query": "How is PhotonLayer different from a normal camera plus a neural network, and what does the sensor actually capture?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides complete, specific answers: normal camera captures all pixels then processes vs PhotonLayer's phase mask compresses light optically before digitization, and the sensor captures a tiny compressed measurement (e.g., 4 pixels at 64× reduction) of task-useful information, not a viewable image.",
+      "top1": "PRIMER#1-what-is-photonlayer",
+      "contextChars": 15314
+    },
+    {
+      "dimension": "what-it-is",
+      "query": "What does a 'learned phase mask' do, and what is the receipt that every run emits?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context fully explains what a learned phase mask does (compresses light into task-useful information before digitization) and what the receipt is (a BLAKE3-bound record of input_hash, mask_hash, config_hash, output_hash, metrics_hash, provenance, and rvf_receipt_hash that proves reproducibility).",
+      "top1": "PRIMER#4-how-the-optical-pipeline-works-step-by-step",
+      "contextChars": 16745
+    },
+    {
+      "dimension": "architecture",
+      "query": "What crates make up PhotonLayer and how do they depend on each other? Which crate is the foundation?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides the four crates, their purposes, and the complete dependency graph showing photonlayer-core as the foundation with all others depending on it.",
+      "top1": "PRIMER#3-what-is-photonlayer-made-of-the-four-crates",
+      "contextChars": 13752
+    },
+    {
+      "dimension": "architecture",
+      "query": "If I change something in photonlayer-core, which other crates could be affected?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The dependency graph explicitly shows all crates that depend on photonlayer-core (photonlayer-bench, photonlayer-wasm, photonlayer-cli), providing a complete answer to which crates could be affected by changes.",
+      "top1": "crates/photonlayer-core/src/metrics.rs",
+      "contextChars": 14622
+    },
+    {
+      "dimension": "architecture",
+      "query": "Which crate owns the optical simulator versus the training and benchmarks, and what does each module in core do?",
+      "generated": false,
+      "deepFile": null,
+      "score": 96,
+      "missing": "nothing",
+      "reason": "The context provides the crate ownership (core owns simulator, bench owns training/benchmarks) and describes each core module's purpose (field, mask, propagate, detector, metrics, receipt, rng, simulator, etc.).",
+      "top1": "PRIMER#3-what-is-photonlayer-made-of-the-four-crates",
+      "contextChars": 27285
+    },
+    {
+      "dimension": "capabilities",
+      "query": "What can PhotonLayer do? List its features: compression, gradient training, multi-plane cascade, and receipts.",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "All four features (compression, gradient training, multi-plane cascade, receipts) are explicitly detailed with concrete numbers, commands, and implementation specifics across the README, PRIMER, and code.",
+      "top1": "PRIMER#2-what-can-photonlayer-do",
+      "contextChars": 33509
+    },
+    {
+      "dimension": "capabilities",
+      "query": "Which CLI subcommands does PhotonLayer expose and what does each do?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The CLI subcommands, their purposes, and invocation patterns are explicitly documented in main.rs and the entrypoints artifact.",
+      "top1": "PRIMER#3-what-is-photonlayer-made-of-the-four-crates",
+      "contextChars": 32165
+    },
+    {
+      "dimension": "capabilities",
+      "query": "What are PhotonLayer's measured results — the accuracy numbers for gradient training and the multi-plane cascade at 16x compression?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The gradient training accuracy (83.30% at 16× compression) and multi-plane cascade results (2 planes → 88.80%, 3 planes → 89.80%) are explicitly stated in PRIMER#2 and README.md, with the 2-plane 88.80% noted as the robust headline.",
+      "top1": "crates/photonlayer-bench/tests/cascade_gradient_check.rs",
+      "contextChars": 35006
+    },
+    {
+      "dimension": "usage",
+      "query": "Show me how to run the optical simulator in photonlayer-core — what are the key types and a real minimal example?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "All key types (ScalarSimulator, InputImage, PhaseMask, OpticalConfig, OpticalFrame), their constructors/methods, and a complete minimal example are present in the context.",
+      "top1": "crates/photonlayer-core/src/simulator.rs",
+      "contextChars": 39734
+    },
+    {
+      "dimension": "usage",
+      "query": "What is the public API of the phase mask — how do I create a random, designed, or learned PhaseMask?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides complete constructor signatures (new, identity, random, lens), full method signatures (apply, phase_histogram), the struct definition with all fields, and concrete usage examples from multiple sources.",
+      "top1": "PRIMER#4-how-the-optical-pipeline-works-step-by-step",
+      "contextChars": 30654
+    },
+    {
+      "dimension": "usage",
+      "query": "How do I propagate an optical field and run a diffraction step — what function and propagation modes are available?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides the propagate function signature, all three PropagationMode variants (Fresnel/Fraunhofer/AngularSpectrum), the Propagator struct with propagate/propagate_into methods, a complete working example (propagation_modes.rs), and the full propagate.rs source showing how to call it — everything needed for a correct, complete answer.",
+      "top1": "crates/photonlayer-core/examples/propagation_modes.rs",
+      "contextChars": 40636
+    },
+    {
+      "dimension": "best-practices",
+      "query": "Is PhotonLayer production-ready? What are its honest limits around hardware, privacy, and the accuracy figures?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides comprehensive, specific answers to all three dimensions: production-readiness (simulator, not hardware), hardware limits (power-of-two grids, MAX_GRID_DIM=4096, memory scaling), privacy (linear probe only, no guarantee), and accuracy figures (73% hill-climb, 83.30% gradient, 88.80% 2-plane, 89.80% 3-plane, all noise-free continuous-phase simulation).",
+      "top1": "PRIMER#5-is-it-production-ready-scope-and-honest-limits",
+      "contextChars": 18973
+    },
+    {
+      "dimension": "best-practices",
+      "query": "What should I treat with caution in PhotonLayer — what does the privacy probe actually measure and what does the 16x MAC reduction count?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The PRIMER#5 passage explicitly states what the privacy probe measures (linear invertibility only, not a guarantee) and what the 16× MAC reduction counts (digital decoder only, 640 vs 10,240, optical transform not counted), plus the privacy_probe.rs example confirms the linear-attack methodology with the honest caveat printed in output.",
+      "top1": "PRIMER#9-performance-determinism-and-gotchas",
+      "contextChars": 14139
+    },
+    {
+      "dimension": "best-practices",
+      "query": "What are the gotchas around memory, grid size, determinism, and training when running PhotonLayer?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The PRIMER#9 passage directly and comprehensively answers all four dimensions (memory, grid size, determinism, training) with concrete specifics: MAX_GRID_DIM=4096, power-of-two requirement, memory formula (8 bytes/pixel, 134MB for 4096²), determinism guarantees within-platform with the libm cross-platform gap, training ceilings (73% hill-climb, 83.30% gradient, 88.80% 2-plane, 89.80% 3-plane init-sensitive), and all relevant gotchas.",
+      "top1": "PRIMER#9-performance-determinism-and-gotchas",
+      "contextChars": 24472
+    },
+    {
+      "dimension": "extensibility",
+      "query": "If I want to add a new propagation mode or diffraction model, where does it go and what is the contract I must satisfy (forward and adjoint)?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides the exact enum location (config.rs), the implementation file (propagate.rs with transfer_kernel and Propagator::backward_into), the adjoint contract (conj(H) for transfer modes, validated via ⟨P(a),b⟩==⟨a,Pᴴ(b)⟩), and the test location (gradient_check.rs) — all concrete facts the question demands.",
+      "top1": "PRIMER#8-how-do-i-extend-photonlayer-safely-the-extension-points",
+      "contextChars": 40402
+    },
+    {
+      "dimension": "extensibility",
+      "query": "How would I safely add a new phase mask type or training method to photonlayer-bench without breaking the core or wasm crates?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context provides complete extension points (PRIMER#8), full source for both training methods (learn.rs, grad_train.rs, grad_cascade.rs), the PhaseMask API (mask.rs), the crate dependency graph, and the stable prelude contract — everything needed to write a correct, specific answer.",
+      "top1": "crates/photonlayer-bench/src/grad_train.rs",
+      "contextChars": 41031
+    },
+    {
+      "dimension": "extensibility",
+      "query": "Where do I add a new CLI subcommand or a new wasm binding, and what wires the Rust simulator to JavaScript?",
+      "generated": false,
+      "deepFile": null,
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The context shows the CLI subcommand dispatch in main.rs (match args.first() over \"bench\", \"barcode\", etc.), the WASM #[wasm_bindgen] pattern in lib.rs (simulate, compress, verify_receipt_json), and the ScalarSimulator trait/struct wiring Rust to JS via photonlayer-core → photonlayer-wasm.",
+      "top1": "crates/photonlayer-core/src/simulator.rs",
+      "contextChars": 52873
+    },
+    {
+      "dimension": "deep-dive",
+      "query": "Explain specifically what the file crates/photonlayer-bench/tests/mnist_gradient_bench.rs does and the key symbols it defines. What is its responsibility within the crate?",
+      "generated": true,
+      "deepFile": "crates/photonlayer-bench/tests/mnist_gradient_bench.rs",
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The full file body, its imports, constants, helper functions, and test structure are all present; the question is fully answerable from the provided context.",
+      "top1": "crates/photonlayer-bench/src/mnist.rs",
+      "contextChars": 22799
+    },
+    {
+      "dimension": "deep-dive",
+      "query": "Explain specifically what the file crates/photonlayer-core/src/propagate.rs does and the key symbols it defines (it defines propagate, propagate, Propagator, new, new). What is its responsibility within the crate?",
+      "generated": true,
+      "deepFile": "crates/photonlayer-core/src/propagate.rs",
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The full file body, module doc, all key symbols (propagate fn, Propagator struct, new method, propagate method), their signatures, and implementation details are present in the context.",
+      "top1": "crates/photonlayer-core/src/propagate.rs",
+      "contextChars": 21897
+    },
+    {
+      "dimension": "deep-dive",
+      "query": "Explain specifically what the file crates/photonlayer-bench/src/privacy.rs does and the key symbols it defines (it defines privacy, clone, fmt, serialize, deserialize). What is its responsibility within the crate?",
+      "generated": true,
+      "deepFile": "crates/photonlayer-bench/src/privacy.rs",
+      "score": 98,
+      "missing": "nothing",
+      "reason": "The full file body, module doc, struct definition with all three fields, and all five derived trait methods (clone, fmt, serialize, deserialize, plus the privacy_leakage function) are explicitly shown in the context.",
+      "top1": "crates/photonlayer-bench/src/privacy.rs",
+      "contextChars": 20785
+    }
+  ]
+}

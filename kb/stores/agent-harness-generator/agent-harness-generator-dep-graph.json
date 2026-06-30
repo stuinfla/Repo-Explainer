@@ -1,0 +1,728 @@
+{
+  "target": "agent-harness-generator",
+  "metaName": "MetaHarness",
+  "generated": "2026-06-19T21:43:34.941Z",
+  "ecosystems": [
+    "rust",
+    "npm"
+  ],
+  "componentCount": 25,
+  "internalEdgeCount": 40,
+  "externalDepCount": 22,
+  "nodes": [
+    {
+      "name": "ruflo-kernel",
+      "version": "0.1.0",
+      "description": "Cross-platform kernel for the agent-harness-generator (MCP, hooks, memory, routing, intelligence, claims, witness)",
+      "manifest": "crates/kernel/Cargo.toml",
+      "targets": [
+        {
+          "name": "ruflo_kernel",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "mcp_validate",
+          "kinds": [
+            "bench"
+          ]
+        },
+        {
+          "name": "witness_canon",
+          "kinds": [
+            "bench"
+          ]
+        },
+        {
+          "name": "witness_sign",
+          "kinds": [
+            "bench"
+          ]
+        },
+        {
+          "name": "build-script-build",
+          "kinds": [
+            "custom-build"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "ruflo-kernel-wasm",
+      "version": "0.1.0",
+      "description": "WebAssembly bindings for ruflo-kernel",
+      "manifest": "crates/kernel-wasm/Cargo.toml",
+      "targets": [
+        {
+          "name": "ruflo_kernel_wasm",
+          "kinds": [
+            "cdylib",
+            "rlib"
+          ]
+        }
+      ],
+      "isLib": false,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "ruflo-kernel-napi",
+      "version": "0.1.0",
+      "description": "NAPI-RS bindings for ruflo-kernel",
+      "manifest": "crates/kernel-napi/Cargo.toml",
+      "targets": [
+        {
+          "name": "ruflo_kernel_napi",
+          "kinds": [
+            "cdylib"
+          ]
+        },
+        {
+          "name": "build-script-build",
+          "kinds": [
+            "custom-build"
+          ]
+        }
+      ],
+      "isLib": false,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "template-catalog",
+      "version": "0.1.0",
+      "description": "Canonical, embedded quick-start template catalog for agent-harness-generator (parsed from templates/catalog.json)",
+      "manifest": "crates/template-catalog/Cargo.toml",
+      "targets": [
+        {
+          "name": "template_catalog",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "@ruvnet/agent-harness-generator",
+      "version": "0.1.3",
+      "description": "Library/core package for the Agent Harness Generator. Pair with `metaharness` for the CLI. Re-exports scaffold(), validate(), and the deterministic-analysis pipeline from `metaharness` so consumers can `import { scaffold } from '@ruvnet/agent-harness-generator'` without shelling out to the CLI.",
+      "manifest": "packages/agent-harness-generator-lib/package.json",
+      "deps": [
+        "metaharness"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/bench",
+      "version": "0.1.0",
+      "description": "Benchmark harness for the kernel memory pipeline (vs Mem0 / ReasoningBank baseline shapes)",
+      "manifest": "packages/bench/package.json",
+      "deps": [
+        "@metaharness/kernel",
+        "@metaharness/host-claude-code",
+        "@metaharness/host-codex",
+        "@metaharness/host-pi-dev",
+        "@metaharness/host-hermes",
+        "@metaharness/host-openclaw",
+        "@metaharness/host-rvm",
+        "@metaharness/host-copilot",
+        "@metaharness/host-opencode",
+        "@metaharness/host-github-actions",
+        "@metaharness/router"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "metaharness",
+      "version": "0.2.0",
+      "description": "MetaHarness — mint a custom AI agent harness from any repo. Browser Studio + `npx metaharness` CLI. Runs on Claude Code, Codex, pi.dev, Hermes, OpenClaw, RVM.",
+      "manifest": "packages/create-agent-harness/package.json",
+      "deps": [
+        "kolorist",
+        "prompts"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/darwin",
+      "version": "0.2.1",
+      "description": "An LLM supercharger and cost optimizer: keep your model frozen and evolve the harness around it so a cheap model performs like an expensive one — measurably better, far cheaper. Mutate→sandbox→score→archive; promote only safe, measured wins. Validated on real SWE-bench Lite (~$0.01/instance). Dependency-free (Node built-ins).",
+      "manifest": "packages/darwin-mode/package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/harness",
+      "version": "0.1.0",
+      "description": "Algorithmic Agent Harness (ADR-047) — a deterministic control plane that wraps any model/tool/skill as a replaceable worker: utility-scored decisions, four-gate safety, hash-chained receipts, circuit-breaker recovery, adversarial verification, and a bandit agent pool. The model proposes, the harness decides, the algorithms verify.",
+      "manifest": "packages/harness/package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/host-claude-code",
+      "version": "0.1.2",
+      "description": "Claude Code host adapter for agent-harness-generator (MCP + hooks + .claude/settings.json)",
+      "manifest": "packages/host-claude-code/package.json",
+      "deps": [
+        "@metaharness/kernel"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/host-codex",
+      "version": "0.1.2",
+      "description": "OpenAI Codex CLI host adapter for agent-harness-generator (MCP via ~/.codex/config.toml)",
+      "manifest": "packages/host-codex/package.json",
+      "deps": [
+        "@metaharness/kernel"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/host-copilot",
+      "version": "0.1.2",
+      "description": "GitHub Copilot (VSCode) host adapter for agent-harness-generator. Emits .vscode/mcp.json for the Copilot MCP client (ADR-032).",
+      "manifest": "packages/host-copilot/package.json",
+      "deps": [
+        "@metaharness/kernel"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/host-github-actions",
+      "version": "0.1.2",
+      "description": "GitHub Actions host adapter for agent-harness-generator. Emits .github/workflows/<name>.yml + a composite action.yml for non-interactive CI/CD agent harnesses (ADR-033).",
+      "manifest": "packages/host-github-actions/package.json",
+      "deps": [
+        "@metaharness/kernel"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/host-hermes",
+      "version": "0.1.2",
+      "description": "Hermes Agent (NousResearch) host adapter for agent-harness-generator (MCP + <think>/<tool_call> scrubbing)",
+      "manifest": "packages/host-hermes/package.json",
+      "deps": [
+        "@metaharness/kernel"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/host-openclaw",
+      "version": "0.1.2",
+      "description": "OpenClaw (personal AI assistant) host adapter for agent-harness-generator (MCP via ~/.openclaw/openclaw.json + workspace skills)",
+      "manifest": "packages/host-openclaw/package.json",
+      "deps": [
+        "@metaharness/kernel"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/host-opencode",
+      "version": "0.1.2",
+      "description": "OpenCode (sst/opencode) host adapter for agent-harness-generator. Emits .opencode/opencode.json (ADR-036).",
+      "manifest": "packages/host-opencode/package.json",
+      "deps": [
+        "@metaharness/kernel"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/host-pi-dev",
+      "version": "0.1.2",
+      "description": "pi.dev coding-agent host adapter for agent-harness-generator (Pi extension, no MCP by design)",
+      "manifest": "packages/host-pi-dev/package.json",
+      "deps": [
+        "@metaharness/kernel"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/host-rvm",
+      "version": "0.1.2",
+      "description": "RVM (Agentic Virtual Machine) host adapter for agent-harness-generator — hardware-isolated deployment via capability tokens",
+      "manifest": "packages/host-rvm/package.json",
+      "deps": [
+        "@metaharness/kernel"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/kernel",
+      "version": "0.1.2",
+      "description": "Cross-platform kernel for the agent-harness-generator — wasm primary, NAPI-RS native fallback",
+      "manifest": "packages/kernel-js/package.json",
+      "deps": [
+        "@ruvector/emergent-time"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/router",
+      "version": "0.3.2",
+      "description": "Cost-optimal model router for AI agent harnesses — route each query to the cheapest model that's good enough (k-NN over labelled embeddings). The productized DRACO Phase-2 finding.",
+      "manifest": "packages/router/package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/sdk",
+      "version": "0.1.0",
+      "description": "Convenience helpers for harness authors — defineHarness, defineAgent, defineSkill, defineTool. Light wrappers around @metaharness/kernel.",
+      "manifest": "packages/sdk/package.json",
+      "deps": [
+        "@metaharness/kernel"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/vertical-base",
+      "version": "0.1.0",
+      "description": "Shared contract for @metaharness/vertical-* packs — VerticalPack interface, manifest schema, template-files protocol",
+      "manifest": "packages/vertical-base/package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@metaharness/vertical-trading",
+      "version": "0.1.0",
+      "description": "Trading harness vertical pack — paper-mode-default, circuit breakers, fractional-Kelly position sizing, 5-agent pipeline (market-watcher / signal-gen / risk-checker / executor / postmortem)",
+      "manifest": "packages/vertical-trading/package.json",
+      "deps": [
+        "@metaharness/vertical-base"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@agent-harness-generator/web-ui",
+      "version": "0.1.0",
+      "description": "Browser-based generator UI for agent-harness-generator — scaffold harnesses + Claude skills/agents/commands, all client-side, deployable to GitHub Pages.",
+      "manifest": "apps/web-ui/package.json",
+      "deps": [
+        "@huggingface/transformers",
+        "jszip",
+        "lucide-react",
+        "react",
+        "react-dom"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "agent-harness-generator",
+      "version": "0.1.0",
+      "description": "Scaffold your own focused AI agent harness — workspace root",
+      "manifest": "package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [
+    {
+      "from": "ruflo-kernel-wasm",
+      "to": "ruflo-kernel",
+      "kind": "normal"
+    },
+    {
+      "from": "ruflo-kernel-napi",
+      "to": "ruflo-kernel",
+      "kind": "normal"
+    },
+    {
+      "from": "@ruvnet/agent-harness-generator",
+      "to": "metaharness",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/bench",
+      "to": "@metaharness/kernel",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/bench",
+      "to": "@metaharness/host-claude-code",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/bench",
+      "to": "@metaharness/host-codex",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/bench",
+      "to": "@metaharness/host-pi-dev",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/bench",
+      "to": "@metaharness/host-hermes",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/bench",
+      "to": "@metaharness/host-openclaw",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/bench",
+      "to": "@metaharness/host-rvm",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/bench",
+      "to": "@metaharness/host-copilot",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/bench",
+      "to": "@metaharness/host-opencode",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/bench",
+      "to": "@metaharness/host-github-actions",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/bench",
+      "to": "@metaharness/router",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/host-claude-code",
+      "to": "@metaharness/kernel",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/host-codex",
+      "to": "@metaharness/kernel",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/host-copilot",
+      "to": "@metaharness/kernel",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/host-github-actions",
+      "to": "@metaharness/kernel",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/host-hermes",
+      "to": "@metaharness/kernel",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/host-openclaw",
+      "to": "@metaharness/kernel",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/host-opencode",
+      "to": "@metaharness/kernel",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/host-pi-dev",
+      "to": "@metaharness/kernel",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/host-rvm",
+      "to": "@metaharness/kernel",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/sdk",
+      "to": "@metaharness/kernel",
+      "kind": "normal"
+    },
+    {
+      "from": "@metaharness/vertical-trading",
+      "to": "@metaharness/vertical-base",
+      "kind": "normal"
+    },
+    {
+      "from": "metaharness",
+      "to": "@metaharness/kernel",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "@ruvnet/agent-harness-generator",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "metaharness",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "@metaharness/router",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "@metaharness/host-claude-code",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "@metaharness/host-codex",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "@metaharness/host-pi-dev",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "@metaharness/host-hermes",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "@metaharness/host-openclaw",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "@metaharness/host-rvm",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "@metaharness/host-copilot",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "@metaharness/host-opencode",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "@metaharness/host-github-actions",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "@metaharness/kernel",
+      "kind": "import"
+    },
+    {
+      "from": "agent-harness-generator",
+      "to": "@metaharness/vertical-base",
+      "kind": "import"
+    }
+  ],
+  "externalDeps": {
+    "ruflo-kernel": [
+      {
+        "name": "ed25519-dalek",
+        "req": "^2.1",
+        "kind": "normal"
+      },
+      {
+        "name": "hex",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "sha2",
+        "req": "^0.10",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "anyhow",
+        "req": "^1.0",
+        "kind": "dev"
+      },
+      {
+        "name": "criterion",
+        "req": "^0.5",
+        "kind": "dev"
+      }
+    ],
+    "ruflo-kernel-wasm": [
+      {
+        "name": "js-sys",
+        "req": "^0.3",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "serde-wasm-bindgen",
+        "req": "^0.6",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "wasm-bindgen",
+        "req": "^0.2",
+        "kind": "normal"
+      }
+    ],
+    "ruflo-kernel-napi": [
+      {
+        "name": "napi",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "napi-derive",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "napi-build",
+        "req": "^2",
+        "kind": "build"
+      }
+    ],
+    "template-catalog": [
+      {
+        "name": "serde",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1.0",
+        "kind": "normal"
+      }
+    ],
+    "@ruvnet/agent-harness-generator": [],
+    "@metaharness/bench": [],
+    "metaharness": [
+      {
+        "name": "kolorist",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "prompts",
+        "req": "*",
+        "kind": "normal"
+      }
+    ],
+    "@metaharness/darwin": [],
+    "@metaharness/harness": [],
+    "@metaharness/host-claude-code": [],
+    "@metaharness/host-codex": [],
+    "@metaharness/host-copilot": [],
+    "@metaharness/host-github-actions": [],
+    "@metaharness/host-hermes": [],
+    "@metaharness/host-openclaw": [],
+    "@metaharness/host-opencode": [],
+    "@metaharness/host-pi-dev": [],
+    "@metaharness/host-rvm": [],
+    "@metaharness/kernel": [
+      {
+        "name": "@ruvector/emergent-time",
+        "req": "*",
+        "kind": "normal"
+      }
+    ],
+    "@metaharness/router": [],
+    "@metaharness/sdk": [],
+    "@metaharness/vertical-base": [],
+    "@metaharness/vertical-trading": [],
+    "@agent-harness-generator/web-ui": [
+      {
+        "name": "@huggingface/transformers",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "jszip",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "lucide-react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-dom",
+        "req": "*",
+        "kind": "normal"
+      }
+    ],
+    "agent-harness-generator": []
+  },
+  "externalDepNames": [
+    "@huggingface/transformers",
+    "@ruvector/emergent-time",
+    "anyhow",
+    "criterion",
+    "ed25519-dalek",
+    "hex",
+    "js-sys",
+    "jszip",
+    "kolorist",
+    "lucide-react",
+    "napi",
+    "napi-build",
+    "napi-derive",
+    "prompts",
+    "react",
+    "react-dom",
+    "serde",
+    "serde-wasm-bindgen",
+    "serde_json",
+    "sha2",
+    "thiserror",
+    "wasm-bindgen"
+  ]
+}

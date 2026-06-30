@@ -1,0 +1,210 @@
+{
+  "target": "ruqu",
+  "generated": "2026-06-19T21:31:12.529Z",
+  "pass": true,
+  "hardFail": false,
+  "checks": {
+    "coverageRatio": {
+      "value": 0.99,
+      "pass": true,
+      "hardFail": false,
+      "threshold": 0.92,
+      "indexed": 99,
+      "authored": 100
+    },
+    "perComponentMin": {
+      "pass": true,
+      "thin": [],
+      "threshold": 3
+    },
+    "passageRatio": {
+      "value": 13.38,
+      "pass": true,
+      "threshold": 4,
+      "distinctSourceFiles": 99,
+      "passages": 1325
+    },
+    "spotCheck": {
+      "value": 1,
+      "pass": true,
+      "threshold": 0.8,
+      "hits": 20,
+      "of": 20
+    }
+  },
+  "sourceTypeCounts": {
+    "doc": 133,
+    "config": 17,
+    "src": 855,
+    "test": 236,
+    "example": 74,
+    "(untagged)": 10
+  },
+  "summary": {
+    "authoredSourceFiles": 100,
+    "indexedAuthoredFiles": 99,
+    "coverage": 0.99,
+    "totalPassages": 1325,
+    "distinctIndexedPaths": 138,
+    "passageRatio": 13.38,
+    "components": 6,
+    "thinComponents": 0
+  },
+  "notIndexedSample": [
+    "cli/wasm/ruqu_wasm.js"
+  ],
+  "perComponent": [
+    {
+      "component": "crates/ruQu",
+      "passages": 545,
+      "ok": true
+    },
+    {
+      "component": "crates/ruqu-algorithms",
+      "passages": 59,
+      "ok": true
+    },
+    {
+      "component": "crates/ruqu-core",
+      "passages": 555,
+      "ok": true
+    },
+    {
+      "component": "crates/ruqu-exotic",
+      "passages": 113,
+      "ok": true
+    },
+    {
+      "component": "crates/ruqu-wasm",
+      "passages": 20,
+      "ok": true
+    },
+    {
+      "component": "cli",
+      "passages": 15,
+      "ok": true
+    }
+  ],
+  "spotResults": [
+    {
+      "file": "crates/ruQu/benches/mincut_bench.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "PRIMER#3-what-is-ruqu-made-of-the-five-crates"
+    },
+    {
+      "file": "crates/ruqu-core/src/simulator.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/ruqu-core/README.md"
+    },
+    {
+      "file": "crates/ruQu/examples/quantum_fabric_basic.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "PRIMER#3-what-is-ruqu-made-of-the-five-crates"
+    },
+    {
+      "file": "crates/ruqu-core/src/gate.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "crates/ruqu-core/README.md"
+    },
+    {
+      "file": "cli/src/agents/hypothesizer.ts",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "cli/src/agents/hypothesizer.ts"
+    },
+    {
+      "file": "crates/ruqu-core/src/decoder.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/ruqu-core/README.md"
+    },
+    {
+      "file": "crates/ruQu/benches/latency_bench.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "PRIMER#3-what-is-ruqu-made-of-the-five-crates"
+    },
+    {
+      "file": "crates/ruqu-exotic/src/reversible_memory.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "cli/bin/cli.js"
+    },
+    {
+      "file": "crates/ruqu-core/src/lib.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "crates/ruqu-core/README.md"
+    },
+    {
+      "file": "crates/ruQu/src/stim.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "PRIMER#3-what-is-ruqu-made-of-the-five-crates"
+    },
+    {
+      "file": "crates/ruQu/src/syndrome.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "PRIMER#3-what-is-ruqu-made-of-the-five-crates"
+    },
+    {
+      "file": "crates/ruqu-core/src/transpiler.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/ruqu-core/README.md"
+    },
+    {
+      "file": "crates/ruQu/examples/early_warning_validation.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "PRIMER#3-what-is-ruqu-made-of-the-five-crates"
+    },
+    {
+      "file": "crates/ruqu-core/tests/test_state.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "crates/ruqu-core/README.md"
+    },
+    {
+      "file": "crates/ruQu/benches/throughput_bench.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "PRIMER#3-what-is-ruqu-made-of-the-five-crates"
+    },
+    {
+      "file": "crates/ruqu-core/src/control_theory.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "crates/ruqu-core/README.md"
+    },
+    {
+      "file": "crates/ruqu-core/src/benchmark.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/ruqu-core/README.md"
+    },
+    {
+      "file": "crates/ruQu/src/metrics.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "PRIMER#3-what-is-ruqu-made-of-the-five-crates"
+    },
+    {
+      "file": "crates/ruqu-core/src/hardware.rs",
+      "indexed": true,
+      "retrieved": true,
+      "top1": "crates/ruqu-core/README.md"
+    },
+    {
+      "file": "crates/ruqu-exotic/src/interference_search.rs",
+      "indexed": true,
+      "retrieved": false,
+      "top1": "cli/bin/cli.js"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "target": "agenticow",
+  "metaName": "agenticow",
+  "generated": "2026-06-29T20:43:12.442Z",
+  "ecosystems": [
+    "npm"
+  ],
+  "componentCount": 1,
+  "internalEdgeCount": 0,
+  "externalDepCount": 1,
+  "nodes": [
+    {
+      "name": "agenticow",
+      "version": "0.2.3",
+      "description": "Git for Agent Memory: Copy-On-Write vector branching for embedded multi-agent memory. Branch a base memory in ~0.5ms / 162 bytes regardless of base size — 83x faster, 3000x smaller than full-copy snapshots. Exact read-through queries (parent ∪ edits, child wins).",
+      "manifest": "package.json",
+      "deps": [
+        "@ruvector/rvf-node"
+      ],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [],
+  "externalDeps": {
+    "agenticow": [
+      {
+        "name": "@ruvector/rvf-node",
+        "req": "*",
+        "kind": "normal"
+      }
+    ]
+  },
+  "externalDepNames": [
+    "@ruvector/rvf-node"
+  ]
+}

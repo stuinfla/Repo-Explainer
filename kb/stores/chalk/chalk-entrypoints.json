@@ -1,0 +1,50 @@
+{
+  "target": "chalk",
+  "metaName": "chalk",
+  "generated": "2026-06-30T05:32:33.655Z",
+  "workspace": {
+    "kind": "npm",
+    "members": []
+  },
+  "components": [
+    {
+      "name": "chalk",
+      "path": "",
+      "kind": "package",
+      "description": "Terminal string styling done right",
+      "scripts": {
+        "test": "xo && c8 ava && tsd",
+        "bench": "matcha benchmark.js"
+      },
+      "bins": [],
+      "deps": []
+    }
+  ],
+  "binaries": [],
+  "commands": [
+    {
+      "cmd": "npm run test",
+      "raw": "xo && c8 ava && tsd",
+      "category": "test",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run bench",
+      "raw": "matcha benchmark.js",
+      "category": "bench",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm install chalk",
+      "category": "install",
+      "source": "README.md",
+      "note": null
+    }
+  ],
+  "install": [
+    "npm install chalk"
+  ],
+  "quickstart": []
+}

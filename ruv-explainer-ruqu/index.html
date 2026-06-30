@@ -52,11 +52,13 @@
   <div class="prov-banner" role="note" aria-label="Source and provenance">
     <div class="wrap prov-banner-inner">
       <p class="prov-attr">
-        A plain-language explainer for
-        <a href="https://github.com/ruvnet/ruqu"><strong>ruvnet/ruqu</strong></a>
-        by <strong>Reuven Cohen</strong> (<a href="https://github.com/ruvnet">@ruvnet</a>),
-        part of the <a href="https://github.com/ruvnet/ruvector">ruvector</a> ecosystem.
+        An <strong>independent explainer</strong> for
+        <strong>Reuven Cohen&rsquo;s</strong> (<a href="https://github.com/ruvnet">@ruvnet</a>)
+        <a href="https://github.com/ruvnet/ruqu"><strong>ruqu</strong></a> &mdash; built to help you
+        implement his technology. Part of the
+        <a href="https://github.com/ruvnet/ruvector">ruvector</a> ecosystem.
         Not affiliated &mdash; an independent walkthrough of the open-source project.
+        <a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener">Built with the Ruv-Explainer Repo-Primer Pipeline &#8599;</a>
       </p>
       <p class="prov-live">
         <span class="prov-dot" aria-hidden="true">&#9679;</span>
@@ -87,6 +89,8 @@
         <a href="#s04">How</a>
         <a href="#s07">Start</a>
         <a href="#s08">Use cases</a>
+        <a href="#sdiff">vs others</a>
+        <a href="#slimits">Limits</a>
         <a href="#s09">Drop-in</a>
       </nav>
     </div>
@@ -107,6 +111,12 @@
               Rust, it runs as <code>npx @ruvector/ruqu</code> or drops straight into a web page.
               No Python. No install.
             </p>
+            <p class="attrib-lede">
+              An <strong>independent explainer</strong> for
+              <strong>Reuven Cohen&rsquo;s</strong> (<a href="https://github.com/ruvnet" target="_blank" rel="noopener">@ruvnet</a>)
+              <a href="https://github.com/ruvnet/ruqu" target="_blank" rel="noopener">ruqu</a> &mdash;
+              built to help you implement his technology.
+            </p>
             <div class="meta-row" aria-hidden="true">
               <span>CLI&nbsp;<b>npx @ruvector/ruqu</b></span>
               <span>WEB&nbsp;<b>@ruvector/ruqu-wasm</b></span>
@@ -114,7 +124,7 @@
             </div>
             <div class="cta-row">
               <a class="cta" href="#s07">Start in 60 seconds &rarr;</a>
-              <a class="cta ghost" href="#s09">Get the drop-in kit</a>
+              <a class="cta ghost" href="downloads/ruqu-dropin.zip" download="ruqu-dropin.zip">Get the drop-in kit &darr;</a>
             </div>
           </div>
           <figure class="hero-art">
@@ -704,8 +714,8 @@ let result = VQE::new(h, Ansatz::uccsd(/* … */)).optimize();</code></pre>
             <div class="dual">
               <figure class="figure">
                 <span class="tier tech">Technical &middot; the ACTUAL file tree</span>
-                <img src="assets/diagrams/dropin.svg" alt="An annotated file tree of the ruqu-kb download. Root: ruqu-kb, unzip into your project as kb. for-humans half: ruqu-primer.md (the whole tool in plain English) and an optional studio folder (video and audio overview). for-ai half: ruqu-kb.big.rvf (the sharp brain, 768-dim), ruqu-kb.small.rvf (the light brain, 384-dim), ruqu.passages.jsonl (every doc and all source, searchable), ask-kb.mjs (ask it from the command line), kb-mcp-server.mjs (wire it into Claude Code or Cursor). Plus a README and manifest with the build's provenance." />
-                <figcaption><b>Exactly what&rsquo;s inside.</b> Every file, with a plain-English &ldquo;what this is&rdquo; &mdash; the real contents, not an abstract picture.</figcaption>
+                <img src="assets/diagrams/dropin.svg" alt="An annotated file tree of the ruqu-dropin.zip download. Root: ruqu-dropin, unzip into your project as kb. for-humans half: ruqu-primer.md (the whole tool in plain English) and a highlighted studio folder holding ruqu-audio.m4a (a NotebookLM audio overview to play first), ruqu-report.md (the written briefing), and the prompt that made them. for-ai half: ruqu-kb.rvf (the single 384-dim bge-small brain), ruqu-kb.passages.jsonl (every doc and all source, full text), ruqu-kb.ids.json (the id index), ask-kb.mjs (ask it from the command line), kb-mcp-server.mjs (wire it into Claude Code or Cursor), kb.config.mjs and package.json. Plus a README and manifest with the build's provenance." />
+                <figcaption><b>Exactly what&rsquo;s inside.</b> Every file, with a plain-English &ldquo;what this is&rdquo; &mdash; the real contents, not an abstract picture. Note the highlighted <strong>studio/</strong>: a &#127911; audio overview (play first) and a &#128196; report ride <em>inside the zip</em>.</figcaption>
               </figure>
               <figure class="figure">
                 <span class="tier friendly">Friendly &middot; the on-ramp</span>
@@ -723,7 +733,7 @@ let result = VQE::new(h, Ansatz::uccsd(/* … */)).optimize();</code></pre>
               <div class="step">
                 <div class="n">2</div>
                 <h4>Add the 2-line <code>.mcp.json</code></h4>
-                <p>Point the bundled <code>kb-mcp-server.mjs</code> at the <code>.rvf</code> brain so your assistant can query it.</p>
+                <p>In <code>for-ai/</code> run <code>npm i</code> (two deps, Node&nbsp;18+), then point a 2-line <code>.mcp.json</code> at the bundled <code>kb-mcp-server.mjs</code> so your assistant can query the single <code>ruqu-kb.rvf</code> brain.</p>
               </div>
               <div class="step">
                 <div class="n">3</div>
@@ -732,11 +742,65 @@ let result = VQE::new(h, Ansatz::uccsd(/* … */)).optimize();</code></pre>
               </div>
             </div>
 
-            <div class="note"><strong>Status &amp; honest note.</strong> The drop-in kit is the second
-              hero artifact in this primer&rsquo;s pipeline; this page is the explainer half. Where the
-              packaged <code>.rvf</code> bundle isn&rsquo;t attached yet, the file tree above is the exact
-              contract it ships to &mdash; both 768-dim and 384-dim brains, the passages, the CLI, and the
-              MCP server.</div>
+            <a class="dropzone" id="dropzone" href="downloads/ruqu-dropin.zip" download="ruqu-dropin.zip"
+               aria-label="Download the ruqu drop-in kit">
+              <div class="dz-icon" aria-hidden="true">&#8659;</div>
+              <div><strong>Download the drop-in kit</strong></div>
+              <div class="dz-hint"><code>ruqu-dropin.zip</code> &mdash; single 384-dim brain + the &#127911; studio audio overview &amp; &#128196; report inside &mdash; Gate&nbsp;A: 99.3 tuned / 100 held-out &mdash; ready now</div>
+              <p class="dz-status" id="dzStatus" role="status" aria-live="polite">Ready</p>
+            </a>
+
+            <!-- ===== NotebookLM STUDIO — prominent public notebook + media ===== -->
+            <div class="studio-hero">
+              <div class="studio-hero-glow" aria-hidden="true"></div>
+              <p class="studio-hero-kicker">Generated with Google NotebookLM &middot; grounded in the same source repo</p>
+              <h3 class="studio-hero-title">A full NotebookLM studio for ruqu</h3>
+              <p class="studio-hero-sub">Audio overview, an explainer video, a slide deck, an infographic and a written report &mdash; all in one place, all built for a curious newcomer with no quantum hardware. No account, no setup: just open it and explore.</p>
+              <div class="studio-hero-cta">
+                <a class="cta" href="https://notebooklm.google.com/notebook/994580f7-b28d-4c02-9346-8829220af63a" target="_blank" rel="noopener">&#9654; Open the public NotebookLM studio &mdash; audio, video, slides &amp; more &#8599;</a>
+              </div>
+              <ul class="studio-chips" aria-label="What's in the studio">
+                <li>&#127911; Audio overview</li>
+                <li>&#127916; Explainer video</li>
+                <li>&#128202; Slide deck</li>
+                <li>&#128200; Infographic</li>
+                <li>&#128196; Written report</li>
+              </ul>
+            </div>
+
+            <figure class="studio-player">
+              <figcaption>&#127911; <strong>Audio overview</strong> &mdash; a warm, jargon-free deep-dive on ruqu (NotebookLM). Play it right here, or find it in the zip at <code>for-humans/studio/</code>.</figcaption>
+              <audio controls preload="none" src="studio/ruqu-audio.m4a">Your browser can&rsquo;t play audio inline &mdash; <a href="studio/ruqu-audio.m4a" download>download the audio overview</a>.</audio>
+              <p class="studio-links">Prefer reading? &#128196; <a href="studio/ruqu-report.md">the written report</a> (themes &middot; quotes &middot; honest limits).</p>
+            </figure>
+
+            <!-- ===== STUDIO MEDIA GALLERY (video · slides · infographic) ===== -->
+            <div class="studio-gallery">
+              <figure class="studio-card">
+                <figcaption>&#127916; <strong>Explainer video</strong> &mdash; the before&rarr;after of a curious dev with no quantum hardware, in ~a minute.</figcaption>
+                <video controls preload="none" poster="studio/ruqu-infographic.png" src="studio/ruqu-video.mp4">Your browser can&rsquo;t play video inline &mdash; <a href="studio/ruqu-video.mp4" download>download the explainer video</a>, or <a href="https://notebooklm.google.com/notebook/994580f7-b28d-4c02-9346-8829220af63a" target="_blank" rel="noopener">watch it in the studio</a>.</video>
+              </figure>
+              <figure class="studio-card">
+                <figcaption>&#128202; <strong>Slide deck</strong> &mdash; what ruqu is, why it matters, how to start.</figcaption>
+                <a class="studio-thumb" href="studio/ruqu-slides.pdf" target="_blank" rel="noopener">
+                  <span class="studio-thumb-ic" aria-hidden="true">&#128202;</span>
+                  <span>Open the slide deck (PDF) &#8599;</span>
+                </a>
+              </figure>
+              <figure class="studio-card">
+                <figcaption>&#128200; <strong>Infographic</strong> &mdash; the whole idea on one landscape page (before&rarr;after).</figcaption>
+                <a class="studio-thumb" href="studio/ruqu-infographic.png" target="_blank" rel="noopener">
+                  <img src="studio/ruqu-infographic.png" alt="The ruqu explainer infographic: the before-and-after of running quantum circuits without quantum hardware, on one landscape page." loading="lazy" />
+                </a>
+              </figure>
+            </div>
+
+            <div class="note"><strong>Listen first.</strong> Inside the zip, <code>for-humans/studio/</code>
+              holds the &#127911;&nbsp;<strong>NotebookLM audio overview</strong> above (play it first &mdash; a warm,
+              jargon-free deep-dive) and a &#128196;&nbsp;<strong>written report</strong>. The
+              <code>for-ai/</code> half is one runnable folder: a single <code>ruqu-kb.rvf</code> brain
+              (384-dim <code>bge-small</code>), the full passages, the CLI, and the MCP server &mdash; it
+              cleared its answer-quality gate (tuned 99.3 / held-out 100, both &ge;95) before shipping.</div>
           </div>
         </details>
 
@@ -799,7 +863,9 @@ let result = VQE::new(h, Ansatz::uccsd(/* … */)).optimize();</code></pre>
       <p>
         An independent, plain-language explainer for <a href="https://github.com/ruvnet/ruqu">ruvnet/ruqu</a>,
         created by <strong>Reuven Cohen</strong> (<a href="https://github.com/ruvnet">@ruvnet</a>).
-        Built as part of the Repo-Primer Pipeline. Not affiliated with or endorsed by the author.
+        Built with the <a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener">Ruv-Explainer Repo-Primer Pipeline &#8599;</a>
+        &mdash; an open project for turning dense repos into friendly explainers.
+        Not affiliated with or endorsed by the author.
       </p>
       <p class="prov">
         Updated 2026-06-19 &middot; source <code>@ 026d63e</code> &middot; workspace v2.2.3

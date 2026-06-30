@@ -1,0 +1,193 @@
+{
+  "target": "photonlayer",
+  "metaName": "PhotonLayer",
+  "generated": "2026-06-19T21:42:08.982Z",
+  "workspace": {
+    "kind": "rust",
+    "members": [
+      "crates/photonlayer-core",
+      "crates/photonlayer-bench",
+      "crates/photonlayer-wasm",
+      "crates/photonlayer-cli"
+    ]
+  },
+  "components": [
+    {
+      "name": "photonlayer-bench",
+      "path": "crates/photonlayer-bench",
+      "kind": "crate",
+      "description": "PhotonLayer reproducible benchmarks + in-Rust mask learner and digital decoder (ADR-260 Phase 4)",
+      "bins": [
+        "photonlayer-bench"
+      ],
+      "examples": []
+    },
+    {
+      "name": "photonlayer-cli",
+      "path": "crates/photonlayer-cli",
+      "kind": "crate",
+      "description": "PhotonLayer command-line studio: run simulations, demos (barcode, edge, privacy gate), benchmarks, and verify receipts (ADR-260)",
+      "bins": [
+        "photonlayer"
+      ],
+      "examples": []
+    },
+    {
+      "name": "photonlayer-core",
+      "path": "crates/photonlayer-core",
+      "kind": "crate",
+      "description": "Deterministic optical-AI front end in pure Rust: a learned phase mask compresses light into task-useful sensor pixels.",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "photonlayer-wasm",
+      "path": "crates/photonlayer-wasm",
+      "kind": "crate",
+      "description": "PhotonLayer WASM bindings for browser optics playback and receipt verification (ADR-260 Phase 3)",
+      "bins": [],
+      "examples": []
+    }
+  ],
+  "binaries": [
+    {
+      "name": "photonlayer-bench",
+      "component": "photonlayer-bench",
+      "path": "crates/photonlayer-bench",
+      "kind": "rust-bin"
+    },
+    {
+      "name": "photonlayer",
+      "component": "photonlayer-cli",
+      "path": "crates/photonlayer-cli",
+      "kind": "rust-bin"
+    }
+  ],
+  "commands": [
+    {
+      "cmd": "cargo run --release --example hello_optics -p photonlayer-core",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test -p photonlayer-bench --release --test mnist_gradient_bench \\",
+      "category": "test",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test -p photonlayer-bench --release --test mnist_cascade_bench \\",
+      "category": "test",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test -p photonlayer-bench --release --test mnist_differential_bench \\",
+      "category": "test",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo add photonlayer-core",
+      "category": "install",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run --release --example hello_optics           -p photonlayer-core",
+      "category": "run",
+      "source": "README.md",
+      "note": "minimal pipeline + deterministic hash"
+    },
+    {
+      "cmd": "cargo run --release --example compression            -p photonlayer-core",
+      "category": "run",
+      "source": "README.md",
+      "note": "64x fewer sensor pixels, rendered as ASCII"
+    },
+    {
+      "cmd": "cargo run --release --example receipt                -p photonlayer-core",
+      "category": "run",
+      "source": "README.md",
+      "note": "build, verify, tamper -> fails"
+    },
+    {
+      "cmd": "cargo run --release --example propagation_modes      -p photonlayer-core",
+      "category": "run",
+      "source": "README.md",
+      "note": "Fresnel / Fraunhofer / AngularSpectrum"
+    },
+    {
+      "cmd": "cargo run --release --example learn_mask             -p photonlayer-bench",
+      "category": "bench",
+      "source": "README.md",
+      "note": "hill-climb: learned beats random"
+    },
+    {
+      "cmd": "cargo run --release --example differential_detection -p photonlayer-bench",
+      "category": "bench",
+      "source": "README.md",
+      "note": "the Li/Ozcan I+ - I- lever"
+    },
+    {
+      "cmd": "cargo run --release --example gradient_training      -p photonlayer-bench",
+      "category": "bench",
+      "source": "README.md",
+      "note": "train through the proven adjoint"
+    },
+    {
+      "cmd": "cargo run --release --example multiplane_cascade     -p photonlayer-bench",
+      "category": "bench",
+      "source": "README.md",
+      "note": "2-plane composed adjoint"
+    },
+    {
+      "cmd": "cargo run --release --example optical_feature_extractor -p photonlayer-bench",
+      "category": "bench",
+      "source": "README.md",
+      "note": "optics as analog feature extractor"
+    },
+    {
+      "cmd": "cargo run --release --example wavefront_focus        -p photonlayer-core",
+      "category": "run",
+      "source": "README.md",
+      "note": "a learned lens concentrates light"
+    },
+    {
+      "cmd": "cargo run --release --example privacy_probe          -p photonlayer-bench",
+      "category": "bench",
+      "source": "README.md",
+      "note": "linear reconstruction attack (lower bound)"
+    },
+    {
+      "cmd": "cargo run --release --example mnist_compression      -p photonlayer-bench",
+      "category": "bench",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "python -m http.server 8000 --directory docs",
+      "category": "other",
+      "source": "docs/README.md",
+      "note": null
+    },
+    {
+      "cmd": "wasm-pack build crates/photonlayer-wasm \\",
+      "category": "build",
+      "source": "docs/README.md",
+      "note": null
+    }
+  ],
+  "install": [
+    "cargo add photonlayer-core"
+  ],
+  "quickstart": [
+    "cargo run --release --example hello_optics -p photonlayer-core",
+    "cargo run --release --example hello_optics           -p photonlayer-core",
+    "cargo run --release --example compression            -p photonlayer-core",
+    "cargo run --release --example receipt                -p photonlayer-core",
+    "cargo run --release --example propagation_modes      -p photonlayer-core",
+    "cargo run --release --example wavefront_focus        -p photonlayer-core"
+  ]
+}

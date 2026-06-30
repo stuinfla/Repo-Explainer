@@ -7,14 +7,14 @@
   <meta name="description" content="ruvn turns a question into a graded, cited evidence dossier: it searches the web, gives every source a letter grade, writes only from the trustworthy ones, tries to prove itself wrong, and gives you a report where every claim has a receipt. An explainer for non-technical Claude Code users. By Reuven Cohen / @ruvnet." />
   <meta name="author" content="Reuven Cohen / @ruvnet — explainer by Stuart Kerr" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-  <link rel="canonical" href="https://ruv-explainer-ruvn.vercel.app/" />
+  <link rel="canonical" href="https://ruvn-explainer.vercel.app/" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content="ruvn — graded, cited research instead of a confident guess" />
   <meta property="og:description" content="An AI research assistant that grades every source A–D, writes only from the trustworthy ones, fact-checks itself, and gives you a dossier where every claim has a receipt." />
-  <meta property="og:image" content="https://ruv-explainer-ruvn.vercel.app/assets/img/g-hero.png" />
-  <meta property="og:url" content="https://ruv-explainer-ruvn.vercel.app/" />
+  <meta property="og:image" content="https://ruvn-explainer.vercel.app/assets/img/g-hero.png" />
+  <meta property="og:url" content="https://ruvn-explainer.vercel.app/" />
   <meta name="twitter:card" content="summary_large_image" />
 
   <link rel="stylesheet" href="styles.css" />
@@ -37,6 +37,7 @@
         <a href="#s06">06 vs. tools</a>
         <a href="#s07">07 gallery</a>
         <a href="#s08">08 implement</a>
+        <a href="#studio">&#127911; studio</a>
         <a href="#s09">09 drop-in</a>
       </nav>
     </div>
@@ -57,6 +58,11 @@
             trustworthy ones, tries to prove itself wrong, and hands you a report where
             <em>every single claim has a receipt</em>. It runs inside the AI you already have
             &mdash; <code>npm i -g @ruvnet/ruvn</code> &mdash; and adds no model of its own.
+          </p>
+          <p class="attrib-lede">
+            An <strong>independent explainer</strong> for <strong>Reuven Cohen</strong>&rsquo;s
+            (<a href="https://github.com/ruvnet" target="_blank" rel="noopener">@ruvnet</a>) ruvn
+            &mdash; built to help you actually adopt and implement his technology.
           </p>
           <div class="meta-row" aria-hidden="true">
             <span>INSTALL&nbsp;<b>npm i -g @ruvnet/ruvn</b></span>
@@ -85,6 +91,7 @@
         <span>Source: <a href="https://github.com/ruvnet/ruvn" target="_blank" rel="noopener">github.com/ruvnet/ruvn</a></span>
         <span>Updated <b>2026-06-19</b> · source <b>@ruvnet/ruvn v0.1.1</b> @ <span class="sha">5b5dd72</span></span>
         <span>This page explains, and credits, ruv&rsquo;s work &mdash; it is not the tool itself.</span>
+        <span>Built with <a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener">the Ruv-Explainer pipeline</a></span>
       </div>
     </section>
 
@@ -1083,6 +1090,117 @@ npm run <span class="k">validate:openrouter</span></div>
         </details>
 
         <!-- ===================================================================
+             STUDIO — NotebookLM audio overview + report (D18); also shipped IN the zip
+             ================================================================== -->
+        <details class="section studio-section" id="studio" open>
+          <summary>
+            <span class="num">&#127911;</span>
+            <span class="head-text">
+              <h2>The NotebookLM studio &mdash; listen, watch, skim, or open the whole thing</h2>
+              <span class="q">A full media pack: audio, video, slides, an infographic &amp; a report.</span>
+            </span>
+            <span class="chev" aria-hidden="true">&rsaquo;</span>
+          </summary>
+          <div class="body">
+            <p>
+              We fed ruvn&rsquo;s own primer, README, and CLAUDE.md into <strong>NotebookLM</strong> and
+              had it build a whole <strong>media pack</strong> &mdash; each piece tuned for a newcomer:
+              the same plain-language story (a confident, <em>unsourced</em> AI paragraph &rarr; a
+              <em>graded, cited dossier you can actually defend</em>) told as audio, video, slides, an
+              infographic, and a written report. Start wherever you like &mdash; or open the live
+              notebook and explore the sources yourself.
+            </p>
+
+            <!-- PUBLIC NOTEBOOK — the hero link of the whole studio -->
+            <div class="nb-open">
+              <span class="nb-ico" aria-hidden="true">&#9654;</span>
+              <div class="nb-meta">
+                <p class="nb-t">Open the NotebookLM studio &mdash; audio, video, slides &amp; more</p>
+                <p class="nb-d">The live, public notebook: every artifact below plus the source documents they were built from. Free, no sign-up to view.</p>
+              </div>
+              <a class="nb-cta" href="https://notebooklm.google.com/notebook/7d3e90bf-5bb7-4b78-9770-6e2c92bf5da0" target="_blank" rel="noopener">&#9654;&nbsp; Open the studio &rarr;</a>
+            </div>
+
+            <!-- AUDIO — play first -->
+            <div class="studio-card">
+              <div class="studio-row">
+                <span class="studio-ico" aria-hidden="true">&#127911;</span>
+                <div class="studio-meta">
+                  <p class="studio-t">Audio overview &mdash; <em>play this first</em></p>
+                  <p class="studio-d">A warm two-host conversation: the confident-blend trap, how grading + citation fix it, and how to start.</p>
+                </div>
+              </div>
+              <audio controls preload="none" class="studio-audio" src="assets/studio/ruvn-audio-overview.m4a">
+                Your browser doesn&rsquo;t support audio playback &mdash; the file is in the drop-in zip at
+                <code>for-humans/studio/ruvn-audio-overview.m4a</code>.
+              </audio>
+
+              <div class="studio-row">
+                <span class="studio-ico" aria-hidden="true">&#128196;</span>
+                <div class="studio-meta">
+                  <p class="studio-t">Written report &mdash; the briefing doc</p>
+                  <p class="studio-d">A skimmable deep-dive: the six-agent pipeline (with model tiers), the A/B/C/D rubric, scope, and honest limits.</p>
+                </div>
+                <a class="cta ghost studio-cta" href="assets/studio/ruvn-report.md" target="_blank" rel="noopener">Read the report &rarr;</a>
+              </div>
+            </div>
+
+            <!-- VIDEO + SLIDES grid -->
+            <div class="studio-grid">
+              <div class="studio-media" id="sm-video">
+                <div class="sm-head"><span class="sm-ico" aria-hidden="true">&#127909;</span><h3 class="sm-t">Video overview</h3></div>
+                <p class="sm-d">A short animated explainer: the before&rarr;after, in motion.</p>
+                <video controls preload="none" poster="assets/studio/ruvn-video-poster.png" src="assets/studio/ruvn-video-overview.mp4">
+                  Your browser can&rsquo;t play this video &mdash; <a href="assets/studio/ruvn-video-overview.mp4">download the MP4</a>.
+                </video>
+                <div class="sm-actions">
+                  <a class="cta ghost" href="assets/studio/ruvn-video-overview.mp4" target="_blank" rel="noopener">Open the video &rarr;</a>
+                </div>
+                <p class="sm-note">Tip: also playable in the public notebook above.</p>
+              </div>
+
+              <div class="studio-media" id="sm-slides">
+                <div class="sm-head"><span class="sm-ico" aria-hidden="true">&#128202;</span><h3 class="sm-t">Slide deck</h3></div>
+                <p class="sm-d">A detailed deck you can flip through &mdash; or hand to a colleague.</p>
+                <div class="sm-frame">
+                  <a href="assets/studio/ruvn-slides.pdf" target="_blank" rel="noopener" aria-label="Open the ruvn slide deck (PDF)">
+                    <img src="assets/studio/ruvn-slides-cover.png" width="1400" height="781"
+                         alt="Cover of the ruvn slide deck: Stop Trusting, Start Verifying — how ruvn turns any question into a graded, cited evidence dossier." loading="lazy" />
+                  </a>
+                </div>
+                <div class="sm-actions">
+                  <a class="cta" href="assets/studio/ruvn-slides.pdf" target="_blank" rel="noopener">Open the slides (PDF) &rarr;</a>
+                </div>
+                <p class="sm-note">PDF rides inside the drop-in zip too.</p>
+              </div>
+
+              <!-- INFOGRAPHIC — full width -->
+              <div class="studio-media span2" id="sm-infographic">
+                <div class="sm-head"><span class="sm-ico" aria-hidden="true">&#128200;</span><h3 class="sm-t">Infographic &mdash; the whole story on one sheet</h3></div>
+                <p class="sm-d">From AI &ldquo;vibes&rdquo; to graded evidence: before&rarr;after, the A/B/C/D rubric, and the three commands to start. Tap to open full-size.</p>
+                <div class="sm-frame">
+                  <a href="assets/studio/ruvn-infographic-web.png" target="_blank" rel="noopener" aria-label="Open the ruvn infographic full-size">
+                    <img src="assets/studio/ruvn-infographic-web.png" width="2752" height="1536"
+                         alt="ruvn infographic: From AI vibes to graded evidence. Before — standard AI blends a real study with random forum posts into one unverified paragraph. After — a graded dossier with primary and expert sources (Grade A/B), a TL;DR, and verified, cited synthesis. The A/B/C/D standard: A/B primaries used for synthesis, C (Wikipedia) for context only, D (forums, dead links) discarded. It rides inside tools you already use like Claude Code, is honest early beta, and starts in three steps: npm i -g @ruvnet/ruvn, ruvn init, ask your question." loading="lazy" />
+                  </a>
+                </div>
+                <div class="sm-actions">
+                  <a class="cta ghost" href="assets/studio/ruvn-infographic-web.png" target="_blank" rel="noopener">Open full-size &rarr;</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="note">
+              <span class="note-k">Made with NotebookLM</span>
+              Every piece is generated from ruvn&rsquo;s own primer, README, and CLAUDE.md, then checked
+              against the source. The audio, report, slides (PDF) and infographic also ride <em>inside</em>
+              the drop-in zip (<code>for-humans/studio/</code>); the full video and the live notebook are
+              linked from the zip&rsquo;s README to keep the download light &mdash; see the file-tree below.
+            </div>
+          </div>
+        </details>
+
+        <!-- ===================================================================
              09 — DROP-IN SMART ZIP (annotated file-tree, Cognitum-style; D13)
              ================================================================== -->
         <details class="section" id="s09">
@@ -1102,39 +1220,51 @@ npm run <span class="k">validate:openrouter</span></div>
               file with a plain-English note on what it is:
             </p>
 
-            <!-- ANNOTATED FILE TREE -->
-            <div class="filetree" role="img" aria-label="Annotated file tree of the ruvn drop-in zip: a kb folder with for-humans and for-ai halves, plus README and manifest.">
-              <div class="ft-row"><span class="ft-tree ft-name">ruvn-kb/</span><span class="ft-desc">one download &mdash; the whole drop-in, two halves inside</span></div>
+            <!-- ANNOTATED FILE TREE — the REAL contents of ruvn-dropin.zip (verify: unzip -l) -->
+            <div class="filetree" role="img" aria-label="Annotated file tree of the ruvn drop-in zip: a for-humans half (primer plus a studio folder with the audio overview and report) and a for-ai half (the single 384-dim ruvn-kb.rvf brain plus its tools), with a README and manifest at the top.">
+              <div class="ft-row"><span class="ft-tree ft-name">ruvn-dropin/</span><span class="ft-desc">one download &mdash; two halves, plus a README + manifest</span></div>
 
-              <div class="ft-row"><span class="ft-tree ft-head first">&#9492;&#9472; for-humans/ &nbsp;&#8212; the half you read</span><span class="ft-desc"></span></div>
+              <div class="ft-row"><span class="ft-tree ft-head first">&#9500;&#9472; for-humans/ &nbsp;&#8212; the half <em>you</em> read &amp; listen to</span><span class="ft-desc"></span></div>
               <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name human">ruvn-primer.md</span></span><span class="ft-desc">the whole tool explained in plain English &mdash; what it is, why, how to use it</span></div>
-              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9492;&#9472; <span class="ft-name human">studio/</span> <span style="color:var(--muted)">(optional)</span></span><span class="ft-desc">short video + audio overview, if generated (a nice-to-have, not required)</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9492;&#9472; <span class="ft-name human">studio/</span> <span class="ft-badge">NotebookLM media</span></span><span class="ft-desc">an AI-generated media pack &mdash; <strong>start here if you&rsquo;d rather listen, watch or skim than read</strong></span></div>
+              <div class="ft-row ft-hi"><span class="ft-tree">&nbsp;&nbsp;&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name human">&#127911; ruvn-audio-overview.m4a</span></span><span class="ft-desc"><strong>audio overview &mdash; play this first.</strong> A two-host conversation that walks you through ruvn end-to-end.</span></div>
+              <div class="ft-row ft-hi"><span class="ft-tree">&nbsp;&nbsp;&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name human">&#128196; ruvn-report.md</span></span><span class="ft-desc"><strong>the report</strong> &mdash; a written deep-dive briefing on ruvn you can skim or search.</span></div>
+              <div class="ft-row ft-hi"><span class="ft-tree">&nbsp;&nbsp;&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name human">&#128200; ruvn-infographic.png</span></span><span class="ft-desc"><strong>the infographic</strong> &mdash; the whole before&rarr;after story on one sheet.</span></div>
+              <div class="ft-row ft-hi"><span class="ft-tree">&nbsp;&nbsp;&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name human">&#128202; ruvn-slides.pdf</span></span><span class="ft-desc"><strong>the slide deck</strong> &mdash; a detailed deck to flip through or hand on.</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&nbsp;&nbsp;&#9492;&#9472; <span class="ft-name human">audio-overview-prompt.md</span></span><span class="ft-desc">the exact prompt used to generate the audio &mdash; reuse or tweak it. <em>(The full video + the live public notebook are linked from the README to keep the zip light.)</em></span></div>
 
-              <div class="ft-row"><span class="ft-tree ft-head">&#9492;&#9472; for-ai/ &nbsp;&#8212; the half your AI queries</span><span class="ft-desc"></span></div>
-              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">ruvn-kb.big.rvf</span></span><span class="ft-desc">the &ldquo;brain&rdquo; &mdash; sharp recall (768-dim), best for Mac/PC</span></div>
-              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">ruvn-kb.small.rvf</span></span><span class="ft-desc">the &ldquo;brain&rdquo; &mdash; light (384-dim), fast everywhere</span></div>
-              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">ruvn.passages.jsonl</span></span><span class="ft-desc">every doc + all the source, as plain searchable text</span></div>
+              <div class="ft-row"><span class="ft-tree ft-head">&#9492;&#9472; for-ai/ &nbsp;&#8212; the half <em>your AI</em> queries</span><span class="ft-desc"></span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">ruvn-kb.rvf</span></span><span class="ft-desc">the &ldquo;brain&rdquo; &mdash; one searchable vector DB of ruvn&rsquo;s own code + docs (384-dim, runs anywhere Node&nbsp;18+ does)</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">ruvn-kb.passages.jsonl</span></span><span class="ft-desc">every doc + all the source, as plain searchable text</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">ruvn-kb.ids.json</span></span><span class="ft-desc">the index that joins each vector back to its passage</span></div>
               <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">ask-kb.mjs</span></span><span class="ft-desc">ask the brain a question straight from the command line</span></div>
-              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">kb-mcp-server.mjs</span></span><span class="ft-desc">wire the brain into Claude&nbsp;Code / Cursor as a tool</span></div>
-              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9492;&#9472; <span class="ft-name">summary.md</span></span><span class="ft-desc">a one-screen orientation for the AI to load first</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">kb-mcp-server.mjs</span></span><span class="ft-desc">wire the brain into Claude&nbsp;Code / Cursor as an MCP tool</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">kb.config.mjs</span></span><span class="ft-desc">the retrieval config the tools read (intent routing, primer slugs)</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9492;&#9472; <span class="ft-name">package.json</span></span><span class="ft-desc">the two deps (<code>@ruvector/rvf</code> + the local embedder) &mdash; <code>npm i</code> and go</span></div>
 
               <div class="ft-row"><span class="ft-tree ft-head">&#9492;&#9472; (top level)</span><span class="ft-desc"></span></div>
-              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">README.md</span></span><span class="ft-desc">what it is + the 3-step setup below</span></div>
-              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9492;&#9472; <span class="ft-name">manifest.json</span></span><span class="ft-desc">provenance &mdash; source repo, SHA, build date, so you can tell it&rsquo;s current</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9500;&#9472; <span class="ft-name">README.md</span></span><span class="ft-desc">what it is + the 3-step setup below (points you at the studio audio first)</span></div>
+              <div class="ft-row"><span class="ft-tree">&nbsp;&nbsp;&#9492;&#9472; <span class="ft-name">manifest.json</span></span><span class="ft-desc">provenance &mdash; source repo, SHA, build date, embedder &mdash; so you can tell it&rsquo;s current</span></div>
             </div>
 
             <h3>The 3-step drop-in</h3>
             <ol class="steps">
-              <li>Unzip it into your project as <code>kb/</code> &mdash; you now have <code>for-humans/</code> and <code>for-ai/</code> side by side.</li>
-              <li>Add the 2-line <code>.mcp.json</code> so your AI host can see the <code>kb-mcp-server.mjs</code> tool.</li>
-              <li>Paste the <code>CLAUDE.md</code> gate &mdash; now your AI answers from the <em>real</em> ruvn source, not from guesses.</li>
+              <li><strong>Listen first</strong> (optional): open <code>for-humans/studio/</code> and play
+                <strong>&#127911;&nbsp;ruvn-audio-overview.m4a</strong> &mdash; a friendly two-host walkthrough
+                of the whole tool. Prefer reading? Open <strong>&#128196;&nbsp;ruvn-report.md</strong>.</li>
+              <li>Unzip <code>for-ai/</code> into your project, then <code>npm i</code> (two deps) and ask the
+                brain a question: <code>node ask-kb.mjs ruvn "how does the source-grader decide A vs B?"</code></li>
+              <li>Wire it into your AI host: add the 2-line <code>.mcp.json</code> pointing at
+                <code>kb-mcp-server.mjs</code>, and paste the <code>CLAUDE.md</code> gate &mdash; now your AI
+                answers from the <em>real</em> ruvn source, not from guesses.</li>
             </ol>
 
             <div class="note">
               <span class="note-k">Confirm it works</span>
               After wiring it in, ask: <em>&ldquo;Using the kb tool, how does ruvn&rsquo;s source-grader
               decide an A vs a B?&rdquo;</em> &mdash; a correct, grounded answer that quotes the rubric
-              means the drop-in is live.
+              means the drop-in is live. (The whole bundle is self-contained: the
+              <code>for-humans/studio/</code> audio + report ride <em>inside</em> the zip, not just on this page.)
             </div>
 
             <!-- FRIENDLY RASTER -->
@@ -1150,9 +1280,9 @@ npm run <span class="k">validate:openrouter</span></div>
             </figure>
 
             <!-- dropzone -->
-            <div class="dz" id="dropzone" role="button" tabindex="0" aria-label="Get the drop-in Smart Zip">
-              <p class="dz-title">Get the drop-in Smart Zip</p>
-              <p class="dz-sub">Click, press Enter, or drag here. Publishes to the GitHub Release.</p>
+            <div class="dz" id="dropzone" role="button" tabindex="0" aria-label="Download the drop-in Smart Zip">
+              <p class="dz-title">&#8681;&nbsp; Download the drop-in Smart Zip</p>
+              <p class="dz-sub">Click or press Enter. Self-contained: the <code>for-humans/studio/</code> audio overview + report ride inside.</p>
               <p class="dz-status" id="dzStatus" aria-live="polite"></p>
             </div>
           </div>
@@ -1214,7 +1344,7 @@ npm run <span class="k">validate:openrouter</span></div>
       </p>
       <p class="fine">
         Updated 2026-06-19 &middot; source @ruvnet/ruvn v0.1.1 @ 5b5dd72 &middot;
-        explainer built to the Repo-Primer recipe (ADR-0001).
+        built with the <a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener">Ruv-Explainer Repo-Primer Pipeline</a> (ADR-0001).
       </p>
     </div>
   </footer>

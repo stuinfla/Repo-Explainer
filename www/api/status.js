@@ -37,7 +37,7 @@ module.exports = async function handler(req, res) {
     const gistRes = await fetch("https://api.github.com/gists/" + gist, {
       headers: {
         Accept: "application/vnd.github.v3+json",
-        "User-Agent": "repo-explainer-bot",
+        "User-Agent": "explainmyrepo-bot",
       },
     });
 

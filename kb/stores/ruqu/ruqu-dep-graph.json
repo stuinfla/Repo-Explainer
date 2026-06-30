@@ -1,0 +1,614 @@
+{
+  "target": "ruqu",
+  "metaName": "ruqu",
+  "generated": "2026-06-19T20:08:38.653Z",
+  "ecosystems": [
+    "rust",
+    "npm"
+  ],
+  "componentCount": 7,
+  "internalEdgeCount": 4,
+  "externalDepCount": 28,
+  "nodes": [
+    {
+      "name": "ruqu-core",
+      "version": "2.0.5",
+      "description": "High-performance quantum circuit simulator in pure Rust - state-vector simulation with SIMD acceleration, noise models, and multi-threading",
+      "manifest": "crates/ruqu-core/Cargo.toml",
+      "targets": [
+        {
+          "name": "ruqu_core",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "test_gates",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "test_simulator",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "test_state",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "test_types",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "quantum_sim",
+          "kinds": [
+            "bench"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "ruqu-algorithms",
+      "version": "2.0.5",
+      "description": "Production-ready quantum algorithms in Rust - VQE for chemistry, Grover's search, QAOA optimization, Surface Code error correction",
+      "manifest": "crates/ruqu-algorithms/Cargo.toml",
+      "targets": [
+        {
+          "name": "ruqu_algorithms",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "test_algorithms",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "ruqu-exotic",
+      "version": "2.0.5",
+      "description": "Experimental quantum-classical hybrid algorithms - quantum memory decay, interference search, reasoning error correction, swarm interference for AI systems",
+      "manifest": "crates/ruqu-exotic/Cargo.toml",
+      "targets": [
+        {
+          "name": "ruqu_exotic",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "test_discovery_cross",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "test_discovery_phase2",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "test_discovery_pipeline",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "test_exotic",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "ruqu-wasm",
+      "version": "2.0.5",
+      "description": "Run quantum simulations in the browser - WebAssembly bindings for quantum circuits with 25-qubit support, VQE, Grover, QAOA",
+      "manifest": "crates/ruqu-wasm/Cargo.toml",
+      "targets": [
+        {
+          "name": "ruqu_wasm",
+          "kinds": [
+            "cdylib",
+            "rlib"
+          ]
+        }
+      ],
+      "isLib": false,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "ruqu",
+      "version": "2.2.3",
+      "description": "Classical nervous system for quantum machines - real-time coherence assessment via dynamic min-cut",
+      "manifest": "crates/ruQu/Cargo.toml",
+      "targets": [
+        {
+          "name": "ruqu",
+          "kinds": [
+            "rlib"
+          ]
+        },
+        {
+          "name": "ruqu_demo",
+          "kinds": [
+            "bin"
+          ]
+        },
+        {
+          "name": "ruqu_predictive_eval",
+          "kinds": [
+            "bin"
+          ]
+        },
+        {
+          "name": "coherence_gate_breakthrough",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "coherence_simulation",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "early_warning_validation",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "integrated_qec_simulation",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "mwpm_comparison_benchmark",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "quantum_fabric_basic",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "validated_coherence_gate",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "filter_tests",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "integration_tests",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "stress_tests",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "syndrome_tests",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "tile_tests",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "latency_bench",
+          "kinds": [
+            "bench"
+          ]
+        },
+        {
+          "name": "memory_bench",
+          "kinds": [
+            "bench"
+          ]
+        },
+        {
+          "name": "mincut_bench",
+          "kinds": [
+            "bench"
+          ]
+        },
+        {
+          "name": "scaling_bench",
+          "kinds": [
+            "bench"
+          ]
+        },
+        {
+          "name": "syndrome_bench",
+          "kinds": [
+            "bench"
+          ]
+        },
+        {
+          "name": "throughput_bench",
+          "kinds": [
+            "bench"
+          ]
+        }
+      ],
+      "isLib": false,
+      "bins": [
+        "ruqu_demo",
+        "ruqu_predictive_eval"
+      ],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "@ruvector/ruqu",
+      "version": "0.2.0",
+      "description": "Quantum circuit simulator in WebAssembly + agent harness CLI — run state-vector simulation, Grover search, and QAOA MaxCut from your terminal. npx @ruvector/ruqu",
+      "manifest": "cli/package.json",
+      "deps": [
+        "@metaharness/kernel",
+        "@metaharness/host-claude-code"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@ruvector/ruqu-wasm",
+      "version": "2.0.5",
+      "description": "Run quantum simulations in the browser - WebAssembly bindings for quantum circuits with 25-qubit support, VQE, Grover, QAOA",
+      "manifest": "npm/packages/ruqu-wasm/package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [
+    {
+      "from": "ruqu-algorithms",
+      "to": "ruqu-core",
+      "kind": "normal"
+    },
+    {
+      "from": "ruqu-exotic",
+      "to": "ruqu-core",
+      "kind": "normal"
+    },
+    {
+      "from": "ruqu-wasm",
+      "to": "ruqu-algorithms",
+      "kind": "normal"
+    },
+    {
+      "from": "ruqu-wasm",
+      "to": "ruqu-core",
+      "kind": "normal"
+    }
+  ],
+  "externalDeps": {
+    "ruqu-core": [
+      {
+        "name": "rand",
+        "req": "^0.8",
+        "kind": "normal"
+      },
+      {
+        "name": "rayon",
+        "req": "^1.10",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2.0",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing",
+        "req": "^0.1",
+        "kind": "normal"
+      },
+      {
+        "name": "web-time",
+        "req": "^1.1",
+        "kind": "normal"
+      },
+      {
+        "name": "approx",
+        "req": "^0.5",
+        "kind": "dev"
+      },
+      {
+        "name": "criterion",
+        "req": "^0.5",
+        "kind": "dev"
+      },
+      {
+        "name": "proptest",
+        "req": "^1.5",
+        "kind": "dev"
+      }
+    ],
+    "ruqu-algorithms": [
+      {
+        "name": "rand",
+        "req": "^0.8",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2.0",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing",
+        "req": "^0.1",
+        "kind": "normal"
+      },
+      {
+        "name": "approx",
+        "req": "^0.5",
+        "kind": "dev"
+      },
+      {
+        "name": "criterion",
+        "req": "^0.5",
+        "kind": "dev"
+      },
+      {
+        "name": "proptest",
+        "req": "^1.5",
+        "kind": "dev"
+      }
+    ],
+    "ruqu-exotic": [
+      {
+        "name": "rand",
+        "req": "^0.8",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2.0",
+        "kind": "normal"
+      },
+      {
+        "name": "approx",
+        "req": "^0.5",
+        "kind": "dev"
+      }
+    ],
+    "ruqu-wasm": [
+      {
+        "name": "getrandom",
+        "req": "^0.2",
+        "kind": "normal"
+      },
+      {
+        "name": "js-sys",
+        "req": "^0.3",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "serde-wasm-bindgen",
+        "req": "^0.6",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "wasm-bindgen",
+        "req": "^0.2",
+        "kind": "normal"
+      },
+      {
+        "name": "wasm-bindgen-test",
+        "req": "^0.3",
+        "kind": "dev"
+      }
+    ],
+    "ruqu": [
+      {
+        "name": "blake3",
+        "req": "^1.5",
+        "kind": "normal"
+      },
+      {
+        "name": "cognitum-gate-tilezero",
+        "req": "^0.1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "crc32fast",
+        "req": "^1.4",
+        "kind": "normal"
+      },
+      {
+        "name": "ed25519-dalek",
+        "req": "^2.1",
+        "kind": "normal"
+      },
+      {
+        "name": "fusion-blossom",
+        "req": "^0.2",
+        "kind": "normal"
+      },
+      {
+        "name": "petgraph",
+        "req": "^0.6",
+        "kind": "normal"
+      },
+      {
+        "name": "rand",
+        "req": "^0.8",
+        "kind": "normal"
+      },
+      {
+        "name": "rayon",
+        "req": "^1.10",
+        "kind": "normal"
+      },
+      {
+        "name": "ruvector-mincut",
+        "req": "^0.1.30",
+        "kind": "normal"
+      },
+      {
+        "name": "ruvector-mincut-gated-transformer",
+        "req": "^0.1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "subtle",
+        "req": "^2.5",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2.0",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.41",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing",
+        "req": "^0.1",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing-subscriber",
+        "req": "^0.3",
+        "kind": "normal"
+      },
+      {
+        "name": "criterion",
+        "req": "^0.5",
+        "kind": "dev"
+      },
+      {
+        "name": "proptest",
+        "req": "^1.5",
+        "kind": "dev"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.0",
+        "kind": "dev"
+      }
+    ],
+    "@ruvector/ruqu": [
+      {
+        "name": "@metaharness/kernel",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@metaharness/host-claude-code",
+        "req": "*",
+        "kind": "normal"
+      }
+    ],
+    "@ruvector/ruqu-wasm": []
+  },
+  "externalDepNames": [
+    "@metaharness/host-claude-code",
+    "@metaharness/kernel",
+    "approx",
+    "blake3",
+    "cognitum-gate-tilezero",
+    "crc32fast",
+    "criterion",
+    "ed25519-dalek",
+    "fusion-blossom",
+    "getrandom",
+    "js-sys",
+    "petgraph",
+    "proptest",
+    "rand",
+    "rayon",
+    "ruvector-mincut",
+    "ruvector-mincut-gated-transformer",
+    "serde",
+    "serde-wasm-bindgen",
+    "serde_json",
+    "subtle",
+    "thiserror",
+    "tokio",
+    "tracing",
+    "tracing-subscriber",
+    "wasm-bindgen",
+    "wasm-bindgen-test",
+    "web-time"
+  ]
+}

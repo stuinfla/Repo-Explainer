@@ -4,4 +4,8 @@ node_modules/
 *.log
 .env
 .env.*
-downloads/
+.targets/
+# KEEP the drop-in zip (it IS the AI-half deliverable); ignore other download scratch.
+downloads/*
+!downloads/photonlayer-dropin.zip
+.vercel

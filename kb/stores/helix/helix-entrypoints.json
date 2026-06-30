@@ -1,0 +1,267 @@
+{
+  "target": "helix",
+  "metaName": "helix (ruvnet)",
+  "generated": "2026-06-30T02:56:38.660Z",
+  "workspace": {
+    "kind": "rust",
+    "members": [
+      "crates/helix-provenance",
+      "crates/helix-numeric",
+      "crates/helix-evidence",
+      "crates/helix-escalation",
+      "crates/helix-pipeline",
+      "crates/helix-ontology",
+      "crates/helix-verifier",
+      "crates/helix-vault",
+      "crates/helix-score",
+      "crates/helix-neural",
+      "crates/helix-sensing",
+      "crates/helix-genome",
+      "crates/helix-ocr",
+      "crates/helix-retrieval",
+      "crates/helix-cohort",
+      "crates/helix-visual",
+      "crates/helix-llm",
+      "crates/helix-embed",
+      "crates/helix-vision",
+      "crates/helix-connect",
+      "crates/helix-fed",
+      "crates/helix-bioage",
+      "crates/helix-focus",
+      "crates/helix-timeline",
+      "crates/helix-evolve",
+      "crates/helix-refranges",
+      "crates/helix-wasm"
+    ]
+  },
+  "components": [
+    {
+      "name": "repo",
+      "path": "",
+      "kind": "crate",
+      "description": null,
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-bioage",
+      "path": "crates/helix-bioage",
+      "kind": "crate",
+      "description": "ADR-034: deterministic biological-age estimate (Levine PhenoAge) from routine labs — non-diagnostic",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-cohort",
+      "path": "crates/helix-cohort",
+      "kind": "crate",
+      "description": "ADR-024: privacy-preserving cohort feature extraction (federation primitive) — generalization + cell-suppression + differential privacy",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-connect",
+      "path": "crates/helix-connect",
+      "kind": "crate",
+      "description": "ADR-029: live connector clients (FHIR/SMART + wearables) — transport-trait core with FHIR->ProvRecord parsing and the degradation ladder",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-embed",
+      "path": "crates/helix-embed",
+      "kind": "crate",
+      "description": "ADR-027: learned MiniLM text embeddings (local GPU) wired into helix-retrieval",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-escalation",
+      "path": "crates/helix-escalation",
+      "kind": "crate",
+      "description": "ADR-009: red-flag escalation & clinician-in-the-loop registry for Helix",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-evidence",
+      "path": "crates/helix-evidence",
+      "kind": "crate",
+      "description": "ADR-006: evidence tiering and explicit abstention policy for Helix",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-evolve",
+      "path": "crates/helix-evolve",
+      "kind": "crate",
+      "description": "ADR-035: Darwin-style parameter evolution — tunes non-safety pipeline params against a labeled eval set; safety thresholds frozen",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-fed",
+      "path": "crates/helix-fed",
+      "kind": "crate",
+      "description": "ADR-030: federation transport — opt-in, DP-gated cohort contribution over the helix-cohort privacy primitive",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-focus",
+      "path": "crates/helix-focus",
+      "kind": "crate",
+      "description": "ADR-032: deterministic, non-diagnostic 'focus areas' selection from the user's own records",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-genome",
+      "path": "crates/helix-genome",
+      "kind": "crate",
+      "description": "ADR-021: user-owned genome ingestion & pharmacogenomics (rvDNA backend) -> Helix ProvRecords + prescriber advisories",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-llm",
+      "path": "crates/helix-llm",
+      "kind": "crate",
+      "description": "ADR-026: on-device LLM analyst — narrates grounded facts via a local-GPU model, with an anti-hallucination number-guard",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-neural",
+      "path": "crates/helix-neural",
+      "kind": "crate",
+      "description": "Integration adapter: ruvnet/ruv-neural gamma-entrainment/EEG session evidence -> Helix ProvRecords (research-grade screening, not diagnosis)",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-numeric",
+      "path": "crates/helix-numeric",
+      "kind": "crate",
+      "description": "ADR-007: deterministic numeric/trend engine for Helix (the LLM never does arithmetic)",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-ocr",
+      "path": "crates/helix-ocr",
+      "kind": "crate",
+      "description": "ADR-022: OCR lab-document ingestion (RuVector OCR backend) -> gated, conservative-confidence ProvRecords",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-ontology",
+      "path": "crates/helix-ontology",
+      "kind": "crate",
+      "description": "ADR-004: canonical ontology normalization (LOINC/RxNorm/SNOMED/ICD-10/UCUM) for Helix",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-pipeline",
+      "path": "crates/helix-pipeline",
+      "kind": "crate",
+      "description": "ADR-002/005: the grounded-answer pipeline wiring Helix's anti-hallucination crates",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-provenance",
+      "path": "crates/helix-provenance",
+      "kind": "crate",
+      "description": "ADR-005: provenance records and retrieval-grounding enforcement for Helix",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-refranges",
+      "path": "crates/helix-refranges",
+      "kind": "crate",
+      "description": "NHANES-derived population reference intervals — a labeled FALLBACK when a lab supplies no reference range",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-retrieval",
+      "path": "crates/helix-retrieval",
+      "kind": "crate",
+      "description": "ADR-023: semantic retrieval contract over the health graph (RuVector HNSW/GraphRAG backend)",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-score",
+      "path": "crates/helix-score",
+      "kind": "crate",
+      "description": "ADR-016: transparent, decomposable, non-diagnostic 0-100 health score for Helix",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-sensing",
+      "path": "crates/helix-sensing",
+      "kind": "crate",
+      "description": "ADR-020: RuView WiFi-CSI contactless ambient sensing -> Helix ProvRecords + escalation screening flags",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-timeline",
+      "path": "crates/helix-timeline",
+      "kind": "crate",
+      "description": "ADR-031: longitudinal health-score timeline — deterministic, methodology-versioned, trend-first",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-vault",
+      "path": "crates/helix-vault",
+      "kind": "crate",
+      "description": "ADR-001/013: user-owned, local-first encrypted vault boundary (XChaCha20-Poly1305) for Helix",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-verifier",
+      "path": "crates/helix-verifier",
+      "kind": "crate",
+      "description": "ADR-008: independent verifier/critic that re-derives every claim from source before it reaches the user",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-vision",
+      "path": "crates/helix-vision",
+      "kind": "crate",
+      "description": "ADR-028: learned visual encoder (local GPU) — layout-only vision captioning + MiniLM embedding for helix-visual",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-visual",
+      "path": "crates/helix-visual",
+      "kind": "crate",
+      "description": "ADR-025: visual RAG over medical documents/images (rupixel backend) — tile embeddings + MaxSim late interaction",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "helix-wasm",
+      "path": "crates/helix-wasm",
+      "kind": "crate",
+      "description": "WASM binding exposing the Helix analytic pipeline to the web/mobile UI",
+      "bins": [],
+      "examples": []
+    }
+  ],
+  "binaries": [],
+  "commands": [],
+  "install": [],
+  "quickstart": []
+}

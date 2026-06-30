@@ -1,0 +1,226 @@
+{
+  "target": "ruvn",
+  "metaName": "ruvn",
+  "generated": "2026-06-19T22:15:34.630Z",
+  "method": "source-scan",
+  "count": 19,
+  "byKind": {
+    "fn": 1,
+    "const": 18
+  },
+  "byCrate": {
+    "bin/cli.js": 1,
+    "src/agents": 18
+  },
+  "symbols": [
+    {
+      "name": "run",
+      "kind": "fn",
+      "signature": "export async function run(argv)",
+      "module": "bin::cli.js",
+      "crate": "bin/cli.js",
+      "doc": "Dispatch one CLI invocation. Exported (not just run on import) so a test can drive it without spawning a subprocess. Returns the intended exit code. /",
+      "file": "bin/cli.js",
+      "line": 53,
+      "source": "source-scan"
+    },
+    {
+      "name": "SYSTEM_PROMPT",
+      "kind": "const",
+      "signature": "export const SYSTEM_PROMPT = `You are the citer for ruvn.",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/citer.ts",
+      "line": 2,
+      "source": "source-scan"
+    },
+    {
+      "name": "NAME",
+      "kind": "const",
+      "signature": "export const NAME = 'citer';",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/citer.ts",
+      "line": 7,
+      "source": "source-scan"
+    },
+    {
+      "name": "TIER",
+      "kind": "const",
+      "signature": "export const TIER = 'sonnet' as const;",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/citer.ts",
+      "line": 8,
+      "source": "source-scan"
+    },
+    {
+      "name": "SYSTEM_PROMPT",
+      "kind": "const",
+      "signature": "export const SYSTEM_PROMPT = `You are the fact-checker for ruvn.",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/fact-checker.ts",
+      "line": 2,
+      "source": "source-scan"
+    },
+    {
+      "name": "NAME",
+      "kind": "const",
+      "signature": "export const NAME = 'fact-checker';",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/fact-checker.ts",
+      "line": 7,
+      "source": "source-scan"
+    },
+    {
+      "name": "TIER",
+      "kind": "const",
+      "signature": "export const TIER = 'sonnet' as const;",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/fact-checker.ts",
+      "line": 8,
+      "source": "source-scan"
+    },
+    {
+      "name": "SYSTEM_PROMPT",
+      "kind": "const",
+      "signature": "export const SYSTEM_PROMPT = `You are the scout for ruvn.",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/scout.ts",
+      "line": 2,
+      "source": "source-scan"
+    },
+    {
+      "name": "NAME",
+      "kind": "const",
+      "signature": "export const NAME = 'scout';",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/scout.ts",
+      "line": 6,
+      "source": "source-scan"
+    },
+    {
+      "name": "TIER",
+      "kind": "const",
+      "signature": "export const TIER = 'sonnet' as const;",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/scout.ts",
+      "line": 7,
+      "source": "source-scan"
+    },
+    {
+      "name": "SYSTEM_PROMPT",
+      "kind": "const",
+      "signature": "export const SYSTEM_PROMPT = `You are the source grader for ruvn.",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/source-grader.ts",
+      "line": 2,
+      "source": "source-scan"
+    },
+    {
+      "name": "NAME",
+      "kind": "const",
+      "signature": "export const NAME = 'source-grader';",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/source-grader.ts",
+      "line": 9,
+      "source": "source-scan"
+    },
+    {
+      "name": "TIER",
+      "kind": "const",
+      "signature": "export const TIER = 'sonnet' as const;",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/source-grader.ts",
+      "line": 10,
+      "source": "source-scan"
+    },
+    {
+      "name": "SYSTEM_PROMPT",
+      "kind": "const",
+      "signature": "export const SYSTEM_PROMPT = `You are the synthesizer for ruvn.",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/synthesizer.ts",
+      "line": 2,
+      "source": "source-scan"
+    },
+    {
+      "name": "NAME",
+      "kind": "const",
+      "signature": "export const NAME = 'synthesizer';",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/synthesizer.ts",
+      "line": 7,
+      "source": "source-scan"
+    },
+    {
+      "name": "TIER",
+      "kind": "const",
+      "signature": "export const TIER = 'sonnet' as const;",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/synthesizer.ts",
+      "line": 8,
+      "source": "source-scan"
+    },
+    {
+      "name": "SYSTEM_PROMPT",
+      "kind": "const",
+      "signature": "export const SYSTEM_PROMPT = `You are the web searcher for ruvn.",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/web-searcher.ts",
+      "line": 2,
+      "source": "source-scan"
+    },
+    {
+      "name": "NAME",
+      "kind": "const",
+      "signature": "export const NAME = 'web-searcher';",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/web-searcher.ts",
+      "line": 5,
+      "source": "source-scan"
+    },
+    {
+      "name": "TIER",
+      "kind": "const",
+      "signature": "export const TIER = 'haiku' as const;",
+      "module": "src::agents",
+      "crate": "src/agents",
+      "doc": null,
+      "file": "src/agents/web-searcher.ts",
+      "line": 6,
+      "source": "source-scan"
+    }
+  ]
+}

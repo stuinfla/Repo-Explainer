@@ -36,6 +36,7 @@ const FALLBACK_MODEL = 'gpt-image-1';        // safety net only if the probe fai
 const VALID_SIZES = new Set(['1024x1024', '1024x1536', '1536x1024', 'auto']);
 const PROBE_TIMEOUT_MS = 30_000;
 const GEN_TIMEOUT_MS = 180_000;              // high-quality renders are slow
+const GEN_ATTEMPTS = 3;                       // retry transient aborts (concurrent renders can starve one request)
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 // ---- single-JSON-on-stdout result helpers (exit code is the source of truth) ----
@@ -201,12 +202,34 @@ async function main() {
   fs.mkdirSync(assetsDir, { recursive: true });
 
   // ---- generate every rung (in parallel); ANY failure is a loud stop (no partial slot merge) ----
-  const results = await Promise.allSettled(rungs.map(async (r) => {
+  const results = await Promise.allSettled(rungs.map(async (r, idx) => {
+    const label = `${r.kind}${r.kind === 'section' ? `(${r.id})` : ''}`;
     const fileName = `${safeName(r.kind === 'hero' ? 'hero' : r.id)}.png`;
     const filePath = path.join(assetsDir, fileName);
-    const buf = await generateOne(engine, String(r.prompt) + colourSuffix, r.px, apiKey);
+    // resume idempotency: reuse a valid PNG already on disk (from an earlier partial run) — don't re-roll finished work
+    try {
+      const cached = fs.readFileSync(filePath);
+      if (cached.length > 0 && cached.subarray(0, 8).equals(PNG_MAGIC)) {
+        console.error(`[generate-image] ${label}: reusing cached ${cached.length} bytes -> ${filePath}`);
+        return { rung: r, filePath, bytes: cached.length };
+      }
+    } catch { /* not cached — generate below */ }
+    // stagger so N concurrent high-quality renders don't all peak at once (a starved request hits the abort)
+    if (idx) await new Promise((res) => setTimeout(res, idx * 1500));
+    let buf, lastErr;
+    for (let attempt = 1; attempt <= GEN_ATTEMPTS; attempt++) {
+      try { buf = await generateOne(engine, String(r.prompt) + colourSuffix, r.px, apiKey); break; }
+      catch (e) {
+        lastErr = e;
+        if (attempt < GEN_ATTEMPTS) {
+          console.error(`[generate-image] ${label}: attempt ${attempt}/${GEN_ATTEMPTS} failed (${e?.message || e}) — retrying in ${attempt * 4}s`);
+          await new Promise((res) => setTimeout(res, attempt * 4000));
+        }
+      }
+    }
+    if (!buf) throw lastErr || new Error(`image generation failed after ${GEN_ATTEMPTS} attempts`);
     fs.writeFileSync(filePath, buf);
-    console.error(`[generate-image] ${r.kind}${r.kind === 'section' ? `(${r.id})` : ''}: ${buf.length} bytes -> ${filePath}`);
+    console.error(`[generate-image] ${label}: ${buf.length} bytes -> ${filePath}`);
     return { rung: r, filePath, bytes: buf.length };
   }));
 

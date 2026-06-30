@@ -4,7 +4,7 @@
 **Created:** 2026-06-28
 **Paired ADR:** `docs/adr/0005-skill-based-explainer-recipe.md` (D4 — strict brain/tools split + one
 `BuildContext`).
-**Paired DDD:** `docs/ddd/repo-explainer-recipe-domain.md` (§4 Brain/Tools/BuildContext triangle,
+**Paired DDD:** `docs/ddd/explainmyrepo-recipe-domain.md` (§4 Brain/Tools/BuildContext triangle,
 §8.6 BuildContext, INV-09/INV-10).
 
 This file is **load-bearing**. Generation 2 of this project died because phases were coupled by

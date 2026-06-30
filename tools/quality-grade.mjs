@@ -136,7 +136,9 @@ GATE B — "Did someone who gives a shit make this?" (craft / anti-slop):
 - B4 Strength & polish — cohesive, deliberate vs generic AI-template slop.
 - B5 Imagery craft — beautiful + explanatory + sequenced high→low vs pretty-but-useless;
   INCLUDING the structural SVG diagrams (crisp, legible, genuinely explanatory),
-  judged for delight + craft.
+  judged for delight + craft. A "diagram" that is merely ASCII / box-drawing / pipe characters
+  typeset as a picture (a screenshot of monospace text boxes) is SLOP — score B5 below 40 and set
+  makesMeSmile=false; real diagrams are DRAWN (shapes, cards, arrows), not typeset text.
 
 OPERATOR QUALITATIVE GATE — five YES/NO questions (the owner's words). As a harsh critic, answer each
 true/false from the crops; ALL five must be true for the page to be done, independent of the numeric
@@ -404,6 +406,20 @@ async function renderDevice(chromium, url, device, assetsDir) {
         log(`  diagram ${d.key}: capture failed (${e?.message || e}) — skipped`);
       }
     }
+    // ALSO capture the big-idea + insight CONCEPT diagrams as dedicated full crops, so the grader judges
+    // EVERY diagram at full resolution — not just architecture/flow. This closes the blind spot that let a
+    // raw-ASCII concept diagram score a pass: it was never put in front of the model at full size.
+    const conceptFigs = page.locator('figure.diagram.concept');
+    const conceptN = await conceptFigs.count();
+    for (let i = 0; i < conceptN; i++) {
+      try {
+        const f = conceptFigs.nth(i);
+        await f.scrollIntoViewIfNeeded().catch(() => {});
+        const cropPath = path.join(assetsDir, `grade-${device.tag}-concept${i}.png`);
+        await f.screenshot({ path: cropPath });
+        diagCrops.push({ key: `concept${i}`, label: `CONCEPT diagram (big-idea / insight) — must be a real DRAWN diagram (cards + arrows), NEVER typeset ASCII/box-characters`, path: cropPath });
+      } catch (e) { log(`  concept${i}: capture failed (${e?.message || e}) — skipped`); }
+    }
     // order the grader sees: hero, then the two diagrams, then the rest of the arc
     const ordered = [];
     const heroCrop = crops.find((c) => c.key === 'hero');
@@ -439,10 +455,16 @@ async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
     userContent.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${b64}`, detail: 'high' } });
   }
 
+  // gpt-5.x / o-series are reasoning models: they reject a custom temperature and use
+  // max_completion_tokens instead of max_tokens. Branch so the grader works on the current model.
+  const isReasoning = /^(gpt-5|o[0-9])/.test(model);
   const body = {
     model,
-    temperature: 0,
-    max_tokens: 1800,
+    ...(isReasoning ? {} : { temperature: 0 }),
+    // Reasoning models spend hidden reasoning tokens out of this SAME budget before emitting the JSON.
+    // 2400 was too small (reasoning exhausted it → empty content). Give ample headroom and cap the
+    // reasoning depth — grading from a rubric is a low-reasoning task, so 'low' is faster AND cheaper.
+    ...(isReasoning ? { max_completion_tokens: 12000, reasoning_effort: 'low' } : { max_tokens: 2400 }),
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: `${RUBRIC}\n\n${RESPONSE_SPEC}` },
@@ -466,7 +488,13 @@ async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
   let envelope;
   try { envelope = JSON.parse(raw); } catch { throw new Error(`vision API returned non-JSON envelope for ${deviceLabel}: ${raw.slice(0, 200)}`); }
   const content = envelope?.choices?.[0]?.message?.content;
-  if (!isText(content)) throw new Error(`vision API returned no message content for ${deviceLabel}`);
+  if (!isText(content)) {
+    const fin = envelope?.choices?.[0]?.finish_reason ?? 'unknown';
+    const u = envelope?.usage || {};
+    const detail = `finish_reason=${fin}, usage=${JSON.stringify(u)}`;
+    // finish_reason 'length' = the model ran out of token budget (likely reasoning-tokens) before emitting JSON.
+    throw new Error(`vision API returned no message content for ${deviceLabel} (${detail})`);
+  }
 
   let g;
   try { g = JSON.parse(content); } catch { throw new Error(`grader content is not valid JSON for ${deviceLabel}: ${String(content).slice(0, 200)}`); }
@@ -504,7 +532,7 @@ async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
 // verdict (present + visible, from checkDiagramsInDom) and the VISION clarity verdict
 // (reads-clearly). A device passes iff headlineScore >= 95 AND INV-18 is clean.
 // ----------------------------------------------------------------------------
-function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths) {
+function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths, flowExpected = true) {
   const all = [...CRITERIA_A.map((k) => graded.gateA[k]), ...CRITERIA_B.map((k) => graded.gateB[k])];
   const headlineScore = Math.min(...all);
   const meanScore = Math.round(all.reduce((a, b) => a + b, 0) / all.length);
@@ -521,10 +549,14 @@ function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths
     flowVisible: domInv18.flowVisible,
     flowReadsClearly: domInv18.flowPresent && domInv18.flowVisible && graded.clarity.flowReadsClearly,
     flowNote: graded.clarity.flowNote,
+    // A pure library repo legitimately has no runtime flow diagram (make-diagrams skips it). When no flow
+    // diagram was produced, INV-18 requires only the architecture diagram — not a flow that cannot exist.
+    flowExpected,
     source: 'presence+visibility=DOM, clarity=vision',
   };
-  const inv18Ok = inv18.architecturePresent && inv18.architectureVisible && inv18.architectureReadsClearly &&
-                  inv18.flowPresent && inv18.flowVisible && inv18.flowReadsClearly;
+  const archOk = inv18.architecturePresent && inv18.architectureVisible && inv18.architectureReadsClearly;
+  const flowOk = !flowExpected || (inv18.flowPresent && inv18.flowVisible && inv18.flowReadsClearly);
+  const inv18Ok = archOk && flowOk;
   inv18.passed = inv18Ok;
   const passed = evaluatePass({ mean: meanScore, min: headlineScore, operatorQuestions: opsArray }) && inv18Ok;
 
@@ -539,9 +571,11 @@ function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths
   if (!inv18.architecturePresent) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `ARCHITECTURE diagram MISSING from the DOM (#how-it-works figure.diagram).` });
   else if (!inv18.architectureVisible) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `ARCHITECTURE diagram present in DOM but NOT visible (zero rendered box / hidden).` });
   else if (!inv18.architectureReadsClearly) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `ARCHITECTURE diagram does not read clearly. ${inv18.architectureNote}` });
-  if (!inv18.flowPresent) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `FLOW diagram MISSING from the DOM (#how-it-works figure.diagram).` });
-  else if (!inv18.flowVisible) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `FLOW diagram present in DOM but NOT visible (zero rendered box / hidden).` });
-  else if (!inv18.flowReadsClearly) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `FLOW diagram does not read clearly. ${inv18.flowNote}` });
+  if (flowExpected) {
+    if (!inv18.flowPresent) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `FLOW diagram MISSING from the DOM (#how-it-works figure.diagram).` });
+    else if (!inv18.flowVisible) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `FLOW diagram present in DOM but NOT visible (zero rendered box / hidden).` });
+    else if (!inv18.flowReadsClearly) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `FLOW diagram does not read clearly. ${inv18.flowNote}` });
+  }
 
   const scorecard = {
     device: deviceLabel,
@@ -575,6 +609,10 @@ async function main() {
   try { ctx = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8')); }
   catch (e) { return emit(false, {}, `build.json is not valid JSON: ${e?.message || e}`); }
 
+  // A flow diagram is expected ONLY when one was actually produced (has a real svgPath). Pure library
+  // repos with no runtime entrypoints legitimately have none — INV-18 must not demand a flow that can't exist.
+  const flowExpected = !!(ctx.visuals && ctx.visuals.flowDiagram && ctx.visuals.flowDiagram.svgPath);
+
   // --- DECLARED INPUTS: ONLY the `page` slot. Absent/invalid → loud stop. ---
   const page = ctx.page;
   if (!page || typeof page !== 'object') return emit(false, {}, 'build.json has no `page` slot — assemble-page (Station 6) must run before quality-grade');
@@ -588,7 +626,7 @@ async function main() {
   // --- SECRET from env (never from build.json). No key → CANNOT evaluate → loud. ---
   const apiKey = loadOpenAiKey();
   if (!apiKey) return emit(false, {}, 'no OpenAI key found (set OPENAI_API_KEY / OPEN_AI_KEY in the environment or repo-root .env) — the page cannot be graded; refusing to emit a silent PASS');
-  const model = process.env.QUALITY_VISION_MODEL || 'gpt-4o';
+  const model = process.env.QUALITY_VISION_MODEL || 'gpt-5.5'; // latest vision model, VERIFIED live via GET /v1/models 2026-06-29 (gpt-4o is deprecated; never assume from training data)
   const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 
   // --- Playwright at runtime (do NOT npm-install; loud if absent). ---
@@ -626,7 +664,7 @@ async function main() {
 
       log(`grading ${d.label} with ${model} from ${crops.length} full-res crops …`);
       const graded = await gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel: d.label });
-      const { scorecard: card, refineNotes: notes } = buildScorecard(d.label, graded, domInv18, fullPagePath, crops.map((c) => c.path));
+      const { scorecard: card, refineNotes: notes } = buildScorecard(d.label, graded, domInv18, fullPagePath, crops.map((c) => c.path), flowExpected);
       scorecard.push(card);
       refineNotes.push(...notes);
       log(`${d.label}: headline=${card.headlineScore} inv18=${card.inv18.passed ? 'ok' : 'FAIL'} passed=${card.passed}`);

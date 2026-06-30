@@ -1,0 +1,99 @@
+{
+  "target": "ruvn",
+  "metaName": "ruvn",
+  "generated": "2026-06-19T22:15:34.687Z",
+  "ecosystems": [
+    "npm"
+  ],
+  "componentCount": 1,
+  "internalEdgeCount": 0,
+  "externalDepCount": 10,
+  "nodes": [
+    {
+      "name": "@ruvnet/ruvn",
+      "version": "0.1.1",
+      "description": "Gamma-entrainment protocol research agent — compare modalities/dosing, grade evidence, verify signed session bundles (ruv-neural)",
+      "manifest": "package.json",
+      "deps": [
+        "@metaharness/kernel",
+        "@metaharness/host-claude-code",
+        "@metaharness/host-codex",
+        "@metaharness/host-pi-dev",
+        "@metaharness/host-hermes",
+        "@metaharness/host-openclaw",
+        "@metaharness/host-rvm",
+        "@metaharness/host-copilot",
+        "@metaharness/host-opencode",
+        "@metaharness/host-github-actions"
+      ],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [],
+  "externalDeps": {
+    "@ruvnet/ruvn": [
+      {
+        "name": "@metaharness/kernel",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@metaharness/host-claude-code",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@metaharness/host-codex",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@metaharness/host-pi-dev",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@metaharness/host-hermes",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@metaharness/host-openclaw",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@metaharness/host-rvm",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@metaharness/host-copilot",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@metaharness/host-opencode",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@metaharness/host-github-actions",
+        "req": "*",
+        "kind": "normal"
+      }
+    ]
+  },
+  "externalDepNames": [
+    "@metaharness/host-claude-code",
+    "@metaharness/host-codex",
+    "@metaharness/host-copilot",
+    "@metaharness/host-github-actions",
+    "@metaharness/host-hermes",
+    "@metaharness/host-openclaw",
+    "@metaharness/host-opencode",
+    "@metaharness/host-pi-dev",
+    "@metaharness/host-rvm",
+    "@metaharness/kernel"
+  ]
+}

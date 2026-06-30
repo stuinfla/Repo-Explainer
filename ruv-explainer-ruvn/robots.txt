@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ruv-explainer-ruvn.vercel.app/sitemap.xml
+Sitemap: https://ruvn-explainer.vercel.app/sitemap.xml

@@ -1,40 +1,152 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 607 416" width="607" height="416" role="img" aria-labelledby="d-title d-desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 956 956" width="956" height="956" role="img" aria-labelledby="d-title d-desc">
   <title id="d-title">demorepo — Architecture</title>
-  <desc id="d-desc">demorepo — Architecture: server, cli ↓ core, store ↓ utils, types ↓ express, zod</desc>
+  <desc id="d-desc">demorepo module dependency map: 10 components across node wired by 15 internal dependencies, drawn as a layered graph where each arrow points from a module to what it depends on (top entry points down to shared foundation libraries), with core as the core module the most others depend on.</desc>
+  <metadata><![CDATA[
+Module dependency map: ENTRY [cli, web-ui, api] → CORE [core, router] → SERVICES [store, models, auth] → FOUNDATION [types, utils]; 15 real dependency edges, core = core.
+]]></metadata>
   <defs>
-    <marker id="ah" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
-      <polygon class="ah" points="0 0, 9 3.5, 0 7" fill="#555555"/>
-    </marker>
-    <style>
-      .box { fill: #f8f9fa; stroke: #333333; stroke-width: 1.5px; }
-      .lbl { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; font-weight: 500; fill: #1a1a1a; }
-      .sub { font-size: 11px; font-weight: 400; opacity: .8; }
-      .arr { stroke: #555555; stroke-width: 1.5px; fill: none; }
-      .band { font-family: system-ui, sans-serif; font-size: 11px; font-weight: 700; fill: #4a90d9; letter-spacing: .04em; }
-      .ttl { font-family: system-ui, sans-serif; font-size: 15px; font-weight: 700; fill: #1a1a1a; }
-      @media (prefers-color-scheme: dark) {
-        .box { fill: #2d333b; stroke: #768390; }
-        .lbl { fill: #e6edf3; }
-        .arr { stroke: #768390; }
-        .ah  { fill: #768390; }
-        .ttl { fill: #e6edf3; }
-        .band { fill: #6cb6ff; }
-      }
-    </style>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#0b1018"/><stop offset="0.55" stop-color="#0a0e15"/><stop offset="1" stop-color="#070a10"/>
+    </linearGradient>
+    <radialGradient id="spot" cx="0.5" cy="0.02" r="0.8">
+      <stop offset="0" stop-color="rgba(109,40,217,0.1)"/><stop offset="0.5" stop-color="rgba(109,40,217,0.025)"/><stop offset="1" stop-color="rgba(0,0,0,0)"/>
+    </radialGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="rgba(255,255,255,0.09)"/><stop offset="0.5" stop-color="rgba(255,255,255,0.015)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="rgba(255,255,255,0.014)"/>
+    </pattern>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="11"/></filter>
+    <filter id="glowS" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="cardSh" x="-40%" y="-50%" width="180%" height="210%">
+      <feDropShadow dx="0" dy="6" stdDeviation="11" flood-color="#000000" flood-opacity="0.34"/>
+    </filter>
   </defs>
-  <text class="ttl" x="303.5" y="40" text-anchor="middle">demorepo — Architecture</text>
-  <line class="arr" x1="369.5" y1="108" x2="369.5" y2="155" marker-end="url(#ah)"/>
-  <line class="arr" x1="369.5" y1="202" x2="369.5" y2="249" marker-end="url(#ah)"/>
-  <line class="arr" x1="369.5" y1="296" x2="369.5" y2="343" marker-end="url(#ah)"/>
-  <text class="band" x="26" y="85" dominant-baseline="middle">APPS / ENTRY</text>
-  <g><rect class="box" x="218.5" y="62" width="137" height="46" rx="5"/><text class="lbl" x="287" y="80" text-anchor="middle" dominant-baseline="middle">server</text><text class="lbl sub" x="287" y="97" text-anchor="middle" dominant-baseline="middle">uses 2 internal</text></g>
-  <g><rect class="box" x="383.5" y="62" width="137" height="46" rx="5"/><text class="lbl" x="452" y="80" text-anchor="middle" dominant-baseline="middle">cli</text><text class="lbl sub" x="452" y="97" text-anchor="middle" dominant-baseline="middle">uses 1 internal</text></g>
-  <text class="band" x="26" y="179" dominant-baseline="middle">CORE</text>
-  <g><rect class="box" x="158" y="156" width="204" height="46" rx="5"/><text class="lbl" x="260" y="174" text-anchor="middle" dominant-baseline="middle">core</text><text class="lbl sub" x="260" y="191" text-anchor="middle" dominant-baseline="middle">2 dependents · 18 symbols</text></g>
-  <g><rect class="box" x="390" y="156" width="191" height="46" rx="5"/><text class="lbl" x="485.5" y="174" text-anchor="middle" dominant-baseline="middle">store</text><text class="lbl sub" x="485.5" y="191" text-anchor="middle" dominant-baseline="middle">1 dependent · 9 symbols</text></g>
-  <text class="band" x="26" y="273" dominant-baseline="middle">FOUNDATION</text>
-  <g><rect class="box" x="202" y="250" width="197" height="46" rx="5"/><text class="lbl" x="300.5" y="268" text-anchor="middle" dominant-baseline="middle">utils</text><text class="lbl sub" x="300.5" y="285" text-anchor="middle" dominant-baseline="middle">2 dependents · 7 symbols</text></g>
-  <g><rect class="box" x="427" y="250" width="110" height="46" rx="5"/><text class="lbl" x="482" y="268" text-anchor="middle" dominant-baseline="middle">types</text><text class="lbl sub" x="482" y="285" text-anchor="middle" dominant-baseline="middle">1 dependent</text></g>
-  <text class="band" x="26" y="367" dominant-baseline="middle">EXTERNAL</text>
-  <g><rect class="box" x="301" y="344" width="137" height="46" rx="5"/><text class="lbl" x="369.5" y="362" text-anchor="middle" dominant-baseline="middle">express, zod</text><text class="lbl sub" x="369.5" y="379" text-anchor="middle" dominant-baseline="middle">2 external deps</text></g>
+  <rect x="0" y="0" width="956" height="956" fill="url(#bg)"/>
+  <rect x="0" y="0" width="956" height="956" fill="url(#spot)"/>
+  <rect x="0" y="0" width="956" height="956" fill="url(#grid)"/>
+  <g transform="translate(38.5,0.0)">
+<text x="478.5" y="44" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="13" font-weight="600" fill="#6d28d9" text-anchor="middle" letter-spacing="3">DEMOREPO · DEPENDENCY MAP</text>
+  <text x="478.5" y="80" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="30" font-weight="800" fill="#6d28d9" text-anchor="middle" opacity="0.45" filter="url(#glowS)">Module dependency map</text>
+<text x="478.5" y="80" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="30" font-weight="800" fill="#f1f5f9" text-anchor="middle">Module dependency map</text>
+  <line x1="444.5" y1="98" x2="512.5" y2="98" stroke="#6d28d9" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
+  <path d="M 431.0 209.0 C 431.0 234.5, 363.0 281.5, 363.0 297.0" fill="none" stroke="#8a53e1" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 357.0 297.5 L 363.0 307.0 L 369.0 297.5 Z" fill="#8a53e1" opacity="0.82"/>
+  <path d="M 526.0 209.0 C 526.0 234.5, 523.5 281.5, 523.5 297.0" fill="none" stroke="#8a53e1" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 517.5 297.5 L 523.5 307.0 L 529.5 297.5 Z" fill="#8a53e1" opacity="0.82"/>
+  <path d="M 293.5 209.0 C 293.5 234.5, 292.5 281.5, 292.5 297.0" fill="none" stroke="#8a53e1" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 286.5 297.5 L 292.5 307.0 L 298.5 297.5 Z" fill="#8a53e1" opacity="0.82"/>
+  <path d="M 616.0 209.0 C 616.0 234.5, 433.5 281.5, 433.5 297.0" fill="none" stroke="#8a53e1" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 427.5 297.5 L 433.5 307.0 L 439.5 297.5 Z" fill="#8a53e1" opacity="0.82"/>
+  <path d="M 711.0 209.0 C 711.0 234.5, 664.5 281.5, 664.5 297.0" fill="none" stroke="#8a53e1" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 658.5 297.5 L 664.5 307.0 L 670.5 297.5 Z" fill="#8a53e1" opacity="0.82"/>
+  <path d="M 433.5 375.0 C 433.5 400.5, 632.0 447.5, 632.0 463.0" fill="none" stroke="#39a7c1" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 626.0 463.5 L 632.0 473.0 L 638.0 463.5 Z" fill="#39a7c1" opacity="0.82"/>
+  <path d="M 292.5 375.0 C 292.5 400.5, 251.0 447.5, 251.0 463.0" fill="none" stroke="#39a7c1" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 245.0 463.5 L 251.0 473.0 L 257.0 463.5 Z" fill="#39a7c1" opacity="0.82"/>
+  <path d="M 386.5 375.0 C 386.5 400.5, 475.0 447.5, 475.0 463.0" fill="none" stroke="#39a7c1" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 469.0 463.5 L 475.0 473.0 L 481.0 463.5 Z" fill="#39a7c1" opacity="0.82"/>
+  <path d="M 594.0 375.0 C 594.0 400.5, 773.0 447.5, 773.0 463.0" fill="none" stroke="#39a7c1" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 767.0 463.5 L 773.0 473.0 L 779.0 463.5 Z" fill="#39a7c1" opacity="0.82"/>
+  <path d="M 318.0 541.0 C 318.0 566.5, 523.5 613.5, 523.5 629.0" fill="none" stroke="#e25292" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 517.5 629.5 L 523.5 639.0 L 529.5 629.5 Z" fill="#e25292" opacity="0.82"/>
+  <path d="M 702.5 541.0 C 702.5 566.5, 717.5 613.5, 717.5 629.0" fill="none" stroke="#e25292" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 711.5 629.5 L 717.5 639.0 L 723.5 629.5 Z" fill="#e25292" opacity="0.82"/>
+  <path d="M 542.0 541.0 C 542.0 566.5, 620.5 613.5, 620.5 629.0" fill="none" stroke="#e25292" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 614.5 629.5 L 620.5 639.0 L 626.5 629.5 Z" fill="#e25292" opacity="0.82"/>
+  <path d="M 184.0 541.0 C 184.0 566.5, 239.5 613.5, 239.5 629.0" fill="none" stroke="#e25292" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 233.5 629.5 L 239.5 639.0 L 245.5 629.5 Z" fill="#e25292" opacity="0.82"/>
+  <path d="M 408.0 541.0 C 408.0 566.5, 433.5 613.5, 433.5 629.0" fill="none" stroke="#e25292" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 427.5 629.5 L 433.5 639.0 L 439.5 629.5 Z" fill="#e25292" opacity="0.82"/>
+  <path d="M 339.5 375.0 C 339.5 443.6, 336.5 570.4, 336.5 629.0" fill="none" stroke="#39a7c1" stroke-width="1.9" opacity="0.82" stroke-linecap="round"/>
+  <path d="M 330.5 629.5 L 336.5 639.0 L 342.5 629.5 Z" fill="#39a7c1" opacity="0.82"/>
+  <line x1="122" y1="175" x2="122" y2="689" stroke="rgba(255,255,255,0.13)" stroke-width="1.5" stroke-dasharray="2 6"/>
+  <path d="M 117 683 L 122 691 L 127 683 Z" fill="rgba(255,255,255,0.28)"/>
+<text x="26" y="424" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="10.5" font-weight="700" fill="#7c8aa0" text-anchor="middle" dominant-baseline="central" letter-spacing="2" transform="rotate(-90 26 424.0)">DEPENDENCY DEPTH</text>
+  <circle cx="122" cy="175" r="4.5" fill="#6d28d9" filter="url(#glowS)"/>
+  <circle cx="122" cy="175" r="3" fill="#a77ee8"/>
+<text x="109" y="175" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11.5" font-weight="700" fill="#6d28d9" text-anchor="end" dominant-baseline="central" letter-spacing="1.2">ENTRY</text>
+  <circle cx="122" cy="341" r="4.5" fill="#0891b2" filter="url(#glowS)"/>
+  <circle cx="122" cy="341" r="3" fill="#6bbdd1"/>
+<text x="109" y="341" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11.5" font-weight="700" fill="#0891b2" text-anchor="end" dominant-baseline="central" letter-spacing="1.2">CORE</text>
+  <circle cx="122" cy="507" r="4.5" fill="#db2777" filter="url(#glowS)"/>
+  <circle cx="122" cy="507" r="3" fill="#e97dad"/>
+<text x="109" y="507" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11.5" font-weight="700" fill="#db2777" text-anchor="end" dominant-baseline="central" letter-spacing="1.2">SERVICES</text>
+  <circle cx="122" cy="673" r="4.5" fill="#22d3ee" filter="url(#glowS)"/>
+  <circle cx="122" cy="673" r="3" fill="#7ae5f5"/>
+<text x="109" y="673" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11.5" font-weight="700" fill="#22d3ee" text-anchor="end" dominant-baseline="central" letter-spacing="1.2">FOUNDATION</text>
+  <rect x="218" y="144" width="151" height="62" rx="12" fill="rgba(11,15,23,0.7)" stroke="rgba(109,40,217,0.45)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="218" y="144" width="151" height="62" rx="12" fill="url(#sheen)" opacity="0.4"/>
+  <circle cx="236" cy="175" r="4.5" fill="#6d28d9" opacity="0.4" filter="url(#glowS)"/>
+  <circle cx="236" cy="175" r="3.2" fill="#a073e6"/>
+<text x="252" y="169" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="15.5" font-weight="700" fill="#f1f5f9" text-anchor="start">cli</text>
+<text x="252" y="188" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#aab6c8" text-anchor="start">entry · uses 1</text>
+  <rect x="403" y="144" width="151" height="62" rx="12" fill="rgba(11,15,23,0.7)" stroke="rgba(109,40,217,0.45)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="403" y="144" width="151" height="62" rx="12" fill="url(#sheen)" opacity="0.4"/>
+  <circle cx="421" cy="175" r="4.5" fill="#6d28d9" opacity="0.4" filter="url(#glowS)"/>
+  <circle cx="421" cy="175" r="3.2" fill="#a073e6"/>
+<text x="437" y="169" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="15.5" font-weight="700" fill="#f1f5f9" text-anchor="start">web-ui</text>
+<text x="437" y="188" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#aab6c8" text-anchor="start">entry · uses 2</text>
+  <rect x="588" y="144" width="151" height="62" rx="12" fill="rgba(11,15,23,0.7)" stroke="rgba(109,40,217,0.45)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="588" y="144" width="151" height="62" rx="12" fill="url(#sheen)" opacity="0.4"/>
+  <circle cx="606" cy="175" r="4.5" fill="#6d28d9" opacity="0.4" filter="url(#glowS)"/>
+  <circle cx="606" cy="175" r="3.2" fill="#a073e6"/>
+<text x="622" y="169" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="15.5" font-weight="700" fill="#f1f5f9" text-anchor="start">api</text>
+<text x="622" y="188" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#aab6c8" text-anchor="start">entry · uses 2</text>
+  <rect x="264.5" y="310" width="197" height="62" rx="12" fill="rgba(11,15,23,0.7)" stroke="rgba(8,145,178,0.45)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="264.5" y="310" width="197" height="62" rx="12" fill="url(#sheen)" opacity="0.4"/>
+  <circle cx="282.5" cy="341" r="4.5" fill="#0891b2" opacity="0.4" filter="url(#glowS)"/>
+  <circle cx="282.5" cy="341" r="3.2" fill="#5eb8cd"/>
+<text x="298.5" y="335" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="15.5" font-weight="700" fill="#f1f5f9" text-anchor="start">core</text>
+<text x="298.5" y="354" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#aab6c8" text-anchor="start">3 dependents · 34 sym</text>
+  <rect x="264.5" y="310" width="197" height="62" rx="12" fill="rgba(8,145,178,0.07)"/>
+  <rect x="260.5" y="306.0" width="205" height="70" rx="16" fill="none" stroke="#0891b2" stroke-width="1.5" opacity="0.7"/>
+  <rect x="409.5" y="299.0" width="52" height="20" rx="6" fill="rgba(11,15,23,0.95)" stroke="rgba(8,145,178,0.5)" stroke-width="1"/>
+  <path d="M 421.5 309.0 l 3.5 -3.5 l 3.5 3.5 l -3.5 3.5 Z" fill="#0891b2"/>
+<text x="431.5" y="309" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="9.5" font-weight="800" fill="#52b2c9" text-anchor="start" dominant-baseline="central" letter-spacing="1">CORE</text>
+  <rect x="495.5" y="310" width="197" height="62" rx="12" fill="rgba(11,15,23,0.7)" stroke="rgba(8,145,178,0.45)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="495.5" y="310" width="197" height="62" rx="12" fill="url(#sheen)" opacity="0.4"/>
+  <circle cx="513.5" cy="341" r="4.5" fill="#0891b2" opacity="0.4" filter="url(#glowS)"/>
+  <circle cx="513.5" cy="341" r="3.2" fill="#5eb8cd"/>
+<text x="529.5" y="335" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="15.5" font-weight="700" fill="#f1f5f9" text-anchor="start">router</text>
+<text x="529.5" y="354" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#aab6c8" text-anchor="start">2 dependents · 11 sym</text>
+  <rect x="156" y="476" width="190" height="62" rx="12" fill="rgba(11,15,23,0.7)" stroke="rgba(219,39,119,0.45)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="156" y="476" width="190" height="62" rx="12" fill="url(#sheen)" opacity="0.4"/>
+  <circle cx="174" cy="507" r="4.5" fill="#db2777" opacity="0.4" filter="url(#glowS)"/>
+  <circle cx="174" cy="507" r="3.2" fill="#e873a7"/>
+<text x="190" y="501" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="15.5" font-weight="700" fill="#f1f5f9" text-anchor="start">store</text>
+<text x="190" y="520" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#aab6c8" text-anchor="start">1 dependent · 18 sym</text>
+  <rect x="380" y="476" width="190" height="62" rx="12" fill="rgba(11,15,23,0.7)" stroke="rgba(219,39,119,0.45)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="380" y="476" width="190" height="62" rx="12" fill="url(#sheen)" opacity="0.4"/>
+  <circle cx="398" cy="507" r="4.5" fill="#db2777" opacity="0.4" filter="url(#glowS)"/>
+  <circle cx="398" cy="507" r="3.2" fill="#e873a7"/>
+<text x="414" y="501" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="15.5" font-weight="700" fill="#f1f5f9" text-anchor="start">models</text>
+<text x="414" y="520" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#aab6c8" text-anchor="start">1 dependent · 12 sym</text>
+  <rect x="604" y="476" width="197" height="62" rx="12" fill="rgba(11,15,23,0.7)" stroke="rgba(219,39,119,0.45)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="604" y="476" width="197" height="62" rx="12" fill="url(#sheen)" opacity="0.4"/>
+  <circle cx="622" cy="507" r="4.5" fill="#db2777" opacity="0.4" filter="url(#glowS)"/>
+  <circle cx="622" cy="507" r="3.2" fill="#e873a7"/>
+<text x="638" y="501" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="15.5" font-weight="700" fill="#f1f5f9" text-anchor="start">auth</text>
+<text x="638" y="520" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#aab6c8" text-anchor="start">2 dependents · 15 sym</text>
+  <rect x="211.5" y="642" width="250" height="62" rx="12" fill="rgba(11,15,23,0.7)" stroke="rgba(34,211,238,0.45)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="211.5" y="642" width="250" height="62" rx="12" fill="url(#sheen)" opacity="0.4"/>
+  <circle cx="229.5" cy="673" r="4.5" fill="#22d3ee" opacity="0.4" filter="url(#glowS)"/>
+  <circle cx="229.5" cy="673" r="3.2" fill="#6fe2f4"/>
+<text x="245.5" y="667" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="15.5" font-weight="700" fill="#f1f5f9" text-anchor="start">types</text>
+<text x="245.5" y="686" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#aab6c8" text-anchor="start">shared · 3 dependents · 6 sym</text>
+  <rect x="495.5" y="642" width="250" height="62" rx="12" fill="rgba(11,15,23,0.7)" stroke="rgba(34,211,238,0.45)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="495.5" y="642" width="250" height="62" rx="12" fill="url(#sheen)" opacity="0.4"/>
+  <circle cx="513.5" cy="673" r="4.5" fill="#22d3ee" opacity="0.4" filter="url(#glowS)"/>
+  <circle cx="513.5" cy="673" r="3.2" fill="#6fe2f4"/>
+<text x="529.5" y="667" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="15.5" font-weight="700" fill="#f1f5f9" text-anchor="start">utils</text>
+<text x="529.5" y="686" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#aab6c8" text-anchor="start">shared · 3 dependents · 9 sym</text>
+  <rect x="208.5" y="770" width="540" height="64" rx="14" fill="rgba(11,15,23,0.55)" stroke="rgba(34,211,238,0.28)" stroke-width="1.25"/>
+  <rect x="208.5" y="770" width="4" height="64" rx="2" fill="rgba(34,211,238,0.6)"/>
+<text x="230.5" y="795" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="10.5" font-weight="700" fill="#7c8aa0" text-anchor="start" letter-spacing="1.5">EXTERNAL PACKAGES</text>
+<text x="230.5" y="817" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="13" font-weight="500" fill="#aab6c8" text-anchor="start">express   ·   zod   ·   pg</text>
+<text x="728.5" y="806" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11.5" font-weight="400" fill="#7c8aa0" text-anchor="end" dominant-baseline="central">3 deps</text>
+<text x="478.5" y="894" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12.5" font-weight="400" fill="#aab6c8" text-anchor="middle">arrow points from a module to what it depends on    ◆ CORE = most depended-on</text>
+<text x="478.5" y="920" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12.5" font-weight="400" fill="#7c8aa0" text-anchor="middle">10 modules · 15 internal links · node</text>
+  </g>
 </svg>

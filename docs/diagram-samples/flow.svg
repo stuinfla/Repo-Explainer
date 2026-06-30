@@ -1,33 +1,145 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 313 416" width="313" height="416" role="img" aria-labelledby="d-title d-desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1064 1064" width="1064" height="1064" role="img" aria-labelledby="d-title d-desc">
   <title id="d-title">demorepo — Process / Data Flow</title>
-  <desc id="d-desc">demorepo — Process / Data Flow: 1 · Install ↓ 2 · Build ↓ 3 · Run ↓ 4 · Verify</desc>
+  <desc id="d-desc">demorepo data-flow pipeline: the repo source flows through install (→ dependencies), build (→ compiled artifacts), run the entry point (mycli), and verify (→ pass/fail), with each stage's input and output artifact labelled so you can see what data changes at every step.</desc>
+  <metadata><![CDATA[
+Data-flow pipeline: package.json + src/ ⟶ INSTALL (package.json + lock → node_modules/) ⟶ BUILD (src/ + node_modules/ → dist/ bundle) ⟶ RUN (dist/ + CLI args → program output) ⟶ VERIFY (dist/ + test specs → pass / fail report) ⟶ mycli ready.
+]]></metadata>
   <defs>
-    <marker id="ah" markerWidth="9" markerHeight="7" refX="8.5" refY="3.5" orient="auto">
-      <polygon class="ah" points="0 0, 9 3.5, 0 7" fill="#555555"/>
-    </marker>
-    <style>
-      .box { fill: #f8f9fa; stroke: #333333; stroke-width: 1.5px; }
-      .lbl { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 14px; font-weight: 500; fill: #1a1a1a; }
-      .sub { font-size: 11px; font-weight: 400; opacity: .8; }
-      .arr { stroke: #555555; stroke-width: 1.5px; fill: none; }
-      .band { font-family: system-ui, sans-serif; font-size: 11px; font-weight: 700; fill: #4a90d9; letter-spacing: .04em; }
-      .ttl { font-family: system-ui, sans-serif; font-size: 15px; font-weight: 700; fill: #1a1a1a; }
-      @media (prefers-color-scheme: dark) {
-        .box { fill: #2d333b; stroke: #768390; }
-        .lbl { fill: #e6edf3; }
-        .arr { stroke: #768390; }
-        .ah  { fill: #768390; }
-        .ttl { fill: #e6edf3; }
-        .band { fill: #6cb6ff; }
-      }
-    </style>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#0b1018"/><stop offset="0.55" stop-color="#0a0e15"/><stop offset="1" stop-color="#070a10"/>
+    </linearGradient>
+    <radialGradient id="spot" cx="0.5" cy="0.02" r="0.8">
+      <stop offset="0" stop-color="rgba(109,40,217,0.1)"/><stop offset="0.5" stop-color="rgba(109,40,217,0.025)"/><stop offset="1" stop-color="rgba(0,0,0,0)"/>
+    </radialGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="rgba(255,255,255,0.09)"/><stop offset="0.5" stop-color="rgba(255,255,255,0.015)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="rgba(255,255,255,0.014)"/>
+    </pattern>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="11"/></filter>
+    <filter id="glowS" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="cardSh" x="-40%" y="-50%" width="180%" height="210%">
+      <feDropShadow dx="0" dy="6" stdDeviation="11" flood-color="#000000" flood-opacity="0.34"/>
+    </filter>
   </defs>
-  <text class="ttl" x="156.5" y="40" text-anchor="middle">demorepo — Process / Data Flow</text>
-  <line class="arr" x1="156.5" y1="108" x2="156.5" y2="155" marker-end="url(#ah)"/>
-  <line class="arr" x1="156.5" y1="202" x2="156.5" y2="249" marker-end="url(#ah)"/>
-  <line class="arr" x1="156.5" y1="296" x2="156.5" y2="343" marker-end="url(#ah)"/>
-  <g><rect class="box" x="97.5" y="62" width="118" height="46" rx="5"/><text class="lbl" x="156.5" y="80" text-anchor="middle" dominant-baseline="middle">1 · Install</text><text class="lbl sub" x="156.5" y="97" text-anchor="middle" dominant-baseline="middle">npm install</text></g>
-  <g><rect class="box" x="94.5" y="156" width="124" height="46" rx="5"/><text class="lbl" x="156.5" y="174" text-anchor="middle" dominant-baseline="middle">2 · Build</text><text class="lbl sub" x="156.5" y="191" text-anchor="middle" dominant-baseline="middle">npm run build</text></g>
-  <g><rect class="box" x="108.5" y="250" width="96" height="46" rx="5"/><text class="lbl" x="156.5" y="268" text-anchor="middle" dominant-baseline="middle">3 · Run</text><text class="lbl sub" x="156.5" y="285" text-anchor="middle" dominant-baseline="middle">mycli</text></g>
-  <g><rect class="box" x="101.5" y="344" width="110" height="46" rx="5"/><text class="lbl" x="156.5" y="362" text-anchor="middle" dominant-baseline="middle">4 · Verify</text><text class="lbl sub" x="156.5" y="379" text-anchor="middle" dominant-baseline="middle">npm test</text></g>
+  <rect x="0" y="0" width="1064" height="1064" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1064" height="1064" fill="url(#spot)"/>
+  <rect x="0" y="0" width="1064" height="1064" fill="url(#grid)"/>
+  <g transform="translate(146.0,0.0)">
+<text x="386" y="44" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="13" font-weight="600" fill="#6d28d9" text-anchor="middle" letter-spacing="3">DEMOREPO · PIPELINE</text>
+  <text x="386" y="80" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="30" font-weight="800" fill="#6d28d9" text-anchor="middle" opacity="0.45" filter="url(#glowS)">Data-flow pipeline</text>
+<text x="386" y="80" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="30" font-weight="800" fill="#f1f5f9" text-anchor="middle">Data-flow pipeline</text>
+  <line x1="352" y1="98" x2="420" y2="98" stroke="#6d28d9" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
+  <rect x="261.5" y="150" width="249" height="40" rx="20" fill="rgba(255,255,255,0.04)" stroke="rgba(109,40,217,0.5)" stroke-width="1.25"/>
+  <rect x="261.5" y="150" width="249" height="40" rx="20" fill="url(#sheen)" opacity="0.4"/>
+  <circle cx="279.5" cy="170.0" r="3.4" fill="#6d28d9" filter="url(#glowS)"/>
+<text x="291.5" y="170" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="800" fill="#6d28d9" text-anchor="start" dominant-baseline="central" letter-spacing="1.2">SOURCE</text>
+<text x="347.5" y="170" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12.5" font-weight="400" fill="#f1f5f9" text-anchor="start" dominant-baseline="central">package.json + src/</text>
+  <line x1="386" y1="194" x2="386" y2="248" stroke="#6d28d9" stroke-width="9" opacity="0.3" filter="url(#glow)" stroke-linecap="round"/>
+  <line x1="386" y1="194" x2="386" y2="248" stroke="#925ee3" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M 381.7 240.1 L 386.0 248.0 L 390.3 240.1" fill="none" stroke="#925ee3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="49" y="249" width="674" height="118" rx="20" fill="#6d28d9" opacity="0.080" filter="url(#glow)"/>
+  <rect x="54" y="258" width="664" height="108" rx="16" fill="rgba(44,16,87,0.85)"/>
+  <rect x="54" y="252" width="664" height="108" rx="16" fill="rgba(109,40,217,0.07)" stroke="rgba(109,40,217,0.42)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="54" y="252" width="664" height="108" rx="16" fill="url(#sheen)"/>
+  <path d="M 70 253.25 H 702" stroke="rgba(255,255,255,0.14)" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <circle cx="104" cy="306" r="22" fill="#6d28d9" opacity="0.28" filter="url(#glowS)"/>
+  <circle cx="104" cy="306" r="20" fill="rgba(109,40,217,0.2)" stroke="#6d28d9" stroke-width="1.75"/>
+<text x="104" y="307" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="20" font-weight="800" fill="#bd9eee" text-anchor="middle" dominant-baseline="central">1</text>
+<text x="142" y="286" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="18" font-weight="800" fill="#f1f5f9" text-anchor="start" letter-spacing="0.4">INSTALL</text>
+<text x="142" y="307" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="12.5" font-weight="400" fill="#aab6c8" text-anchor="start">resolve + download dependencies</text>
+  <rect x="142" y="320" width="362" height="28" rx="7" fill="rgba(0,0,0,0.42)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+<text x="154" y="339" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12" font-weight="400" fill="#b694ec" text-anchor="start">$ npm install</text>
+  <line x1="504" y1="270" x2="504" y2="342" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+<text x="522" y="294" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="10.5" font-weight="700" fill="#7c8aa0" text-anchor="start" dominant-baseline="central" letter-spacing="1.5">IN</text>
+<text x="556" y="294" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12" font-weight="400" fill="#aab6c8" text-anchor="start" dominant-baseline="central">package.json + lock</text>
+  <path d="M 529 302 V 312" stroke="rgba(109,40,217,0.55)" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M 525.5 308 L 529 312.5 L 532.5 308" fill="none" stroke="rgba(109,40,217,0.55)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="556" y="318" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="10.5" font-weight="700" fill="#6d28d9" text-anchor="start" dominant-baseline="central" letter-spacing="1.5">OUT</text>
+<text x="556" y="336" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12" font-weight="600" fill="#a77ee8" text-anchor="start" dominant-baseline="central">node_modules/</text>
+  <line x1="386" y1="364" x2="386" y2="418" stroke="#3b5dc6" stroke-width="9" opacity="0.3" filter="url(#glow)" stroke-linecap="round"/>
+  <line x1="386" y1="364" x2="386" y2="418" stroke="#6c86d4" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M 381.7 410.1 L 386.0 418.0 L 390.3 410.1" fill="none" stroke="#6c86d4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="331.0" y="380.0" width="110" height="22" rx="11" fill="rgba(8,11,17,0.94)" stroke="rgba(59,93,198,0.5)" stroke-width="1"/>
+<text x="386" y="391" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#899edd" text-anchor="middle" dominant-baseline="central">node_modules/</text>
+  <rect x="49" y="419" width="674" height="118" rx="20" fill="#0891b2" opacity="0.080" filter="url(#glow)"/>
+  <rect x="54" y="428" width="664" height="108" rx="16" fill="rgba(3,58,71,0.85)"/>
+  <rect x="54" y="422" width="664" height="108" rx="16" fill="rgba(8,145,178,0.07)" stroke="rgba(8,145,178,0.42)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="54" y="422" width="664" height="108" rx="16" fill="url(#sheen)"/>
+  <path d="M 70 423.25 H 702" stroke="rgba(255,255,255,0.14)" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <circle cx="104" cy="476" r="22" fill="#0891b2" opacity="0.28" filter="url(#glowS)"/>
+  <circle cx="104" cy="476" r="20" fill="rgba(8,145,178,0.2)" stroke="#0891b2" stroke-width="1.75"/>
+<text x="104" y="477" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="20" font-weight="800" fill="#90cedc" text-anchor="middle" dominant-baseline="central">2</text>
+<text x="142" y="456" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="18" font-weight="800" fill="#f1f5f9" text-anchor="start" letter-spacing="0.4">BUILD</text>
+<text x="142" y="477" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="12.5" font-weight="400" fill="#aab6c8" text-anchor="start">compile + bundle the source</text>
+  <rect x="142" y="490" width="362" height="28" rx="7" fill="rgba(0,0,0,0.42)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+<text x="154" y="509" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12" font-weight="400" fill="#84c8d9" text-anchor="start">$ npm run build</text>
+  <line x1="504" y1="440" x2="504" y2="512" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+<text x="522" y="464" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="10.5" font-weight="700" fill="#7c8aa0" text-anchor="start" dominant-baseline="central" letter-spacing="1.5">IN</text>
+<text x="556" y="464" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12" font-weight="400" fill="#aab6c8" text-anchor="start" dominant-baseline="central">src/ + node_modules/</text>
+  <path d="M 529 472 V 482" stroke="rgba(8,145,178,0.55)" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M 525.5 478 L 529 482.5 L 532.5 478" fill="none" stroke="rgba(8,145,178,0.55)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="556" y="488" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="10.5" font-weight="700" fill="#0891b2" text-anchor="start" dominant-baseline="central" letter-spacing="1.5">OUT</text>
+<text x="556" y="506" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12" font-weight="600" fill="#6bbdd1" text-anchor="start" dominant-baseline="central">dist/ bundle</text>
+  <line x1="386" y1="534" x2="386" y2="588" stroke="#725c95" stroke-width="9" opacity="0.3" filter="url(#glow)" stroke-linecap="round"/>
+  <line x1="386" y1="534" x2="386" y2="588" stroke="#9585b0" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M 381.7 580.1 L 386.0 588.0 L 390.3 580.1" fill="none" stroke="#9585b0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="334.0" y="550.0" width="104" height="22" rx="11" fill="rgba(8,11,17,0.94)" stroke="rgba(114,92,149,0.5)" stroke-width="1"/>
+<text x="386" y="561" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#aa9dbf" text-anchor="middle" dominant-baseline="central">dist/ bundle</text>
+  <rect x="49" y="589" width="674" height="118" rx="20" fill="#db2777" opacity="0.080" filter="url(#glow)"/>
+  <rect x="54" y="598" width="664" height="108" rx="16" fill="rgba(88,16,48,0.85)"/>
+  <rect x="54" y="592" width="664" height="108" rx="16" fill="rgba(219,39,119,0.07)" stroke="rgba(219,39,119,0.42)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="54" y="592" width="664" height="108" rx="16" fill="url(#sheen)"/>
+  <path d="M 70 593.25 H 702" stroke="rgba(255,255,255,0.14)" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <circle cx="104" cy="646" r="22" fill="#db2777" opacity="0.28" filter="url(#glowS)"/>
+  <circle cx="104" cy="646" r="20" fill="rgba(219,39,119,0.2)" stroke="#db2777" stroke-width="1.75"/>
+<text x="104" y="647" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="20" font-weight="800" fill="#ef9ec2" text-anchor="middle" dominant-baseline="central">3</text>
+<text x="142" y="626" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="18" font-weight="800" fill="#f1f5f9" text-anchor="start" letter-spacing="0.4">RUN</text>
+<text x="142" y="647" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="12.5" font-weight="400" fill="#aab6c8" text-anchor="start">execute the entry point</text>
+  <rect x="142" y="660" width="362" height="28" rx="7" fill="rgba(0,0,0,0.42)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+<text x="154" y="679" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12" font-weight="400" fill="#ed93bb" text-anchor="start">$ mycli ...</text>
+  <line x1="504" y1="610" x2="504" y2="682" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+<text x="522" y="634" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="10.5" font-weight="700" fill="#7c8aa0" text-anchor="start" dominant-baseline="central" letter-spacing="1.5">IN</text>
+<text x="556" y="634" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12" font-weight="400" fill="#aab6c8" text-anchor="start" dominant-baseline="central">dist/ + CLI args</text>
+  <path d="M 529 642 V 652" stroke="rgba(219,39,119,0.55)" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M 525.5 648 L 529 652.5 L 532.5 648" fill="none" stroke="rgba(219,39,119,0.55)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="556" y="658" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="10.5" font-weight="700" fill="#db2777" text-anchor="start" dominant-baseline="central" letter-spacing="1.5">OUT</text>
+<text x="556" y="676" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12" font-weight="600" fill="#e97dad" text-anchor="start" dominant-baseline="central">program output</text>
+  <line x1="386" y1="704" x2="386" y2="758" stroke="#7f7db3" stroke-width="9" opacity="0.3" filter="url(#glow)" stroke-linecap="round"/>
+  <line x1="386" y1="704" x2="386" y2="758" stroke="#9f9ec6" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M 381.7 750.1 L 386.0 758.0 L 390.3 750.1" fill="none" stroke="#9f9ec6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="327.5" y="720.0" width="117" height="22" rx="11" fill="rgba(8,11,17,0.94)" stroke="rgba(127,125,179,0.5)" stroke-width="1"/>
+<text x="386" y="731" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#b2b1d1" text-anchor="middle" dominant-baseline="central">program output</text>
+  <rect x="49" y="759" width="674" height="118" rx="20" fill="#22d3ee" opacity="0.080" filter="url(#glow)"/>
+  <rect x="54" y="768" width="664" height="108" rx="16" fill="rgba(14,84,95,0.85)"/>
+  <rect x="54" y="762" width="664" height="108" rx="16" fill="rgba(34,211,238,0.07)" stroke="rgba(34,211,238,0.42)" stroke-width="1.25" filter="url(#cardSh)"/>
+  <rect x="54" y="762" width="664" height="108" rx="16" fill="url(#sheen)"/>
+  <path d="M 70 763.25 H 702" stroke="rgba(255,255,255,0.14)" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <circle cx="104" cy="816" r="22" fill="#22d3ee" opacity="0.28" filter="url(#glowS)"/>
+  <circle cx="104" cy="816" r="20" fill="rgba(34,211,238,0.2)" stroke="#22d3ee" stroke-width="1.75"/>
+<text x="104" y="817" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="20" font-weight="800" fill="#9cebf7" text-anchor="middle" dominant-baseline="central">4</text>
+<text x="142" y="796" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="18" font-weight="800" fill="#f1f5f9" text-anchor="start" letter-spacing="0.4">VERIFY</text>
+<text x="142" y="817" font-family="ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif" font-size="12.5" font-weight="400" fill="#aab6c8" text-anchor="start">run the test suite</text>
+  <rect x="142" y="830" width="362" height="28" rx="7" fill="rgba(0,0,0,0.42)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+<text x="154" y="849" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12" font-weight="400" fill="#91e9f7" text-anchor="start">$ npm test</text>
+  <line x1="504" y1="780" x2="504" y2="852" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+<text x="522" y="804" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="10.5" font-weight="700" fill="#7c8aa0" text-anchor="start" dominant-baseline="central" letter-spacing="1.5">IN</text>
+<text x="556" y="804" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12" font-weight="400" fill="#aab6c8" text-anchor="start" dominant-baseline="central">dist/ + test specs</text>
+  <path d="M 529 812 V 822" stroke="rgba(34,211,238,0.55)" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M 525.5 818 L 529 822.5 L 532.5 818" fill="none" stroke="rgba(34,211,238,0.55)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="556" y="828" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="10.5" font-weight="700" fill="#22d3ee" text-anchor="start" dominant-baseline="central" letter-spacing="1.5">OUT</text>
+<text x="556" y="846" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12" font-weight="600" fill="#7ae5f5" text-anchor="start" dominant-baseline="central">pass / fail report</text>
+  <line x1="386" y1="874" x2="386" y2="928" stroke="#22d3ee" stroke-width="9" opacity="0.3" filter="url(#glow)" stroke-linecap="round"/>
+  <line x1="386" y1="874" x2="386" y2="928" stroke="#59def2" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M 381.7 920.1 L 386.0 928.0 L 390.3 920.1" fill="none" stroke="#59def2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="314.5" y="890.0" width="143" height="22" rx="11" fill="rgba(8,11,17,0.94)" stroke="rgba(34,211,238,0.5)" stroke-width="1"/>
+<text x="386" y="901" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="400" fill="#7ae5f5" text-anchor="middle" dominant-baseline="central">pass / fail report</text>
+  <rect x="291.5" y="932" width="189" height="40" rx="20" fill="rgba(255,255,255,0.04)" stroke="rgba(34,211,238,0.5)" stroke-width="1.25"/>
+  <rect x="291.5" y="932" width="189" height="40" rx="20" fill="url(#sheen)" opacity="0.4"/>
+  <circle cx="309.5" cy="952.0" r="3.4" fill="#22d3ee" filter="url(#glowS)"/>
+<text x="321.5" y="952" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="11" font-weight="800" fill="#22d3ee" text-anchor="start" dominant-baseline="central" letter-spacing="1.2">RESULT</text>
+<text x="377.5" y="952" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12.5" font-weight="400" fill="#f1f5f9" text-anchor="start" dominant-baseline="central">mycli ready</text>
+<text x="386" y="1018" font-family="ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace" font-size="12" font-weight="400" fill="#7c8aa0" text-anchor="middle">4 stages · derived from the project's node entrypoints</text>
+  </g>
 </svg>

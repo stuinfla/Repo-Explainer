@@ -4,10 +4,21 @@
   "private": true,
   "description": "Turn any GitHub repo into a bespoke, art-directed explainer site — for humans and their AI — in one command.",
   "type": "module",
+  "bin": {
+    "explainmyrepo": "bin/explainmyrepo.mjs"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "tools/",
+    "kb/",
+    "assets/"
+  ],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "start": "node bin/explainmyrepo.mjs"
   }
 }

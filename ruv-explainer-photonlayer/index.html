@@ -41,7 +41,8 @@
       <a class="hide-sm" href="#what">What it is</a>
       <a class="hide-sm" href="#priya">Example</a>
       <a class="hide-sm" href="#gallery">Use cases</a>
-      <a class="hide-sm" href="#dropin">Drop-in</a>
+      <a class="hide-sm" href="#dropin-zip">Studio &amp; drop-in</a>
+      <a class="hide-sm" href="https://notebooklm.google.com/notebook/d97351e0-542f-4c80-9e56-19cb1dca04f5" target="_blank" rel="noopener">▶ Studio ↗</a>
       <a class="ghub" href="https://github.com/ruvnet/PhotonLayer" target="_blank" rel="noopener">GitHub ↗</a>
     </nav>
   </div>
@@ -58,6 +59,7 @@
         <h1>The lens already did the thinking — so all that's left to capture is the <span class="spec-text">answer</span>.</h1>
         <p class="lede">PhotonLayer is a deterministic optical-AI front end: a learned piece of <strong>smart glass</strong> reshapes light so a tiny sensor captures the <em>answer</em> instead of the whole picture.</p>
         <p class="sub">Then it signs a receipt proving exactly what it measured — a result you can re-run, not just a claim. Today it's a faithful software simulator written in Rust; the actual glass is on the roadmap.</p>
+        <p class="attrib-lede">An <strong>independent explainer</strong> for <strong>Reuven Cohen</strong>'s (<a href="https://github.com/ruvnet" target="_blank" rel="noopener">@ruvnet</a>) PhotonLayer — built to help you actually implement his technology.</p>
         <div class="hero-cta">
           <a class="btn btn-primary" href="#priya">See it with a real example →</a>
           <a class="btn btn-ghost" href="https://ruvnet.github.io/PhotonLayer/" target="_blank" rel="noopener">Try the live demo ↗</a>
@@ -68,6 +70,7 @@
           <span class="pill" id="prov-live">Updated <time datetime="2026-06-19">2026-06-19</time> · source @ <code>fe86c9f</code></span>
           <span>MIT © Ruvector</span>
           <a href="https://github.com/ruvnet/PhotonLayer" target="_blank" rel="noopener">github.com/ruvnet/PhotonLayer ↗</a>
+          <a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener">Built with the Ruv-Explainer pipeline ↗</a>
         </div>
       </div>
 
@@ -108,7 +111,8 @@
       <a href="#vs"><span class="num">08</span>Why this vs. what I have</a>
       <a href="#dropin"><span class="num">09</span>How to implement</a>
       <a href="#start"><span class="num">10</span>How to start</a>
-      <a href="#limits"><span class="num">11</span>Honest limits</a>
+      <a href="#dropin-zip"><span class="num">11</span>Get the drop-in</a>
+      <a href="#limits"><span class="num">12</span>Honest limits</a>
     </nav>
     <button class="expand-btn" id="expand-toggle" aria-expanded="false">Expand all sections</button>
   </aside>
@@ -990,7 +994,29 @@ let frame = ScalarSimulator.simulate(&amp;img, &amp;mask, &amp;cfg)?;
 let receipt = Receipt::build(&amp;img, &amp;mask, &amp;cfg, &amp;frame);
 assert!(receipt.verify());</pre>
 
-      <figure class="vfig" style="margin:22px 0;">
+      <div class="dual" style="margin:22px 0;">
+      <figure class="vfig">
+        <figcaption class="vlabel simple"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4.5"/></svg> Friendly view — one engine, three ways to drive it</figcaption>
+        <div class="svgwrap">
+          <svg viewBox="0 0 260 170" role="img" aria-label="A friendly diagram: a glowing core engine in the middle, with a lab beaker (bench, the proof), a terminal window (cli, the easy front door), and a browser window (wasm, no install) all plugged into it.">
+            <circle cx="130" cy="88" r="34" fill="#0c0c14" stroke="#ff5e62" stroke-width="2"/>
+            <text x="130" y="84" text-anchor="middle" font-size="18">⚙️</text>
+            <text x="130" y="104" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#ff5e62">core</text>
+            <g font-family="JetBrains Mono,monospace" font-size="8" fill="#c3c6dd" text-anchor="middle">
+              <text x="40" y="34" font-size="16">🧪</text><text x="40" y="50">bench · proof</text>
+              <text x="220" y="34" font-size="16">⌨️</text><text x="220" y="50">cli · front door</text>
+              <text x="220" y="150" font-size="16">🌐</text><text x="220" y="166">wasm · no install</text>
+            </g>
+            <g stroke="#3a3a55" stroke-width="1.2" fill="none">
+              <path d="M62 44 C 88 56 100 64 108 72"/>
+              <path d="M198 44 C 172 56 160 64 152 72"/>
+              <path d="M210 140 C 178 122 162 112 154 102"/>
+            </g>
+          </svg>
+        </div>
+        <figcaption class="vcap">Think of <code>core</code> as the engine and <code>bench</code> / <code>cli</code> / <code>wasm</code> as three ways to put your hands on it — prove it, type at it, or click it in a browser.</figcaption>
+      </figure>
+      <figure class="vfig">
         <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12"/></svg> Technical view — how the four crates fit together</figcaption>
         <div class="svgwrap">
           <svg viewBox="0 0 560 180" role="img" aria-label="The four crates: core is the engine used by bench, cli, and wasm; cli and wasm are the two front doors.">
@@ -1010,6 +1036,7 @@ assert!(receipt.verify());</pre>
         </div>
         <figcaption class="vcap"><code>core</code> is the engine. <code>bench</code> proves it, <code>cli</code> drives it from a terminal, and <code>wasm</code> runs it in a browser — every front door calls the same deterministic core.</figcaption>
       </figure>
+      </div>
     </div>
   </details>
   </section>
@@ -1071,11 +1098,159 @@ assert!(receipt.verify());</pre>
   </details>
   </section>
 
-  <!-- ===== 11 — HONEST LIMITS ===== -->
+  <!-- ===== 11 — DROP-IN SMART ZIP (the AI half + studio) [D13/V] ===== -->
+  <section id="dropin-zip">
+  <details class="sec" open>
+    <summary>
+      <span class="s-num">11</span>
+      <span class="s-head">
+        <span class="s-q">Take it with you · a studio to explore, one download to keep</span>
+        <h2 class="s-title">The NotebookLM studio &amp; the drop-in: watch, listen, read — then take the whole thing</h2>
+        <p class="s-sub">A public <strong>NotebookLM studio</strong> (🎧 audio · 🎬 video · 🖼 slides · 📊 infographic · 📄 report) plus a one-zip <strong>drop-in</strong>: <code class="inl">for-humans/</code> (primer + studio media) and <code class="inl">for-ai/</code> (a searchable KB you wire into Claude Code in three steps).</p>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="s-body">
+
+      <!-- ===== NotebookLM STUDIO — prominent public link ===== -->
+      <div class="studio-hero">
+        <div class="studio-hero-glow" aria-hidden="true"></div>
+        <p class="studio-hero-kicker">Generated with Google NotebookLM · grounded in the same source repo</p>
+        <h3 class="studio-hero-title">A full NotebookLM studio for PhotonLayer</h3>
+        <p class="studio-hero-sub">Audio overview, an explainer video, a slide deck, an infographic and a written report — all in one place, all built for a curious newcomer. No account, no setup: just open it and explore.</p>
+        <div class="studio-hero-cta">
+          <a class="btn btn-primary" href="https://notebooklm.google.com/notebook/d97351e0-542f-4c80-9e56-19cb1dca04f5" target="_blank" rel="noopener">▶ Open the NotebookLM studio — audio, video, slides &amp; more</a>
+        </div>
+        <ul class="studio-chips" aria-label="What's in the studio">
+          <li>🎧 Audio overview</li>
+          <li>🎬 Explainer video</li>
+          <li>🖼 Slide deck</li>
+          <li>📊 Infographic</li>
+          <li>📄 Written report</li>
+        </ul>
+      </div>
+
+      <!-- ===== STUDIO MEDIA — video, slides, infographic ===== -->
+      <div class="studio-media">
+        <div class="sm-card sm-video">
+          <h4>🎬 Explainer video</h4>
+          <p>A short, plain-language walkthrough — what PhotonLayer is, the before→after, why it matters, how to start.</p>
+          <video controls preload="metadata" playsinline poster="studio/photonlayer-infographic.png">
+            <source src="studio/photonlayer-video.mp4" type="video/mp4">
+            Your browser can't play this video — <a href="https://notebooklm.google.com/notebook/d97351e0-542f-4c80-9e56-19cb1dca04f5" target="_blank" rel="noopener">watch it in the NotebookLM studio</a>.
+          </video>
+          <div class="sm-actions">
+            <a class="btn btn-ghost" href="studio/photonlayer-video.mp4" download>Download the video (.mp4) ↓</a>
+            <a class="btn btn-ghost" href="https://notebooklm.google.com/notebook/d97351e0-542f-4c80-9e56-19cb1dca04f5" target="_blank" rel="noopener">Watch in the studio ↗</a>
+          </div>
+        </div>
+        <div class="sm-card sm-infographic">
+          <h4>📊 The whole idea on one page</h4>
+          <p>The before→after at a glance: a camera that records every pixel vs. light pre-shaped so a tiny sensor reads only the answer — 16× less data, privacy by physics, a signed receipt.</p>
+          <img src="studio/photonlayer-infographic.png" alt="PhotonLayer infographic: AI that sees the answer, not the image. Traditional sensing captures everything and thinks later, leaking privacy and burning compute; PhotonLayer uses a learned phase mask to shape light so a tiny sensor captures the answer in a few numbers — 16x less data, 88.8% accuracy, with a signed receipt for trusted audits." loading="lazy">
+          <div class="sm-actions">
+            <a class="btn btn-ghost" href="studio/photonlayer-infographic.png" download>Download the infographic (.png) ↓</a>
+          </div>
+        </div>
+        <div class="sm-card sm-slides">
+          <h4>🖼 Slide deck for a newcomer</h4>
+          <p>A 12-slide deck that walks the idea from "what is this?" to "how do I try it?" — built for someone seeing optical AI for the first time.</p>
+          <a href="studio/photonlayer-slides.pdf" download aria-label="Download the PhotonLayer slide deck (PDF)"><img src="studio/photonlayer-slides-cover.png" alt="PhotonLayer slide deck cover: The camera that captures the answer, not the picture — an introduction to PhotonLayer, the deterministic optical-AI front end." loading="lazy"></a>
+          <div class="sm-actions">
+            <a class="btn btn-ghost" href="studio/photonlayer-slides.pdf" download>Download the slides (.pdf) ↓</a>
+            <a class="btn btn-ghost" href="https://notebooklm.google.com/notebook/d97351e0-542f-4c80-9e56-19cb1dca04f5" target="_blank" rel="noopener">Open in the studio ↗</a>
+          </div>
+        </div>
+      </div>
+
+
+      <figure class="vfig" style="margin:6px 0 4px;">
+        <figcaption class="vlabel simple"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4.5"/></svg> Friendly view — what you actually get when you unzip it</figcaption>
+      </figure>
+      <p class="lead-in">This is the <strong>real file-tree of the download</strong> — every file, in plain English. The <span style="color:#ffce54;font-weight:600;">studio media is highlighted</span>: play the audio overview first, it's the gentlest way in.</p>
+
+      <div class="tree">
+<span class="root">photonlayer-dropin/</span>  <span class="cmt"># one zip · two halves · grounded in ruvnet/PhotonLayer @ fe86c9f</span>
+├ <span class="d">for-humans/</span>          <span class="cmt"># read &amp; listen first — no setup needed</span>
+│  ├ <span class="f">photonlayer-primer.md</span>   <span class="cmt"># the 7-question plain-English orientation</span>
+│  └ <span class="d">studio/</span>                 <span class="cmt"># NotebookLM media — start here</span>
+<span class="tree-row hl">│     ├ <span class="play">🎧 photonlayer-audio.m4a</span>     <span class="studio"># AUDIO OVERVIEW — play this FIRST (Priya's story, ~deep-dive)</span></span>
+<span class="tree-row hl">│     ├ <span class="play">📊 photonlayer-infographic.png</span> <span class="studio"># the whole idea on one page (before→after)</span></span>
+<span class="tree-row hl">│     ├ <span class="play">🖼 photonlayer-slides.pdf</span>     <span class="studio"># newcomer-friendly deck</span></span>
+<span class="tree-row hl">│     ├ <span class="play">📄 photonlayer-report.md</span>      <span class="studio"># the written deep-dive briefing (figures + honest limits)</span></span>
+│     └ <span class="f">audio-overview-prompt.md</span>     <span class="cmt"># the optimized prompt that generated the audio</span>
+└ <span class="d">for-ai/</span>              <span class="cmt"># the searchable knowledge pack — wire into your agent</span>
+   ├ <span class="f">photonlayer-kb.rvf</span>            <span class="cmt"># single 384-dim bge-small HNSW knowledge base</span>  <span class="heart">← the brain</span>
+   ├ <span class="f">photonlayer-kb.rvf.embed.json</span> <span class="cmt"># embedder config — REQUIRED so queries use the right model</span>
+   ├ <span class="f">…passages.jsonl · …ids.json</span>  <span class="cmt"># full passage text + per-id index</span>
+   ├ <span class="f">ask-kb.mjs · kb-mcp-server.mjs</span> <span class="cmt"># CLI query + MCP server for Claude Code</span>  <span class="group">← the front doors</span>
+   └ <span class="f">kb.config.mjs · resolve-deps.mjs · package.json</span>  <span class="cmt"># run `npm i` here</span>
+      </div>
+
+      <div class="studio-note" role="note">
+        <p class="studio-lead">Inside <code class="inl">for-humans/studio/</code> — start here</p>
+        <ul>
+          <li><strong>🎧 photonlayer-audio.m4a</strong> — a NotebookLM audio overview that walks Priya's recycling-line story end to end. <strong>Play this first.</strong><span class="tag">.m4a</span></li>
+          <li><strong>📊 photonlayer-infographic.png</strong> — the whole idea on one landscape page: the before→after of raw camera data vs. pre-shaped light.<span class="tag">.png</span></li>
+          <li><strong>🖼 photonlayer-slides.pdf</strong> — a newcomer-friendly deck: what PhotonLayer is, why it matters, how to start.<span class="tag">.pdf</span></li>
+          <li><strong>📄 photonlayer-report.md</strong> — the written deep-dive: the four crates, the measured results, and the honest limits, all grounded in the repo.<span class="tag">.md</span></li>
+        </ul>
+        <p style="margin:10px 0 0;color:var(--muted);font-size:13px;">The explainer video is large, so it lives in the <a href="https://notebooklm.google.com/notebook/d97351e0-542f-4c80-9e56-19cb1dca04f5" target="_blank" rel="noopener">public NotebookLM studio</a> (linked from the zip's README) rather than inside the download.</p>
+      </div>
+
+      <div class="dl-cta">
+        <a class="btn btn-primary" href="downloads/photonlayer-dropin.zip" download>Download the drop-in zip ↓</a>
+        <span class="dl-meta">Self-contained · KB passed Gate A (tuned 99.7 / held-out 100). No account, no cloud.</span>
+      </div>
+
+      <h4>Three steps to wire the AI half into Claude Code</h4>
+      <ol class="steps">
+        <li><strong>Unzip &amp; install:</strong>
+          <div class="cmd" data-copy="unzip photonlayer-dropin.zip && cd photonlayer-dropin/for-ai && npm install"><span class="prompt">$ </span>unzip photonlayer-dropin.zip &amp;&amp; cd photonlayer-dropin/for-ai &amp;&amp; npm install<span class="copy-hint">copy</span></div>
+        </li>
+        <li><strong>Point Claude Code at it</strong> with a <code class="inl">.mcp.json</code> in your project root that runs <code class="inl">for-ai/kb-mcp-server.mjs</code>.</li>
+        <li><strong>Add a one-line gate to <code class="inl">CLAUDE.md</code>:</strong> "Before answering anything about PhotonLayer, query the <code class="inl">photonlayer-kb</code> tool and ground the answer in what it returns."</li>
+      </ol>
+      <p>Prefer the terminal? Query it directly, no Claude Code needed:</p>
+      <div class="cmd" data-copy='node ask-kb.mjs photonlayer "what does PhotonLayer actually do"'><span class="prompt">$ </span>node ask-kb.mjs photonlayer <span class="flag">"what does PhotonLayer actually do"</span><span class="copy-hint">copy</span></div>
+
+      <figure class="vfig" style="margin:22px 0 0;">
+        <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12"/></svg> Technical view — how the two halves serve two audiences from one download</figcaption>
+        <div class="svgwrap">
+          <svg viewBox="0 0 600 200" role="img" aria-label="One zip splits into a for-humans half (primer plus studio audio and report) for a person, and a for-ai half (the RVF knowledge base plus MCP server) wired into Claude Code.">
+            <rect x="240" y="14" width="120" height="34" rx="9" fill="#0c0c14" stroke="#ffce54"/>
+            <text x="300" y="30" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-weight="600" font-size="11" fill="#eef0fb">photonlayer-dropin.zip</text>
+            <text x="300" y="43" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="7.5" fill="#ffce54">one download</text>
+            <!-- for-humans -->
+            <rect x="40" y="90" width="220" height="92" rx="11" fill="#11111c" stroke="#a06bff"/>
+            <text x="150" y="112" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="12" font-weight="600" fill="#a06bff">for-humans/</text>
+            <text x="150" y="132" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#c3c6dd">primer.md</text>
+            <text x="150" y="150" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#ffce54">🎧 audio overview · 📄 report</text>
+            <text x="150" y="168" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#8b8fab">→ a person reads &amp; listens</text>
+            <!-- for-ai -->
+            <rect x="340" y="90" width="220" height="92" rx="11" fill="#11111c" stroke="#1fd6d6"/>
+            <text x="450" y="112" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="12" font-weight="600" fill="#1fd6d6">for-ai/</text>
+            <text x="450" y="132" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#c3c6dd">photonlayer-kb.rvf + MCP server</text>
+            <text x="450" y="150" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#c3c6dd">ask-kb.mjs</text>
+            <text x="450" y="168" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#8b8fab">→ Claude Code searches it</text>
+            <g stroke="#8b8fab" stroke-width="1.2" fill="none">
+              <path d="M285 48 C 230 60 180 70 160 88" marker-end="url(#ar)"/>
+              <path d="M315 48 C 370 60 420 70 440 88" marker-end="url(#ar)"/>
+            </g>
+            <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0l6 3-6 3z" fill="#8b8fab"/></marker></defs>
+          </svg>
+        </div>
+        <figcaption class="vcap">One zip, two audiences: <code>for-humans/</code> is a primer plus a studio (🎧 audio + 📄 report) a person reads and listens to; <code>for-ai/</code> is the same knowledge as a searchable <code>.rvf</code> + MCP server your assistant queries — so it answers from the real source instead of guessing.</figcaption>
+      </figure>
+    </div>
+  </details>
+  </section>
+
+  <!-- ===== 12 — HONEST LIMITS ===== -->
   <section id="limits">
   <details class="sec">
     <summary>
-      <span class="s-num">11</span>
+      <span class="s-num">12</span>
       <span class="s-head">
         <span class="s-q">In the repo's own words — don't soften them</span>
         <h2 class="s-title">Honest limits</h2>
@@ -1084,6 +1259,48 @@ assert!(receipt.verify());</pre>
       <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
     </summary>
     <div class="s-body">
+      <div class="dual" style="margin-bottom:8px;">
+        <figure class="vfig">
+          <figcaption class="vlabel simple"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="8" cy="8" r="7"/><path d="M5 8.5l2 2 4-4.5"/></svg> Friendly view — what's real vs. what's a goal</figcaption>
+          <div class="svgwrap">
+            <svg viewBox="0 0 260 150" role="img" aria-label="Two columns: proven today (deterministic Rust simulator, BLAKE3 receipts, 16x compression, 83.3 percent result) versus on the roadmap (real glass hardware, noise and quantization robustness, cross-platform bit-identity, formal privacy).">
+              <text x="68" y="20" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600" fill="#3ee68a">Proven today ✓</text>
+              <text x="192" y="20" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="11" font-weight="600" fill="#ffce54">On the roadmap ◷</text>
+              <g font-family="JetBrains Mono,monospace" font-size="8" fill="#c3c6dd">
+                <text x="10" y="44">✓ deterministic Rust sim</text>
+                <text x="10" y="62">✓ BLAKE3 receipts</text>
+                <text x="10" y="80">✓ 16× / 64× compression</text>
+                <text x="10" y="98">✓ 83.3% ceiling-break</text>
+                <text x="10" y="116">✓ runs offline</text>
+              </g>
+              <g font-family="JetBrains Mono,monospace" font-size="8" fill="#8b8fab">
+                <text x="134" y="44">◷ real glass hardware</text>
+                <text x="134" y="62">◷ noise / quantization</text>
+                <text x="134" y="80">◷ cross-platform bits</text>
+                <text x="134" y="98">◷ formal privacy proof</text>
+                <text x="134" y="116">◷ beating a CNN</text>
+              </g>
+              <line x1="128" y1="28" x2="128" y2="126" stroke="#262640" stroke-width="1"/>
+            </svg>
+          </div>
+          <figcaption class="vcap">The left column is real and reproducible right now; the right column is honest future work the repo names itself.</figcaption>
+        </figure>
+        <figure class="vfig">
+          <figcaption class="vlabel tech"><svg class="ic" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12"/></svg> Technical view — where each claim's confidence comes from</figcaption>
+          <div class="svgwrap">
+            <svg viewBox="0 0 260 150" role="img" aria-label="A scope diagram: simulation-verified claims sit inside an inner solid box; hardware-dependent claims sit in an outer dashed box marked not yet characterized.">
+              <rect x="8" y="14" width="244" height="124" rx="10" fill="none" stroke="#ffce54" stroke-dasharray="4 4"/>
+              <text x="130" y="30" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#ffce54">real-hardware regime — not yet characterized</text>
+              <rect x="36" y="44" width="188" height="78" rx="8" fill="#0c0c14" stroke="#3ee68a"/>
+              <text x="130" y="62" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" fill="#3ee68a">simulation-verified</text>
+              <text x="130" y="80" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#c3c6dd">noise-free scalar diffraction</text>
+              <text x="130" y="94" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#c3c6dd">continuous phase · x86-64 bit-identical</text>
+              <text x="130" y="110" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#c3c6dd">accuracy = feature-separability claim</text>
+            </svg>
+          </div>
+          <figcaption class="vcap">Every number on this page lives in the green inner box (simulated, reproducible). The dashed outer box — real glass, sensor noise, fabrication — is explicitly unproven.</figcaption>
+        </figure>
+      </div>
       <div class="note warn"><span class="lab">It's a simulator, not hardware (yet)</span>"Today this is a software simulator written in Rust … building the actual glass is on the roadmap." Real hardware is expected to <strong>degrade</strong> the numbers.</div>
       <div class="note warn"><span class="lab">Not a new accuracy state-of-the-art</span>A single task-trained optical layer + tiny decoder = <em>competitive single-layer optical compression</em>, <strong>not</strong> SOTA. The gap vs the full-image baseline is feature-separability under a deliberately weak nearest-centroid decoder; a small CNN on the same raw pixels reaches ~99% and beats both.</div>
       <div class="note warn"><span class="lab">No privacy or security guarantee</span>It stores a <em>learned measurement, not the raw image</em> — "a description, not a theorem." The bundled probe measures <strong>linear</strong> invertibility only; nonlinear (CNN/U-Net) reconstruction is <em>expected to succeed</em>. Never read it as "cannot be reconstructed" or "privacy-preserving."</div>
@@ -1111,7 +1328,8 @@ assert!(receipt.verify());</pre>
           This is an independent, plain-English <b>explainer</b> of his work — built to give a powerful, dense repo a friendly handle. All numbers and quotes are grounded in the source at the SHA below; nothing here is invented.<br><br>
           Source: <a href="https://github.com/ruvnet/PhotonLayer" target="_blank" rel="noopener" style="display:inline;">github.com/ruvnet/PhotonLayer ↗</a><br>
           Live demo: <a href="https://ruvnet.github.io/PhotonLayer/" target="_blank" rel="noopener" style="display:inline;">ruvnet.github.io/PhotonLayer ↗</a><br>
-          License: MIT © Ruvector
+          License: MIT © Ruvector<br><br>
+          This explainer was built with the <a href="https://github.com/stuinfla/Ruv-Explainer" target="_blank" rel="noopener" style="display:inline;">Ruv-Explainer Repo-Primer Pipeline ↗</a> — an open project for turning dense repos into friendly explainers.
         </p>
       </div>
       <div>
@@ -1121,7 +1339,8 @@ assert!(receipt.verify());</pre>
         <a href="#priya">06 · Priya's example</a>
         <a href="#gallery">07 · Use-case gallery</a>
         <a href="#dropin">09 · The four crates</a>
-        <a href="#limits">11 · Honest limits</a>
+        <a href="#dropin-zip">11 · Get the drop-in</a>
+        <a href="#limits">12 · Honest limits</a>
       </div>
       <div>
         <h6>Academic anchors</h6>

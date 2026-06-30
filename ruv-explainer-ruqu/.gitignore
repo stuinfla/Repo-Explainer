@@ -1,11 +1,3 @@
-# Binaries & bundles are NOT committed here [Constraint H] — they ship via GitHub Release.
-downloads/*.zip
-*.zip
-*.rvf
-*.rvf.lock
-*.embed.json
-*.passages.jsonl
-
 # Tooling noise
 node_modules/
 .vercel/
@@ -15,3 +7,7 @@ node_modules/
 # Secrets never go in git
 .env
 .env.*
+
+# NOTE (recipe v1.3.1): the drop-in zip in downloads/ IS committed so Vercel serves it
+# directly behind the .dropzone download button. downloads/ruqu-dropin.zip must NOT be ignored.
+.vercel

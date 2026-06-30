@@ -127,7 +127,7 @@ The magic is **Claude Code reading a repo and authoring a bespoke, art-directed 
 capture that magic — for the first time — as **one skill**:
 
 ```
-skills/repo-explainer/SKILL.md      ← THE BRAIN (judgment: understand, conceive, author, judge)
+skills/explainmyrepo/SKILL.md      ← THE BRAIN (judgment: understand, conceive, author, judge)
 tools/*                              ← PURE TOOLS (mechanics: embed, image API, screenshot, zip, deploy)
 assets/design-system/               ← the shared tokens + components + responsive skeleton
 ```
@@ -243,7 +243,7 @@ Each station has a **loud postcondition** (the "cue"). A station that cannot rec
 not passed (INV-04, Never-Fail-Silently).
 
 > **One contract, two views.** This shape is **illustrative**; it and the DDD's `BuildContext`
-> (`docs/ddd/repo-explainer-recipe-domain.md` §8.6) are **the same single contract** modelled under
+> (`docs/ddd/explainmyrepo-recipe-domain.md` §8.6) are **the same single contract** modelled under
 > two naming conventions — the ADR names slots by station artefact (`repo`/`kb`/`brief`/`content`/
 > `visuals`/`brand`/`site`/`scorecard`/`publish`/`readmePr`/`notify`), the DDD names them by domain
 > concern (`validation`/`understanding`/`page`+`pack`/`deployment`/`readmePr`/`notification`). Neither
@@ -343,7 +343,7 @@ Three adapters, all executing the **identical** skill (INV-08). No adapter conta
 of its own:
 
 1. **Claude Code plugin — BUILD FIRST.** `.claude-plugin/plugin.json` +
-   `commands/repo-explainer.md` + `skills/repo-explainer/SKILL.md` (the brain) + `tools/*` (pure
+   `commands/explainmyrepo.md` + `skills/explainmyrepo/SKILL.md` (the brain) + `tools/*` (pure
    tools) + `assets/design-system/`.
 2. **npx Agent-SDK CLI.** A thin Agent-SDK shell that loads the same skill, points at the user's
    GitHub, and lists their repos.
@@ -682,7 +682,7 @@ does not reject. Anything less is not done — and getting there over a few revs
 ## Invariants
 
 These are always-true properties, enforced in code (design system + tools) and at the gate. The DDD
-(`docs/ddd/repo-explainer-recipe-domain.md`) models them as first-class domain concepts.
+(`docs/ddd/explainmyrepo-recipe-domain.md`) models them as first-class domain concepts.
 
 > **This register is an intentional subset.** INV-01..08 below are the eight cross-cutting invariants
 > and match the DDD §13 numbering **exactly**. The DDD §13 carries the **full INV-01..19 set**: it
@@ -786,7 +786,7 @@ These are always-true properties, enforced in code (design system + tools) and a
 ### What we gain
 
 - **The magic is captured for the first time** — Claude Code's repo-reading, art-directing judgment
-  lives in `skills/repo-explainer/SKILL.md`, reusable and versioned, not trapped in a chat session.
+  lives in `skills/explainmyrepo/SKILL.md`, reusable and versioned, not trapped in a chat session.
 - **Anti-brittleness by construction** — strict brain/tools split, one `BuildContext`, render-once,
   pure independently-testable tools. The failure mode that killed generation 2 cannot recur.
 - **A real shared design system** (`assets/design-system/`) — invariants guaranteed once, so judgment
@@ -802,7 +802,7 @@ These are always-true properties, enforced in code (design system + tools) and a
 ### What we accept as cost
 
 - We must **build the shared design system and the plugin scaffold** (`.claude-plugin/plugin.json`,
-  `commands/repo-explainer.md`, `skills/repo-explainer/SKILL.md`, `tools/*`,
+  `commands/explainmyrepo.md`, `skills/explainmyrepo/SKILL.md`, `tools/*`,
   `assets/design-system/`) — none of these exist yet. (`assets/design-system/` is a **new subdir**
   under the pre-existing, **unrelated** root `assets/`; see the D1 path note — do not collide with
   it.) This is real, deliberate work, not a port.
@@ -833,4 +833,4 @@ These are always-true properties, enforced in code (design system + tools) and a
 | Built stores today | `kb/stores/{photonlayer,ruqu,ruvn,agent-harness-generator}/` |
 | Example sites (gen-1) | `ruv-explainer-{photonlayer,ruqu,ruvn,agent-harness-generator,rufield}/` **plus `explainer-agentic-qe/`** (a sixth explainer-family dir) — each a bespoke `styles.css`, zero shared tokens. (`www/styles.css` is the hosted-door stylesheet, not an example site.) |
 | Superseded ADRs | `docs/adr/0002-repo-explainer-architecture.md`, `0003-async-build-and-real-quality-gates.md`, `0004-cloud-build-engine.md`, `0004a-gap-resolutions.md` (pipeline approach) |
-| Companion DDD | `docs/ddd/repo-explainer-recipe-domain.md` (Build aggregate, BuildContext, the dual-gate + exemplar bar (mean≥90/min≥85) + five operator questions + three eyes as first-class domain concepts) |
+| Companion DDD | `docs/ddd/explainmyrepo-recipe-domain.md` (Build aggregate, BuildContext, the dual-gate + exemplar bar (mean≥90/min≥85) + five operator questions + three eyes as first-class domain concepts) |

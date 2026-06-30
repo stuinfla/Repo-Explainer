@@ -16,6 +16,262 @@ const componentWord = ['crate', 'package', 'module', 'component'];
 
 /** @type {Record<string, object>} keyed by target slug. */
 export const targets = {
+  "chalk": {
+    "slug": "chalk",
+    "metaName": "chalk",
+    "embed": {
+      "model": "Xenova/bge-small-en-v1.5",
+      "dim": 384,
+      "pooling": "mean",
+      "queryPrefix": "Represent this sentence for searching relevant passages: ",
+      "rankScale": 0.6,
+      "rvfSuffix": ".rvf"
+    },
+    "productNames": [
+      "chalk"
+    ],
+    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/chalk/repo",
+    "scopeExclude": [
+      "node_modules",
+      "dist",
+      "target",
+      ".git",
+      "coverage",
+      "pkg",
+      ".next"
+    ],
+    "codeExt": [
+      ".js",
+      ".ts",
+      ".mjs",
+      ".cjs"
+    ],
+    "fullTextExt": [
+      ".md",
+      ".mdx",
+      ".txt"
+    ],
+    "templateExt": [],
+    "componentRoots": [
+      "source",
+      "src",
+      "."
+    ],
+    "componentWord": [
+      "crate",
+      "package",
+      "module",
+      "component"
+    ],
+    "include": [
+      {
+        "rule": "mdSweepFullText",
+        "roots": [
+          "."
+        ]
+      },
+      {
+        "rule": "literalFiles",
+        "files": [
+          "README.md",
+          "package.json",
+          "license",
+          "index.js",
+          "index.d.ts"
+        ]
+      },
+      {
+        "rule": "sourceBodies",
+        "roots": [
+          "source",
+          "src",
+          "."
+        ],
+        "ext": [
+          ".js",
+          ".ts",
+          ".mjs",
+          ".cjs"
+        ]
+      }
+    ]
+  },
+  "helix": {
+    "slug": "helix",
+    "metaName": "helix (ruvnet)",
+    "embed": {
+      "model": "Xenova/bge-small-en-v1.5",
+      "dim": 384,
+      "pooling": "mean",
+      "queryPrefix": "Represent this sentence for searching relevant passages: ",
+      "rankScale": 0.6,
+      "rvfSuffix": ".rvf"
+    },
+    "productNames": [
+      "helix"
+    ],
+    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/helix/repo",
+    "scopeExclude": [
+      "node_modules",
+      "dist",
+      "target",
+      ".git",
+      "coverage",
+      "pkg",
+      ".next",
+      "__pycache__",
+      ".cargo"
+    ],
+    "codeExt": [
+      ".rs",
+      ".ts",
+      ".js",
+      ".mjs",
+      ".py",
+      ".sh",
+      ".toml",
+      ".yaml",
+      ".yml",
+      ".json"
+    ],
+    "fullTextExt": [
+      ".md",
+      ".mdx",
+      ".txt",
+      ".rst"
+    ],
+    "templateExt": [],
+    "componentRoots": [
+      "src",
+      "lib",
+      "bin",
+      "examples",
+      "crates",
+      "packages",
+      "scripts",
+      "config"
+    ],
+    "componentWord": [
+      "crate",
+      "package",
+      "module",
+      "component"
+    ],
+    "include": [
+      {
+        "rule": "mdSweepFullText",
+        "roots": [
+          "."
+        ]
+      },
+      {
+        "rule": "literalFiles",
+        "files": [
+          "README.md",
+          "Cargo.toml",
+          "package.json",
+          "pyproject.toml",
+          "setup.py"
+        ]
+      },
+      {
+        "rule": "sourceBodies",
+        "roots": [
+          "src",
+          "lib",
+          "bin",
+          "crates",
+          "packages",
+          "examples",
+          "scripts"
+        ],
+        "ext": [
+          ".rs",
+          ".ts",
+          ".js",
+          ".mjs",
+          ".py",
+          ".sh",
+          ".toml",
+          ".yaml",
+          ".yml"
+        ]
+      }
+    ]
+  },
+  // ──────────────────────────────────────────────────────────────────────────
+  // agenticow — "Git for Agent Memory": copy-on-write vector branching. Node ESM
+  // single-package npm (agenticow@0.2.x on @ruvector/rvf-node). Components are the
+  // public API in src/index.js (open/openBase/branch/fork/checkpoint/rollback/diff/
+  // promote/query), the CLI in bin/agenticow.js, and the runnable use-case scripts
+  // in examples/. repoDir points at the live build-dir clone. Registered for the
+  // explainmyrepo recipe acceptance run (2026-06-28).
+  // ──────────────────────────────────────────────────────────────────────────
+  agenticow: {
+    slug: 'agenticow',
+    metaName: 'agenticow',
+    embed: {
+      model: 'Xenova/bge-small-en-v1.5',
+      dim: 384,
+      pooling: 'mean',
+      queryPrefix: 'Represent this sentence for searching relevant passages: ',
+      rankScale: 0.6,
+      rvfSuffix: '.rvf',
+    },
+    productNames: [
+      'agenticow', 'AgenticMemory', 'open', 'openBase', 'branch', 'fork',
+      'checkpoint', 'rollback', 'diff', 'promote', 'query', 'ingest', 'lineage',
+    ],
+    primerSlugs: {
+      whatis:        'PRIMER#1-what-is-agenticow',
+      capabilities:  'PRIMER#2-what-can-agenticow-do-for-you',
+      crates:        'PRIMER#3-what-is-agenticow-made-of',
+      composer:      'PRIMER#4-how-copy-on-write-branching-works',
+      maturity:      'PRIMER#5-is-it-production-ready-scope-and-honest-limits',
+      docs:          'PRIMER#6-where-do-i-read-more-the-docs-map',
+      adr:           'PRIMER#6-where-do-i-read-more-the-docs-map',
+      playbook:      'PRIMER#7-how-do-i-install-and-use-it-end-to-end',
+      extensibility: 'PRIMER#8-how-do-i-extend-agenticow',
+      gotchas:       'PRIMER#9-cost-latency-and-gotchas',
+    },
+    extensionFiles: {
+      'verb':   ['src/index.js', 'src/index.d.ts'],
+      'branch': ['src/index.js', 'examples/git-workflow.mjs'],
+      'cli':    ['bin/agenticow.js'],
+      'command':['bin/agenticow.js'],
+      'example':['examples/red-team-sandbox.mjs', 'examples/parallel-agents.mjs'],
+    },
+    docFiles: {
+      cli:   ['README.md', 'bin/agenticow.js'],
+      usage: ['README.md', 'examples/README.md'],
+    },
+    typeAliases: {
+      'memory': 'AgenticMemory',
+      'open':   'open',
+      'fork':   'fork',
+    },
+
+    // ── Source scope (force-walk; clone has no .gitmodules) ──
+    repoDir: '../.targets/agenticow',
+    scopeExclude: ['node_modules', 'dist', 'target', '.git', 'coverage', 'pkg', '.next', 'docs'],
+
+    codeExt: ['.ts', '.tsx', '.js', '.mjs', '.cjs'],
+    fullTextExt: ['.md', '.mdx', '.txt'],
+    templateExt: [],
+
+    componentRoots: ['src', 'bin', 'examples'],
+    componentWord: ['verb', 'method', 'api', 'module', 'component', 'example'],
+
+    // ── Corpus include rules ──
+    include: [
+      { rule: 'mdSweepFullText', roots: ['.'] },                                  // README + examples/README verbatim
+      { rule: 'literalFiles', files: ['README.md', 'examples/README.md', 'package.json', 'src/index.js', 'src/index.d.ts', 'bin/agenticow.js', 'LICENSE'] },
+      { rule: 'sourceBodies', roots: ['src', 'bin'], ext: ['.ts', '.js', '.mjs'] },     // the public API + CLI bodies
+      { rule: 'testsAndExamples', roots: ['examples', 'test', 'bench'], ext: ['.ts', '.js', '.mjs'] }, // runnable usage = best docs
+      { rule: 'docCommentSweep', roots: ['src', 'bin', 'examples'] },
+    ],
+  },
+
   'agent-harness-generator': {
     // ── Identity ────────────────────────────────────────────────────────────
     slug: 'agent-harness-generator',
@@ -1094,6 +1350,12 @@ export function getTarget(slug = defaultTarget) {
       `kb.config.mjs: unknown target "${slug}". Known: ${Object.keys(targets).join(', ')}`,
     );
   }
+  // KB_REPO_DIR — set by tools/build-kb.mjs from build.json's repo.clonePath so that every
+  // kb/ engine script indexes the correct build-dir clone, not the config's default repoDir.
+  // Without this, a fresh run on a new build dir silently reads the wrong repo (Blocker-1 fix).
+  // Direct / legacy invocations (no env var) fall back to target.repoDir as before.
+  const repoDirOverride = process.env.KB_REPO_DIR;
+  if (repoDirOverride) return { ...t, repoDir: repoDirOverride };
   return t;
 }
 
