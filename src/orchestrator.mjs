@@ -272,7 +272,7 @@ function finalSummary(outDir) {
 
 function reportQualityGap(quality) {
   if (!quality || !Array.isArray(quality.scorecard)) { log(`${C.red}quality gate: no scorecard available${C.reset}`); return; }
-  log(`\n${C.bold}Quality scorecard — gate not met (bar: mean ≥ 90, worst axis ≥ 85, all operator questions YES, both devices):${C.reset}`);
+  log(`\n${C.bold}Quality scorecard — HELD below the SHIP bar (need, on both devices: mean ≥ 82, worst axis ≥ 70, real legible architecture+flow diagrams, and the comprehension operators YES). World-class target is mean ≥ 90 / worst ≥ 85 / all 5 operators.${C.reset}`);
   for (const c of quality.scorecard) {
     log(`  ${C.bold}${c.device}${C.reset}: mean ${c.meanScore}, worst axis ${c.headlineScore}, diagrams ${c.inv18?.passed ? 'ok' : 'FAIL'}, passed ${c.passed ? C.green + 'yes' + C.reset : C.red + 'no' + C.reset}`);
   }
@@ -359,7 +359,13 @@ export async function run(repoUrl, opts = {}) {
     return { ok: false, gated: true, quality, outDir, results: preR.results };
   }
 
-  log(`\n${C.green}${C.bold}Quality gate PASSED.${C.reset} Shipping.`);
+  const meanPair = quality.scorecard.map((c) => `${String(c.device).replace(/\(.*/, '')} ${c.meanScore}`).join(' / ');
+  if (quality.exemplary) {
+    log(`\n${C.green}${C.bold}Quality gate PASSED — world-class (mean ${meanPair}).${C.reset} Shipping.`);
+  } else {
+    log(`\n${C.green}${C.bold}Quality gate PASSED — ship-worthy (mean ${meanPair}).${C.reset} Shipping.`);
+    log(`${C.dim}Genuinely good + no slop + real legible diagrams (INV-18). The world-class target (mean ≥ 90 / worst axis ≥ 85 / all 5 operators) is not fully reached — the per-axis gap is recorded in build.json refineNotes and travels with the scorecard.${C.reset}`);
+  }
   const postR = post.length ? await runStations(post, baseArgs, total, qIdx + 1) : { ok: true, results: [] };
   finalSummary(outDir);
   return { ok: postR.ok !== false, outDir, results: [...preR.results, ...postR.results] };

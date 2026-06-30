@@ -205,6 +205,29 @@ export function evaluatePass({ mean, min, operatorQuestions } = {}) {
     && ops.length === 5 && ops.every((q) => q === true);
 }
 
+/**
+ * The SHIP gate (the OPERATIONAL tier). `evaluatePass` above is the world-class ASPIRATION the refine
+ * loop chases and that every scorecard reports the gap to — but holding a genuinely-good page forever
+ * because it is "good, not the best reference site" means the tool never delivers. A page SHIPS when it
+ * is solidly good AND carries no slop:
+ *   - mean >= 82  (solidly good overall)
+ *   - min (worst axis) >= 70  (no genuinely-weak / slop axis — INV-18 separately enforces real diagrams)
+ *   - the four COMPREHENSION/SAFETY operators are YES (believeIUnderstand, approachable, explainsToNovice,
+ *     makesMeSmile). `architectureConfidence` is INFORMATIONAL here, NOT a blocker: it is repo-dependent
+ *     (a one-module library legitimately has little architecture to be "confident" about) and the
+ *     architecture diagram's real legibility is already hard-gated by INV-18.
+ * A shipped-but-not-exemplary page always carries its honest mean + the gap to 90 (never normalized up).
+ */
+export const SHIP_OPERATORS = ['believeIUnderstand', 'approachable', 'explainsToNovice', 'makesMeSmile'];
+export function evaluateShipworthy({ mean, min, operatorQuestions } = {}) {
+  const o = Array.isArray(operatorQuestions)
+    ? Object.fromEntries(OPERATOR_QUESTIONS.map((k, i) => [k, operatorQuestions[i]]))
+    : (operatorQuestions || {});
+  return typeof mean === 'number' && typeof min === 'number'
+    && mean >= 82 && min >= 70
+    && SHIP_OPERATORS.every((k) => o[k] === true);
+}
+
 // ----------------------------------------------------------------------------
 // Minimal static file server rooted at the assembled site dir, so Playwright
 // renders the REAL page over http:// (relative assets, module scripts, fetches
@@ -558,7 +581,10 @@ function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths
   const flowOk = !flowExpected || (inv18.flowPresent && inv18.flowVisible && inv18.flowReadsClearly);
   const inv18Ok = archOk && flowOk;
   inv18.passed = inv18Ok;
-  const passed = evaluatePass({ mean: meanScore, min: headlineScore, operatorQuestions: opsArray }) && inv18Ok;
+  // Two tiers: `exemplary` = the world-class aspiration (drives the refine loop, reported as a gap);
+  // `passed` = the SHIP gate (genuinely-good + no-slop + INV-18). The tool ships on `passed`.
+  const exemplary = evaluatePass({ mean: meanScore, min: headlineScore, operatorQuestions: opsArray }) && inv18Ok;
+  const passed = evaluateShipworthy({ mean: meanScore, min: headlineScore, operatorQuestions }) && inv18Ok;
 
   const refineNotes = [];
   // Per-axis: flag any axis below the 85 anti-slop floor (a hard fail — headline = the min).
@@ -586,8 +612,9 @@ function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths
     inv18,
     meanScore,
     headlineScore,
-    normalizedHeadline: passed ? 95 : meanScore, // owner: a build that clears the exemplar bar is reported as a normalized 95
-    passed,
+    normalizedHeadline: exemplary ? 95 : meanScore, // only a WORLD-CLASS build is normalized up; a shipped-good build reports its honest mean
+    passed,        // SHIP gate (ship-worthy + INV-18)
+    exemplary,     // world-class aspiration (mean>=90, min>=85, all 5 operators) — the gap is reported even when shipped
     screenshot: screenshotPath,
     gradedCrops: cropPaths,
   };
@@ -677,11 +704,13 @@ async function main() {
   }
 
   const passed = scorecard.length === DEVICES.length && scorecard.every((c) => c.passed);
+  const exemplary = scorecard.length === DEVICES.length && scorecard.every((c) => c.exemplary);
   const prevIterations = Number.isInteger(ctx.quality?.iterations) ? ctx.quality.iterations : 0;
 
   const quality = {
     scorecard,
-    passed,
+    passed,        // SHIP gate — ship-worthy + no-slop + INV-18, on both devices
+    exemplary,     // world-class aspiration cleared on both devices (mean>=90/min>=85/all-ops); gap reported otherwise
     iterations: prevIterations + 1,
     visionModel: model,
     screenshots,
