@@ -41,11 +41,14 @@ const ALIASES = {
   OPENAI_API_KEY: ['OPEN_AI_KEY'],
 };
 
-// Load the merged environment for a build run. process.env overrides the .env file; canonical
-// aliases are then back-filled. Returns a NEW object (does not mutate process.env).
+// Load the merged environment for a build run. The project .env is the SOURCE OF TRUTH and OVERRIDES
+// the ambient process.env for any key it defines; the ambient env only fills in keys the file omits.
+// (We deliberately reversed the usual "env wins" precedence after a STALE NETLIFY_AUTH_TOKEN left over
+// in the shell session silently overrode a freshly-updated .env and caused a 401 deploy — 2026-06-30.)
+// Canonical aliases are then back-filled. Returns a NEW object (does not mutate process.env).
 export function loadEnv(repoRoot) {
   const fromFile = parseDotenv(path.join(repoRoot, '.env'));
-  const merged = { ...fromFile, ...process.env };
+  const merged = { ...process.env, ...fromFile };
   for (const [canon, alts] of Object.entries(ALIASES)) {
     if (merged[canon] && String(merged[canon]).trim()) continue;
     for (const a of alts) {
