@@ -146,15 +146,27 @@ async function deployVercel({ pageDir, slug }) {
 // interactive CLI session is available (no NETLIFY_AUTH_TOKEN / VERCEL_TOKEN in the environment).
 async function deployVercelCli({ pageDir, slug }) {
   const name = `${sanitize(slug)}-explainer`;
+  // CRITICAL ISOLATION: deploy from a temp dir NAMED after the dedicated project, with no inherited
+  // `.vercel` link. Vercel infers the project from the cwd directory name, so deploying straight from a
+  // build dir literally named "site" auto-links to a pre-existing shared "site" project and OVERWRITES
+  // its production — which clobbered an unrelated live site (warrior-nation, 2026-06-30). Staging under
+  // `${slug}-explainer/` guarantees a UNIQUE dedicated project per repo and never touches anything else.
+  const stage = path.join(os.tmpdir(), 'explainmyrepo-deploy', name);
+  fs.rmSync(stage, { recursive: true, force: true });
+  fs.mkdirSync(stage, { recursive: true });
+  fs.cpSync(pageDir, stage, { recursive: true });
+  fs.rmSync(path.join(stage, '.vercel'), { recursive: true, force: true });
   let out;
   try {
-    out = execFileSync('vercel', ['deploy', '--prod', '--yes', pageDir], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    out = execFileSync('vercel', ['deploy', '--prod', '--yes'], { cwd: stage, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   } catch (e) {
     const msg = String(e.stderr || e.stdout || e.message || '');
     if (/not authenticated|log ?in|credentials|no existing credentials/i.test(msg)) {
       throw new Error('vercel CLI is not logged in — run `vercel login`, or set DEPLOY_PROVIDER=vercel with VERCEL_TOKEN');
     }
     throw new Error(`vercel CLI deploy failed: ${msg.split('\n').filter(Boolean).slice(-3).join(' ').slice(0, 220)}`);
+  } finally {
+    fs.rmSync(stage, { recursive: true, force: true });
   }
   const url = (out.match(/https:\/\/[a-z0-9-]+\.vercel\.app/i) || [])[0];
   if (!url) throw new Error('vercel CLI deploy returned no URL');
