@@ -140,7 +140,48 @@ async function deployVercel({ pageDir, slug }) {
   return { liveUrl: `https://${host}`, provider: 'vercel' };
 }
 
-const ADAPTERS = { netlify: deployNetlify, vercel: deployVercel };
+// ---- adapter: Vercel via the logged-in CLI (DEPLOY_PROVIDER=vercel-cli) ----
+// No token needed when `vercel login` has run. Deploys the static page dir to production and aliases it
+// to a clean {slug}-explainer.vercel.app host. This is what makes autonomous shipping work when only an
+// interactive CLI session is available (no NETLIFY_AUTH_TOKEN / VERCEL_TOKEN in the environment).
+async function deployVercelCli({ pageDir, slug }) {
+  const name = `${sanitize(slug)}-explainer`;
+  let out;
+  try {
+    out = execFileSync('vercel', ['deploy', '--prod', '--yes', pageDir], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (e) {
+    const msg = String(e.stderr || e.stdout || e.message || '');
+    if (/not authenticated|log ?in|credentials|no existing credentials/i.test(msg)) {
+      throw new Error('vercel CLI is not logged in — run `vercel login`, or set DEPLOY_PROVIDER=vercel with VERCEL_TOKEN');
+    }
+    throw new Error(`vercel CLI deploy failed: ${msg.split('\n').filter(Boolean).slice(-3).join(' ').slice(0, 220)}`);
+  }
+  const url = (out.match(/https:\/\/[a-z0-9-]+\.vercel\.app/i) || [])[0];
+  if (!url) throw new Error('vercel CLI deploy returned no URL');
+  let liveUrl = url;
+  try { execFileSync('vercel', ['alias', 'set', url, `${name}.vercel.app`], { stdio: ['ignore', 'ignore', 'ignore'] }); liveUrl = `https://${name}.vercel.app`; }
+  catch { /* alias is best-effort (subdomain may be taken by another team) — keep the deployment URL */ }
+  return { liveUrl, provider: 'vercel-cli' };
+}
+
+const ADAPTERS = { netlify: deployNetlify, vercel: deployVercel, 'vercel-cli': deployVercelCli };
+
+// Pick the provider that can actually authenticate right now, unless DEPLOY_PROVIDER forces one:
+// a VALID Netlify token → Vercel token → logged-in Vercel CLI. A stale Netlify token (present but
+// expired) must not shadow a working CLI, so we verify it instead of trusting its presence.
+async function resolveProvider() {
+  if (process.env.DEPLOY_PROVIDER) return process.env.DEPLOY_PROVIDER.toLowerCase();
+  if (process.env.NETLIFY_AUTH_TOKEN) {
+    try {
+      const r = await fetch('https://api.netlify.com/api/v1/user', { headers: { Authorization: `Bearer ${process.env.NETLIFY_AUTH_TOKEN}` } });
+      if (r.ok) return 'netlify';
+      console.error(`[deploy] NETLIFY_AUTH_TOKEN present but not valid (HTTP ${r.status}) — falling back`);
+    } catch { /* network issue — fall through to the next option */ }
+  }
+  if (process.env.VERCEL_TOKEN) return 'vercel';
+  try { execFileSync('vercel', ['whoami'], { stdio: ['ignore', 'ignore', 'ignore'] }); return 'vercel-cli'; }
+  catch { return 'netlify'; /* nothing usable — fail loud later with the netlify-token message */ }
+}
 
 async function main() {
   if (typeof fetch !== 'function') throw new Error('global fetch unavailable — Node 18+ required');
@@ -154,7 +195,7 @@ async function main() {
   if (!bc.page?.dir) throw new Error('page.dir missing in build.json (run assemble-page first)');
   if (!fs.existsSync(path.join(pageDir, 'index.html'))) throw new Error(`page.dir has no index.html: ${pageDir}`);
 
-  const provider = (process.env.DEPLOY_PROVIDER || 'netlify').toLowerCase();
+  const provider = await resolveProvider();
   const adapter = ADAPTERS[provider];
   if (!adapter) throw new Error(`unknown DEPLOY_PROVIDER '${provider}' (supported: ${Object.keys(ADAPTERS).join(', ')})`);
 
