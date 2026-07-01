@@ -1,0 +1,19 @@
+# Netlify config for the explainmyrepo LANDING / product site ONLY
+# (https://explainmyrepo.isovision.ai), which is Git-connected to this repo.
+#
+# The GENERATED explainer sites are NOT governed by this file — the pipeline
+# deploys each of those to its own Netlify site via the API. This config only
+# tells the landing site's Git deploy what to publish.
+
+[build]
+  # Treat landing/ as the project root. It has no package.json, so Netlify
+  # will NOT try to install deps or "build" the root pipeline — it just serves
+  # the static files. publish is relative to base.
+  base = "landing"
+  publish = "."
+  command = ""
+
+  # Monorepo guard: skip the deploy unless landing/ (or this config) changed.
+  # `git diff --quiet` exits 0 (→ Netlify cancels the build) when nothing in
+  # those paths changed, and non-zero (→ build proceeds) when something did.
+  ignore = "git diff --quiet HEAD^ HEAD -- . ../netlify.toml"

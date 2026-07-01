@@ -659,6 +659,65 @@
         </div>
       </div>
     </section>
+
+    <!-- ===================== FEEDBACK ===================== -->
+    <section class="band feedback" id="feedback" aria-labelledby="fb-h">
+      <div class="wrap reveal-up">
+        <div class="fb-card">
+          <span class="fb-glow" aria-hidden="true"></span>
+          <p class="kicker"><span class="kicker-dot" aria-hidden="true"></span> Your turn</p>
+          <h2 id="fb-h">Did this land? Tell me straight.</h2>
+          <p class="fb-lede">Thirty seconds. Grade it, tell me what worked or what&rsquo;s missing, drop an
+            idea or a repo you&rsquo;d point it at. It comes straight to me &mdash; real feedback shapes what
+            this becomes.</p>
+
+          <form class="fb-form" name="explainer-feedback" method="POST"
+                data-netlify="true" netlify-honeypot="bot-field" data-fb>
+            <input type="hidden" name="form-name" value="explainer-feedback" />
+            <input type="hidden" name="source" value="landing" />
+            <p class="fb-hp" hidden aria-hidden="true">
+              <label>Leave this empty: <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
+            </p>
+
+            <fieldset class="fb-rate">
+              <legend>How clearly did it land?</legend>
+              <div class="fb-scale">
+                <label class="fb-seg"><input type="radio" name="clarity" value="1" /><span>1</span></label>
+                <label class="fb-seg"><input type="radio" name="clarity" value="2" /><span>2</span></label>
+                <label class="fb-seg"><input type="radio" name="clarity" value="3" /><span>3</span></label>
+                <label class="fb-seg"><input type="radio" name="clarity" value="4" /><span>4</span></label>
+                <label class="fb-seg"><input type="radio" name="clarity" value="5" /><span>5</span></label>
+              </div>
+              <div class="fb-ends"><span>Still fuzzy</span><span>Crystal clear</span></div>
+            </fieldset>
+
+            <label class="fb-field">
+              <span class="fb-flabel">What worked, what&rsquo;s missing, or an idea</span>
+              <textarea name="thoughts" rows="4" maxlength="2000"
+                placeholder="Say anything &mdash; the pitch, the examples, a feature you&rsquo;d want, a repo you&rsquo;d point it at&hellip;"></textarea>
+            </label>
+
+            <label class="fb-field">
+              <span class="fb-flabel">Email <em>(optional &mdash; for a reply, or your own explainer)</em></span>
+              <input type="email" name="email" autocomplete="email" inputmode="email" placeholder="you@example.com" />
+            </label>
+
+            <div class="fb-actions">
+              <button class="btn btn-primary" type="submit">Send it <span class="arr" aria-hidden="true">&rarr;</span></button>
+              <p class="fb-note" role="status" data-fb-status></p>
+            </div>
+          </form>
+
+          <div class="fb-thanks" data-fb-thanks hidden>
+            <span class="fb-check" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
+            <h3>Got it &mdash; thank you.</h3>
+            <p>That goes straight to me. If you left an email, I may follow up.</p>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <!-- ===================== FOOTER ===================== -->

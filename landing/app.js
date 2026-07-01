@@ -64,4 +64,47 @@
       }
     });
   });
+
+  // ---- feedback form (Netlify Forms, AJAX submit — no page navigation) -----
+  var fb = document.querySelector('form[data-fb]');
+  if (fb) {
+    var fbStatus = fb.querySelector('[data-fb-status]');
+    var fbThanks = document.querySelector('[data-fb-thanks]');
+    function fbSet(msg, isErr) {
+      if (!fbStatus) return;
+      fbStatus.textContent = msg || '';
+      fbStatus.classList.toggle('err', !!isErr);
+    }
+    fb.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var data = new FormData(fb);
+      // Require at least a grade or a line of words — don't ship empty noise.
+      var clarity = data.get('clarity');
+      var thoughts = (data.get('thoughts') || '').toString().trim();
+      if (!clarity && !thoughts) {
+        fbSet('Add a grade or a line of feedback first.', true);
+        return;
+      }
+      var btn = fb.querySelector('button[type="submit"]');
+      if (btn) btn.disabled = true;
+      fbSet('Sending…', false);
+
+      // Netlify Forms expects url-encoded POST to the page path, incl. form-name.
+      var body = [];
+      data.forEach(function (v, k) { body.push(encodeURIComponent(k) + '=' + encodeURIComponent(v)); });
+
+      fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.join('&')
+      }).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        fb.hidden = true;
+        if (fbThanks) fbThanks.hidden = false;
+      }).catch(function () {
+        if (btn) btn.disabled = false;
+        fbSet('Couldn’t send just then — please try again.', true);
+      });
+    });
+  }
 })();
