@@ -533,12 +533,12 @@ ${jsonLdScript}
   <footer class="explainer-footer" role="contentinfo">
     <div class="wrap explainer-footer-inner">
       <p class="ef-credit">
-        Built by <strong>Stuart Kerr</strong> at
-        <a href="https://isovision.ai" rel="author">ISOvision.ai</a>
+        Explainer page created by <strong><a href="https://stuart-kerr-card.netlify.app" rel="author noopener" target="_blank">Stuart Kerr</a></strong> at
+        <a href="https://isovision.ai" rel="noopener" target="_blank">ISOvision</a>
       </p>
-      <a class="ef-cta" href="https://repoexplainer.isovision.ai">
-        <span class="ef-cta-lead">Want an explainer for your own repo?</span>
-        <strong>Create one</strong>
+      <a class="ef-cta" href="https://explainmyrepo.isovision.ai" target="_blank" rel="noopener">
+        <span class="ef-cta-lead">Would you like your own repo explainer page?</span>
+        <strong>Generate one here</strong>
         <span class="ef-arrow" aria-hidden="true">&rarr;</span>
       </a>
     </div>

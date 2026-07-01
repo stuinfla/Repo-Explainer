@@ -4,7 +4,7 @@
 
 ### Point it at any GitHub repo. Get back an explainer a stranger — and their AI — actually understands.
 
-**▶ See it live — the concept, the full process, and all six example explainers on one page: [explainmyrepo.netlify.app](https://explainmyrepo.netlify.app)**
+**▶ See it live — the concept, the full process, and all six example explainers on one page: [explainmyrepo.isovision.ai](https://explainmyrepo.isovision.ai)**
 
 *Complex repos deserve clear introductions. This builds them, then refuses to ship until they're good.*
 
@@ -152,7 +152,7 @@ The tools in the examples above belong to [Reuven Cohen / @ruvnet](https://githu
 
 <div align="center">
 
-Built by **Stuart Kerr** at **[ISOvision.ai](https://isovision.ai)**.
+Built by **[Stuart Kerr](https://stuart-kerr-card.netlify.app)** at **[ISOvision.ai](https://isovision.ai)**.
 
 *Complex repos deserve clear introductions.*
 
