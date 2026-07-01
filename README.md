@@ -4,6 +4,8 @@
 
 ### Point it at any GitHub repo. Get back an explainer a stranger — and their AI — actually understands.
 
+**▶ See it live — the concept, the full process, and all six example explainers on one page: [explainmyrepo.netlify.app](https://explainmyrepo.netlify.app)**
+
 *Complex repos deserve clear introductions. This builds them, then refuses to ship until they're good.*
 
 </div>

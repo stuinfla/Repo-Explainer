@@ -106,24 +106,45 @@ async function main() {
   if (!token) throw new Error('GITHUB_TOKEN (or GH_TOKEN) not set in environment (required to create + push the explainer repo)');
 
   const explainerOwner = process.env.GITHUB_EXPLAINER_OWNER || 'stuinfla';
-  const full = `${explainerOwner}/${sanitize(slug)}-explainer`;
+  // COLLISION-PROOF BY CONSTRUCTION: encode BOTH the source owner AND name. Two different users'
+  // same-named repos (e.g. two "helix" repos) would previously BOTH map to "{name}-explainer" and
+  // the second build's force-push would silently overwrite the first. "{owner}-{name}-explainer" is
+  // globally unique per source repo, so a re-run updates the SAME repo (force-push is safe) and no
+  // two distinct sources can ever clobber each other. (See deploy-safety-incident.)
+  const repoBase = `${sanitize(owner)}-${sanitize(name || slug)}`;
+  const full = `${explainerOwner}/${repoBase}-explainer`;
   const explainerRepoUrl = `https://github.com/${full}`;
 
-  if (ghRepoExists(full)) console.error(`[publish-repo] repo ${full} already exists — pushing latest site`);
-  else { ghCreateRepo(full, `Explainer site for ${owner}/${name || slug}`); console.error(`[publish-repo] created ${full} (public)`); }
+  // Guard: if a repo of this exact name already exists, confirm it is genuinely OUR explainer repo for
+  // THIS source (description marker) before force-pushing — never overwrite an unrelated repo.
+  if (ghRepoExists(full)) {
+    const expectMarker = `Explainer site for ${owner}/${name || slug}`;
+    let desc = '';
+    try { desc = JSON.parse(execFileSync('gh', ['api', `repos/${full}`, '--jq', '.description'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }) || '""'); } catch { desc = ''; }
+    if (desc && desc !== expectMarker) {
+      throw new Error(`refusing to publish: ${full} already exists but is NOT the explainer repo for ${owner}/${name || slug} (its description is "${desc}"). This would overwrite an unrelated repo. Set GITHUB_EXPLAINER_OWNER or rename to resolve.`);
+    }
+    console.error(`[publish-repo] repo ${full} already exists (ours) — pushing latest site`);
+  } else { ghCreateRepo(full, `Explainer site for ${owner}/${name || slug}`); console.error(`[publish-repo] created ${full} (public)`); }
 
   pushSite(pageDir, full, token);
   console.error(`[publish-repo] pushed site → ${explainerRepoUrl}`);
 
+  // The collaborator invite emails a real person, so it is a DELIBERATE opt-out: set
+  // EXPLAINER_SKIP_INVITE=1 to publish the hub repo without contacting the source owner.
   let ownerInvited = false;
   let inviteUrl = null;
-  try {
-    const inv = ghInvite(full, owner);
-    ownerInvited = true;
-    inviteUrl = inv?.html_url || `https://github.com/${full}/invitations`;
-    console.error(`[publish-repo] invited ${owner} as collaborator — invite: ${inviteUrl}`);
-  } catch (e) {
-    console.error(`[publish-repo] WARN: collaborator invite failed (best-effort, build continues): ${e.message}`);
+  if (process.env.EXPLAINER_SKIP_INVITE) {
+    console.error(`[publish-repo] collaborator invite SKIPPED (EXPLAINER_SKIP_INVITE set) — ${owner} not contacted`);
+  } else {
+    try {
+      const inv = ghInvite(full, owner);
+      ownerInvited = true;
+      inviteUrl = inv?.html_url || `https://github.com/${full}/invitations`;
+      console.error(`[publish-repo] invited ${owner} as collaborator — invite: ${inviteUrl}`);
+    } catch (e) {
+      console.error(`[publish-repo] WARN: collaborator invite failed (best-effort, build continues): ${e.message}`);
+    }
   }
 
   mergeSlot(buildDir, 'publish', { explainerRepoUrl, ownerInvited });

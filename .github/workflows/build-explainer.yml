@@ -1,0 +1,79 @@
+name: Build Explainer
+
+# Hosted runner for explainmyrepo: given a public GitHub repo, build its explainer with
+# Stuart's keys (as repo secrets) and deploy to its own isolated Netlify site.
+#
+# RAILS (deterministic, non-negotiable):
+#   • timeout-minutes: 20      → hard TIME cap (a runaway build is killed)
+#   • concurrency (serialized) → one build at a time, no cost fan-out from many triggers
+#   • --no-refine              → caps the expensive gpt-5.5 vision passes (cost rail)
+#   • EXPLAINER_SKIP_INVITE    → never emails a repo owner from an automated run
+#   • input validation         → owner/name shape only; repo must be visible
+# NOTE (v1): triggerable only by repo collaborators (workflow_dispatch). The public web
+# front door + rate-limiting/abuse controls are a deliberate follow-up before it's opened up.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_repo:
+        description: "owner/repo to explain (public GitHub repo)"
+        required: true
+      submitter_email:
+        description: "email to notify when done (optional)"
+        required: false
+
+concurrency:
+  group: build-explainer
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout the explainer tool
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate input (abuse guard)
+        run: |
+          REPO='${{ github.event.inputs.target_repo }}'
+          echo "target: $REPO"
+          if ! printf '%s' "$REPO" | grep -qE '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'; then
+            echo "::error::invalid repo format (expected owner/name): $REPO"; exit 1
+          fi
+
+      - name: Install dependencies
+        run: |
+          npm ci || npm install
+          npm i playwright
+          npx playwright install --with-deps chromium
+
+      - name: Build + deploy the explainer
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.EXPLAINER_GH_TOKEN }}
+          EXPLAINER_NONINTERACTIVE: "1"
+          EXPLAINER_SKIP_INVITE: "1"
+        run: |
+          node bin/explainmyrepo.mjs '${{ github.event.inputs.target_repo }}' --register-kb --no-refine --no-notify
+
+      - name: Summarize result
+        if: always()
+        run: |
+          SLUG=$(printf '%s' '${{ github.event.inputs.target_repo }}' | cut -d/ -f2 | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
+          {
+            echo "### Explainer build — ${{ github.event.inputs.target_repo }}"
+            echo ""
+            echo "- Live (if deploy succeeded): https://${SLUG}-explainer.netlify.app"
+            echo "- Hub repo: https://github.com/stuinfla/*-${SLUG}-explainer"
+          } >> "$GITHUB_STEP_SUMMARY"
