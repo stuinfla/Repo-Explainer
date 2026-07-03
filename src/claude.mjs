@@ -26,13 +26,39 @@ export function resolveModel(env = {}, override) {
   return override || env.EXPLAINMYREPO_MODEL || env.ANTHROPIC_MODEL || DEFAULT_MODEL;
 }
 
+// Transient failures (network throw, timeout, HTTP 429/5xx) are retried with backoff; permanent
+// ones (4xx auth/validation) are not. One unretried "fetch failed" killed a 13-minute hosted build
+// at step 4/17 on 2026-07-03 — a single blip must never abort a run again.
+const RETRY_DELAYS_MS = [2_000, 8_000];
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 export async function callClaude({
   apiKey, model = DEFAULT_MODEL, system, user,
   maxTokens = 4096, temperature = 0.7, timeoutMs = 120_000,
+  retryDelaysMs = RETRY_DELAYS_MS,
 }) {
   if (!apiKey) {
     throw new Error('no Anthropic API key — set ANTHROPIC_API_KEY (or CLAUDE_API_KEY) in .env');
   }
+  let lastErr;
+  for (let attempt = 0; attempt <= retryDelaysMs.length; attempt++) {
+    if (attempt > 0) {
+      const delay = retryDelaysMs[attempt - 1];
+      console.error(`[claude] ${lastErr.message} — retry ${attempt}/${retryDelaysMs.length} in ${delay / 1000}s`);
+      await sleep(delay);
+    }
+    try {
+      return await callClaudeOnce({ apiKey, model, system, user, maxTokens, temperature, timeoutMs });
+    } catch (e) {
+      if (!e.retryable) throw e;
+      lastErr = e;
+    }
+  }
+  throw lastErr;
+}
+
+async function callClaudeOnce({ apiKey, model, system, user, maxTokens, temperature, timeoutMs }) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   let resp;
@@ -53,12 +79,16 @@ export async function callClaude({
     });
   } catch (e) {
     clearTimeout(timer);
-    throw new Error(e.name === 'AbortError' ? `Anthropic request timed out after ${timeoutMs}ms` : `Anthropic request failed: ${e.message}`);
+    const err = new Error(e.name === 'AbortError' ? `Anthropic request timed out after ${timeoutMs}ms` : `Anthropic request failed: ${e.message}`);
+    err.retryable = true;
+    throw err;
   }
   clearTimeout(timer);
   if (!resp.ok) {
     const body = await resp.text().catch(() => '');
-    throw new Error(`Anthropic API ${resp.status} (${model}): ${body.slice(0, 400)}`);
+    const err = new Error(`Anthropic API ${resp.status} (${model}): ${body.slice(0, 400)}`);
+    err.retryable = resp.status === 429 || resp.status >= 500;
+    throw err;
   }
   const j = await resp.json();
   const text = (j.content || []).filter((b) => b && b.type === 'text').map((b) => b.text).join('');
