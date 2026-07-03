@@ -134,7 +134,8 @@ function main() {
   const compDirs = new Set();
   for (const r of [...roots, ...extraDirs]) {
     const abs = path.join(repoDir, r);
-    if (!fs.existsSync(abs)) continue;
+    // componentRoots can be AI-authored and may name a FILE (see dep-graph.mjs) — dirs only.
+    if (!fs.existsSync(abs) || !fs.statSync(abs).isDirectory()) continue;
     // A componentRoot holds child dirs; a leaf like 'cli' may itself be a component.
     const cargoHere = tryRead(path.join(abs, 'Cargo.toml'));
     const pkgHere = tryRead(path.join(abs, 'package.json'));

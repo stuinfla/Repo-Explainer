@@ -92,7 +92,9 @@ function tsGraph(repoDir, skip, componentRoots) {
   const pkgDirs = [];
   for (const r of [...(componentRoots || ['packages']), 'cli', 'apps', 'npm/packages', '.']) {
     const abs = path.join(repoDir, r);
-    if (!fs.existsSync(abs)) continue;
+    // componentRoots can be AI-authored (kb:register) and may name a FILE (execa's "index.js"
+    // crashed readdirSync here, run 28666874765) — only directories are scannable roots.
+    if (!fs.existsSync(abs) || !fs.statSync(abs).isDirectory()) continue;
     if (fs.existsSync(path.join(abs, 'package.json'))) { pkgDirs.push(abs); continue; }
     for (const d of fs.readdirSync(abs, { withFileTypes: true })) {
       if (d.isDirectory() && !skip.has(d.name) && fs.existsSync(path.join(abs, d.name, 'package.json'))) pkgDirs.push(path.join(abs, d.name));
