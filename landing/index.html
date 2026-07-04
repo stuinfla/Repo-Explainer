@@ -159,19 +159,53 @@
         </figure>
 
         <div class="hero-actions">
-          <div class="cta-row reveal-up" data-d="6">
-            <a class="btn btn-primary" href="#get-started">Get started <span class="arr" aria-hidden="true">&rarr;</span></a>
-            <a class="btn btn-ghost" href="https://stuinfla.github.io/Repo-Explainer/agenticow/" target="_blank" rel="noopener">See a real one <span class="arr" aria-hidden="true">&#8599;</span></a>
+          <div class="hero-request gs-request reveal-up" data-d="6" id="hero-request">
+            <p class="hr-kicker"><span class="badge-dot" aria-hidden="true"></span> Try it right now &mdash; no keys, no install</p>
+
+            <form class="rq-form hr-form" data-rq novalidate>
+              <div class="rq-fields hr-fields">
+                <label class="fb-field">
+                  <span class="fb-flabel">GitHub repo URL</span>
+                  <input type="url" name="repo" required inputmode="url" placeholder="https://github.com/owner/name" />
+                </label>
+                <label class="fb-field">
+                  <span class="fb-flabel">Email <em>(we&rsquo;ll send the link)</em></span>
+                  <input type="email" name="email" required autocomplete="email" inputmode="email" placeholder="you@example.com" />
+                </label>
+              </div>
+              <div class="rq-actions">
+                <button class="btn btn-primary" type="submit">Build my explainer <span class="arr" aria-hidden="true">&rarr;</span></button>
+                <a class="btn btn-ghost" href="https://agenticow-explainer.netlify.app/" target="_blank" rel="noopener">See a real one <span class="arr" aria-hidden="true">&#8599;</span></a>
+              </div>
+              <p class="fb-note hr-status" role="status" data-rq-status></p>
+            </form>
+
+            <div class="rq-progress" data-rq-progress hidden>
+              <span class="rq-spinner" aria-hidden="true"></span>
+              <p class="rq-progline" data-rq-progline>Starting up&hellip;</p>
+            </div>
+
+            <div class="rq-result" data-rq-result hidden>
+              <span class="fb-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+              <p>Your explainer is live: <a class="rq-livelink" data-rq-link href="#" target="_blank" rel="noopener">opening&hellip;</a></p>
+            </div>
+
+            <div class="rq-error" data-rq-error hidden>
+              <p data-rq-errmsg>Something went wrong. Please try again.</p>
+            </div>
           </div>
 
-          <div class="cmd hero-cmd reveal-up" data-d="7">
-            <span class="prompt" aria-hidden="true">$</span>
-            <code class="cmd-code" id="hero-command"><span class="tok">npx explainmyrepo</span> <span class="arg">&lt;github-url&gt;</span><span class="caret" aria-hidden="true"></span></code>
-            <button class="copy-btn" type="button" data-copy="npx explainmyrepo &lt;github-url&gt;" aria-label="Copy command: npx explainmyrepo &lt;github-url&gt;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
-              <span class="copy-label">Copy</span>
-            </button>
-          </div>
+          <p class="hero-alt reveal-up" data-d="7">
+            <span>or bring your own keys:</span>
+            <span class="cmd hero-cmd">
+              <span class="prompt" aria-hidden="true">$</span>
+              <code class="cmd-code" id="hero-command"><span class="tok">npx explainmyrepo</span> <span class="arg">&lt;github-url&gt;</span><span class="caret" aria-hidden="true"></span></code>
+              <button class="copy-btn" type="button" data-copy="npx explainmyrepo &lt;github-url&gt;" aria-label="Copy command: npx explainmyrepo &lt;github-url&gt;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
+                <span class="copy-label">Copy</span>
+              </button>
+            </span>
+          </p>
 
           <ul class="hero-chips reveal-up" data-d="8" aria-label="What one run gives you">
             <li><span class="chip-ico" aria-hidden="true"></span> a page you forward</li>
@@ -509,7 +543,7 @@
         </div>
 
         <div class="gallery">
-          <a class="ex-card reveal-up" data-d="1" href="https://stuinfla.github.io/Repo-Explainer/agenticow/" target="_blank" rel="noopener">
+          <a class="ex-card reveal-up" data-d="1" href="https://agenticow-explainer.netlify.app/" target="_blank" rel="noopener">
             <span class="ex-swatch">
               <img src="assets/ex-agenticow.webp" width="1120" height="700" loading="lazy" decoding="async" alt="The agenticow explainer page: a dark teal hero reading 'Branch a million-vector memory in 0.5 ms and 162 bytes' beside a glowing generative branching-network diagram." />
             </span>

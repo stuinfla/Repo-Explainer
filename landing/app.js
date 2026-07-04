@@ -122,7 +122,9 @@
   );
 
   // ---- Hosted builder: paste a repo -> we build on our keys -> poll -> live link ----
-  wireBuildForm(document.querySelector('form[data-rq]'));
+  // querySelectorAll: the hero has its own compact copy of this form in addition to the
+  // full one in #get-started — both must wire up independently.
+  Array.prototype.forEach.call(document.querySelectorAll('form[data-rq]'), wireBuildForm);
 
   function wireBuildForm(form) {
     if (!form) return;
