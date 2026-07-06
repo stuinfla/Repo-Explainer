@@ -79,11 +79,31 @@ exports.handler = async function (event) {
   const fullName = owner + "/" + repo;
 
   // 1) Repo must exist + be reachable by our token (private repos 404 to anon callers).
+  // Same response also carries `size` (KB) — a free, instant, no-clone-needed complexity signal we
+  // reuse below to size this build's time/cost budget instead of one fixed ceiling for every repo.
+  let repoSizeKb = 0;
   try {
     const r = await fetch("https://api.github.com/repos/" + owner + "/" + repo, { headers: gh(token) });
     if (r.status === 404) return json(404, { error: "Couldn't find " + fullName + " (check the URL; private repos must be shared with our GitHub account)." });
     if (!r.ok) return json(502, { error: "GitHub API returned " + r.status + " — try again shortly." });
+    const repoMeta = await r.json();
+    repoSizeKb = Number(repoMeta.size) || 0;
   } catch { return json(502, { error: "Couldn't reach GitHub — try again shortly." }); }
+
+  // Complexity tiers (size-based; component-count refinement can follow once the pipeline itself
+  // reports dep-graph size back, but the outer GH Actions job timeout must be fixed BEFORE dispatch,
+  // so a pre-flight signal is what's available here). Bigger repos get more wall-clock AND more $,
+  // rather than the same fixed budget regardless of scale.
+  //
+  // Floors measured live (2026-07-04): a first smoke test at 15min on `chalk` — about as small and
+  // simple a repo as exists — got killed by its OWN budget guard mid-build, still in image
+  // generation, not yet at diagrams. The agent is more thorough than the old deterministic script
+  // (it reads deeply, asks multiple grounding questions, writes a careful primer) — genuinely slower
+  // per unit of quality, not slower because something is wrong. Floors raised accordingly; revisit
+  // with more real data rather than guessing again.
+  const tier = repoSizeKb > 200000 ? "large" : repoSizeKb > 20000 ? "medium" : "small";
+  const budgetMin = tier === "large" ? 60 : tier === "medium" ? 40 : 25;
+  const budgetUsd = tier === "large" ? 18 : tier === "medium" ? 10 : 6;
 
   // 2) METERING (before we spend a cent). Fail open if the meter gists aren't configured.
   const ledgerId = process.env.EMAIL_LEDGER_GIST_ID;
@@ -131,7 +151,7 @@ exports.handler = async function (event) {
   try {
     const r = await fetch("https://api.github.com/repos/" + REPO + "/actions/workflows/build-explainer.yml/dispatches", {
       method: "POST", headers: gh(token),
-      body: JSON.stringify({ ref: "main", inputs: { target_repo: fullName, build_id: buildId, gist_id: gistId, submitter_email: email || "" } }),
+      body: JSON.stringify({ ref: "main", inputs: { target_repo: fullName, build_id: buildId, gist_id: gistId, submitter_email: email || "", budget_min: String(budgetMin), budget_usd: String(budgetUsd) } }),
     });
     if (!r.ok && r.status !== 204) { console.error("dispatch failed", r.status, await r.text()); return json(502, { error: "Couldn't start the build pipeline — try again." }); }
   } catch { return json(502, { error: "Couldn't start the build pipeline — try again." }); }

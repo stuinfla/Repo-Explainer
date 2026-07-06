@@ -1,12 +1,21 @@
 name: Build Explainer
 
-# Hosted runner for explainmyrepo: given a GitHub repo, build its explainer with the
-# owner's keys (repo secrets), deploy it to its own Netlify site, and write progress
-# back to a status gist that the website polls. Triggered by the /build Netlify function.
+# Hosted runner for explainmyrepo: given a GitHub repo, build its explainer with the owner's
+# keys (repo secrets), deploy it to its own Netlify site, and write progress back to a status
+# gist that the website polls. Triggered by the /build Netlify function.
 #
-# RAILS (deterministic): 20-min hard timeout · serialized concurrency (no cost fan-out) ·
-# --no-refine (caps the expensive vision passes) · --ship-best-effort (ALWAYS delivers a
-# URL) · --no-publish (no per-repo GitHub repo/invite, so no extra token needed).
+# ARCHITECTURE (2026-07-04 rebuild — see project memory "hosted-agentic-architecture", approved
+# 2026-06-30 but never actually wired until now): this invokes bin/agentic-runner.mjs, which runs
+# the real explainmyrepo SKILL as a headless Claude Code agent — the brain decides, tools/*.mjs do
+# the mechanics — instead of the old deterministic orchestrator.mjs pipeline. GitHub Actions is
+# still the right HOST for this (ADR-033, agent-harness-generator: triggered, autonomous, no human
+# at the keyboard); what changed is that it now runs the AGENT, which adapts per-repo, instead of a
+# fixed script that broke on off-mold repos (empty dep-graphs, oversized monorepos).
+#
+# RAILS: timeout-minutes is COMPUTED from budget_min (a pre-flight repo-size signal from build.js)
+# instead of one fixed ceiling for every repo · serialized concurrency (no cost fan-out) · the
+# runner enforces its own wall-clock + $ budget and stops cleanly before the outer timeout would
+# SIGKILL it · on any failure it alerts the owner directly with full particulars (never silent).
 
 on:
   workflow_dispatch:
@@ -23,6 +32,14 @@ on:
       submitter_email:
         description: "email to notify when done (optional)"
         required: false
+      budget_min:
+        description: "wall-clock budget in minutes, sized to repo complexity by build.js"
+        required: false
+        default: "20"
+      budget_usd:
+        description: "$ budget for this build, sized to repo complexity by build.js"
+        required: false
+        default: "6"
 
 concurrency:
   group: build-explainer
@@ -34,7 +51,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # +10min overhead buffer beyond the agent's own budget for checkout/npm/playwright install and
+    # the post-run notify/alert steps — the agent enforces its OWN budget internally and exits
+    # cleanly well before this outer ceiling would ever need to fire.
+    timeout-minutes: ${{ fromJSON(inputs.budget_min || '20') + 10 }}
     steps:
       - name: Checkout the explainer tool
         uses: actions/checkout@v4
@@ -45,8 +65,12 @@ jobs:
           node-version: "20"
 
       - name: Validate input (abuse guard)
+        env:
+          # Template-expanded into the env table, not spliced into the script — the raw value never
+          # touches the shell before validation (a target_repo containing a stray quote could
+          # otherwise break out of the single-quoted context at YAML-expansion time).
+          REPO: ${{ github.event.inputs.target_repo }}
         run: |
-          REPO='${{ github.event.inputs.target_repo }}'
           echo "target: $REPO"
           if ! printf '%s' "$REPO" | grep -qE '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'; then
             echo "::error::invalid repo format (expected owner/name): $REPO"; exit 1
@@ -69,50 +93,42 @@ jobs:
 
       - name: Build, deploy, and report status
         env:
+          # These reach agentic-runner.mjs's OWN env (used for gist-patching, notify, and the
+          # failure alert) — the runner builds a SEPARATE, much narrower allowlist for the spawned
+          # agent process itself (see bin/agentic-runner.mjs), which never sees GH/SMTP creds.
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          EXPLAINER_NONINTERACTIVE: "1"
-          EXPLAINER_SKIP_INVITE: "1"
-          # Email fallback (non-blocking): if these secrets exist, notify emails the submitter.
           SMTP_USER: ${{ secrets.GMAIL_USER }}
           SMTP_PASS: ${{ secrets.GMAIL_APP_PASSWORD }}
-          EMAIL_TO: ${{ github.event.inputs.submitter_email }}
-          # Gist status write-back (needs `gist` scope; same account that created the gist):
-          GIST_TOKEN: ${{ secrets.EXPLAINER_GH_TOKEN }}
+          EXPLAINER_GH_TOKEN: ${{ secrets.EXPLAINER_GH_TOKEN }}
           BUILD_ID: ${{ github.event.inputs.build_id }}
           GIST_ID: ${{ github.event.inputs.gist_id }}
           REPO: ${{ github.event.inputs.target_repo }}
+          SUBMITTER: ${{ github.event.inputs.submitter_email }}
+          BUDGET_MIN: ${{ github.event.inputs.budget_min }}
+          BUDGET_USD: ${{ github.event.inputs.budget_usd }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set +e
-          patch_status() {  # status  step  stepName  liveUrl  error
-            [ -z "$GIST_ID" ] || [ -z "$GIST_TOKEN" ] && return 0
-            local content
-            content=$(jq -n --arg b "$BUILD_ID" --argjson s "$1" --arg sn "$3" --arg st "$2" \
-              --arg u "$4" --arg e "$5" --arg r "$REPO" \
-              '{buildId:$b, step:$s, totalSteps:16, stepName:$sn, status:$st, repo:$r,
-                result: (if $u=="" then null else {liveUrl:$u} end),
-                error: (if $e=="" then null else $e end)}')
-            curl -s -X PATCH "https://api.github.com/gists/$GIST_ID" \
-              -H "Authorization: Bearer $GIST_TOKEN" -H "Accept: application/vnd.github+json" \
-              -d "$(jq -n --arg c "$content" '{files:{"status.json":{content:$c}}}')" >/dev/null || true
-          }
-
-          patch_status 1 building "Reading and understanding the repo…" "" ""
           set -o pipefail
-          node bin/explainmyrepo.mjs "$REPO" --ship-best-effort --no-publish --no-refine 2>&1 | tee /tmp/build.log
+          node bin/agentic-runner.mjs "$REPO" \
+            --build-dir "$RUNNER_TEMP/hosted-build" \
+            --budget-min "${BUDGET_MIN:-20}" \
+            --budget-usd "${BUDGET_USD:-6}" \
+            --submitter "$SUBMITTER" \
+            --run-url "$RUN_URL" \
+            --build-id "$BUILD_ID" \
+            --gist-id "$GIST_ID" \
+            2>&1 | tee /tmp/build.log
           RC=${PIPESTATUS[0]}
-          URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.netlify\.app' /tmp/build.log | tail -1)
+          URL=$(grep -oE '^LIVE: https://\S+' /tmp/build.log | tail -1 | sed 's/^LIVE: //')
 
           if [ "$RC" -eq 0 ] && [ -n "$URL" ]; then
-            patch_status 16 done "Done — your explainer is live." "$URL" ""
             echo "LIVE: $URL"
             echo "### Explainer ready → $URL" >> "$GITHUB_STEP_SUMMARY"
           else
-            # SECURITY: never publish raw build-log tails to the (public) status gist — a log line
-            # could contain an API key. Curated, fixed message to the gist; real detail stays in the
-            # GitHub Actions run log (visible only to repo collaborators).
-            patch_status 16 failed "The build couldn't finish." "" "It didn't complete this time. Try another repo, or try again in a bit."
+            # agentic-runner.mjs already patched the gist + emailed the owner before exiting non-zero.
             echo "::error::build failed (rc=$RC, url=$URL)"
             echo "---- build.log tail (Actions run log only — NOT published) ----"
             tail -c 2000 /tmp/build.log || true
