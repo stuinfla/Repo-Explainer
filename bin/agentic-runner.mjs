@@ -142,14 +142,26 @@ const ghToken = process.env.EXPLAINER_GH_TOKEN || process.env.GITHUB_TOKEN || ''
 // build had actually finished, successfully or not. That is exactly the silent-failure mode this
 // whole rebuild exists to close.
 async function patchStatus(stepName, status = 'building', result = null, error = null) {
-  if (!gistId || !ghToken || !buildId) return;
+  if (!gistId || !ghToken || !buildId) {
+    if (status !== 'building') log(`patchStatus(${status}) SKIPPED — missing ${!gistId ? 'gistId' : !ghToken ? 'ghToken' : 'buildId'}`);
+    return;
+  }
   try {
-    await fetch(`https://api.github.com/gists/${gistId}`, {
+    const resp = await fetch(`https://api.github.com/gists/${gistId}`, {
       method: 'PATCH',
-      headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json' },
+      headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
       body: JSON.stringify({ files: { 'status.json': { content: JSON.stringify({ buildId, step: 0, totalSteps: 1, stepName, status, repo: repoUrl, result, error }, null, 2) } } }),
     });
-  } catch { /* best-effort — a status-gist hiccup must never invert the real outcome */ }
+    // A silent swallow here is exactly the anti-pattern this whole rebuild exists to close — a
+    // gist-patch failure on the TERMINAL state is itself worth knowing about, even though it must
+    // never invert the real build outcome (hence: log loudly, but never throw).
+    if (!resp.ok && status !== 'building') {
+      const body = await resp.text().catch(() => '');
+      log(`patchStatus(${status}) FAILED: HTTP ${resp.status} ${body.slice(0, 200)}`);
+    }
+  } catch (e) {
+    if (status !== 'building') log(`patchStatus(${status}) THREW: ${e.message}`);
+  }
 }
 
 let buf = '';
