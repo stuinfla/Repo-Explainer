@@ -90,6 +90,10 @@ jobs:
           # (libxml2-utils — diagram SVG validation), dot (graphviz — diagram layout), zip (AI pack).
           # Fonts help text render in generated imagery.
           sudo apt-get update && sudo apt-get install -y imagemagick libxml2-utils graphviz zip fonts-liberation fonts-dejavu-core
+          # The agentic kernel itself (bin/agentic-runner.mjs spawns this headless) — pinned exact
+          # version, same rationale as the runtime deps above: no supply-chain drift on a bare runner.
+          npm install -g @anthropic-ai/claude-code@2.1.201
+          claude --version
 
       - name: Build, deploy, and report status
         env:
