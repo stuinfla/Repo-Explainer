@@ -104,6 +104,11 @@ exports.handler = async function (event) {
   const tier = repoSizeKb > 200000 ? "large" : repoSizeKb > 20000 ? "medium" : "small";
   const budgetMin = tier === "large" ? 60 : tier === "medium" ? 40 : 25;
   const budgetUsd = tier === "large" ? 18 : tier === "medium" ? 10 : 6;
+  // GitHub Actions expressions don't support arithmetic the way `fromJSON(x) + 10` implies (learned
+  // the hard way — it rejects the dispatch outright, a YAML-structure check doesn't catch it since
+  // it's an expression-syntax error, not a YAML one). Compute the +10min overhead buffer here in
+  // plain JS instead and pass the already-summed value.
+  const timeoutMin = budgetMin + 10;
 
   // 2) METERING (before we spend a cent). Fail open if the meter gists aren't configured.
   const ledgerId = process.env.EMAIL_LEDGER_GIST_ID;
@@ -151,7 +156,7 @@ exports.handler = async function (event) {
   try {
     const r = await fetch("https://api.github.com/repos/" + REPO + "/actions/workflows/build-explainer.yml/dispatches", {
       method: "POST", headers: gh(token),
-      body: JSON.stringify({ ref: "main", inputs: { target_repo: fullName, build_id: buildId, gist_id: gistId, submitter_email: email || "", budget_min: String(budgetMin), budget_usd: String(budgetUsd) } }),
+      body: JSON.stringify({ ref: "main", inputs: { target_repo: fullName, build_id: buildId, gist_id: gistId, submitter_email: email || "", budget_min: String(budgetMin), budget_usd: String(budgetUsd), timeout_min: String(timeoutMin) } }),
     });
     if (!r.ok && r.status !== 204) { console.error("dispatch failed", r.status, await r.text()); return json(502, { error: "Couldn't start the build pipeline — try again." }); }
   } catch { return json(502, { error: "Couldn't start the build pipeline — try again." }); }

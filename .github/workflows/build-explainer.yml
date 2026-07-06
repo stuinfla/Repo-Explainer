@@ -40,6 +40,10 @@ on:
         description: "$ budget for this build, sized to repo complexity by build.js"
         required: false
         default: "6"
+      timeout_min:
+        description: "budget_min + overhead buffer, pre-summed by build.js (GH Actions expressions don't do arithmetic on inputs)"
+        required: false
+        default: "30"
 
 concurrency:
   group: build-explainer
@@ -51,10 +55,13 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # +10min overhead buffer beyond the agent's own budget for checkout/npm/playwright install and
-    # the post-run notify/alert steps — the agent enforces its OWN budget internally and exits
-    # cleanly well before this outer ceiling would ever need to fire.
-    timeout-minutes: ${{ fromJSON(inputs.budget_min || '20') + 10 }}
+    # The agent enforces its OWN budget (budget_min) internally and exits cleanly well before this
+    # outer ceiling would ever need to fire — this is just the backstop. timeout_min is budget_min +
+    # a fixed overhead buffer, computed in build.js (plain JS), not here: GitHub Actions expressions
+    # don't support arithmetic on inputs the way `fromJSON(x) + 10` implies — learned this the hard
+    # way, it rejects the whole dispatch at parse time, which a YAML-structure check doesn't catch
+    # since it's an expression-syntax error, not a YAML one.
+    timeout-minutes: ${{ fromJSON(inputs.timeout_min || '30') }}
     steps:
       - name: Checkout the explainer tool
         uses: actions/checkout@v4
