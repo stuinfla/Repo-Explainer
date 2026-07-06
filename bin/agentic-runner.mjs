@@ -135,15 +135,21 @@ const hardTimer = setTimeout(() => {
 // poll shows the agent's REAL current action instead of a fixed step counter.
 const gistId = args['gist-id'] || '';
 const ghToken = process.env.EXPLAINER_GH_TOKEN || process.env.GITHUB_TOKEN || '';
-async function patchStatus(stepName) {
+// status: 'building' while in progress (the default); MUST be called with 'done'/'failed' at the
+// end too — a real production run (2026-07-06, sindresorhus/p-map, budget-exceeded) proved this
+// wasn't happening: the gist froze on the last in-progress step forever, so anyone watching the
+// live status page (as opposed to the email alert, which DID fire correctly) saw no indication the
+// build had actually finished, successfully or not. That is exactly the silent-failure mode this
+// whole rebuild exists to close.
+async function patchStatus(stepName, status = 'building', result = null, error = null) {
   if (!gistId || !ghToken || !buildId) return;
   try {
     await fetch(`https://api.github.com/gists/${gistId}`, {
       method: 'PATCH',
       headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json' },
-      body: JSON.stringify({ files: { 'status.json': { content: JSON.stringify({ buildId, step: 0, totalSteps: 1, stepName, status: 'building', repo: repoUrl, result: null, error: null }, null, 2) } } }),
+      body: JSON.stringify({ files: { 'status.json': { content: JSON.stringify({ buildId, step: 0, totalSteps: 1, stepName, status, repo: repoUrl, result, error }, null, 2) } } }),
     });
-  } catch { /* best-effort — a status-gist hiccup must never fail the build */ }
+  } catch { /* best-effort — a status-gist hiccup must never invert the real outcome */ }
 }
 
 let buf = '';
@@ -206,6 +212,7 @@ const reason = budgetExceeded
 if (ok) {
   console.log(`LIVE: ${liveUrl}`);
   log(`SUCCESS — ${liveUrl} (cost $${totalCostUsd.toFixed(2)})`);
+  await patchStatus('Done — your explainer is live.', 'done', { liveUrl }, null);
   // Notify runs HERE, not inside the agent (see the env allowlist above) — this is plain
   // deterministic code, not an LLM interpreting untrusted repo content, so it's the safe place to
   // hold SMTP creds. Non-blocking: a notify failure must never flip a successful build to failed.
@@ -217,6 +224,7 @@ if (ok) {
   process.exit(0);
 } else {
   log(`FAILED — ${reason}`);
+  await patchStatus('The build could not finish.', 'failed', null, "It didn't complete this time. Try another repo, or try again in a bit.");
   const alertArgs = [
     path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
     '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),

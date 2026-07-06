@@ -95,14 +95,14 @@ exports.handler = async function (event) {
   // so a pre-flight signal is what's available here). Bigger repos get more wall-clock AND more $,
   // rather than the same fixed budget regardless of scale.
   //
-  // Floors measured live (2026-07-04): a first smoke test at 15min on `chalk` — about as small and
-  // simple a repo as exists — got killed by its OWN budget guard mid-build, still in image
-  // generation, not yet at diagrams. The agent is more thorough than the old deterministic script
-  // (it reads deeply, asks multiple grounding questions, writes a careful primer) — genuinely slower
-  // per unit of quality, not slower because something is wrong. Floors raised accordingly; revisit
-  // with more real data rather than guessing again.
+  // Floors measured live, twice (2026-07-04, 2026-07-06): a first smoke test at 15min on `chalk`
+  // got killed mid-image-generation; raised small to 25. Then a REAL production front-door run on
+  // `sindresorhus/p-map` (25min) ALSO got killed, this time deep in a quality-grade refine loop —
+  // small repos can still need real time once the agent starts iterating on copy/diagram fixes.
+  // Raised again. This floor has been wrong twice from a guess; don't lower it again without a real
+  // measured run to justify it.
   const tier = repoSizeKb > 200000 ? "large" : repoSizeKb > 20000 ? "medium" : "small";
-  const budgetMin = tier === "large" ? 60 : tier === "medium" ? 40 : 25;
+  const budgetMin = tier === "large" ? 60 : tier === "medium" ? 40 : 30;
   const budgetUsd = tier === "large" ? 18 : tier === "medium" ? 10 : 6;
   // GitHub Actions expressions don't support arithmetic the way `fromJSON(x) + 10` implies (learned
   // the hard way — it rejects the dispatch outright, a YAML-structure check doesn't catch it since
