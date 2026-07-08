@@ -1,0 +1,54 @@
+{
+  "target": "slugify",
+  "metaName": "sindresorhus/slugify",
+  "generated": "2026-07-02T18:04:02.995Z",
+  "ecosystems": [
+    "npm"
+  ],
+  "componentCount": 2,
+  "internalEdgeCount": 0,
+  "externalDepCount": 2,
+  "nodes": [
+    {
+      "name": "@sindresorhus/slugify",
+      "version": "3.0.0",
+      "description": "Slugify a string",
+      "manifest": "package.json",
+      "deps": [
+        "@sindresorhus/transliterate",
+        "escape-string-regexp"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@sindresorhus/slugify",
+      "version": "3.0.0",
+      "description": "Slugify a string",
+      "manifest": "package.json",
+      "deps": [
+        "@sindresorhus/transliterate",
+        "escape-string-regexp"
+      ],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [],
+  "externalDeps": {
+    "@sindresorhus/slugify": [
+      {
+        "name": "@sindresorhus/transliterate",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "escape-string-regexp",
+        "req": "*",
+        "kind": "normal"
+      }
+    ]
+  },
+  "externalDepNames": [
+    "@sindresorhus/transliterate",
+    "escape-string-regexp"
+  ]
+}

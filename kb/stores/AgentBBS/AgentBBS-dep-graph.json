@@ -1,0 +1,2066 @@
+{
+  "target": "AgentBBS",
+  "metaName": "AgentBBS",
+  "generated": "2026-07-03T16:38:56.123Z",
+  "ecosystems": [
+    "rust",
+    "npm"
+  ],
+  "componentCount": 21,
+  "internalEdgeCount": 27,
+  "externalDepCount": 90,
+  "nodes": [
+    {
+      "name": "late-cli",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "crates/late-cli/Cargo.toml",
+      "targets": [
+        {
+          "name": "late",
+          "kinds": [
+            "bin"
+          ]
+        },
+        {
+          "name": "build-script-build",
+          "kinds": [
+            "custom-build"
+          ]
+        }
+      ],
+      "isLib": false,
+      "bins": [
+        "late"
+      ],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "late-core",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "crates/late-core/Cargo.toml",
+      "targets": [
+        {
+          "name": "late_core",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "gen_nonograms",
+          "kinds": [
+            "bin"
+          ]
+        },
+        {
+          "name": "artboard_snapshot",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "article",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "article_feed_read",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "bonsai",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "chat",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "db",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "game_payout",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "game_room",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "le_word",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "marketplace",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "mention_feed_read",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "minesweeper",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "model_macro",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "pet",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "rss_feed_read",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "user",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "build-script-build",
+          "kinds": [
+            "custom-build"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [
+        "gen_nonograms"
+      ],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "late-nethack",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "crates/late-nethack/Cargo.toml",
+      "targets": [
+        {
+          "name": "late-nethack",
+          "kinds": [
+            "bin"
+          ]
+        }
+      ],
+      "isLib": false,
+      "bins": [
+        "late-nethack"
+      ],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "late-ssh",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "crates/late-ssh/Cargo.toml",
+      "targets": [
+        {
+          "name": "late_ssh",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "late-ssh",
+          "kinds": [
+            "bin"
+          ]
+        },
+        {
+          "name": "app_dashboard_flow",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "app_input_flow",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "app_singleton_isolation",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "app_smoke",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "arcade",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "artboard",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "audio_queue_reconcile",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "bonsai",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "chat",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "common",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "ircd",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "pet",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "pinstar_browser",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "profile",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "rebels_proxy",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "ssh_ban",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "ssh_smoke",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "ws_smoke",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [
+        "late-ssh"
+      ],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "irc-proto",
+      "version": "1.1.0",
+      "description": "The IRC protocol distilled.",
+      "manifest": "crates/vendor/irc-proto/Cargo.toml",
+      "targets": [
+        {
+          "name": "irc_proto",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "nes",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "crates/vendor/potatis/nes/Cargo.toml",
+      "targets": [
+        {
+          "name": "nes",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "benchmark",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "blargg",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "nestest",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "common",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "crates/vendor/potatis/common/Cargo.toml",
+      "targets": [
+        {
+          "name": "common",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "mos6502",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "crates/vendor/potatis/mos6502/Cargo.toml",
+      "targets": [
+        {
+          "name": "mos6502",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "integration_test",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "late-web",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "crates/late-web/Cargo.toml",
+      "targets": [
+        {
+          "name": "late_web",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "late-web",
+          "kinds": [
+            "bin"
+          ]
+        },
+        {
+          "name": "dashboard",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "stream",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [
+        "late-web"
+      ],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "agentbbs-core",
+      "version": "0.1.0",
+      "description": "Core domain for AgentBBS: anonymous agent identity, message boards, capabilities, embedded store, vector memory (RVF), and provider-agnostic reporting.",
+      "manifest": "crates/agentbbs-core/Cargo.toml",
+      "targets": [
+        {
+          "name": "agentbbs_core",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "bench_core",
+          "kinds": [
+            "bench"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "agentbbs-federation",
+      "version": "0.1.0",
+      "description": "Zero-trust BBS federation for AgentBBS: signed envelopes, idempotent replication, PII-stripped egress, and auditable peer links.",
+      "manifest": "crates/agentbbs-federation/Cargo.toml",
+      "targets": [
+        {
+          "name": "agentbbs_federation",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "agentbbs-wasm",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "crates/agentbbs-wasm/Cargo.toml",
+      "targets": [
+        {
+          "name": "agentbbs_wasm",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "agentbbs-mcp",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "crates/agentbbs-mcp/Cargo.toml",
+      "targets": [
+        {
+          "name": "agentbbs_mcp",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "mcp",
+          "kinds": [
+            "test"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "agentbbs-tui",
+      "version": "0.1.0",
+      "description": "Retro Wildcat!-style terminal UI for AgentBBS — the BBS for agents and humans.",
+      "manifest": "crates/agentbbs-tui/Cargo.toml",
+      "targets": [
+        {
+          "name": "agentbbs_tui",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "screenshot",
+          "kinds": [
+            "example"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "agentbbs-arena",
+      "version": "0.1.0",
+      "description": "The AgentBBS Arena — agents compete on benchmarks (CVE-Bench and friends) via the npm meta-harness, with signed, verifiable submissions and a leaderboard.",
+      "manifest": "crates/agentbbs-arena/Cargo.toml",
+      "targets": [
+        {
+          "name": "agentbbs_arena",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "emit_retort_seed",
+          "kinds": [
+            "example"
+          ]
+        },
+        {
+          "name": "retort_ingest",
+          "kinds": [
+            "test"
+          ]
+        },
+        {
+          "name": "bench_arena",
+          "kinds": [
+            "bench"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "agentbbs-gcp",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "infra/agentbbs-gcp/Cargo.toml",
+      "targets": [
+        {
+          "name": "agentbbs_gcp",
+          "kinds": [
+            "lib"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "agentbbs-web",
+      "version": "0.1.0",
+      "description": "Mobile-first web PWA for AgentBBS — a ChatGPT-style agent/human collaboration UI over the AgentBBS core.",
+      "manifest": "crates/agentbbs-web/Cargo.toml",
+      "targets": [
+        {
+          "name": "agentbbs_web",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "agentbbs-web",
+          "kinds": [
+            "bin"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [
+        "agentbbs-web"
+      ],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "agentbbs-bridge",
+      "version": "0.1.0",
+      "description": "Outbound bridge — mirror AgentBBS board messages to Slack and Microsoft Teams (ADR-0025 Phase 0).",
+      "manifest": "crates/agentbbs-bridge/Cargo.toml",
+      "targets": [
+        {
+          "name": "agentbbs_bridge",
+          "kinds": [
+            "lib"
+          ]
+        },
+        {
+          "name": "agentbbs-bridge",
+          "kinds": [
+            "bin"
+          ]
+        },
+        {
+          "name": "irc-bridge",
+          "kinds": [
+            "bin"
+          ]
+        },
+        {
+          "name": "sample_message",
+          "kinds": [
+            "example"
+          ]
+        }
+      ],
+      "isLib": true,
+      "bins": [
+        "agentbbs-bridge",
+        "irc-bridge"
+      ],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "agentbbs",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "crates/agentbbs/Cargo.toml",
+      "targets": [
+        {
+          "name": "agentbbs",
+          "kinds": [
+            "bin"
+          ]
+        }
+      ],
+      "isLib": false,
+      "bins": [
+        "agentbbs"
+      ],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "agentbbs-web-e2e",
+      "version": "0.1.0",
+      "description": "End-to-end browser tests for the AgentBBS web UI (genesis + agentbbs-web).",
+      "manifest": "scripts/e2e/package.json",
+      "deps": [
+        "playwright-core"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "agentbbs",
+      "version": "0.2.1",
+      "description": "The first BBS made for agents and humans to collaborate — a multiplayer community where humans use the web UI and agents connect over SSH or MCP.",
+      "manifest": "npm/package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [
+    {
+      "from": "late-core",
+      "to": "late-core",
+      "kind": "dev"
+    },
+    {
+      "from": "late-ssh",
+      "to": "irc-proto",
+      "kind": "normal"
+    },
+    {
+      "from": "late-ssh",
+      "to": "late-core",
+      "kind": "normal"
+    },
+    {
+      "from": "late-ssh",
+      "to": "nes",
+      "kind": "normal"
+    },
+    {
+      "from": "late-ssh",
+      "to": "late-core",
+      "kind": "dev"
+    },
+    {
+      "from": "nes",
+      "to": "common",
+      "kind": "normal"
+    },
+    {
+      "from": "nes",
+      "to": "mos6502",
+      "kind": "normal"
+    },
+    {
+      "from": "mos6502",
+      "to": "common",
+      "kind": "normal"
+    },
+    {
+      "from": "late-web",
+      "to": "late-core",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs-federation",
+      "to": "agentbbs-core",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs-wasm",
+      "to": "agentbbs-core",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs-mcp",
+      "to": "agentbbs-core",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs-tui",
+      "to": "agentbbs-arena",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs-tui",
+      "to": "agentbbs-core",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs-tui",
+      "to": "agentbbs-federation",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs-arena",
+      "to": "agentbbs-core",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs-gcp",
+      "to": "agentbbs-core",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs-web",
+      "to": "agentbbs-arena",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs-web",
+      "to": "agentbbs-bridge",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs-web",
+      "to": "agentbbs-core",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs-web",
+      "to": "agentbbs-federation",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs-bridge",
+      "to": "agentbbs-core",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs",
+      "to": "agentbbs-arena",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs",
+      "to": "agentbbs-core",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs",
+      "to": "agentbbs-federation",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs",
+      "to": "agentbbs-mcp",
+      "kind": "normal"
+    },
+    {
+      "from": "agentbbs",
+      "to": "agentbbs-tui",
+      "kind": "normal"
+    }
+  ],
+  "externalDeps": {
+    "late-cli": [
+      {
+        "name": "anyhow",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "base64",
+        "req": "^0.22",
+        "kind": "normal"
+      },
+      {
+        "name": "cpal",
+        "req": "^0.16",
+        "kind": "normal"
+      },
+      {
+        "name": "crossterm",
+        "req": "^0.29",
+        "kind": "normal"
+      },
+      {
+        "name": "futures-util",
+        "req": "^0.3",
+        "kind": "normal"
+      },
+      {
+        "name": "getrandom",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "rand_core",
+        "req": "^0.6",
+        "kind": "normal"
+      },
+      {
+        "name": "reqwest",
+        "req": "^0.13.1",
+        "kind": "normal"
+      },
+      {
+        "name": "ringbuf",
+        "req": "^0.4.8",
+        "kind": "normal"
+      },
+      {
+        "name": "russh",
+        "req": "^0.61.1",
+        "kind": "normal"
+      },
+      {
+        "name": "rustfft",
+        "req": "^6.4.1",
+        "kind": "normal"
+      },
+      {
+        "name": "rustls",
+        "req": "^0.23.40",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "shlex",
+        "req": "^1.3.0",
+        "kind": "normal"
+      },
+      {
+        "name": "symphonia",
+        "req": "^0.5.5",
+        "kind": "normal"
+      },
+      {
+        "name": "tao",
+        "req": "^0.34",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio-tungstenite",
+        "req": "^0.28",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing",
+        "req": "^0.1",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing-subscriber",
+        "req": "^0.3",
+        "kind": "normal"
+      },
+      {
+        "name": "wry",
+        "req": "^0.55",
+        "kind": "normal"
+      },
+      {
+        "name": "arboard",
+        "req": "^3",
+        "kind": "normal"
+      },
+      {
+        "name": "image",
+        "req": "^0.25.9",
+        "kind": "normal"
+      },
+      {
+        "name": "livekit",
+        "req": "^0.7.42",
+        "kind": "normal"
+      },
+      {
+        "name": "webkit2gtk",
+        "req": "=2.0.2",
+        "kind": "normal"
+      },
+      {
+        "name": "nix",
+        "req": "^0.29.0",
+        "kind": "normal"
+      }
+    ],
+    "late-core": [
+      {
+        "name": "anyhow",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "axum",
+        "req": "^0.8.8",
+        "kind": "normal"
+      },
+      {
+        "name": "chrono",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "deadpool-postgres",
+        "req": "^0.14",
+        "kind": "normal"
+      },
+      {
+        "name": "getrandom",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "hex",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "image",
+        "req": "^0.25.9",
+        "kind": "normal"
+      },
+      {
+        "name": "opentelemetry",
+        "req": "^0.31.0",
+        "kind": "normal"
+      },
+      {
+        "name": "opentelemetry-appender-tracing",
+        "req": "^0.31.1",
+        "kind": "normal"
+      },
+      {
+        "name": "opentelemetry-http",
+        "req": "^0.31.0",
+        "kind": "normal"
+      },
+      {
+        "name": "opentelemetry-otlp",
+        "req": "^0.31.0",
+        "kind": "normal"
+      },
+      {
+        "name": "opentelemetry_sdk",
+        "req": "^0.31.0",
+        "kind": "normal"
+      },
+      {
+        "name": "reqwest",
+        "req": "^0.13.1",
+        "kind": "normal"
+      },
+      {
+        "name": "rustfft",
+        "req": "^6.4.1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "sha2",
+        "req": "^0.10",
+        "kind": "normal"
+      },
+      {
+        "name": "symphonia",
+        "req": "^0.5.5",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio-postgres",
+        "req": "^0.7",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio-util",
+        "req": "^0.7",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing",
+        "req": "^0.1",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing-opentelemetry",
+        "req": "^0.32.1",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing-subscriber",
+        "req": "^0.3",
+        "kind": "normal"
+      },
+      {
+        "name": "uuid",
+        "req": "^1.10",
+        "kind": "normal"
+      }
+    ],
+    "late-nethack": [
+      {
+        "name": "anyhow",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "blake3",
+        "req": "^1.5",
+        "kind": "normal"
+      },
+      {
+        "name": "getrandom",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "nix",
+        "req": "^0.29.0",
+        "kind": "normal"
+      },
+      {
+        "name": "russh",
+        "req": "^0.61.1",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing",
+        "req": "^0.1",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing-subscriber",
+        "req": "^0.3",
+        "kind": "normal"
+      }
+    ],
+    "late-ssh": [
+      {
+        "name": "anyhow",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "asterion-core",
+        "req": "^0.1",
+        "kind": "normal"
+      },
+      {
+        "name": "axum",
+        "req": "^0.8.8",
+        "kind": "normal"
+      },
+      {
+        "name": "base64",
+        "req": "^0.22",
+        "kind": "normal"
+      },
+      {
+        "name": "bitflags",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "blake3",
+        "req": "^1.5",
+        "kind": "normal"
+      },
+      {
+        "name": "chafa-syms-rs",
+        "req": "^0.1.0",
+        "kind": "normal"
+      },
+      {
+        "name": "chrono",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "chrono-tz",
+        "req": "^0.10",
+        "kind": "normal"
+      },
+      {
+        "name": "cozy-chess",
+        "req": "^0.3.4",
+        "kind": "normal"
+      },
+      {
+        "name": "crossterm",
+        "req": "^0.29",
+        "kind": "normal"
+      },
+      {
+        "name": "dartboard-core",
+        "req": "^0.1.4",
+        "kind": "normal"
+      },
+      {
+        "name": "dartboard-editor",
+        "req": "^0.1.4",
+        "kind": "normal"
+      },
+      {
+        "name": "dartboard-local",
+        "req": "^0.1.4",
+        "kind": "normal"
+      },
+      {
+        "name": "dartboard-tui",
+        "req": "^0.1.4",
+        "kind": "normal"
+      },
+      {
+        "name": "emojis",
+        "req": "^0.7",
+        "kind": "normal"
+      },
+      {
+        "name": "futures-util",
+        "req": "^0.3",
+        "kind": "normal"
+      },
+      {
+        "name": "getrandom",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "hex",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "hmac",
+        "req": "^0.12",
+        "kind": "normal"
+      },
+      {
+        "name": "image",
+        "req": "^0.25.9",
+        "kind": "normal"
+      },
+      {
+        "name": "ipnet",
+        "req": "^2.11",
+        "kind": "normal"
+      },
+      {
+        "name": "kdl",
+        "req": "^6.5.0",
+        "kind": "normal"
+      },
+      {
+        "name": "opentelemetry",
+        "req": "^0.31.0",
+        "kind": "normal"
+      },
+      {
+        "name": "opentelemetry-http",
+        "req": "^0.31.0",
+        "kind": "normal"
+      },
+      {
+        "name": "qrcodegen",
+        "req": "^1.8.0",
+        "kind": "normal"
+      },
+      {
+        "name": "rand",
+        "req": "^0.8",
+        "kind": "normal"
+      },
+      {
+        "name": "rand_core",
+        "req": "^0.6",
+        "kind": "normal"
+      },
+      {
+        "name": "ratatui",
+        "req": "^0.30",
+        "kind": "normal"
+      },
+      {
+        "name": "ratatui-textarea",
+        "req": "^0.9.1",
+        "kind": "normal"
+      },
+      {
+        "name": "reqwest",
+        "req": "^0.13.1",
+        "kind": "normal"
+      },
+      {
+        "name": "rumenx-sudoku",
+        "req": "^1.0.0",
+        "kind": "normal"
+      },
+      {
+        "name": "russh",
+        "req": "^0.61.1",
+        "kind": "normal"
+      },
+      {
+        "name": "rustls",
+        "req": "^0.23.40",
+        "kind": "normal"
+      },
+      {
+        "name": "rustls-pemfile",
+        "req": "^2.2",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "sha2",
+        "req": "^0.10",
+        "kind": "normal"
+      },
+      {
+        "name": "sshattrick-core",
+        "req": "^0.1",
+        "kind": "normal"
+      },
+      {
+        "name": "tikv-jemallocator",
+        "req": "^0.6",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio-postgres",
+        "req": "^0.7",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio-rustls",
+        "req": "^0.26",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio-util",
+        "req": "^0.7",
+        "kind": "normal"
+      },
+      {
+        "name": "tower-http",
+        "req": "^0.6.8",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing",
+        "req": "^0.1",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing-opentelemetry",
+        "req": "^0.32.1",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing-subscriber",
+        "req": "^0.3",
+        "kind": "normal"
+      },
+      {
+        "name": "unicode-width",
+        "req": "^0.2",
+        "kind": "normal"
+      },
+      {
+        "name": "unicode_names2",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "uuid",
+        "req": "^1.10",
+        "kind": "normal"
+      },
+      {
+        "name": "vt100",
+        "req": "^0.16",
+        "kind": "normal"
+      },
+      {
+        "name": "vte",
+        "req": "^0.15",
+        "kind": "normal"
+      },
+      {
+        "name": "rstest",
+        "req": "^0.26.1",
+        "kind": "dev"
+      },
+      {
+        "name": "nix",
+        "req": "^0.29.0",
+        "kind": "normal"
+      }
+    ],
+    "irc-proto": [
+      {
+        "name": "bytes",
+        "req": "^1.4.0",
+        "kind": "normal"
+      },
+      {
+        "name": "encoding",
+        "req": "^0.2.33",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^1.0.40",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.27.0",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio-util",
+        "req": "^0.7.7",
+        "kind": "normal"
+      }
+    ],
+    "nes": [
+      {
+        "name": "bitflags",
+        "req": "^1.3.2",
+        "kind": "normal"
+      },
+      {
+        "name": "phf",
+        "req": "^0.11.1",
+        "kind": "normal"
+      }
+    ],
+    "common": [],
+    "mos6502": [
+      {
+        "name": "bitflags",
+        "req": "^2.6.0",
+        "kind": "normal"
+      },
+      {
+        "name": "getch",
+        "req": "^0.3.1",
+        "kind": "normal"
+      }
+    ],
+    "late-web": [
+      {
+        "name": "anyhow",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "askama",
+        "req": "^0.15.1",
+        "kind": "normal"
+      },
+      {
+        "name": "async-stream",
+        "req": "^0.3",
+        "kind": "normal"
+      },
+      {
+        "name": "axum",
+        "req": "^0.8.8",
+        "kind": "normal"
+      },
+      {
+        "name": "bytes",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "chrono",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "dartboard-core",
+        "req": "^0.1.4",
+        "kind": "normal"
+      },
+      {
+        "name": "futures-util",
+        "req": "^0.3",
+        "kind": "normal"
+      },
+      {
+        "name": "opentelemetry",
+        "req": "^0.31.0",
+        "kind": "normal"
+      },
+      {
+        "name": "opentelemetry-http",
+        "req": "^0.31.0",
+        "kind": "normal"
+      },
+      {
+        "name": "pulldown-cmark",
+        "req": "^0.13",
+        "kind": "normal"
+      },
+      {
+        "name": "reqwest",
+        "req": "^0.13.1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "normal"
+      },
+      {
+        "name": "tower-http",
+        "req": "^0.6.8",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing",
+        "req": "^0.1",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing-opentelemetry",
+        "req": "^0.32.1",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing-subscriber",
+        "req": "^0.3",
+        "kind": "normal"
+      },
+      {
+        "name": "tower",
+        "req": "^0.5",
+        "kind": "dev"
+      }
+    ],
+    "agentbbs-core": [
+      {
+        "name": "bitflags",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "blake3",
+        "req": "^1.5",
+        "kind": "normal"
+      },
+      {
+        "name": "chrono",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "ed25519-dalek",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "hex",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "rand_core",
+        "req": "^0.6",
+        "kind": "normal"
+      },
+      {
+        "name": "redb",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "thiserror",
+        "req": "^2",
+        "kind": "normal"
+      },
+      {
+        "name": "uuid",
+        "req": "^1.10",
+        "kind": "normal"
+      },
+      {
+        "name": "criterion",
+        "req": "^0.5",
+        "kind": "dev"
+      },
+      {
+        "name": "tempfile",
+        "req": "^3",
+        "kind": "dev"
+      }
+    ],
+    "agentbbs-federation": [
+      {
+        "name": "async-trait",
+        "req": "^0.1",
+        "kind": "normal"
+      },
+      {
+        "name": "chrono",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "futures-util",
+        "req": "^0.3",
+        "kind": "normal"
+      },
+      {
+        "name": "hex",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "dev"
+      }
+    ],
+    "agentbbs-wasm": [
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "wasmi",
+        "req": "^0.32",
+        "kind": "normal"
+      },
+      {
+        "name": "wat",
+        "req": "^1",
+        "kind": "dev"
+      }
+    ],
+    "agentbbs-mcp": [
+      {
+        "name": "chrono",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "dev"
+      }
+    ],
+    "agentbbs-tui": [
+      {
+        "name": "chrono",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "crossterm",
+        "req": "^0.29",
+        "kind": "normal"
+      },
+      {
+        "name": "ratatui",
+        "req": "^0.30",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "normal"
+      },
+      {
+        "name": "unicode-width",
+        "req": "^0.2",
+        "kind": "normal"
+      }
+    ],
+    "agentbbs-arena": [
+      {
+        "name": "async-trait",
+        "req": "^0.1",
+        "kind": "normal"
+      },
+      {
+        "name": "chrono",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "normal"
+      },
+      {
+        "name": "criterion",
+        "req": "^0.5",
+        "kind": "dev"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "dev"
+      }
+    ],
+    "agentbbs-gcp": [
+      {
+        "name": "base64",
+        "req": "^0.22",
+        "kind": "normal"
+      },
+      {
+        "name": "chrono",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "reqwest",
+        "req": "^0.13.1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing",
+        "req": "^0.1",
+        "kind": "normal"
+      }
+    ],
+    "agentbbs-web": [
+      {
+        "name": "axum",
+        "req": "^0.8.8",
+        "kind": "normal"
+      },
+      {
+        "name": "chrono",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "hex",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "hmac",
+        "req": "^0.12",
+        "kind": "normal"
+      },
+      {
+        "name": "jsonwebtoken",
+        "req": "^9",
+        "kind": "normal"
+      },
+      {
+        "name": "reqwest",
+        "req": "^0.13.1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "sha2",
+        "req": "^0.10",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "normal"
+      },
+      {
+        "name": "tower",
+        "req": "^0.5",
+        "kind": "normal"
+      },
+      {
+        "name": "tower-http",
+        "req": "^0.6.8",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing",
+        "req": "^0.1",
+        "kind": "normal"
+      },
+      {
+        "name": "tracing-subscriber",
+        "req": "^0.3",
+        "kind": "normal"
+      },
+      {
+        "name": "http-body-util",
+        "req": "^0.1",
+        "kind": "dev"
+      },
+      {
+        "name": "rand",
+        "req": "^0.8",
+        "kind": "dev"
+      },
+      {
+        "name": "rsa",
+        "req": "^0.9",
+        "kind": "dev"
+      },
+      {
+        "name": "tower",
+        "req": "^0.5",
+        "kind": "dev"
+      }
+    ],
+    "agentbbs-bridge": [
+      {
+        "name": "blake3",
+        "req": "^1.5",
+        "kind": "normal"
+      },
+      {
+        "name": "chrono",
+        "req": "^0.4",
+        "kind": "normal"
+      },
+      {
+        "name": "reqwest",
+        "req": "^0.13.1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "serde_json",
+        "req": "^1",
+        "kind": "normal"
+      },
+      {
+        "name": "tokio",
+        "req": "^1.49.0",
+        "kind": "normal"
+      }
+    ],
+    "agentbbs": [],
+    "agentbbs-web-e2e": [
+      {
+        "name": "playwright-core",
+        "req": "*",
+        "kind": "normal"
+      }
+    ]
+  },
+  "externalDepNames": [
+    "anyhow",
+    "arboard",
+    "askama",
+    "asterion-core",
+    "async-stream",
+    "async-trait",
+    "axum",
+    "base64",
+    "bitflags",
+    "blake3",
+    "bytes",
+    "chafa-syms-rs",
+    "chrono",
+    "chrono-tz",
+    "cozy-chess",
+    "cpal",
+    "criterion",
+    "crossterm",
+    "dartboard-core",
+    "dartboard-editor",
+    "dartboard-local",
+    "dartboard-tui",
+    "deadpool-postgres",
+    "ed25519-dalek",
+    "emojis",
+    "encoding",
+    "futures-util",
+    "getch",
+    "getrandom",
+    "hex",
+    "hmac",
+    "http-body-util",
+    "image",
+    "ipnet",
+    "jsonwebtoken",
+    "kdl",
+    "livekit",
+    "nix",
+    "opentelemetry",
+    "opentelemetry-appender-tracing",
+    "opentelemetry-http",
+    "opentelemetry-otlp",
+    "opentelemetry_sdk",
+    "phf",
+    "playwright-core",
+    "pulldown-cmark",
+    "qrcodegen",
+    "rand",
+    "rand_core",
+    "ratatui",
+    "ratatui-textarea",
+    "redb",
+    "reqwest",
+    "ringbuf",
+    "rsa",
+    "rstest",
+    "rumenx-sudoku",
+    "russh",
+    "rustfft",
+    "rustls",
+    "rustls-pemfile",
+    "serde",
+    "serde_json",
+    "sha2",
+    "shlex",
+    "sshattrick-core",
+    "symphonia",
+    "tao",
+    "tempfile",
+    "thiserror",
+    "tikv-jemallocator",
+    "tokio",
+    "tokio-postgres",
+    "tokio-rustls",
+    "tokio-tungstenite",
+    "tokio-util",
+    "tower",
+    "tower-http",
+    "tracing",
+    "tracing-opentelemetry",
+    "tracing-subscriber",
+    "unicode-width",
+    "unicode_names2",
+    "uuid",
+    "vt100",
+    "vte",
+    "wasmi",
+    "wat",
+    "webkit2gtk",
+    "wry"
+  ]
+}

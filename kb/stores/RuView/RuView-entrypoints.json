@@ -1,0 +1,1505 @@
+{
+  "target": "RuView",
+  "metaName": "RuView",
+  "generated": "2026-07-04T07:35:21.789Z",
+  "workspace": {
+    "kind": "mixed",
+    "members": []
+  },
+  "components": [
+    {
+      "name": "@ruvnet/nvsim-dashboard",
+      "path": "dashboard",
+      "kind": "package",
+      "description": "Vite + Lit dashboard for the nvsim NV-diamond magnetometer pipeline simulator (ADR-092).",
+      "scripts": {
+        "dev": "vite",
+        "build": "tsc --noEmit && vite build",
+        "preview": "vite preview --port 4173",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:e2e": "playwright test",
+        "test:a11y": "playwright test tests/a11y.spec.ts"
+      },
+      "bins": [],
+      "deps": [
+        "@preact/signals-core",
+        "lit",
+        "workbox-window"
+      ]
+    },
+    {
+      "name": "wifi-densepose-py",
+      "path": "python",
+      "kind": "crate",
+      "description": "PyO3 bindings for the WiFi-DensePose Rust core — ships as the `wifi-densepose` PyPI wheel (ADR-117)",
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "mobile",
+      "path": "ui/mobile",
+      "kind": "package",
+      "description": null,
+      "scripts": {
+        "start": "expo start",
+        "android": "expo start --android",
+        "ios": "expo start --ios",
+        "web": "expo start --web",
+        "test": "jest",
+        "lint": "eslint ."
+      },
+      "bins": [],
+      "deps": [
+        "@expo/vector-icons",
+        "@react-native-async-storage/async-storage",
+        "@react-navigation/bottom-tabs",
+        "@react-navigation/native",
+        "@types/three",
+        "axios",
+        "expo",
+        "expo-status-bar",
+        "react",
+        "react-dom",
+        "react-native",
+        "react-native-gesture-handler",
+        "react-native-reanimated",
+        "react-native-safe-area-context",
+        "react-native-screens",
+        "react-native-svg",
+        "react-native-web",
+        "react-native-webview",
+        "react-native-wifi-reborn",
+        "three",
+        "victory-native",
+        "zustand"
+      ]
+    },
+    {
+      "name": "v2",
+      "path": "v2",
+      "kind": "crate",
+      "description": null,
+      "bins": [],
+      "examples": []
+    }
+  ],
+  "binaries": [],
+  "commands": [
+    {
+      "cmd": "npm run dev",
+      "raw": "vite",
+      "category": "run",
+      "source": "dashboard/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc --noEmit && vite build",
+      "category": "build",
+      "source": "dashboard/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run preview",
+      "raw": "vite preview --port 4173",
+      "category": "other",
+      "source": "dashboard/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run typecheck",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "dashboard/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run",
+      "category": "test",
+      "source": "dashboard/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test:watch",
+      "raw": "vitest",
+      "category": "test",
+      "source": "dashboard/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test:e2e",
+      "raw": "playwright test",
+      "category": "test",
+      "source": "dashboard/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test:a11y",
+      "raw": "playwright test tests/a11y.spec.ts",
+      "category": "test",
+      "source": "dashboard/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run start",
+      "raw": "expo start",
+      "category": "run",
+      "source": "ui/mobile/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run android",
+      "raw": "expo start --android",
+      "category": "run",
+      "source": "ui/mobile/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run ios",
+      "raw": "expo start --ios",
+      "category": "run",
+      "source": "ui/mobile/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run web",
+      "raw": "expo start --web",
+      "category": "run",
+      "source": "ui/mobile/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "jest",
+      "category": "test",
+      "source": "ui/mobile/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "eslint .",
+      "category": "other",
+      "source": "ui/mobile/package.json",
+      "note": null
+    },
+    {
+      "cmd": "docker pull ruvnet/wifi-densepose:latest",
+      "category": "other",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "docker run -p 3000:3000 ruvnet/wifi-densepose:latest",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "python -m esptool --chip esp32s3 --port COM9 --baud 460800 \\",
+      "category": "other",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "python firmware/esp32-csi-node/provision.py --port COM9 \\",
+      "category": "other",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/rf-scan.js --port 5006",
+      "category": "other",
+      "source": "README.md",
+      "note": "Live RF room scan"
+    },
+    {
+      "cmd": "node scripts/snn-csi-processor.js --port 5006",
+      "category": "other",
+      "source": "README.md",
+      "note": "SNN real-time learning"
+    },
+    {
+      "cmd": "node scripts/mincut-person-counter.js --port 5006",
+      "category": "other",
+      "source": "README.md",
+      "note": "Correct person counting"
+    },
+    {
+      "cmd": "python archive/v1/data/proof/verify.py",
+      "category": "other",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -p wifi-densepose-sensing-server -- --pretrain --dataset data/csi/ --pretrain-epochs 50",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -p wifi-densepose-sensing-server -- --train --dataset data/mmfi/ --epochs 100 --save-rvf model.rvf",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -p wifi-densepose-sensing-server -- --model model.rvf --embed",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -p wifi-densepose-sensing-server -- --model model.rvf --build-index env",
+      "category": "build",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest swarm status",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest swarm monitor",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest init --wizard",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest agent spawn -t coder --name my-coder",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory store --key \"pattern\" --value \"data\" --namespace patterns",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory search --query \"authentication\"",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest doctor --fix",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory store --key \"name\" --value \"data\" --namespace patterns",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory list --namespace patterns",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory init --force",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hive-mind init --queen-type strategic",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hive-mind status",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hive-mind spawn --count 5 --type worker",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hive-mind consensus --propose \"task\"",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest daemon start",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest agent spawn -t coder",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest agent list",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory search --query \"patterns\"",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hooks pre-task --description \"task\"",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hooks worker dispatch --trigger optimize",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -q -p wifi-densepose-train --bin aa_score_runner --no-default-features",
+      "category": "run",
+      "source": "aether-arena/VERIFY.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -q -p wifi-densepose-train --bin aa_score_runner --no-default-features -- --json",
+      "category": "run",
+      "source": "aether-arena/VERIFY.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -q -p wifi-densepose-train --bin aa_score_runner --no-default-features -- --repeat 16",
+      "category": "run",
+      "source": "aether-arena/VERIFY.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -q -p wifi-densepose-train --bin aa_score_runner --no-default-features -- \\",
+      "category": "run",
+      "source": "aether-arena/VERIFY.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -p wifi-densepose-train --bin aa_score_runner --no-default-features -- --generate-hash \\",
+      "category": "run",
+      "source": "aether-arena/VERIFY.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test --workspace --no-default-features",
+      "category": "test",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo check -p wifi-densepose-train --no-default-features",
+      "category": "other",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "python firmware/esp32-csi-node/provision.py --port COM7 \\",
+      "category": "other",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "python -m serial.tools.miniterm COM7 115200",
+      "category": "other",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "python archive/v1/data/proof/verify.py --generate-hash",
+      "category": "other",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "category": "build",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npm test",
+      "category": "test",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest swarm init --v3-mode",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory search --query \"authentication patterns\"",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory store --key \"pattern-auth\" --value \"JWT with refresh\" --namespace patterns",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory list --namespace patterns --limit 10",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory retrieve --key \"pattern-auth\" --namespace patterns",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test --workspace --no-default-features --lib",
+      "category": "test",
+      "source": "docs/ADR-110-BRANCH-STATE.md",
+      "note": "1437 tests at iter 22, 0 failures"
+    },
+    {
+      "cmd": "python -m pytest archive/v1/tests/unit/test_esp32_binary_parser.py::TestSyncPacketParser -v",
+      "category": "other",
+      "source": "docs/ADR-110-BRANCH-STATE.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test -p wifi-densepose-hardware --no-default-features --lib sync_packet::tests::canonical_wire_bytes_match_python_decoder",
+      "category": "test",
+      "source": "docs/ADR-110-BRANCH-STATE.md",
+      "note": null
+    },
+    {
+      "cmd": "python -m pytest archive/v1/tests/unit/test_esp32_binary_parser.py::TestSyncPacketParser::test_canonical_wire_bytes_match_rust_decoder -v",
+      "category": "other",
+      "source": "docs/ADR-110-BRANCH-STATE.md",
+      "note": null
+    },
+    {
+      "cmd": "make verify",
+      "category": "other",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "make verify-verbose",
+      "category": "other",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "make verify-audit",
+      "category": "other",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 archive/v1/data/proof/verify.py --generate-hash",
+      "category": "other",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 archive/v1/data/proof/verify.py",
+      "category": "other",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --release",
+      "category": "build",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test --workspace",
+      "category": "test",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo bench --package wifi-densepose-signal",
+      "category": "bench",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --release --package wifi-densepose-signal",
+      "category": "build",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --release --package wifi-densepose-api",
+      "category": "build",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --release --package wifi-densepose-mat",
+      "category": "build",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --release --package wifi-densepose-wasm --target wasm32-unknown-unknown",
+      "category": "build",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 -m http.server 3000 --directory ui",
+      "category": "other",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker compose up",
+      "category": "other",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker compose logs -f wifi-densepose",
+      "category": "other",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker compose exec wifi-densepose pytest tests/ -v",
+      "category": "run",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker compose down",
+      "category": "other",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker compose down -v",
+      "category": "other",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker build --target production -t wifi-densepose:latest .",
+      "category": "build",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker run -d \\",
+      "category": "run",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker stack deploy -c docker-compose.prod.yml wifi-densepose",
+      "category": "other",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker compose -f docker-compose.esp32.yml up",
+      "category": "other",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run --release --package wifi-densepose-hardware -- --mode esp32-aggregator --port 5000",
+      "category": "run",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker exec aggregator python verify_esp32.py",
+      "category": "run",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo install wasm-pack",
+      "category": "install",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "wasm-pack build crates/wifi-densepose-wasm --target web --release",
+      "category": "build",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "wasm-pack build crates/wifi-densepose-wasm --target web --release -- --features mat",
+      "category": "build",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "wasm-pack test --headless --chrome crates/wifi-densepose-wasm",
+      "category": "test",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --release --package wifi-densepose-cli --target aarch64-unknown-linux-gnu",
+      "category": "build",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker run -d -p 8000:8000 wifi-densepose:latest",
+      "category": "run",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run --release --package wifi-densepose-api",
+      "category": "run",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 -m venv venv",
+      "category": "other",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build",
+      "category": "build",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test --workspace -- --nocapture",
+      "category": "test",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo install cargo-watch",
+      "category": "install",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo watch -x 'test --workspace' -x 'build --release'",
+      "category": "test",
+      "source": "docs/build-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --release -p wifi-densepose-pointcloud",
+      "category": "build",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "python scripts/collect-ground-truth.py --duration 300 --preview",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "python scripts/record-csi-udp.py --duration 300",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/align-ground-truth.js --gt data/ground-truth/*.jsonl --csi data/recordings/*.csi.jsonl",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/train-wiflow-supervised.js --data data/paired/*.jsonl --scale lite",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/eval-wiflow.js --model models/wiflow-real/wiflow-v1.json --data data/paired/*.jsonl",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/train-ruvllm.js --data data/recordings/*.csi.jsonl",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": "retrain on your own data"
+    },
+    {
+      "cmd": "node scripts/benchmark-ruvllm.js --model models/csi-ruvllm",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": "benchmark"
+    },
+    {
+      "cmd": "node scripts/rf-scan.js --port 5006 --duration 30",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/csi-spectrogram.js --replay data/recordings/*.csi.jsonl",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/train-wiflow.js --data data/recordings/*.csi.jsonl",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "python firmware/esp32-csi-node/provision.py --port COM9 --hop-channels \"1,6,11\"",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "python scripts/collect-training-data.py --port 5006 --duration 120",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/train-ruvllm.js --data data/recordings/pretrain-*.csi.jsonl",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/train-camera-free.js --data data/recordings/pretrain-*.csi.jsonl",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "docker run -p 3000:3000 -p 3001:3001 -p 5005:5005/udp ruvnet/wifi-densepose:latest",
+      "category": "run",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "docker pull ruvnet/wifi-densepose:python",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "docker run -p 8765:8765 -p 8080:8080 ruvnet/wifi-densepose:python",
+      "category": "run",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "docker run --rm -v $(pwd):/out ruvnet/wifi-densepose:latest --export-rvf /out/model.rvf",
+      "category": "run",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo add wifi-densepose-core",
+      "category": "install",
+      "source": "docs/readme-details.md",
+      "note": "Types, traits, errors"
+    },
+    {
+      "cmd": "cargo add wifi-densepose-signal",
+      "category": "install",
+      "source": "docs/readme-details.md",
+      "note": "CSI signal processing (6 SOTA algorithms)"
+    },
+    {
+      "cmd": "cargo add wifi-densepose-nn",
+      "category": "install",
+      "source": "docs/readme-details.md",
+      "note": "Neural inference (ONNX, PyTorch, Candle)"
+    },
+    {
+      "cmd": "cargo add wifi-densepose-vitals",
+      "category": "install",
+      "source": "docs/readme-details.md",
+      "note": "Vital sign extraction (breathing + heart rate)"
+    },
+    {
+      "cmd": "cargo add wifi-densepose-mat",
+      "category": "install",
+      "source": "docs/readme-details.md",
+      "note": "Disaster response (MAT survivor detection)"
+    },
+    {
+      "cmd": "cargo add wifi-densepose-hardware",
+      "category": "install",
+      "source": "docs/readme-details.md",
+      "note": "ESP32, Intel 5300, Atheros sensors"
+    },
+    {
+      "cmd": "cargo add wifi-densepose-train",
+      "category": "install",
+      "source": "docs/readme-details.md",
+      "note": "Training pipeline (MM-Fi dataset)"
+    },
+    {
+      "cmd": "cargo add wifi-densepose-wifiscan",
+      "category": "install",
+      "source": "docs/readme-details.md",
+      "note": "Multi-BSSID WiFi scanning"
+    },
+    {
+      "cmd": "cargo add wifi-densepose-ruvector",
+      "category": "install",
+      "source": "docs/readme-details.md",
+      "note": "RuVector v2.0.4 integration layer (ADR-017)"
+    },
+    {
+      "cmd": "python -m esptool --chip esp32s3 --port COM7 --baud 460800 \\",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -p wifi-densepose-sensing-server -- --http-port 3000 --source auto",
+      "category": "run",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "python firmware/esp32-csi-node/provision.py --port COM8 \\",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "python scripts/seed_csi_bridge.py \\",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "python scripts/seed_csi_bridge.py --token \"$SEED_TOKEN\" --stats",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test -p wifi-densepose-wifiscan",
+      "category": "test",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "docker run --rm -v $(pwd)/data:/data ruvnet/wifi-densepose:latest \\",
+      "category": "run",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 scripts/qemu_swarm.py --preset smoke",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 scripts/qemu_swarm.py --preset standard",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 scripts/qemu_swarm.py --list-presets",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 scripts/qemu_swarm.py --preset standard --dry-run",
+      "category": "run",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test -p wifi-densepose-sensing-server",
+      "category": "test",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "python -m pytest archive/v1/tests/ -v",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "python -m venv venv && source venv/bin/activate",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --release --workspace --no-default-features",
+      "category": "build",
+      "source": "docs/RELEASE-streaming-engine-v0.3.0.md",
+      "note": "optimized build"
+    },
+    {
+      "cmd": "cargo test -p wifi-densepose-engine",
+      "category": "test",
+      "source": "docs/RELEASE-streaming-engine-v0.3.0.md",
+      "note": "13 integration tests"
+    },
+    {
+      "cmd": "cargo bench -p wifi-densepose-engine",
+      "category": "bench",
+      "source": "docs/RELEASE-streaming-engine-v0.3.0.md",
+      "note": "per-cycle latency"
+    },
+    {
+      "cmd": "python scripts/udp-relay.py --listen-port 5005 --forward-port 5006",
+      "category": "other",
+      "source": "docs/TROUBLESHOOTING.md",
+      "note": null
+    },
+    {
+      "cmd": "docker compose -f docker/docker-compose.yml up",
+      "category": "other",
+      "source": "docs/TROUBLESHOOTING.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -- --source esp32",
+      "category": "run",
+      "source": "docs/TROUBLESHOOTING.md",
+      "note": null
+    },
+    {
+      "cmd": "docker compose -f docker/docker-compose.yml up sensing-server",
+      "category": "other",
+      "source": "docs/TROUBLESHOOTING.md",
+      "note": null
+    },
+    {
+      "cmd": "python firmware/esp32-csi-node/provision.py \\",
+      "category": "other",
+      "source": "docs/user-guide-apple-homepod.md",
+      "note": null
+    },
+    {
+      "cmd": "python c6-presence-watcher.py --node-id 1 --esp32-ip 192.168.1.20 --privacy-class 2",
+      "category": "other",
+      "source": "docs/user-guide-apple-homepod.md",
+      "note": null
+    },
+    {
+      "cmd": "python ruview-sensing-server.py --port 3000",
+      "category": "other",
+      "source": "docs/user-guide-apple-homepod.md",
+      "note": null
+    },
+    {
+      "cmd": "python ruview-hap-bridge.py --port 51826 --pin 200-70-910",
+      "category": "other",
+      "source": "docs/user-guide-apple-homepod.md",
+      "note": null
+    },
+    {
+      "cmd": "python c6-presence-watcher.py --node-id 1 --esp32-ip 192.168.1.20 \\",
+      "category": "other",
+      "source": "docs/user-guide-apple-homepod.md",
+      "note": null
+    },
+    {
+      "cmd": "python c6-presence-watcher.py --node-id 2 --esp32-ip 192.168.1.21 \\",
+      "category": "other",
+      "source": "docs/user-guide-apple-homepod.md",
+      "note": null
+    },
+    {
+      "cmd": "python ruview-hap-bridge.py --port 51826 --rooms \"Living Room,Bedroom\"",
+      "category": "other",
+      "source": "docs/user-guide-apple-homepod.md",
+      "note": null
+    },
+    {
+      "cmd": "python c6-presence-watcher.py --node-id 1 \\",
+      "category": "other",
+      "source": "docs/user-guide-apple-homepod.md",
+      "note": null
+    },
+    {
+      "cmd": "npm install -D @ruvnet/rvagent@0.1.0",
+      "category": "install",
+      "source": "docs/user-guide-apple-homepod.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo add wifi-densepose-ruvector --features crv",
+      "category": "install",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo add wifi-densepose-wasm",
+      "category": "install",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo add wifi-densepose-wasm-edge",
+      "category": "install",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker run -p 3000:3000 -p 3001:3001 ruvnet/wifi-densepose:latest",
+      "category": "run",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker run --network host ruvnet/wifi-densepose:latest --source wifi --tick-ms 500",
+      "category": "run",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker run -p 3000:3000 -p 3001:3001 -p 5005:5005/udp -e CSI_SOURCE=esp32 ruvnet/wifi-densepose:latest",
+      "category": "run",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -p wifi-densepose-sensing-server -- \\",
+      "category": "run",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker run --rm \\",
+      "category": "run",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python scripts/seed_csi_bridge.py --token \"$SEED_TOKEN\" --compact",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python -c \"import asyncio,websockets; asyncio.run((lambda: websockets.connect('ws://localhost:8765/ws/field'))())\"",
+      "category": "run",
+      "source": "docs/user-guide.md",
+      "note": "stream"
+    },
+    {
+      "cmd": "docker run --rm --net=host ruvnet/wifi-densepose:0.7.0 \\",
+      "category": "run",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -p wifi-densepose-bfld --example bfld_minimal",
+      "category": "run",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -p wifi-densepose-bfld --example bfld_handle",
+      "category": "run",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 firmware/esp32-csi-node/provision.py \\",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python -c \"",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -p wifi-densepose-sensing-server --release -- \\",
+      "category": "run",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 scripts/occworld_retrain.py record \\",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 scripts/occworld_retrain.py vqvae \\",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 scripts/occworld_retrain.py transformer \\",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python provision.py --port COM6 --ssid \"YourWiFi\" --password \"secret\" --target-ip 192.168.1.20",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python firmware/esp32-csi-node/provision.py --port COM7 --tdm-slot 0 --tdm-total 3",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python firmware/esp32-csi-node/provision.py --port COM8 --tdm-slot 1 --tdm-total 3",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python firmware/esp32-csi-node/provision.py --port COM9 --tdm-slot 2 --tdm-total 3",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/train-camera-free.js \\",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python - <<'EOF'",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python scripts/calibrate-camera-room.py",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": "< 5 min, two checkerboards + a few photos"
+    },
+    {
+      "cmd": "python scripts/record-csi-udp.py --duration 2400",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python scripts/collect-ground-truth.py --duration 2400 --preview \\",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/align-ground-truth.js \\",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/train-wiflow-supervised.js \\",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/eval-wiflow.js \\",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/sleep-monitor.js --port 5006 --bind 192.168.1.20",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/apnea-detector.js --port 5006 --bind 192.168.1.20",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/stress-monitor.js --port 5006 --bind 192.168.1.20",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/gait-analyzer.js --port 5006 --bind 192.168.1.20",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/sleep-monitor.js --replay data/recordings/*.csi.jsonl",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "make -j$(nproc)",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 scripts/qemu_swarm.py --config my_test.yaml",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "make all CC=clang",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "make run_serialize FUZZ_DURATION=60",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "make run_edge FUZZ_DURATION=60",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "make run_nvs FUZZ_DURATION=60",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 scripts/generate_nvs_matrix.py --output-dir build/nvs_matrix",
+      "category": "build",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "docker pull --platform linux/arm64 ruvnet/wifi-densepose:latest",
+      "category": "other",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test --package wifi-densepose-mat",
+      "category": "test",
+      "source": "docs/wifi-mat-user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --release --package wifi-densepose-mat --all-features",
+      "category": "build",
+      "source": "docs/wifi-mat-user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test -p wifi-densepose-hardware --no-default-features",
+      "category": "test",
+      "source": "docs/WITNESS-LOG-028.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test -p wifi-densepose-signal --no-default-features",
+      "category": "test",
+      "source": "docs/WITNESS-LOG-028.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test -p wifi-densepose-train --no-default-features",
+      "category": "test",
+      "source": "docs/WITNESS-LOG-028.md",
+      "note": null
+    },
+    {
+      "cmd": "docker inspect ruvnet/wifi-densepose:latest --format='{{.Size}}'",
+      "category": "other",
+      "source": "docs/WITNESS-LOG-028.md",
+      "note": null
+    },
+    {
+      "cmd": "docker inspect ruvnet/wifi-densepose:python --format='{{.Size}}'",
+      "category": "other",
+      "source": "docs/WITNESS-LOG-028.md",
+      "note": null
+    },
+    {
+      "cmd": "python -m esptool --chip esp32s3 --port COM7 chip_id",
+      "category": "other",
+      "source": "docs/WITNESS-LOG-028.md",
+      "note": null
+    },
+    {
+      "cmd": "python firmware/esp32-csi-node/provision.py --port $port --chip esp32c6 \\",
+      "category": "other",
+      "source": "docs/WITNESS-LOG-110.md",
+      "note": null
+    },
+    {
+      "cmd": "python examples/ruview_live.py --csi COM7 --mmwave COM4",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "python examples/medical/bp_estimator.py --port COM4",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "python examples/sleep/apnea_screener.py --port COM4 --duration 28800",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "python examples/stress/hrv_stress_monitor.py --port COM4 --duration 3600",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "python examples/environment/room_monitor.py --csi-port COM7 --mmwave-port COM4",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "python examples/ruview_live.py --csi COM7 --mmwave none",
+      "category": "other",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm install",
+      "category": "install",
+      "source": "examples/README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev",
+      "category": "run",
+      "source": "examples/README.md",
+      "note": "http://localhost:5173 — proxies /api → http://localhost:8123"
+    },
+    {
+      "cmd": "docker-compose up",
+      "category": "other",
+      "source": "ui/README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build -p wifi-densepose-sensing-server --no-default-features",
+      "category": "build",
+      "source": "ui/README.md",
+      "note": null
+    },
+    {
+      "cmd": "python -m http.server 3000",
+      "category": "other",
+      "source": "ui/README.md",
+      "note": null
+    }
+  ],
+  "install": [
+    "cargo install wasm-pack",
+    "cargo install cargo-watch",
+    "cargo add wifi-densepose-core",
+    "cargo add wifi-densepose-signal",
+    "cargo add wifi-densepose-nn",
+    "cargo add wifi-densepose-vitals",
+    "cargo add wifi-densepose-mat",
+    "cargo add wifi-densepose-hardware",
+    "cargo add wifi-densepose-train",
+    "cargo add wifi-densepose-wifiscan",
+    "cargo add wifi-densepose-ruvector",
+    "npm install -D @ruvnet/rvagent@0.1.0",
+    "cargo add wifi-densepose-ruvector --features crv",
+    "cargo add wifi-densepose-wasm",
+    "cargo add wifi-densepose-wasm-edge",
+    "npm install"
+  ],
+  "quickstart": [
+    "npm run dev",
+    "npm run start",
+    "npm run android",
+    "npm run ios",
+    "npm run web",
+    "docker run -p 3000:3000 ruvnet/wifi-densepose:latest",
+    "cargo run -p wifi-densepose-sensing-server -- --pretrain --dataset data/csi/ --pretrain-epochs 50",
+    "cargo run -p wifi-densepose-sensing-server -- --train --dataset data/mmfi/ --epochs 100 --save-rvf model.rvf",
+    "cargo run -p wifi-densepose-sensing-server -- --model model.rvf --embed",
+    "npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized",
+    "npx @claude-flow/cli@latest swarm status",
+    "npx @claude-flow/cli@latest swarm monitor"
+  ]
+}

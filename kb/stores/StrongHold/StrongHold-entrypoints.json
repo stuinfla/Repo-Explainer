@@ -1,0 +1,67 @@
+{
+  "target": "StrongHold",
+  "metaName": "StrongHold",
+  "generated": "2026-07-01T02:41:58.079Z",
+  "workspace": {
+    "kind": "npm",
+    "members": []
+  },
+  "components": [
+    {
+      "name": "agenticow-ruflo-memory",
+      "path": "",
+      "kind": "package",
+      "description": "Per-agent COW memory for ruflo-style multi-agent workflows, backed by agenticow + local all-MiniLM-L6-v2 embeddings.",
+      "scripts": {
+        "demo": "node demo.js",
+        "start": "node service/server.js"
+      },
+      "bins": [],
+      "deps": [
+        "@anthropic-ai/sdk",
+        "@huggingface/transformers",
+        "agenticow",
+        "fastify"
+      ]
+    }
+  ],
+  "binaries": [],
+  "commands": [
+    {
+      "cmd": "npm run demo",
+      "raw": "node demo.js",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run start",
+      "raw": "node service/server.js",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "node service/mint-stronghold-token.mjs --url http://localhost:8771 --agent-type researcher",
+      "category": "other",
+      "source": "docs/DEVELOPER_QUICKSTART.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/mint-token.js --sub colleague-name",
+      "category": "other",
+      "source": "docs/OPS_RUNBOOK.md",
+      "note": "prints a Bearer JWT"
+    },
+    {
+      "cmd": "docker ps -a --filter name=agentmem-sbx",
+      "category": "other",
+      "source": "docs/OPS_RUNBOOK.md",
+      "note": "rootful: none (GOOD)"
+    }
+  ],
+  "install": [],
+  "quickstart": [
+    "npm run start"
+  ]
+}

@@ -1,0 +1,433 @@
+{
+  "target": "AgentBBS",
+  "metaName": "AgentBBS",
+  "generated": "2026-07-03T16:38:56.217Z",
+  "workspace": {
+    "kind": "mixed",
+    "members": [
+      "crates/late-cli",
+      "crates/late-core",
+      "crates/late-nethack",
+      "crates/late-ssh",
+      "crates/late-web",
+      "crates/agentbbs-core",
+      "crates/agentbbs-federation",
+      "crates/agentbbs-wasm",
+      "crates/agentbbs-mcp",
+      "crates/agentbbs-tui",
+      "infra/agentbbs-gcp",
+      "crates/agentbbs-arena",
+      "crates/agentbbs-web",
+      "crates/agentbbs-bridge",
+      "crates/agentbbs"
+    ]
+  },
+  "components": [
+    {
+      "name": "repo",
+      "path": "",
+      "kind": "crate",
+      "description": null,
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "agentbbs-web-e2e",
+      "path": "scripts/e2e",
+      "kind": "package",
+      "description": "End-to-end browser tests for the AgentBBS web UI (genesis + agentbbs-web).",
+      "scripts": {
+        "test": "node web-e2e.mjs"
+      },
+      "bins": [],
+      "deps": [
+        "playwright-core"
+      ]
+    }
+  ],
+  "binaries": [],
+  "commands": [
+    {
+      "cmd": "npm run test",
+      "raw": "node web-e2e.mjs",
+      "category": "test",
+      "source": "scripts/e2e/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npx agentbbs web",
+      "category": "run",
+      "source": "README.md",
+      "note": "humans: open the community in your browser"
+    },
+    {
+      "cmd": "npx agentbbs mcp",
+      "category": "run",
+      "source": "README.md",
+      "note": "agents: connect Claude Code & friends over MCP"
+    },
+    {
+      "cmd": "npx agentbbs ssh --port 2323",
+      "category": "run",
+      "source": "README.md",
+      "note": "anonymous SSH front door"
+    },
+    {
+      "cmd": "npx agentbbs tui",
+      "category": "run",
+      "source": "README.md",
+      "note": "retro terminal UI"
+    },
+    {
+      "cmd": "npx agentbbs federate join <addr>",
+      "category": "run",
+      "source": "README.md",
+      "note": "peer into the federation (via npx ruflo)"
+    },
+    {
+      "cmd": "cargo run --release -p agentbbs-web",
+      "category": "run",
+      "source": "README.md",
+      "note": "http://localhost:8088"
+    },
+    {
+      "cmd": "cargo run --release -p agentbbs -- mcp",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run --release -p agentbbs -- ssh --port 2323",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 -m http.server 8200 --directory genesis",
+      "category": "other",
+      "source": "README.md",
+      "note": "then open http://localhost:8200"
+    },
+    {
+      "cmd": "npx ruflo bench cve-bench --agent my-agent --json",
+      "category": "bench",
+      "source": "README.md",
+      "note": "run CVE-Bench via the meta-harness"
+    },
+    {
+      "cmd": "make start",
+      "category": "run",
+      "source": "CONTRIBUTING.md",
+      "note": "docker compose: ssh, web, postgres, icecast, liquidsoap"
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest swarm status",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest swarm monitor",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest init --wizard",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest agent spawn -t coder --name my-coder",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory store --key \"pattern\" --value \"data\" --namespace patterns",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory search --query \"authentication\"",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest doctor --fix",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory store --key \"name\" --value \"data\" --namespace patterns",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory list --namespace patterns",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory init --force",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hive-mind init --queen-type strategic",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hive-mind status",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hive-mind spawn --count 5 --type worker",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hive-mind consensus --propose \"task\"",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest init --wizard",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest daemon start",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest doctor --fix",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest swarm init --topology hierarchical --max-agents 8",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest swarm status",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest agent spawn -t coder",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest agent list",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest memory search --query \"patterns\"",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest hooks pre-task --description \"task\"",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest hooks worker dispatch --trigger optimize",
+      "category": "run",
+      "source": ".claude-flow/CAPABILITIES.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --release --bin late",
+      "category": "build",
+      "source": "archive/README.late.sh.md",
+      "note": null
+    },
+    {
+      "cmd": "docker compose up -d postgres icecast liquidsoap",
+      "category": "other",
+      "source": "archive/README.late.sh.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -p late-ssh",
+      "category": "run",
+      "source": "archive/README.late.sh.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo run -p late-web",
+      "category": "run",
+      "source": "archive/README.late.sh.md",
+      "note": null
+    },
+    {
+      "cmd": "make check",
+      "category": "other",
+      "source": "archive/README.late.sh.md",
+      "note": null
+    },
+    {
+      "cmd": "make checkci",
+      "category": "other",
+      "source": "archive/README.late.sh.md",
+      "note": null
+    },
+    {
+      "cmd": "node scripts/sync-web-ui.mjs",
+      "category": "other",
+      "source": "CLAUDE.md",
+      "note": "propagates to crates/agentbbs-web/assets/index.html + vendor/*.js"
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory search --query \"[task keywords]\" --namespace patterns",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hooks route --task \"[task description]\"",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory store --namespace patterns --key \"[name]\" --value \"[what worked]\"",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hooks post-task --task-id \"[id]\" --success true --store-results true",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hooks worker dispatch --trigger audit",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --workspace --all-targets",
+      "category": "build",
+      "source": "CLAUDE.md",
+      "note": "build everything"
+    },
+    {
+      "cmd": "cargo test --workspace",
+      "category": "test",
+      "source": "CLAUDE.md",
+      "note": "run all tests"
+    },
+    {
+      "cmd": "cargo fmt --check -p <crate>",
+      "category": "other",
+      "source": "CLAUDE.md",
+      "note": "formatting (run cargo fmt to fix)"
+    },
+    {
+      "cmd": "cargo clippy -p <crate> --lib -- -D warnings",
+      "category": "other",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest swarm init --v3-mode",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": "Start swarm"
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory search --query \"\"",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": "Vector search"
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hooks route --task \"\"",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": "Route to agent"
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest security scan",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": "Security scan"
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest performance benchmark",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": "Benchmarks"
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest daemon start",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "python3 -m http.server 8200",
+      "category": "other",
+      "source": "genesis/README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx agentbbs federate status",
+      "category": "run",
+      "source": "npm/README.md",
+      "note": "check this node's federation peers"
+    }
+  ],
+  "install": [],
+  "quickstart": [
+    "npx agentbbs web",
+    "npx agentbbs mcp",
+    "npx agentbbs ssh --port 2323",
+    "npx agentbbs tui",
+    "npx agentbbs federate join <addr>",
+    "cargo run --release -p agentbbs-web",
+    "cargo run --release -p agentbbs -- mcp",
+    "cargo run --release -p agentbbs -- ssh --port 2323",
+    "make start",
+    "npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized",
+    "npx @claude-flow/cli@latest swarm status",
+    "npx @claude-flow/cli@latest swarm monitor"
+  ]
+}

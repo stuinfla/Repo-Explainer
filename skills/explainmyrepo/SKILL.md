@@ -9,7 +9,7 @@ description: >-
   deeply via a real RVF knowledge base, conceives a one-of-a-kind visual
   metaphor, authors the content along a comprehension arc grounded in the KB,
   generates feeling (raster) + structure (SVG) imagery, assembles one page,
-  grades it on real pixels to the exemplar-anchored bar (mean >= 90, min >= 85, five operator-YES) with a surgical refine
+  grades it on real pixels to the exemplar-anchored bar (mean >= 90, min >= 85, six operator-YES) with a surgical refine
   loop, ships a downloadable AI knowledge pack, and deploys to a live URL. Do
   NOT use for generic "build me a website" requests with no repo to explain.
 ---
@@ -51,11 +51,20 @@ Authoritative sources (read them if anything here is ambiguous):
    You read the **exit code first**, then the JSON. A failed cue stops the build
    with an honest reason — never a stack trace, never a silent green.
 4. **Never ship below the exemplar bar (INV-05).** "Done" = on BOTH mobile (390px) and desktop
-   (1440px) the scorecard's **mean ≥ 90 AND min axis ≥ 85 AND all five operator questions YES**
+   (1440px) the scorecard's **mean ≥ 90 AND min axis ≥ 85 AND all six operator questions YES**
    (anchored to the owner's own example sites — a literal "95 on every axis" is unreachable by an
    honest grader; a build that clears this bar is **reported as a normalized 95**). The two pre-ship
    eyes (vision model + you) agree, the page is live (200 unauthenticated), and the AI pack ships.
    Below the bar: **refine, or flag honestly.** Never ship slop and call it done.
+5. **The submitted repo IS the identity (INV-21).** You build an explainer of the EXACT
+   repo the human submitted — nothing else, ever. If it cannot be cloned (private,
+   deleted, typo) or its clone is broken, STOP with an honest, actionable reason ("we
+   can't access this repo — if it's private, share it with our GitHub account or make it
+   public, then rebuild"). NEVER search for, substitute, or reconstruct a similar-looking
+   repo or its README: an explainer of the wrong repo is fabrication, the one unforgivable
+   output — worse than shipping nothing (incident 2026-07-08). The boundary tools enforce
+   the pin mechanically: `clone-repo` and `deploy` refuse any `repo.url` that doesn't match
+   `EXPLAINER_SUBMITTED_REPO` when the harness sets it.
 
 ---
 
@@ -204,7 +213,21 @@ failure). The brief, grounded in what the KB revealed:
 Write the content along the **comprehension arc** into the `content` slot. The
 reader asks a sequence of questions; every section answers the **next** one as it
 forms. **Never show a low-level detail before the high-level frame that makes it
-legible.** Author all eight sections:
+legible.**
+
+**THE COMPREHENSION LADDER (ADR-0006 — altitude control).** The reader is a **smart
+developer from a DIFFERENT domain** — intelligent, curious, knowing NOTHING about this
+project's field. Sections 1–4 (hero, problem, whatItIs, insight) assume **zero** domain
+knowledge: no acronym or term of art without a plain-words gloss at first use (INV-20
+fails the build on violations, deterministically). The **problem section works from
+first principles** — make the reader FEEL the pain in human, consequence terms BEFORE
+any category vocabulary; never name the solution's category before the reader feels the
+problem it kills. `howItWorks` may descend ONE technical level (terms still defined);
+`useCases`/`getStarted` return to the reader's world — how THEY would use it and exactly
+what the experience looks like. Grounding (INV-06) supplies the FACTS, not the
+VOCABULARY: translate insider terms; cite the passage, don't parrot its jargon.
+
+Author all eight sections:
 
 | Reader's question | Section | Medium of its image |
 |---|---|---|
@@ -326,14 +349,18 @@ parallel.
   structural SVGs (crisp, legible, genuinely explanatory) and the 1200×630 social
   card (on-brand, inviting, tagline legible).**
 
-  **The OPERATOR QUALITATIVE GATE — five YES/NO questions (the owner's words), ALL must be YES or you
+  **The OPERATOR QUALITATIVE GATE — six YES/NO questions (the owner's words), ALL must be YES or you
   loop:** (1) Would this make me believe I understand this? (2) Would this make it approachable?
   (3) Would this explain it for somebody who doesn't understand it? (4) Would it give me confidence I
-  understand the architecture? (5) Does it make me smile — "oh, that's cool"? These are independent of
-  the numeric axes; a page can clear the numbers and still fail one of these.
+  understand the architecture? (5) Does it make me smile — "oh, that's cool"? (6) Could someone who
+  knows nothing about this domain read the first four sections and explain the problem and the
+  solution back to me? (ADR-0006 D4 — the critic answers (6) role-playing a smart developer from a
+  DIFFERENT domain.) These are independent of the numeric axes; a page can clear the numbers and
+  still fail one of these. **INV-20 (deterministic, free):** any acronym in the first four sections
+  without a plain-words gloss at first use fails the gate before the vision pass even runs.
 
 - **The bar + the loop (non-negotiable — iteration over a few revs is EXPECTED, not a failure):**
-  - **BAR:** on **BOTH** devices, **mean ≥ 90 AND min axis ≥ 85 AND all five operator questions YES**
+  - **BAR:** on **BOTH** devices, **mean ≥ 90 AND min axis ≥ 85 AND all six operator questions YES**
     (11 axes × 2 devices). The **min ≥ 85 is the anti-slop floor** — a single slop axis (a raw-ASCII
     diagram, a pretty-but-empty image) scores ≈50 and fails the build. Anchored to the owner's own
     example sites (~88 headline / ~92 mean); a build that clears the bar is reported as a normalized **95**.
@@ -351,9 +378,9 @@ parallel.
   **flag it honestly** in the result and the email. **Never ship slop and call it
   done.** Two pre-ship eyes gate S7: the **vision model** and **you** (the
   operator), viewing the **same screenshots**, both agreeing, with **mean ≥ 90, min ≥ 85, and all
-  five operator questions YES** on both devices. The **owner is the post-delivery third eye** (S9) —
+  six operator questions YES** on both devices. The **owner is the post-delivery third eye** (S9) —
   owner rejection re-opens this same surgical loop.
-- **Cue:** **mean ≥ 90 AND min axis ≥ 85 AND all five operator questions YES on BOTH devices**, or an
+- **Cue:** **mean ≥ 90 AND min axis ≥ 85 AND all six operator questions YES on BOTH devices**, or an
   honest flag. Only an **already-great** page proceeds to deploy.
 
 ### Station 8 — PUBLISH / DEPLOY (+ repo SEO) — the FIRST and only deploy
@@ -419,7 +446,7 @@ in its `BuildContext` slot.
 - **INV-04 Never-fail-silently** — every station has a loud cue; no placeholder,
   default, or stub past a failure.
 - **INV-05 Never-ship-below-the-exemplar-bar** — on both devices, mean ≥ 90 AND min axis ≥ 85 AND all
-  five operator questions YES IS the completion criterion (a clearing build is reported as a normalized
+  six operator questions YES IS the completion criterion (a clearing build is reported as a normalized
   95); below it, refine or flag honestly.
 - **INV-06 Grounded-in-KB** — no claim without a real RVF KB passage; never a JSON
   stand-in.
@@ -436,9 +463,12 @@ in its `BuildContext` slot.
 - **INV-19 Implementation-experience present** — the Get-Started section shows the command, what the
   reader will SEE when they run it, the steps, what they get, what's next, and prerequisites — never a
   bare "just run this." Scored as A6.
+- **INV-21 Source-identity** — the explainer describes the exact submitted repo; an
+  inaccessible repo stops the build loudly with an actionable message. Never a substitute,
+  never a lookalike, never content reconstructed from search results or a remote README.
 - **Mandatory ISOvision footer** — the credit + "create one" CTA footer ships on
   every page, verbatim.
 
-**"Done" = real screenshots; on both devices mean ≥ 90, min axis ≥ 85, and all five operator questions
+**"Done" = real screenshots; on both devices mean ≥ 90, min axis ≥ 85, and all six operator questions
 YES (reported as a normalized 95); the two pre-ship eyes agree; the page is live; and the AI pack ships.
-If a stranger doesn't smile, it isn't finished.**
+If a stranger doesn't smile — or a newcomer can't follow the first four sections — it isn't finished.**

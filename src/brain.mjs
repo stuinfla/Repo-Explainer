@@ -114,10 +114,38 @@ Author the "concept" slot for this repo's explainer page. Return JSON:
 export async function authorContent(ctx, { apiKey, model, feedback }) {
   const brief = gatherBrief(ctx, ctx._repoRoot);
   const voice = ctx.concept?.copyVoice || 'clear, confident, technical-but-human';
-  const system = `You are a senior technical writer + narrative designer. You write the copy for a repo explainer page in this voice: ${voice}. ${GROUNDING_RULE}`;
+  const system = `You are a senior technical writer + narrative designer. You write the copy for a repo explainer page in this voice: ${voice}.
+
+THE COMPREHENSION LADDER (ADR-0006 — non-negotiable altitude control). Your reader is a smart
+developer from a DIFFERENT domain: intelligent and curious, but knowing NOTHING about this
+project's field. The page must carry them from "never heard of it" to "I could run this now".
+- hero, problem, whatItIs, insight (rungs 1-4): assume ZERO domain knowledge. No acronym or term
+  of art may appear without a plain-words gloss at first use — better still, just use the plain
+  words. A deterministic linter FAILS the build on any unglossed acronym in these four sections.
+- problem works from FIRST PRINCIPLES: make the reader FEEL the pain in human, consequence terms
+  BEFORE any category vocabulary. Never name the solution's category before the reader feels the
+  problem it kills.
+- howItWorks may descend ONE technical level — every term still defined at first use.
+- useCases and getStarted return to the reader's own world: how THEY would use it, and exactly
+  what the experience looks like.
+- CONCEPT BUDGET (rungs 1-4): a gloss is not a free pass — ten glossed terms is still ten new
+  ideas. Across hero+problem+whatItIs+insight, introduce AT MOST THREE domain concepts, each
+  earning a full plain-language sentence; every other technical term either moves down to
+  howItWorks or is cut. Before glossing a term, ask whether the reader needs the term at all —
+  prefer dropping it. One idea, felt deeply, beats ten ideas named.
+Define every acronym at first use EVERYWHERE, like "SSG (pre-building pages as plain files)".
+
+${GROUNDING_RULE} Grounding supplies the FACTS, not the VOCABULARY: translate the repo's insider
+terms into plain language — cite the passage, don't parrot its jargon.`;
+  // A revision pass without the previous version is a blind rewrite — the model cannot "keep what
+  // already works" if it never sees it, and each pass reintroduces new weaknesses (the INV-20
+  // whack-a-mole: fixing RAM brought back KV). Show it exactly what it wrote last time.
+  const prior = (Array.isArray(feedback) && feedback.length && ctx.content)
+    ? `YOUR PREVIOUS VERSION (the one the critic graded):\n${JSON.stringify(ctx.content)}\n\nThis is a REVISION, not a rewrite: reproduce the previous version faithfully and change ONLY what the flagged weaknesses require. Keep every sentence that was not flagged.\n\n`
+    : '';
   const user = `${brief}
 
-${revisionBlock(feedback)}Author the "content" slot. The page renders these sections from typed fields — match the shapes EXACTLY. Return JSON:
+${revisionBlock(feedback)}${prior}Author the "content" slot. The page renders these sections from typed fields — match the shapes EXACTLY. Return JSON:
 {
   "arc": [ { "question": "What world am I in?", "section": "hero", "altitude": "high" } ],
   "sections": {

@@ -1,0 +1,41 @@
+{
+  "target": "gathering-architect",
+  "metaName": "Gathering Architect",
+  "generated": "2026-07-04T07:30:00.000Z",
+  "ecosystems": ["claude-plugin"],
+  "componentCount": 3,
+  "internalEdgeCount": 2,
+  "externalDepCount": 0,
+  "nodes": [
+    {
+      "name": "SKILL.md",
+      "version": "3.0.0",
+      "description": "Core coaching AI: voice, philosophy, 4-phase coaching flow (Diagnose→Recommend→Design→Artifacts), method routing table, external resources. The brain of the plugin.",
+      "manifest": "plugins/gathering-architect/.claude-plugin/plugin.json",
+      "deps": ["references", "assets"],
+      "ecosystem": "claude-plugin"
+    },
+    {
+      "name": "references",
+      "version": "3.0.0",
+      "description": "Five on-demand reference libraries: facilitation-methods (20+ methods), community-frameworks (Canvas, CoP, Weaving), hackathons-and-builds, social-learning-evidence (peer-reviewed), facilitator-pain-points.",
+      "manifest": "plugins/gathering-architect/skills/gathering-architect/references/README.md",
+      "deps": [],
+      "ecosystem": "claude-plugin"
+    },
+    {
+      "name": "assets",
+      "version": "3.0.0",
+      "description": "Five ready-to-use workshop templates: MVC worksheet, IDOARRT meeting design, run-of-show with SET/HOLD/LAND, Community Canvas runner, agenda-builder prompt.",
+      "manifest": "plugins/gathering-architect/skills/gathering-architect/assets/run-of-show-template.md",
+      "deps": [],
+      "ecosystem": "claude-plugin"
+    }
+  ],
+  "internalEdges": [
+    {"from": "SKILL.md", "to": "references", "kind": "loads-on-demand"},
+    {"from": "SKILL.md", "to": "assets", "kind": "offers-on-demand"}
+  ],
+  "externalDeps": {},
+  "externalDepNames": []
+}

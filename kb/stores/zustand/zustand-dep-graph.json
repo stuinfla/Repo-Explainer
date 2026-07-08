@@ -1,0 +1,151 @@
+{
+  "target": "zustand",
+  "metaName": "zustand",
+  "generated": "2026-07-02T13:45:25.305Z",
+  "ecosystems": [
+    "npm"
+  ],
+  "componentCount": 3,
+  "internalEdgeCount": 2,
+  "externalDepCount": 11,
+  "nodes": [
+    {
+      "name": "demo",
+      "version": "0.0.0",
+      "description": null,
+      "manifest": "examples/demo/package.json",
+      "deps": [
+        "@react-three/drei",
+        "@react-three/fiber",
+        "@react-three/postprocessing",
+        "@types/three",
+        "meshline",
+        "postprocessing",
+        "prism-react-renderer",
+        "prismjs",
+        "react",
+        "react-dom",
+        "three",
+        "zustand"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "starter",
+      "version": "0.0.0",
+      "description": null,
+      "manifest": "examples/starter/package.json",
+      "deps": [
+        "zustand",
+        "react",
+        "react-dom"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "zustand",
+      "version": "5.0.14",
+      "description": "🐻 Bear necessities for state management in React",
+      "manifest": "package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [
+    {
+      "from": "demo",
+      "to": "zustand",
+      "kind": "normal"
+    },
+    {
+      "from": "starter",
+      "to": "zustand",
+      "kind": "normal"
+    }
+  ],
+  "externalDeps": {
+    "demo": [
+      {
+        "name": "@react-three/drei",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@react-three/fiber",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@react-three/postprocessing",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@types/three",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "meshline",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "postprocessing",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "prism-react-renderer",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "prismjs",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-dom",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "three",
+        "req": "*",
+        "kind": "normal"
+      }
+    ],
+    "starter": [
+      {
+        "name": "react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-dom",
+        "req": "*",
+        "kind": "normal"
+      }
+    ],
+    "zustand": []
+  },
+  "externalDepNames": [
+    "@react-three/drei",
+    "@react-three/fiber",
+    "@react-three/postprocessing",
+    "@types/three",
+    "meshline",
+    "postprocessing",
+    "prism-react-renderer",
+    "prismjs",
+    "react",
+    "react-dom",
+    "three"
+  ]
+}

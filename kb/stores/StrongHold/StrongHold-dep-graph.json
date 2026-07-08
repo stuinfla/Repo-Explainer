@@ -1,0 +1,57 @@
+{
+  "target": "StrongHold",
+  "metaName": "StrongHold",
+  "generated": "2026-07-01T02:41:58.027Z",
+  "ecosystems": [
+    "npm"
+  ],
+  "componentCount": 1,
+  "internalEdgeCount": 0,
+  "externalDepCount": 4,
+  "nodes": [
+    {
+      "name": "agenticow-ruflo-memory",
+      "version": "0.1.0",
+      "description": "Per-agent COW memory for ruflo-style multi-agent workflows, backed by agenticow + local all-MiniLM-L6-v2 embeddings.",
+      "manifest": "package.json",
+      "deps": [
+        "@anthropic-ai/sdk",
+        "@huggingface/transformers",
+        "agenticow",
+        "fastify"
+      ],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [],
+  "externalDeps": {
+    "agenticow-ruflo-memory": [
+      {
+        "name": "@anthropic-ai/sdk",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@huggingface/transformers",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "agenticow",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "fastify",
+        "req": "*",
+        "kind": "normal"
+      }
+    ]
+  },
+  "externalDepNames": [
+    "@anthropic-ai/sdk",
+    "@huggingface/transformers",
+    "agenticow",
+    "fastify"
+  ]
+}

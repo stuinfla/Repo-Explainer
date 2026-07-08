@@ -1,0 +1,83 @@
+{
+  "target": "slugify",
+  "metaName": "sindresorhus/slugify",
+  "generated": "2026-07-02T18:04:02.864Z",
+  "method": "source-scan",
+  "count": 6,
+  "byKind": {
+    "type_alias": 2,
+    "fn": 4
+  },
+  "byCrate": {
+    "index.d.ts": 4,
+    "index.js": 2
+  },
+  "symbols": [
+    {
+      "name": "Options",
+      "kind": "type_alias",
+      "signature": "export type Options =",
+      "module": "index.d.ts",
+      "crate": "index.d.ts",
+      "doc": null,
+      "file": "index.d.ts",
+      "line": 1,
+      "source": "source-scan"
+    },
+    {
+      "name": "slugify",
+      "kind": "fn",
+      "signature": "export default function slugify(string: string, options?: Options): string;",
+      "module": "index.d.ts",
+      "crate": "index.d.ts",
+      "doc": "Slugify a string.",
+      "file": "index.d.ts",
+      "line": 218,
+      "source": "source-scan"
+    },
+    {
+      "name": "CountableSlugify",
+      "kind": "type_alias",
+      "signature": "export type CountableSlugify =",
+      "module": "index.d.ts",
+      "crate": "index.d.ts",
+      "doc": null,
+      "file": "index.d.ts",
+      "line": 220,
+      "source": "source-scan"
+    },
+    {
+      "name": "slugifyWithCounter",
+      "kind": "fn",
+      "signature": "export function slugifyWithCounter(): CountableSlugify;",
+      "module": "index.d.ts",
+      "crate": "index.d.ts",
+      "doc": null,
+      "file": "index.d.ts",
+      "line": 286,
+      "source": "source-scan"
+    },
+    {
+      "name": "slugify",
+      "kind": "fn",
+      "signature": "export default function slugify(string, options)",
+      "module": "index.js",
+      "crate": "index.js",
+      "doc": null,
+      "file": "index.js",
+      "line": 46,
+      "source": "source-scan"
+    },
+    {
+      "name": "slugifyWithCounter",
+      "kind": "fn",
+      "signature": "export function slugifyWithCounter()",
+      "module": "index.js",
+      "crate": "index.js",
+      "doc": null,
+      "file": "index.js",
+      "line": 112,
+      "source": "source-scan"
+    }
+  ]
+}

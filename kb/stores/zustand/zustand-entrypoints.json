@@ -1,0 +1,331 @@
+{
+  "target": "zustand",
+  "metaName": "zustand",
+  "generated": "2026-07-02T13:45:25.361Z",
+  "workspace": {
+    "kind": "npm",
+    "members": []
+  },
+  "components": [
+    {
+      "name": "zustand",
+      "path": "",
+      "kind": "package",
+      "description": "🐻 Bear necessities for state management in React",
+      "scripts": {
+        "prebuild": "shx rm -rf dist",
+        "build": "pnpm run prebuild && pnpm run \"/^build:.*/\" && pnpm run postbuild",
+        "build-watch": "pnpm run \"/^build:.*/\" --watch",
+        "build:base": "rollup -c",
+        "build:vanilla": "rollup -c --config-vanilla",
+        "build:react": "rollup -c --config-react",
+        "build:middleware": "rollup -c --config-middleware",
+        "build:middleware:immer": "rollup -c --config-middleware_immer",
+        "build:shallow": "rollup -c --config-shallow",
+        "build:vanilla:shallow": "rollup -c --config-vanilla_shallow",
+        "build:react:shallow": "rollup -c --config-react_shallow",
+        "build:traditional": "rollup -c --config-traditional",
+        "postbuild": "pnpm run patch-d-ts && pnpm run copy && pnpm run patch-old-ts && pnpm run patch-esm-ts",
+        "fix": "pnpm run fix:lint && pnpm run fix:format",
+        "fix:format": "prettier . --write",
+        "fix:lint": "eslint . --fix",
+        "test": "pnpm run \"/^test:.*/\"",
+        "test:format": "prettier . --list-different",
+        "test:types": "tsc --noEmit",
+        "test:lint": "eslint .",
+        "test:spec": "vitest run",
+        "patch-d-ts": "node --input-type=module -e \"import { entries } from './rollup.config.mjs'; import shelljs from 'shelljs'; const { find, sed } = shelljs; find('dist/**/*.d.ts').forEach(f => { entries.forEach(({ find, replacement }) => { sed('-i', new RegExp(' from \\'' + find.source.slice(0, -1) + '\\';$'), ' from \\'' + replacement + '\\';', f); }); sed('-i', / from '(\\.[^']+)\\.ts';$/, ' from \\'\\$1\\';', f); });\"",
+        "copy": "shx cp -r dist/src/* dist/esm && shx cp -r dist/src/* dist && shx rm -rf dist/src && shx rm -rf dist/{src,tests} && shx cp package.json README.md LICENSE dist && json -I -f dist/package.json -e \"this.private=false; this.devDependencies=undefined; this.optionalDependencies=undefined; this.scripts=undefined; this.prettier=undefined;\"",
+        "patch-old-ts": "shx touch dist/ts_version_4.5_and_above_is_required.d.ts",
+        "patch-esm-ts": "node -e \"require('shelljs').find('dist/esm/**/*.d.ts').forEach(f=>{var f2=f.replace(/\\.ts$/,'.mts');require('fs').renameSync(f,f2);require('shelljs').sed('-i',/ from '(\\.[^']+)';$/,' from \\'\\$1.mjs\\';',f2);require('shelljs').sed('-i',/^declare module '(\\.[^']+)'/,'declare module \\'\\$1.mjs\\'',f2)})\""
+      },
+      "bins": [],
+      "deps": []
+    },
+    {
+      "name": "demo",
+      "path": "examples/demo",
+      "kind": "package",
+      "description": null,
+      "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "lint": "eslint .",
+        "preview": "vite preview"
+      },
+      "bins": [],
+      "deps": [
+        "@react-three/drei",
+        "@react-three/fiber",
+        "@react-three/postprocessing",
+        "@types/three",
+        "meshline",
+        "postprocessing",
+        "prism-react-renderer",
+        "prismjs",
+        "react",
+        "react-dom",
+        "three",
+        "zustand"
+      ]
+    },
+    {
+      "name": "starter",
+      "path": "examples/starter",
+      "kind": "package",
+      "description": null,
+      "scripts": {
+        "dev": "vite",
+        "build": "tsc && vite build",
+        "preview": "vite preview"
+      },
+      "bins": [],
+      "deps": [
+        "zustand",
+        "react",
+        "react-dom"
+      ]
+    }
+  ],
+  "binaries": [],
+  "commands": [
+    {
+      "cmd": "npm run prebuild",
+      "raw": "shx rm -rf dist",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "pnpm run prebuild && pnpm run \"/^build:.*/\" && pnpm run postbuild",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build-watch",
+      "raw": "pnpm run \"/^build:.*/\" --watch",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:base",
+      "raw": "rollup -c",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:vanilla",
+      "raw": "rollup -c --config-vanilla",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:react",
+      "raw": "rollup -c --config-react",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:middleware",
+      "raw": "rollup -c --config-middleware",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:middleware:immer",
+      "raw": "rollup -c --config-middleware_immer",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:shallow",
+      "raw": "rollup -c --config-shallow",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:vanilla:shallow",
+      "raw": "rollup -c --config-vanilla_shallow",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:react:shallow",
+      "raw": "rollup -c --config-react_shallow",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:traditional",
+      "raw": "rollup -c --config-traditional",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run postbuild",
+      "raw": "pnpm run patch-d-ts && pnpm run copy && pnpm run patch-old-ts && pnpm run patch-esm-ts",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run fix",
+      "raw": "pnpm run fix:lint && pnpm run fix:format",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run fix:format",
+      "raw": "prettier . --write",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run fix:lint",
+      "raw": "eslint . --fix",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "pnpm run \"/^test:.*/\"",
+      "category": "test",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test:format",
+      "raw": "prettier . --list-different",
+      "category": "test",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test:types",
+      "raw": "tsc --noEmit",
+      "category": "test",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test:lint",
+      "raw": "eslint .",
+      "category": "test",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test:spec",
+      "raw": "vitest run",
+      "category": "test",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run patch-d-ts",
+      "raw": "node --input-type=module -e \"import { entries } from './rollup.config.mjs'; import shelljs from 'shelljs'; const { find, sed } = shelljs; find('dist/**/*.d.ts').forEach(f => { entries.forEach(({ find, replacement }) => { sed('-i', new RegExp(' from \\'' + find.source.slice(0, -1) + '\\';$'), ' from \\'' + replacement + '\\';', f); }); sed('-i', / from '(\\.[^']+)\\.ts';$/, ' from \\'\\$1\\';', f); });\"",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run copy",
+      "raw": "shx cp -r dist/src/* dist/esm && shx cp -r dist/src/* dist && shx rm -rf dist/src && shx rm -rf dist/{src,tests} && shx cp package.json README.md LICENSE dist && json -I -f dist/package.json -e \"this.private=false; this.devDependencies=undefined; this.optionalDependencies=undefined; this.scripts=undefined; this.prettier=undefined;\"",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run patch-old-ts",
+      "raw": "shx touch dist/ts_version_4.5_and_above_is_required.d.ts",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run patch-esm-ts",
+      "raw": "node -e \"require('shelljs').find('dist/esm/**/*.d.ts').forEach(f=>{var f2=f.replace(/\\.ts$/,'.mts');require('fs').renameSync(f,f2);require('shelljs').sed('-i',/ from '(\\.[^']+)';$/,' from \\'\\$1.mjs\\';',f2);require('shelljs').sed('-i',/^declare module '(\\.[^']+)'/,'declare module \\'\\$1.mjs\\'',f2)})\"",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev",
+      "raw": "vite",
+      "category": "run",
+      "source": "examples/demo/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "vite build",
+      "category": "build",
+      "source": "examples/demo/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "eslint .",
+      "category": "other",
+      "source": "examples/demo/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run preview",
+      "raw": "vite preview",
+      "category": "other",
+      "source": "examples/demo/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev",
+      "raw": "vite",
+      "category": "run",
+      "source": "examples/starter/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc && vite build",
+      "category": "build",
+      "source": "examples/starter/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run preview",
+      "raw": "vite preview",
+      "category": "other",
+      "source": "examples/starter/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm install zustand",
+      "category": "install",
+      "source": "README.md",
+      "note": null
+    }
+  ],
+  "install": [
+    "npm install zustand"
+  ],
+  "quickstart": [
+    "npm run postbuild",
+    "npm run fix",
+    "npm run dev"
+  ]
+}

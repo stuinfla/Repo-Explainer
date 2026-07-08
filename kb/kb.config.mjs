@@ -16,6 +16,103 @@ const componentWord = ['crate', 'package', 'module', 'component'];
 
 /** @type {Record<string, object>} keyed by target slug. */
 export const targets = {
+  "AgentBBS": {
+    "slug": "AgentBBS",
+    "metaName": "AgentBBS",
+    "embed": {
+      "model": "Xenova/bge-small-en-v1.5",
+      "dim": 384,
+      "pooling": "mean",
+      "queryPrefix": "Represent this sentence for searching relevant passages: ",
+      "rankScale": 0.6,
+      "rvfSuffix": ".rvf"
+    },
+    "productNames": [
+      "AgentBBS"
+    ],
+    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/agentbbs/repo",
+    "scopeExclude": [
+      "node_modules",
+      "dist",
+      "target",
+      ".git",
+      "coverage",
+      "pkg",
+      ".next",
+      "__pycache__",
+      ".venv",
+      "venv"
+    ],
+    "codeExt": [
+      ".ts",
+      ".js",
+      ".mjs",
+      ".py",
+      ".rb",
+      ".sh"
+    ],
+    "fullTextExt": [
+      ".md",
+      ".mdx",
+      ".txt",
+      ".rst"
+    ],
+    "templateExt": [],
+    "componentRoots": [
+      "src",
+      "lib",
+      "app",
+      "bin",
+      "scripts",
+      "examples",
+      "agents"
+    ],
+    "componentWord": [
+      "crate",
+      "package",
+      "module",
+      "component"
+    ],
+    "include": [
+      {
+        "rule": "mdSweepFullText",
+        "roots": [
+          "."
+        ]
+      },
+      {
+        "rule": "literalFiles",
+        "files": [
+          "README.md",
+          "package.json",
+          "requirements.txt",
+          "Gemfile",
+          "Makefile",
+          "Dockerfile"
+        ]
+      },
+      {
+        "rule": "sourceBodies",
+        "roots": [
+          "src",
+          "lib",
+          "app",
+          "bin",
+          "scripts",
+          "examples",
+          "agents"
+        ],
+        "ext": [
+          ".ts",
+          ".js",
+          ".mjs",
+          ".py",
+          ".rb",
+          ".sh"
+        ]
+      }
+    ]
+  },
   "chalk": {
     "slug": "chalk",
     "metaName": "chalk",
@@ -30,7 +127,7 @@ export const targets = {
     "productNames": [
       "chalk"
     ],
-    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/chalk/repo",
+    "repoDir": "/tmp/agentic-smoke-chalk2/repo",
     "scopeExclude": [
       "node_modules",
       "dist",
@@ -1336,6 +1433,163 @@ export const targets = {
         'How do I install ruqu or run it from the terminal with npx?',
       ],
     },
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // RuView — "See through walls with WiFi": a WiFi-based spatial-intelligence
+  // platform that turns commodity 802.11 radio signals into contactless presence
+  // detection, vital-sign monitoring (breathing + heart rate), fall detection,
+  // 17-keypoint pose estimation and more — all on a $9 ESP32 sensor with no
+  // cameras or wearables. Built on RuVector + Cognitum Seed. Multi-language:
+  // Rust core + Python library (PyPI: ruview / wifi-densepose) + JavaScript UI
+  // + ESP32 C/Rust firmware. Pretrained weights on Hugging Face. Docker image.
+  // Works with Home Assistant, Apple Home, Google Home, Alexa, Matter.
+  // Registered for the explainmyrepo recipe run (2026-07-04).
+  // ──────────────────────────────────────────────────────────────────────────
+  RuView: {
+    slug: 'RuView',
+    metaName: 'RuView',
+    embed: {
+      model: 'Xenova/bge-small-en-v1.5',
+      dim: 384,
+      pooling: 'mean',
+      queryPrefix: 'Represent this sentence for searching relevant passages: ',
+      rankScale: 0.6,
+      rvfSuffix: '.rvf',
+    },
+    productNames: [
+      'RuView',
+      'ruview',
+      'wifi-densepose',
+      'WiFi DensePose',
+      'WifiDensePose',
+      'CSI',
+      'BreathingExtractor',
+      'HeartRateExtractor',
+      'Cognitum Seed',
+      'ESP32',
+    ],
+    primerSlugs: {
+      whatis:        'PRIMER#1-what-is-ruview',
+      capabilities:  'PRIMER#2-what-can-ruview-do-for-you',
+      crates:        'PRIMER#3-what-is-ruview-made-of',
+      composer:      'PRIMER#4-how-wifi-sensing-works-step-by-step',
+      maturity:      'PRIMER#5-is-it-production-ready-scope-and-honest-limits',
+      docs:          'PRIMER#6-where-do-i-read-more-the-docs-map',
+      adr:           'PRIMER#6-where-do-i-read-more-the-docs-map',
+      playbook:      'PRIMER#7-how-do-i-install-and-use-it-end-to-end',
+      extensibility: 'PRIMER#8-how-do-i-extend-ruview',
+      gotchas:       'PRIMER#9-hardware-limits-and-gotchas',
+    },
+
+    repoDir: '/tmp/agentic-proof-ruview/repo',
+    scopeExclude: [
+      'node_modules',
+      'dist',
+      'target',
+      '.git',
+      'coverage',
+      'pkg',
+      '.next',
+      '__pycache__',
+      '.venv',
+      'venv',
+      'archive',
+      'vendor',
+      'releases',
+    ],
+
+    codeExt: ['.rs', '.py', '.js', '.ts', '.mjs', '.sh', '.toml'],
+    fullTextExt: ['.md', '.mdx', '.txt', '.rst'],
+    templateExt: [],
+
+    componentRoots: [
+      'wifi_densepose',
+      'firmware',
+      'ui',
+      'scripts',
+      'python',
+      'docs',
+    ],
+    componentWord: ['module', 'component', 'crate', 'package', 'service', 'sensor'],
+
+    include: [
+      { rule: 'mdSweepFullText', roots: ['.', 'docs', 'docs/integrations'] },
+      { rule: 'literalFiles', files: [
+        'README.md',
+        'docs/user-guide.md',
+        'docs/build-guide.md',
+        'docs/proof-of-capabilities.md',
+        'pyproject.toml',
+        'requirements.txt',
+        'python/README.md',
+        'ui/README.md',
+        'firmware/esp32-csi-node/README.md',
+      ]},
+      { rule: 'sourceBodies', roots: ['wifi_densepose', 'scripts', 'python/src'], ext: ['.py', '.rs', '.js', '.mjs'] },
+      { rule: 'sourceBodies', roots: ['ui'], ext: ['.js', '.ts', '.mjs'] },
+      { rule: 'docCommentSweep', roots: ['wifi_densepose', 'python', 'ui'] },
+    ],
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // gathering-architect — a coaching-first Claude Code plugin for designing
+  // gatherings that actually connect people. Pure-markdown skill (SKILL.md +
+  // 5 reference libraries + 5 workshop templates), Claude Code / Cowork plugin.
+  // Created by Klara Hermesz (AI Enablement Academy). v3.0.0, CC BY 4.0.
+  // Registered for the explainmyrepo recipe 2026-07-04.
+  // ──────────────────────────────────────────────────────────────────────────
+  'gathering-architect': {
+    slug: 'gathering-architect',
+    metaName: 'Gathering Architect',
+    embed: {
+      model: 'Xenova/bge-small-en-v1.5',
+      dim: 384,
+      pooling: 'mean',
+      queryPrefix: 'Represent this sentence for searching relevant passages: ',
+      rankScale: 0.6,
+      rvfSuffix: '.rvf',
+    },
+    productNames: [
+      'gathering-architect',
+      'Gathering Architect',
+      'gathering architect',
+    ],
+    repoDir: '/tmp/agentic-proof-gathering-architect/repo',
+    scopeExclude: [
+      'node_modules',
+      '.git',
+      'dist',
+      'target',
+      'coverage',
+    ],
+    codeExt: [],
+    fullTextExt: ['.md', '.mdx', '.txt'],
+    templateExt: [],
+    componentRoots: [
+      'plugins/gathering-architect/skills/gathering-architect',
+    ],
+    componentWord: ['skill', 'reference', 'template', 'asset', 'plugin', 'module'],
+    include: [
+      { rule: 'mdSweepFullText', roots: ['.', 'plugins/gathering-architect/skills/gathering-architect/references', 'plugins/gathering-architect/skills/gathering-architect/assets'] },
+      { rule: 'literalFiles', files: [
+        'README.md',
+        'plugins/gathering-architect/skills/gathering-architect/SKILL.md',
+        'plugins/gathering-architect/skills/gathering-architect/CHANGELOG.md',
+        'plugins/gathering-architect/skills/gathering-architect/references/facilitation-methods.md',
+        'plugins/gathering-architect/skills/gathering-architect/references/community-frameworks.md',
+        'plugins/gathering-architect/skills/gathering-architect/references/hackathons-and-builds.md',
+        'plugins/gathering-architect/skills/gathering-architect/references/social-learning-evidence.md',
+        'plugins/gathering-architect/skills/gathering-architect/references/facilitator-pain-points.md',
+        'plugins/gathering-architect/skills/gathering-architect/assets/mvc-worksheet.md',
+        'plugins/gathering-architect/skills/gathering-architect/assets/idoarrt-template.md',
+        'plugins/gathering-architect/skills/gathering-architect/assets/run-of-show-template.md',
+        'plugins/gathering-architect/skills/gathering-architect/assets/community-canvas-runner.md',
+        'plugins/gathering-architect/skills/gathering-architect/assets/agenda-builder-prompt.md',
+        '.claude-plugin/marketplace.json',
+        'plugins/gathering-architect/.claude-plugin/plugin.json',
+      ] },
+    ],
   },
 };
 

@@ -1,7 +1,7 @@
 {
   "target": "agenticow",
   "metaName": "agenticow",
-  "generated": "2026-06-29T20:43:12.442Z",
+  "generated": "2026-07-04T06:12:36.759Z",
   "ecosystems": [
     "npm"
   ],
@@ -11,7 +11,7 @@
   "nodes": [
     {
       "name": "agenticow",
-      "version": "0.2.3",
+      "version": "0.2.4",
       "description": "Git for Agent Memory: Copy-On-Write vector branching for embedded multi-agent memory. Branch a base memory in ~0.5ms / 162 bytes regardless of base size — 83x faster, 3000x smaller than full-copy snapshots. Exact read-through queries (parent ∪ edits, child wins).",
       "manifest": "package.json",
       "deps": [

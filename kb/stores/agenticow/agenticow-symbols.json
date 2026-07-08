@@ -1,7 +1,7 @@
 {
   "target": "agenticow",
   "metaName": "agenticow",
-  "generated": "2026-06-29T20:43:12.374Z",
+  "generated": "2026-07-04T06:12:36.679Z",
   "method": "source-scan",
   "count": 24,
   "byKind": {
@@ -267,7 +267,7 @@
       "crate": "src/index.js",
       "doc": null,
       "file": "src/index.js",
-      "line": 646,
+      "line": 655,
       "source": "source-scan"
     },
     {
@@ -278,7 +278,7 @@
       "crate": "src/index.js",
       "doc": "Alias of {@link open}. Provided so documented snippets that read `import { openBase } from 'agenticow'` run verbatim. Identical behavior. /",
       "file": "src/index.js",
-      "line": 654,
+      "line": 663,
       "source": "source-scan"
     }
   ]

@@ -8,7 +8,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-const ALL_YES = [true, true, true, true, true];
+// Six operators since ADR-0006 D4 added zeroKnowledgeReader to the owner gate.
+const ALL_YES = [true, true, true, true, true, true];
 
 test('INV-05 — quality-grade exports a pure evaluatePass() implementing the v1.7 exemplar-anchored bar', async () => {
   const mod = await import('../tools/quality-grade.mjs');
@@ -27,7 +28,7 @@ test('INV-05 — quality-grade exports a pure evaluatePass() implementing the v1
   assert.equal(mod.evaluatePass({ mean: 89, min: 86, operatorQuestions: ALL_YES }), false, 'mean < 90 must FAIL');
 
   // A single operator NO (e.g. "no confidence I understand the architecture") must fail, regardless of scores.
-  assert.equal(mod.evaluatePass({ mean: 93, min: 88, operatorQuestions: [true, true, false, true, true] }), false, 'an operator NO must FAIL');
+  assert.equal(mod.evaluatePass({ mean: 93, min: 88, operatorQuestions: [true, true, false, true, true, true] }), false, 'an operator NO must FAIL');
 
   // The old >=95 floor is gone: a page that would have FAILED the old rule but clears the new bar passes.
   assert.equal(mod.evaluatePass({ mean: 92, min: 88, operatorQuestions: ALL_YES }), true, 'min 88 (below old 95) now passes under the exemplar bar');

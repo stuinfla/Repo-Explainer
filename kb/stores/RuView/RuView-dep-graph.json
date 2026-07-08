@@ -1,0 +1,215 @@
+{
+  "target": "RuView",
+  "metaName": "RuView",
+  "generated": "2026-07-04T07:35:21.721Z",
+  "ecosystems": [
+    "npm"
+  ],
+  "componentCount": 2,
+  "internalEdgeCount": 0,
+  "externalDepCount": 25,
+  "nodes": [
+    {
+      "name": "mobile",
+      "version": "1.0.0",
+      "description": null,
+      "manifest": "ui/mobile/package.json",
+      "deps": [
+        "@expo/vector-icons",
+        "@react-native-async-storage/async-storage",
+        "@react-navigation/bottom-tabs",
+        "@react-navigation/native",
+        "@types/three",
+        "axios",
+        "expo",
+        "expo-status-bar",
+        "react",
+        "react-dom",
+        "react-native",
+        "react-native-gesture-handler",
+        "react-native-reanimated",
+        "react-native-safe-area-context",
+        "react-native-screens",
+        "react-native-svg",
+        "react-native-web",
+        "react-native-webview",
+        "react-native-wifi-reborn",
+        "three",
+        "victory-native",
+        "zustand"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "@ruvnet/nvsim-dashboard",
+      "version": "0.1.0",
+      "description": "Vite + Lit dashboard for the nvsim NV-diamond magnetometer pipeline simulator (ADR-092).",
+      "manifest": "dashboard/package.json",
+      "deps": [
+        "@preact/signals-core",
+        "lit",
+        "workbox-window"
+      ],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [],
+  "externalDeps": {
+    "mobile": [
+      {
+        "name": "@expo/vector-icons",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@react-native-async-storage/async-storage",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@react-navigation/bottom-tabs",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@react-navigation/native",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@types/three",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "axios",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "expo",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "expo-status-bar",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-dom",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-native",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-native-gesture-handler",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-native-reanimated",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-native-safe-area-context",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-native-screens",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-native-svg",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-native-web",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-native-webview",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-native-wifi-reborn",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "three",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "victory-native",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "zustand",
+        "req": "*",
+        "kind": "normal"
+      }
+    ],
+    "@ruvnet/nvsim-dashboard": [
+      {
+        "name": "@preact/signals-core",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "lit",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "workbox-window",
+        "req": "*",
+        "kind": "normal"
+      }
+    ]
+  },
+  "externalDepNames": [
+    "@expo/vector-icons",
+    "@preact/signals-core",
+    "@react-native-async-storage/async-storage",
+    "@react-navigation/bottom-tabs",
+    "@react-navigation/native",
+    "@types/three",
+    "axios",
+    "expo",
+    "expo-status-bar",
+    "lit",
+    "react",
+    "react-dom",
+    "react-native",
+    "react-native-gesture-handler",
+    "react-native-reanimated",
+    "react-native-safe-area-context",
+    "react-native-screens",
+    "react-native-svg",
+    "react-native-web",
+    "react-native-webview",
+    "react-native-wifi-reborn",
+    "three",
+    "victory-native",
+    "workbox-window",
+    "zustand"
+  ]
+}

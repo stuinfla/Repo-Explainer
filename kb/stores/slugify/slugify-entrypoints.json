@@ -1,0 +1,45 @@
+{
+  "target": "slugify",
+  "metaName": "sindresorhus/slugify",
+  "generated": "2026-07-02T18:04:03.111Z",
+  "workspace": {
+    "kind": "npm",
+    "members": []
+  },
+  "components": [
+    {
+      "name": "@sindresorhus/slugify",
+      "path": "",
+      "kind": "package",
+      "description": "Slugify a string",
+      "scripts": {
+        "test": "xo && ava"
+      },
+      "bins": [],
+      "deps": [
+        "@sindresorhus/transliterate",
+        "escape-string-regexp"
+      ]
+    }
+  ],
+  "binaries": [],
+  "commands": [
+    {
+      "cmd": "npm run test",
+      "raw": "xo && ava",
+      "category": "test",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm install @sindresorhus/slugify",
+      "category": "install",
+      "source": "README.md",
+      "note": null
+    }
+  ],
+  "install": [
+    "npm install @sindresorhus/slugify"
+  ],
+  "quickstart": []
+}

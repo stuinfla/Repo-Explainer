@@ -1,0 +1,58 @@
+{
+  "target": "gathering-architect",
+  "metaName": "Gathering Architect",
+  "generated": "2026-07-04T07:30:00.000Z",
+  "workspace": {
+    "kind": "claude-plugin",
+    "members": ["gathering-architect"]
+  },
+  "components": [
+    {
+      "name": "gathering-architect",
+      "path": "plugins/gathering-architect",
+      "kind": "claude-plugin",
+      "description": "Coaching-first gathering design skill for Claude Code and Cowork. Purpose-first diagnosis, 20+ facilitation methods, introvert-friendly defaults, SET/HOLD/LAND energy arc.",
+      "scripts": {},
+      "bins": ["/gathering-architect:gathering-architect"],
+      "deps": []
+    }
+  ],
+  "binaries": [
+    {
+      "name": "/gathering-architect:gathering-architect",
+      "component": "gathering-architect",
+      "path": "plugins/gathering-architect/skills/gathering-architect/SKILL.md",
+      "kind": "claude-skill"
+    }
+  ],
+  "commands": [
+    {
+      "cmd": "/plugin marketplace add klarahermesz/gathering-architect",
+      "raw": "/plugin marketplace add klarahermesz/gathering-architect",
+      "category": "install",
+      "source": "README.md",
+      "note": "Add the plugin source to Claude Code marketplace"
+    },
+    {
+      "cmd": "/plugin install gathering-architect@gathering-architect",
+      "raw": "/plugin install gathering-architect@gathering-architect",
+      "category": "install",
+      "source": "README.md",
+      "note": "Install the skill into your Claude session"
+    },
+    {
+      "cmd": "/gathering-architect:gathering-architect",
+      "raw": "/gathering-architect:gathering-architect",
+      "category": "run",
+      "source": "README.md",
+      "note": "Invoke the skill directly, or just describe your gathering"
+    }
+  ],
+  "install": [
+    "/plugin marketplace add klarahermesz/gathering-architect",
+    "/plugin install gathering-architect@gathering-architect"
+  ],
+  "quickstart": [
+    "/gathering-architect:gathering-architect"
+  ]
+}

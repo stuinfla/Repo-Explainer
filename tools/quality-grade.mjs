@@ -140,14 +140,21 @@ GATE B — "Did someone who gives a shit make this?" (craft / anti-slop):
   typeset as a picture (a screenshot of monospace text boxes) is SLOP — score B5 below 40 and set
   makesMeSmile=false; real diagrams are DRAWN (shapes, cards, arrows), not typeset text.
 
-OPERATOR QUALITATIVE GATE — five YES/NO questions (the owner's words). As a harsh critic, answer each
-true/false from the crops; ALL five must be true for the page to be done, independent of the numeric
+BEGINNER PERSONA PASS (ADR-0006 D4) — before answering the operator questions, re-read the FIRST
+FOUR crops (hero, problem, what-it-is, insight) role-playing a smart developer from a DIFFERENT
+domain who knows NOTHING about this project's field. Note every sentence you could not follow and
+every term you would have to already know — judge question (6) from that persona, not as yourself.
+
+OPERATOR QUALITATIVE GATE — six YES/NO questions (the owner's words). As a harsh critic, answer each
+true/false from the crops; ALL six must be true for the page to be done, independent of the numeric
 axes (a page can clear the numbers and still fail one of these):
  (1) believeIUnderstand — Would this make me believe I understand this?
  (2) approachable — Would this make it approachable?
  (3) explainsToNovice — Would this explain it for somebody who doesn't understand it?
  (4) architectureConfidence — Would it give me confidence I understand the architecture?
  (5) makesMeSmile — Does it make me smile — "oh, that's cool"?
+ (6) zeroKnowledgeReader — Could someone who knows nothing about this domain read the first four
+     sections and explain the problem and the solution back to me?
 
 INV-18 — CLARITY ONLY. The page is already DOM-verified to CONTAIN both an ARCHITECTURE
 diagram (modules / components / dependencies) and a PROCESS / DATA-FLOW diagram (the
@@ -170,7 +177,7 @@ const RESPONSE_SPEC = `Return ONLY a JSON object, no prose, with EXACTLY this sh
   "operatorQuestions": {
     "believeIUnderstand": <true|false>, "approachable": <true|false>,
     "explainsToNovice": <true|false>, "architectureConfidence": <true|false>,
-    "makesMeSmile": <true|false>
+    "makesMeSmile": <true|false>, "zeroKnowledgeReader": <true|false>
   },
   "rationales": {
     "A1": "<what you SAW>", "A2": "...", "A3": "...", "A4": "...", "A5": "...", "A6": "...",
@@ -188,12 +195,75 @@ For clarity, judge legibility honestly — an illegible/garbled diagram is reads
 
 const CRITERIA_A = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'];
 const CRITERIA_B = ['B1', 'B2', 'B3', 'B4', 'B5'];
-const OPERATOR_QUESTIONS = ['believeIUnderstand', 'approachable', 'explainsToNovice', 'architectureConfidence', 'makesMeSmile'];
+const OPERATOR_QUESTIONS = ['believeIUnderstand', 'approachable', 'explainsToNovice', 'architectureConfidence', 'makesMeSmile', 'zeroKnowledgeReader'];
+
+// ----------------------------------------------------------------------------
+// INV-20 UnexplainedAcronymZero (ADR-0006 D3) — DETERMINISTIC, runs BEFORE the
+// expensive vision pass. Rungs 1-4 of the comprehension ladder (hero, problem,
+// what-it-is, the-insight) must contain no acronym without a plain-words gloss:
+// either acronym-first "SSG (pre-building pages…)" or gloss-first "…(SSG)".
+// Free to run; a violation fails the gate for zero vision tokens and feeds the
+// refine loop an operator:zeroKnowledgeReader note it knows how to act on.
+// ----------------------------------------------------------------------------
+// Cross-domain developer lingua franca — terms ANY smart developer knows, whatever
+// their domain (ADR-0006's reader model). Owner-tunable; keep it small.
+export const INV20_WHITELIST = new Set([
+  'AI', 'API', 'CLI', 'URL', 'HTTP', 'HTTPS', 'JSON', 'HTML', 'CSS', 'SDK',
+  'README', 'FAQ', 'ID', 'UI', 'CPU', 'GPU', 'OS', 'IO', 'MIT', 'NPM', 'PR',
+  'RAM', 'GB', 'MB', 'TB', // universal hardware units — NOT 'KB' (this product uses KB = knowledge base; it must be glossed)
+]);
+// ALL-CAPS English words that are styling/emphasis, not acronyms.
+const CAPS_STOPWORDS = new Set([
+  'A', 'AN', 'THE', 'AND', 'OR', 'NOT', 'NO', 'YES', 'OK', 'ALL', 'ANY', 'ONE',
+  'TWO', 'NEW', 'GET', 'RUN', 'SEE', 'HOW', 'WHY', 'WHAT', 'WHO', 'YOU', 'YOUR',
+  'FOR', 'ON', 'IN', 'IT', 'IS', 'TO', 'OF', 'VS', 'BY', 'AT', 'AS', 'BE', 'DO',
+  'IF', 'SO', 'UP', 'OUT', 'NOW', 'FREE', 'FAST', 'REAL', 'ZERO', 'FROM', 'WITH',
+]);
+
+// Extract the visible text of ladder rungs 1-4 from the assembled page HTML.
+// hero is <section class="hero">…</section>; the rest are the assemble-page
+// <details class="section" id="…"> blocks (ARC ids: problem, what-it-is, the-insight).
+export function extractRungText(html) {
+  const chunks = [];
+  const hero = html.match(/<section class="hero">[\s\S]*?<\/section>/);
+  if (hero) chunks.push(hero[0]);
+  for (const id of ['problem', 'what-it-is', 'the-insight']) {
+    const m = html.match(new RegExp(`<details class="section" id="${id}"[\\s\\S]*?<\\/details>`));
+    if (m) chunks.push(m[0]);
+  }
+  return chunks.join('\n')
+    .replace(/<script[\s\S]*?<\/script>/g, ' ')
+    .replace(/<style[\s\S]*?<\/style>/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&(?:rsquo|lsquo|#8217|#8216);/g, "'").replace(/&(?:mdash|#8212);/g, '—')
+    .replace(/\s+/g, ' ');
+}
+
+export function findUnexplainedAcronyms(text, whitelist = INV20_WHITELIST) {
+  const violations = new Set();
+  for (const m of text.matchAll(/\b[A-Z][A-Z0-9]{1,5}\b/g)) {
+    const tok = m[0];
+    if (whitelist.has(tok) || CAPS_STOPWORDS.has(tok)) continue;
+    if (/^\d+$/.test(tok.slice(1))) continue; // version-ish tokens like V2
+    // A gloss counts in any natural form, not just parentheses — the brain writes appositives
+    // ("…the gate-and-dynamics state, or GDN state") and the linter must not reject good copy.
+    const acronymFirst = new RegExp(`\\b${tok}\\b\\s*\\([a-z]`);           // "SSG (pre-building …)"
+    const glossFirst = new RegExp(`[a-z][^()]{2,80}\\(\\s*${tok}\\s*\\)`); // "static site generation (SSG)"
+    const appositive = new RegExp(`[a-z][^.!?]{0,80},\\s+or\\s+(?:the\\s+)?${tok}\\b`); // "…state, or GDN state"
+    const dashGloss = new RegExp(`\\b${tok}\\b[^.!?—]{0,12}—\\s*[a-z]`);   // "GDN — the running signal …"
+    const commaGloss = new RegExp(`\\b${tok}\\b,\\s+(?:a|an|the)\\s+[a-z]`); // "GDN, the model's recurrent …"
+    if (acronymFirst.test(text) || glossFirst.test(text) || appositive.test(text)
+      || dashGloss.test(text) || commaGloss.test(text)) continue;
+    violations.add(tok);
+  }
+  return [...violations].sort();
+}
 
 /**
  * The v1.7 exemplar-anchored gate rule (ADR-0005 §"The QA System" / DDD §12.3 / INV-05). PURE.
- * PASS iff meanScore >= 90 AND min (the worst axis — the anti-slop floor) >= 85 AND all five operator
- * yes/no questions are YES. INV-18 (architecture+flow present & clear) is AND-ed in separately by
+ * PASS iff meanScore >= 90 AND min (the worst axis — the anti-slop floor) >= 85 AND all six operator
+ * yes/no questions are YES (the sixth, zeroKnowledgeReader, is ADR-0006 D4). INV-18 is AND-ed in separately by
  * buildScorecard. Anchored to the owner's own example sites (~88 headline / ~92 mean); a literal
  * "95 on every axis" is unreachable by an honest grader. Exported so the gate logic is unit-testable
  * without a network call or a browser.
@@ -202,7 +272,7 @@ export function evaluatePass({ mean, min, operatorQuestions } = {}) {
   const ops = Array.isArray(operatorQuestions) ? operatorQuestions : [];
   return typeof mean === 'number' && typeof min === 'number'
     && mean >= 90 && min >= 85
-    && ops.length === 5 && ops.every((q) => q === true);
+    && ops.length === OPERATOR_QUESTIONS.length && ops.every((q) => q === true);
 }
 
 /**
@@ -212,13 +282,15 @@ export function evaluatePass({ mean, min, operatorQuestions } = {}) {
  * is solidly good AND carries no slop:
  *   - mean >= 82  (solidly good overall)
  *   - min (worst axis) >= 70  (no genuinely-weak / slop axis — INV-18 separately enforces real diagrams)
- *   - the four COMPREHENSION/SAFETY operators are YES (believeIUnderstand, approachable, explainsToNovice,
- *     makesMeSmile). `architectureConfidence` is INFORMATIONAL here, NOT a blocker: it is repo-dependent
+ *   - the five COMPREHENSION/SAFETY operators are YES (believeIUnderstand, approachable, explainsToNovice,
+ *     makesMeSmile, zeroKnowledgeReader — the last is ADR-0006 D4: the first four sections must work for a
+ *     reader with zero domain knowledge; shipping "technical-but-pretty" is the failure it exists to stop).
+ *     `architectureConfidence` is INFORMATIONAL here, NOT a blocker: it is repo-dependent
  *     (a one-module library legitimately has little architecture to be "confident" about) and the
  *     architecture diagram's real legibility is already hard-gated by INV-18.
  * A shipped-but-not-exemplary page always carries its honest mean + the gap to 90 (never normalized up).
  */
-export const SHIP_OPERATORS = ['believeIUnderstand', 'approachable', 'explainsToNovice', 'makesMeSmile'];
+export const SHIP_OPERATORS = ['believeIUnderstand', 'approachable', 'explainsToNovice', 'makesMeSmile', 'zeroKnowledgeReader'];
 export function evaluateShipworthy({ mean, min, operatorQuestions } = {}) {
   const o = Array.isArray(operatorQuestions)
     ? Object.fromEntries(OPERATOR_QUESTIONS.map((k, i) => [k, operatorQuestions[i]]))
@@ -676,6 +748,30 @@ async function main() {
   if (!apiKey) return emit(false, {}, 'no OpenAI key found (set OPENAI_API_KEY / OPEN_AI_KEY in the environment or repo-root .env) — the page cannot be graded; refusing to emit a silent PASS');
   const model = process.env.QUALITY_VISION_MODEL || 'gpt-5.5'; // latest vision model, VERIFIED live via GET /v1/models 2026-06-29 (gpt-4o is deprecated; never assume from training data)
   const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
+
+  // --- INV-20 UnexplainedAcronymZero (ADR-0006 D3) — deterministic, BEFORE the vision pass. ---
+  // A violation fails the gate for zero vision tokens; the note's criterion matches the refine
+  // loop's filter (^operator:) so a local refine pass re-authors the copy and tries again.
+  const inv20Violations = findUnexplainedAcronyms(extractRungText(fs.readFileSync(htmlPath, 'utf8')));
+  if (inv20Violations.length) {
+    log(`INV-20 FAIL: unexplained acronym(s) in ladder rungs 1-4: ${inv20Violations.join(', ')} — failing before the vision pass (zero tokens)`);
+    const refineNotes = [{
+      device: 'both', criterion: 'operator:zeroKnowledgeReader', score: 0,
+      note: `INV-20 UnexplainedAcronymZero: the first four sections (hero, problem, what-it-is, insight) use ${inv20Violations.join(', ')} with no plain-words gloss at first use. The reader is a smart developer from a DIFFERENT domain — define each term inline (e.g. "SSG (pre-building pages as plain files)") or replace it with plain language.`,
+    }];
+    const quality = {
+      scorecard: [], passed: false, exemplary: false,
+      iterations: (Number.isInteger(ctx.quality?.iterations) ? ctx.quality.iterations : 0) + 1,
+      visionModel: model, screenshots: {}, pageHeights: {}, refineNotes,
+      inv20: { passed: false, violations: inv20Violations },
+      gradedAt: new Date().toISOString(),
+    };
+    ctx.quality = quality;
+    try { fs.writeFileSync(buildJsonPath, JSON.stringify(ctx, null, 2) + '\n'); }
+    catch (e) { return emit(false, {}, `could not write build.json: ${e?.message || e}`); }
+    return emit(true, { quality, screenshots: {}, pageHeights: {}, passed: false, headline: {}, refineNoteCount: refineNotes.length }, null);
+  }
+  log('INV-20 ok: no unexplained acronyms in ladder rungs 1-4');
 
   // --- Playwright at runtime (do NOT npm-install; loud if absent). ---
   let chromium;

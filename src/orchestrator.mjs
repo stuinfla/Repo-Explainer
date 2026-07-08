@@ -267,8 +267,11 @@ function readQuality(buildDir) { try { return readContext(buildDir).quality; } c
 // they're left for the design system / make-diagrams, not looped on here.
 async function refineLoop({ buildDir, env, model, apiKey, opts }) {
   const MAX = opts.maxRefine != null ? Math.max(0, parseInt(opts.maxRefine, 10) || 0) : 2;
+  // Fewer INV-20 violations breaks mean ties: when every iteration fails the deterministic acronym
+  // gate (all means 0), "best" must be the one CLOSEST to clean, not whichever came first.
+  const inv20Count = (qq) => (Array.isArray(qq?.inv20?.violations) ? qq.inv20.violations.length : 0);
   let q = readQuality(buildDir);
-  let best = { mean: sumMean(q), content: (() => { try { return readContext(buildDir).content; } catch { return null; } })() };
+  let best = { mean: sumMean(q), inv20: inv20Count(q), content: (() => { try { return readContext(buildDir).content; } catch { return null; } })() };
   let pass = 0;
   while (q && !q.passed && pass < MAX) {
     pass++;
@@ -285,7 +288,8 @@ async function refineLoop({ buildDir, env, model, apiKey, opts }) {
     q = readQuality(buildDir);
     const m = sumMean(q);
     log(`${C.dim}refine pass ${pass}: mean(sum of devices)=${m}  passed=${q?.passed}${C.reset}`);
-    if (m > best.mean) best = { mean: m, content: readContext(buildDir).content };
+    const v = inv20Count(q);
+    if (m > best.mean || (m === best.mean && v < best.inv20)) best = { mean: m, inv20: v, content: readContext(buildDir).content };
   }
   // not passing → restore the BEST iteration so the local build is the strongest we reached
   if (q && !q.passed && best.content) {
