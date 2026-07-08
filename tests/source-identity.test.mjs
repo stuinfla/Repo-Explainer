@@ -61,6 +61,25 @@ test('INV-21 — deploy refuses to publish a build whose repo.url is not the pin
   assert.match(r.stdout, /SOURCE-IDENTITY VIOLATION/, 'deploy must refuse BEFORE touching any provider');
 });
 
+test('clone-repo is immune to an inherited AUTHORIZATION extraheader in the invoking checkout (CI)', () => {
+  // Regression (live 2026-07-08, second preflight attempt): on the hosted runner, clone-repo is
+  // invoked from inside the actions/checkout tree, whose LOCAL git config carries an
+  // "http.https://github.com/.extraheader=AUTHORIZATION: basic ..." — git stacked our token header
+  // on top and GitHub refused with `Duplicate header: "Authorization"`. runGit now uses a neutral
+  // cwd, so a poisoned invoking checkout must not leak its header into the probe/clone.
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'inv21-poisoned-'));
+  spawnSync('git', ['init', '-q', cwd], { encoding: 'utf8' });
+  spawnSync('git', ['-C', cwd, 'config', 'http.https://github.com/.extraheader', 'AUTHORIZATION: basic Ym9ndXM6Ym9ndXM='], { encoding: 'utf8' });
+  const dir = tmpBuildDir({ repo: { url: 'https://github.com/octocat/Hello-World' } });
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'tools', 'clone-repo.mjs'), dir], {
+    cwd,   // invoke FROM the poisoned checkout, exactly like the CI runner does
+    env: { ...process.env, GITHUB_TOKEN: '', GH_TOKEN: '', EXPLAINER_SUBMITTED_REPO: 'octocat/hello-world' },
+    encoding: 'utf8', timeout: 120000,
+  });
+  assert.doesNotMatch(r.stdout + r.stderr, /Duplicate header/i, 'the inherited extraheader must not stack');
+  assert.equal(r.status, 0, `public clone from a poisoned cwd must succeed (got: ${r.stdout} ${r.stderr.slice(-300)})`);
+});
+
 test('INV-21 — the runner accepts the bare owner/name form the workflow actually passes (fails on ACCESS, not parse)', () => {
   // Regression: the first live preflight (2026-07-08, rebuild of mamd69/SONA-Trader) failed CLOSED
   // on "cannot parse owner/name" because the workflow passes bare owner/name, not a full URL.

@@ -17,6 +17,7 @@
 // never writes a placeholder / partial clone past an error (tools/CONTRACT.md §b·6, INV-04).
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -49,6 +50,12 @@ function runGit(args, { capture = true, timeout = 120000 } = {}) {
   try {
     const out = execFileSync('git', args, {
       env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },   // never block on an interactive prompt
+      // Run from a NEUTRAL directory: if this tool is invoked from inside a git checkout (e.g. the
+      // CI runner's own actions/checkout tree, whose local config carries an AUTHORIZATION
+      // extraheader), git would inherit that repo's config and stack a second auth header —
+      // GitHub rejects it with `Duplicate header: "Authorization"` (hit live 2026-07-08). A
+      // neutral cwd also keeps the unauthenticated probe honestly unauthenticated.
+      cwd: os.tmpdir(),
       stdio: ['ignore', capture ? 'pipe' : 2, 'pipe'],     // non-captured stdout -> our stderr (fd 2)
       timeout, maxBuffer: 32 * 1024 * 1024,
     });
