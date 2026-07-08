@@ -42,8 +42,12 @@ function parseArgs(argv) {
 }
 
 const args = parseArgs(process.argv.slice(2));
-const repoUrl = args._[0];
+let repoUrl = args._[0];
 if (!repoUrl) { console.error('usage: agentic-runner.mjs <github-url> --build-dir <dir> [--budget-min N] [--budget-usd N]'); process.exit(2); }
+// The workflow passes the bare "owner/name" form (build.js sends fullName, not a URL) — normalize
+// to a full URL up front so the identity pin, build.json seed, and clone all see the same thing.
+// (Learned live 2026-07-08: the first INV-21 preflight failed CLOSED on exactly this — safe, but wrong.)
+if (!/^[a-z]+:\/\//i.test(repoUrl) && !/github\.com/i.test(repoUrl)) repoUrl = `https://github.com/${repoUrl.replace(/^\/+/, '')}`;
 
 const buildDir = path.resolve(args['build-dir'] || path.join(REPO_ROOT, 'build', `hosted-${Date.now()}`));
 const budgetMin = Number(args['budget-min'] || 20);

@@ -61,6 +61,19 @@ test('INV-21 — deploy refuses to publish a build whose repo.url is not the pin
   assert.match(r.stdout, /SOURCE-IDENTITY VIOLATION/, 'deploy must refuse BEFORE touching any provider');
 });
 
+test('INV-21 — the runner accepts the bare owner/name form the workflow actually passes (fails on ACCESS, not parse)', () => {
+  // Regression: the first live preflight (2026-07-08, rebuild of mamd69/SONA-Trader) failed CLOSED
+  // on "cannot parse owner/name" because the workflow passes bare owner/name, not a full URL.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'inv21-runner-'));
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'agentic-runner.mjs'), 'no-such-user-xyz123/no-such-repo', '--build-dir', dir], {
+    env: { PATH: process.env.PATH, HOME: dir },   // scrubbed: no tokens, no SMTP — alert-owner fails harmlessly
+    encoding: 'utf8', timeout: 60000,
+  });
+  assert.notEqual(r.status, 0, 'an inaccessible repo must still exit non-zero');
+  assert.doesNotMatch(r.stderr, /cannot parse owner\/name/, 'bare owner/name must parse');
+  assert.match(r.stderr, /PREFLIGHT FAILED/, 'the failure must be the access preflight, pre-agent');
+});
+
 test('INV-21 — the hosted runner clones pre-agent, pins the identity, and never leaks GH tokens to the agent', () => {
   const src = fs.readFileSync(path.join(ROOT, 'bin', 'agentic-runner.mjs'), 'utf8');
   assert.match(src, /SOURCE-IDENTITY LAW/, 'the brief must state the law to the agent');
