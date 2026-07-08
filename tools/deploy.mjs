@@ -136,6 +136,17 @@ async function main() {
   if (!buildDir) throw new Error('usage: node tools/deploy.mjs <build-dir>');
 
   const bc = readContext(buildDir);
+
+  // SOURCE-IDENTITY pin (INV-21) — deploy is the outward-facing boundary: the page being published
+  // must be built from the repo the human actually submitted, never a mid-build substitute
+  // (incident 2026-07-08: an agent, unable to clone a private repo, deployed a lookalike's page).
+  const pinned = (process.env.EXPLAINER_SUBMITTED_REPO || '').trim().toLowerCase();
+  if (pinned) {
+    const m = String(bc.repo?.url || '').trim().replace(/\/+$/, '').match(/github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?$/i);
+    const actual = m ? `${m[1]}/${m[2]}`.toLowerCase() : null;
+    if (actual !== pinned) throw new Error(`SOURCE-IDENTITY VIOLATION (INV-21): refusing to deploy — build.json repo.url (${bc.repo?.url || 'missing'}) is not the submitted repo (${pinned}).`);
+  }
+
   const slug = bc.repo?.slug;
   const pageDir = path.resolve(bc.page?.dir || '');
   if (!slug) throw new Error('repo.slug missing in build.json (run clone-repo first)');

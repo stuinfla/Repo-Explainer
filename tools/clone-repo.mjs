@@ -82,6 +82,14 @@ function main() {
   if (!parsed) fail(`could not parse owner/name from repo.url "${url}" (expected https://host/owner/name or git@host:owner/name)`);
   const { host, owner, name, cloneUrl } = parsed;
 
+  // SOURCE-IDENTITY pin (INV-21): when the harness pins the submitted repo, build.json's repo.url
+  // must BE that repo — an agent that edits repo.url to a lookalike dies here, before any network.
+  // (Incident 2026-07-08: submitted mamd69/SONA-Trader, an agent swapped in Dar-41's repo.)
+  const pinned = (process.env.EXPLAINER_SUBMITTED_REPO || '').trim().toLowerCase();
+  if (pinned && `${owner}/${name}`.toLowerCase() !== pinned) {
+    fail(`SOURCE-IDENTITY VIOLATION (INV-21): build.json repo.url is ${owner}/${name} but this build was submitted for ${pinned}. The submitted repo is the only permitted source — never substitute a similar-looking repo.`);
+  }
+
   const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
   const base = `https://${host}/`;
   const authArgs = token

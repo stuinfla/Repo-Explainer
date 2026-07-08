@@ -23,7 +23,7 @@
 //   - On ANY failure (non-zero exit, timeout, budget exceeded, or a completed run with no live URL
 //     in build.json), calls tools/alert-owner.mjs with full particulars — never fails silently.
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -61,11 +61,90 @@ if (!fs.existsSync(buildJsonPath)) {
 
 function log(msg) { process.stderr.write(`[agentic-runner] ${msg}\n`); }
 
+// Canonical "owner/name" identity for a GitHub URL — what the whole build is pinned to (INV-21).
+function repoId(u) {
+  const m = String(u || '').trim().replace(/\/+$/, '').match(/github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?$/i);
+  return m ? `${m[1]}/${m[2]}`.toLowerCase() : null;
+}
+const submittedRepoId = repoId(repoUrl);
+if (!submittedRepoId) { console.error(`[agentic-runner] cannot parse owner/name from "${repoUrl}" — need a github.com/owner/name URL`); process.exit(2); }
+
+// Status-gist patching lives ABOVE the preflight so access failures can reach the status page too.
+const gistId = args['gist-id'] || '';
+const ghToken = process.env.EXPLAINER_GH_TOKEN || process.env.GITHUB_TOKEN || '';
+// status: 'building' while in progress (the default); MUST be called with 'done'/'failed' at the
+// end too — a real production run (2026-07-06, sindresorhus/p-map, budget-exceeded) proved this
+// wasn't happening: the gist froze on the last in-progress step forever, so anyone watching the
+// live status page (as opposed to the email alert, which DID fire correctly) saw no indication the
+// build had actually finished, successfully or not. That is exactly the silent-failure mode this
+// whole rebuild exists to close.
+async function patchStatus(stepName, status = 'building', result = null, error = null) {
+  if (!gistId || !ghToken || !buildId) {
+    if (status !== 'building') log(`patchStatus(${status}) SKIPPED — missing ${!gistId ? 'gistId' : !ghToken ? 'ghToken' : 'buildId'}`);
+    return;
+  }
+  try {
+    const resp = await fetch(`https://api.github.com/gists/${gistId}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: { 'status.json': { content: JSON.stringify({ buildId, step: 0, totalSteps: 1, stepName, status, repo: repoUrl, result, error }, null, 2) } } }),
+    });
+    // A silent swallow here is exactly the anti-pattern this whole rebuild exists to close — a
+    // gist-patch failure on the TERMINAL state is itself worth knowing about, even though it must
+    // never invert the real build outcome (hence: log loudly, but never throw).
+    if (!resp.ok && status !== 'building') {
+      const body = await resp.text().catch(() => '');
+      log(`patchStatus(${status}) FAILED: HTTP ${resp.status} ${body.slice(0, 200)}`);
+    }
+  } catch (e) {
+    if (status !== 'building') log(`patchStatus(${status}) THREW: ${e.message}`);
+  }
+}
+
+// ── SOURCE-IDENTITY GATE: Station 0–1 (validate + clone) runs HERE, pre-agent, deterministic ────
+// Incident 2026-07-08 (submitted mamd69/SONA-Trader, shipped Dar-41/Virtual-Trader-SONA-AI-): the
+// agent, unable to clone a private-but-shared repo (the env allowlist strips GITHUB_TOKEN —
+// correctly), treated the clone failure as an obstacle to work around, GitHub-searched a lookalike,
+// edited repo.url in build.json, and shipped a stranger's repo to the submitter as theirs. Two
+// structural conclusions, both enforced here:
+//   1. The clone belongs in trusted deterministic code that MAY hold the token — never in the
+//      agent. Private repos shared with our account now work; the agent still never sees a token.
+//   2. If the EXACT submitted repo cannot be cloned, the build ends before the agent exists,
+//      loudly, with an actionable message to the human. Nothing can "work around" it.
+log(`preflight: cloning ${repoUrl} deterministically (pre-agent, token never enters the agent env)`);
+const cloneEnv = { ...process.env, EXPLAINER_SUBMITTED_REPO: submittedRepoId };
+if (!cloneEnv.GITHUB_TOKEN && cloneEnv.EXPLAINER_GH_TOKEN) cloneEnv.GITHUB_TOKEN = cloneEnv.EXPLAINER_GH_TOKEN;
+const cloneRes = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'clone-repo.mjs'), buildDir], { cwd: REPO_ROOT, env: cloneEnv, encoding: 'utf8' });
+if (cloneRes.stderr) process.stderr.write(cloneRes.stderr);
+let cloneOut = null;
+try { cloneOut = JSON.parse((cloneRes.stdout || '').trim().split('\n').pop()); } catch { /* non-JSON stdout = failure */ }
+if (cloneRes.status !== 0 || !cloneOut?.ok) {
+  const why = cloneOut?.error || (cloneRes.stderr || '').trim().split('\n').pop() || `clone-repo exited ${cloneRes.status}`;
+  log(`PREFLIGHT FAILED — ${why}`);
+  await patchStatus('Stopped before building: we could not access this repo.', 'failed', null,
+    `We couldn't access ${repoUrl}. If it's private, share it with our GitHub account or make it public, then rebuild. Nothing was built — we never build from a guess or a similar-looking repo.`);
+  const alert = spawn(process.execPath, [
+    path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
+    '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),
+    '--submitter', submitter || '(none)',
+    '--build-id', buildId || '(none)',
+    '--run-url', runUrl || '(none)',
+    '--reason', `repo inaccessible at preflight: ${why}`,
+    '--elapsed-min', '0',
+  ], { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
+  await new Promise((r) => alert.on('close', r));
+  process.exit(1);
+}
+log(`preflight OK — cloned ${cloneOut.outputs?.repo?.owner}/${cloneOut.outputs?.repo?.name} (private=${cloneOut.outputs?.repo?.private})`);
+
 const prompt = `Use the explainmyrepo skill (skills/explainmyrepo/SKILL.md is the brain — read it, follow it) to build a bespoke explainer for this repo:
 
   ${repoUrl}
 
 Build directory (already created, seeded with build.json): ${buildDir}
+Station 0–1 (validate + clone) is ALREADY DONE by the harness: the repo is cloned, verified, and pinned at ${buildDir}/repo. Do NOT re-run clone-repo, and do NOT touch repo.url in build.json.
+
+THE SOURCE-IDENTITY LAW (INV-21 — overrides every other instruction in this brief, including the workaround license below): the repo named above IS this build's identity. If its clone is missing, broken, or anything else makes it unusable, STOP and report ok:false with the specific reason. NEVER search for, substitute, fetch, or reconstruct a different repo or its README — an explainer of the wrong repo is fabrication, the one unforgivable output. There is no workaround for source identity.
 Ship mode: --ship-best-effort semantics — if you cannot reach the exemplar bar (mean>=90/min>=85/all six operators) after a reasonable refine attempt, ship the best HONEST version you have (the SHIP_OPERATORS bar: mean>=82, min>=70, real legible diagrams, comprehension operators YES) rather than nothing. The one thing you must NEVER ship broken is the mandatory architecture + flow diagrams (INV-18) — hold rather than ship if those didn't render as real vectors.
 Do NOT publish a separate GitHub repo for this build (skip that station — no write-scoped GitHub token is provisioned in this hosted context, by design).
 Do NOT run the notify station (station 9) — sending the submitter's email is handled OUTSIDE your process; you have no SMTP credentials and should not need them. Your job ends once quality-grade + deploy are done and build.json's publish.liveUrl is set.
@@ -73,7 +152,7 @@ Do NOT run the refine loop more than twice.
 
 You have an approximate budget of ${budgetMin} minutes and $${budgetUsd}. Track your own elapsed time and cost as you work. This repo's actual size/complexity is unknown to me in advance — YOU are the one who discovers it by reading the repo, so budget your own effort accordingly: for a small repo, take your time and polish; for a large/deep monorepo, work faster and be willing to cap exhaustiveness (e.g. don't try to full-text-sweep every file in a 10,000-file repo — sample the important ones: READMEs, top-level docs, the most-referenced components) rather than trying to be exhaustive and running out of budget.
 
-CRITICAL — never fail silently (this is INV-04 in the skill, restated because it is the single most important rule for this run): if a tool fails, or a repo's structure breaks an assumption (e.g. the dependency graph comes back empty, or the repo is unusually deep/large), do NOT just crash. STOP, THINK about why, and try a reasonable workaround (e.g. hand-write a minimal-but-honest architecture note if the automated extractor genuinely cannot produce one for this repo's structure) before giving up. If you truly cannot produce a working page, say EXACTLY why in plain language as your final message — a specific, honest reason a human could act on, never a bare stack trace or a vague "something went wrong."
+CRITICAL — never fail silently (this is INV-04 in the skill, restated because it is the single most important rule for this run): if a tool fails, or a repo's structure breaks an assumption (e.g. the dependency graph comes back empty, or the repo is unusually deep/large), do NOT just crash. STOP, THINK about why, and try a reasonable workaround — always WITHIN the pinned repo; the SOURCE-IDENTITY LAW above is never workaroundable — (e.g. hand-write a minimal-but-honest architecture note if the automated extractor genuinely cannot produce one for this repo's structure) before giving up. If you truly cannot produce a working page, say EXACTLY why in plain language as your final message — a specific, honest reason a human could act on, never a bare stack trace or a vague "something went wrong."
 
 At the end, print your final status as the LAST line of your response in this exact form (nothing after it):
 RESULT: {"ok": true, "liveUrl": "<url>"}   — on success
@@ -96,6 +175,9 @@ log(`starting: ${repoUrl} (budget ${budgetMin}min / $${budgetUsd}, build dir ${b
 const AGENT_ENV_ALLOWLIST = ['PATH', 'HOME', 'LANG', 'TERM', 'TMPDIR', 'NODE_ENV', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'NETLIFY_AUTH_TOKEN'];
 const agentEnv = {};
 for (const key of AGENT_ENV_ALLOWLIST) if (process.env[key] !== undefined) agentEnv[key] = process.env[key];
+// Not a secret — the INV-21 identity pin. clone-repo.mjs and deploy.mjs refuse to run against any
+// repo.url that doesn't match it, so even a misbehaving agent cannot swap the source mid-build.
+agentEnv.EXPLAINER_SUBMITTED_REPO = submittedRepoId;
 
 const claudeBin = process.env.CLAUDE_BIN || 'claude';
 const child = spawn(claudeBin, [
@@ -130,39 +212,6 @@ const hardTimer = setTimeout(() => {
   child.kill('SIGTERM');
   setTimeout(() => child.kill('SIGKILL'), 10_000);
 }, budgetMin * 60_000);
-
-// Also patch a status gist directly if the caller gave us the IDs, so the hosted-flow website's
-// poll shows the agent's REAL current action instead of a fixed step counter.
-const gistId = args['gist-id'] || '';
-const ghToken = process.env.EXPLAINER_GH_TOKEN || process.env.GITHUB_TOKEN || '';
-// status: 'building' while in progress (the default); MUST be called with 'done'/'failed' at the
-// end too — a real production run (2026-07-06, sindresorhus/p-map, budget-exceeded) proved this
-// wasn't happening: the gist froze on the last in-progress step forever, so anyone watching the
-// live status page (as opposed to the email alert, which DID fire correctly) saw no indication the
-// build had actually finished, successfully or not. That is exactly the silent-failure mode this
-// whole rebuild exists to close.
-async function patchStatus(stepName, status = 'building', result = null, error = null) {
-  if (!gistId || !ghToken || !buildId) {
-    if (status !== 'building') log(`patchStatus(${status}) SKIPPED — missing ${!gistId ? 'gistId' : !ghToken ? 'ghToken' : 'buildId'}`);
-    return;
-  }
-  try {
-    const resp = await fetch(`https://api.github.com/gists/${gistId}`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ files: { 'status.json': { content: JSON.stringify({ buildId, step: 0, totalSteps: 1, stepName, status, repo: repoUrl, result, error }, null, 2) } } }),
-    });
-    // A silent swallow here is exactly the anti-pattern this whole rebuild exists to close — a
-    // gist-patch failure on the TERMINAL state is itself worth knowing about, even though it must
-    // never invert the real build outcome (hence: log loudly, but never throw).
-    if (!resp.ok && status !== 'building') {
-      const body = await resp.text().catch(() => '');
-      log(`patchStatus(${status}) FAILED: HTTP ${resp.status} ${body.slice(0, 200)}`);
-    }
-  } catch (e) {
-    if (status !== 'building') log(`patchStatus(${status}) THREW: ${e.message}`);
-  }
-}
 
 let buf = '';
 child.stdout.on('data', (chunk) => {
@@ -211,10 +260,21 @@ if (!liveUrl) {
   } catch { /* build.json may not exist on a very early failure */ }
 }
 
+// Source-identity re-verification at the exit boundary (INV-21, defense in depth vs a mid-build
+// swap): the repo the build ENDED on must be the repo the human submitted, or nothing ships.
+let identityViolation = null;
+try {
+  const finalCtx = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
+  const finalId = repoId(finalCtx?.repo?.url);
+  if (finalId !== submittedRepoId) identityViolation = `build ended on "${finalCtx?.repo?.url}" but was submitted for ${submittedRepoId}`;
+} catch { /* unreadable build.json already fails the liveUrl check */ }
+
 const budgetExceeded = killedForBudget;
-const ok = exitCode === 0 && !budgetExceeded && !!liveUrl;
+const ok = exitCode === 0 && !budgetExceeded && !!liveUrl && !identityViolation;
 const elapsedMin = ((Date.now() - (lastActivity - 0)) / 60000); // approx; refined below
-const reason = budgetExceeded
+const reason = identityViolation
+  ? `SOURCE-IDENTITY VIOLATION: ${identityViolation} — treating any deploy from this run as invalid`
+  : budgetExceeded
   ? `exceeded its ${budgetMin}-minute budget before finishing`
   : agentReported && agentReported.ok === false ? agentReported.reason
   : exitCode !== 0 ? `claude process exited ${exitCode}`

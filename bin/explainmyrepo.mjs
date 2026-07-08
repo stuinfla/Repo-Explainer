@@ -62,6 +62,10 @@ ENV (from .env, never printed)
   NETLIFY_AUTH_TOKEN                (deploy)         gh auth / GH_TOKEN (publish, repo-seo, readme)
   SMTP_USER/SMTP_PASS/EMAIL_TO      (notify — optional; failure is non-blocking)
 
+TIP: run this inside a Claude Code session (in a project whose .env already holds these
+  keys) — the keys are picked up automatically and nothing needs to be re-exported.
+  Private repos: authenticate git first (gh auth login) or the clone will stop, loudly.
+
 EXAMPLES
   npx explainmyrepo https://github.com/owner/cool-lib
   npx explainmyrepo owner/cool-lib --no-deploy --no-publish

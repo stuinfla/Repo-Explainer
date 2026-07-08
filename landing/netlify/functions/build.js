@@ -84,7 +84,7 @@ exports.handler = async function (event) {
   let repoSizeKb = 0;
   try {
     const r = await fetch("https://api.github.com/repos/" + owner + "/" + repo, { headers: gh(token) });
-    if (r.status === 404) return json(404, { error: "Couldn't find " + fullName + " (check the URL; private repos must be shared with our GitHub account)." });
+    if (r.status === 404) return json(404, { error: "We can't access " + fullName + ". Check the URL — and if the repo is private, either make it public or share it with our GitHub account (stuinfla) and resubmit. We only ever build from your exact repo; if we can't see it, we stop rather than guess." });
     if (!r.ok) return json(502, { error: "GitHub API returned " + r.status + " — try again shortly." });
     const repoMeta = await r.json();
     repoSizeKb = Number(repoMeta.size) || 0;
