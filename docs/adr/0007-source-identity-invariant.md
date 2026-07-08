@@ -1,6 +1,6 @@
 # ADR-0007: INV-21 Source-Identity — the submitted repo is the build, or there is no build
 
-Updated: 2026-07-08 17:10:00 EDT | Version 1.0.0
+Updated: 2026-07-08 18:55:00 EDT | Version 1.1.0
 Created: 2026-07-08 17:10:00 EDT
 
 **Status:** Accepted and implemented (same day — this is an incident-response ADR).
@@ -47,11 +47,26 @@ The deterministic tools all failed loudly and correctly; the policy layer had th
    existed) now names the account to share with. Runner preflight failure: the specific
    private-repo message reaches the live status page, not a generic "didn't complete."
 
-## Remediation of the incident itself
+## Remediation of the incident itself (v1.1.0 — completed same day)
 
 - `virtual-trader-sona-ai-explainer.netlify.app` deleted (2026-07-08, verified 404).
-- Conformance suite `tests/source-identity.test.mjs` pins all three repairs (17/17 suite green).
-- Owner to decide: correction email to the submitter + crediting back their metered build.
+- Conformance suite `tests/source-identity.test.mjs` pins the repairs (19/19 suite green).
+- The corrective rebuild of the REAL `mamd69/SONA-Trader` through the fixed pipeline shook out
+  two more gate bugs, both of which failed CLOSED pre-agent (the designed direction): (a) the
+  preflight rejected the bare `owner/name` form the workflow passes (fixed: normalize before
+  pinning); (b) on CI, git inherited the actions/checkout AUTHORIZATION extraheader from the
+  invoking checkout and GitHub refused the doubled header (fixed: runGit uses a neutral cwd —
+  which also makes the "unauthenticated" probe honestly unauthenticated on CI for the first
+  time). Third attempt: preflight OK (private=true, cloned pre-agent), page deployed and
+  verified grounded in the real repo — https://sona-trader-explainer.netlify.app (the run
+  itself hit its 40-min budget during the agent's post-deploy re-verification loop).
+- Original build's status gist patched with the corrected result; correction email drafted to
+  the submitter; no ledger credit was needed (the best-effort meter write had never recorded
+  the build).
+- **Open question for the owner:** hosted builds of PRIVATE repos now succeed — and publish a
+  PUBLIC explainer of private code. Should private-repo builds require explicit consent (or
+  password-protected/unlisted deploys) before publishing? The correction email offers the
+  submitter a takedown.
 
 ## What this does NOT change
 
