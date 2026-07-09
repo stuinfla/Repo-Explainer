@@ -82,26 +82,43 @@ const ghToken = process.env.EXPLAINER_GH_TOKEN || process.env.GITHUB_TOKEN || ''
 // live status page (as opposed to the email alert, which DID fire correctly) saw no indication the
 // build had actually finished, successfully or not. That is exactly the silent-failure mode this
 // whole rebuild exists to close.
+// Progress patches are throttled: one gist PATCH per tool call blew GitHub's secondary
+// rate limit mid-build (2026-07-09, agentveil-sdk) — and the 403 landed on the one patch
+// that mattered, `done`, leaving the submitter staring at "building" while their page was
+// live. Progress is best-effort every ≥20s; terminal states retry through the limit.
+let lastProgressPatchAt = 0;
+
 async function patchStatus(stepName, status = 'building', result = null, error = null) {
   if (!gistId || !ghToken || !buildId) {
     if (status !== 'building') log(`patchStatus(${status}) SKIPPED — missing ${!gistId ? 'gistId' : !ghToken ? 'ghToken' : 'buildId'}`);
     return;
   }
-  try {
-    const resp = await fetch(`https://api.github.com/gists/${gistId}`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ files: { 'status.json': { content: JSON.stringify({ buildId, step: 0, totalSteps: 1, stepName, status, repo: repoUrl, result, error }, null, 2) } } }),
-    });
-    // A silent swallow here is exactly the anti-pattern this whole rebuild exists to close — a
-    // gist-patch failure on the TERMINAL state is itself worth knowing about, even though it must
-    // never invert the real build outcome (hence: log loudly, but never throw).
-    if (!resp.ok && status !== 'building') {
+  if (status === 'building') {
+    if (Date.now() - lastProgressPatchAt < 20_000) return;
+    lastProgressPatchAt = Date.now();
+  }
+  // Terminal states (done/failed) must land even if a secondary rate limit is active —
+  // GitHub's write-burst limits clear within a minute or two, so wait them out.
+  const delaysMs = status === 'building' ? [] : [30_000, 60_000, 120_000];
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const resp = await fetch(`https://api.github.com/gists/${gistId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: { 'status.json': { content: JSON.stringify({ buildId, step: 0, totalSteps: 1, stepName, status, repo: repoUrl, result, error }, null, 2) } } }),
+      });
+      if (resp.ok) return;
+      // A silent swallow here is exactly the anti-pattern this whole rebuild exists to close — a
+      // gist-patch failure on the TERMINAL state is itself worth knowing about, even though it must
+      // never invert the real build outcome (hence: log loudly, but never throw).
       const body = await resp.text().catch(() => '');
-      log(`patchStatus(${status}) FAILED: HTTP ${resp.status} ${body.slice(0, 200)}`);
+      if (status !== 'building') log(`patchStatus(${status}) attempt ${attempt + 1} FAILED: HTTP ${resp.status} ${body.slice(0, 200)}`);
+      if (attempt >= delaysMs.length) return;
+    } catch (e) {
+      if (status !== 'building') log(`patchStatus(${status}) attempt ${attempt + 1} THREW: ${e.message}`);
+      if (attempt >= delaysMs.length) return;
     }
-  } catch (e) {
-    if (status !== 'building') log(`patchStatus(${status}) THREW: ${e.message}`);
+    await new Promise((r) => setTimeout(r, delaysMs[attempt]));
   }
 }
 

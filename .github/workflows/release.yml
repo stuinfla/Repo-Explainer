@@ -6,11 +6,18 @@
 # Trusted publishing removes the whole class: npm trusts THIS workflow in THIS repo via OIDC,
 # mints a per-run credential, and publishes with provenance. Nothing stored, nothing expiring.
 #
+# Security posture (per commit review, 2026-07-09): the OIDC publish credential lives ONLY in
+# the publish job, which never executes dependency code — no npm ci, no tests, no lifecycle
+# scripts (package.json defines none of the prepublish family). Tests run first in a separate
+# job with no id-token permission, with dependency install scripts disabled. Actions and the
+# npm upgrade are pinned to exact SHAs/versions so "whatever latest is today" never holds
+# publish trust.
+#
 # One-time setup on npmjs.com (package settings → Publishing access → Trusted publisher):
 #   repository: stuinfla/Repo-Explainer · workflow: release.yml · environment: (blank)
 #
 # To release: bump package.json version, commit, then push a matching tag:
-#   git tag v0.2.4 && git push origin v0.2.4
+#   git tag v0.2.5 && git push origin v0.2.5
 
 name: Release to npm
 
@@ -20,21 +27,42 @@ on:
 
 permissions:
   contents: read
-  id-token: write # OIDC — this is what npm exchanges for the publish credential
 
 jobs:
-  publish:
+  test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      # --ignore-scripts: dependency postinstall hooks never run in CI. The suite is pure
+      # node:test with no browser launches, so playwright's browser download isn't needed.
+      - run: npm ci --ignore-scripts
+
+      - run: npm test
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC — this is what npm exchanges for the publish credential
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
 
-      # OIDC trusted publishing needs npm >= 11.5.1; node 22 ships an older one.
-      - run: npm install -g npm@latest
+      # OIDC trusted publishing needs npm >= 11.5.1; node 22 ships an older one. Pinned —
+      # an unpinned @latest would hand publish trust to whatever npm ships that day.
+      - run: npm install -g npm@12.0.0
 
       - name: Tag must match package.json version
         run: |
@@ -44,10 +72,8 @@ jobs:
             exit 1
           fi
 
-      - run: npm ci
-
-      - run: npm test
-
+      # No npm ci here on purpose: the package ships plain JS as-is (no build step), and with
+      # no prepublish-family scripts `npm publish` executes nothing but npm itself.
       - run: npm publish --access public
 
       - name: Verify the registry serves it
