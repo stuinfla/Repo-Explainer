@@ -120,6 +120,8 @@ npx explainmyrepo https://github.com/owner/repo
 
 > **Honest status:** the engine is built and proven. The `npx` package and the Claude Code plugin are **being published** — until that's live the one-liner above won't resolve from npm yet; today it runs as the Claude Code skill in this repo. We won't show the command as "done" until it actually installs.
 
+**Don't want to pay per token for the authoring brain?** The same skill runs through a **Codex** session signed in with a ChatGPT subscription, which drops the text-model cost to $0 (only `gpt-image-2` imagery stays metered, at cents per build). It also builds straight from a **local checkout**, so private source never leaves the machine. See [`docs/prompts/codex-explainer-build.md`](docs/prompts/codex-explainer-build.md) for the setup and a copy-paste prompt template.
+
 ---
 
 ## See a real one
