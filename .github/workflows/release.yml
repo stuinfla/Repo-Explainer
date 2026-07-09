@@ -1,0 +1,62 @@
+# Release to npm via TRUSTED PUBLISHING (OIDC) — no tokens, no login, nothing to go stale.
+#
+# Why this exists (2026-07-09): local `npm publish` now requires a browser 2FA tap every time
+# ("Two-factor authentication or granular access token with bypass 2fa enabled is required"),
+# and web-login sessions expire silently — 0.2.4 sat unpublished behind a 401 then a 403.
+# Trusted publishing removes the whole class: npm trusts THIS workflow in THIS repo via OIDC,
+# mints a per-run credential, and publishes with provenance. Nothing stored, nothing expiring.
+#
+# One-time setup on npmjs.com (package settings → Publishing access → Trusted publisher):
+#   repository: stuinfla/Repo-Explainer · workflow: release.yml · environment: (blank)
+#
+# To release: bump package.json version, commit, then push a matching tag:
+#   git tag v0.2.4 && git push origin v0.2.4
+
+name: Release to npm
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write # OIDC — this is what npm exchanges for the publish credential
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      # OIDC trusted publishing needs npm >= 11.5.1; node 22 ships an older one.
+      - run: npm install -g npm@latest
+
+      - name: Tag must match package.json version
+        run: |
+          PKG_V="v$(node -p "require('./package.json').version")"
+          if [ "$PKG_V" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME != package.json $PKG_V"
+            exit 1
+          fi
+
+      - run: npm ci
+
+      - run: npm test
+
+      - run: npm publish --access public
+
+      - name: Verify the registry serves it
+        run: |
+          sleep 20
+          LIVE="$(npm view explainmyrepo version)"
+          PKG_V="$(node -p "require('./package.json').version")"
+          if [ "$LIVE" != "$PKG_V" ]; then
+            echo "::error::registry serves $LIVE, expected $PKG_V"
+            exit 1
+          fi
+          echo "explainmyrepo@$LIVE is live."
