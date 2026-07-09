@@ -210,6 +210,30 @@ let totalCostUsd = 0;
 let finalResultText = '';
 let sawResultEvent = false;
 
+// The status gist is read by the submitter's browser — it gets a human progress line, never the
+// raw tool call (a reader watching their build saw `node tools/generate-image.mjs … PID=$!` as
+// the "step", 2026-07-09). The raw command still goes to the workflow log for debugging.
+function friendlyStep(name, input) {
+  if (name === 'Bash') {
+    const cmd = String(input?.command || '');
+    if (/generate-image/.test(cmd)) return 'Creating the imagery…';
+    if (/quality-grade|render-page|screenshot/.test(cmd)) return 'Grading the page against the quality bar…';
+    if (/deploy/.test(cmd)) return 'Deploying the page…';
+    if (/assemble-page/.test(cmd)) return 'Assembling the page…';
+    if (/build-context|clone/.test(cmd)) return 'Studying the repository…';
+    if (/npm (ci|install)/.test(cmd)) return 'Setting up tools…';
+    return 'Working…';
+  }
+  if (name === 'Write' || name === 'Edit') {
+    const p = String(input?.file_path || '');
+    if (/\.svg$/.test(p)) return 'Drawing diagrams…';
+    if (/\.(html|css)$/.test(p)) return 'Writing the page…';
+    return 'Authoring content…';
+  }
+  if (name === 'Read' || name === 'Grep' || name === 'Glob' || name === 'LS') return 'Reading the code…';
+  return 'Thinking…';
+}
+
 const hardTimer = setTimeout(() => {
   killedForBudget = true;
   log(`WALL-CLOCK BUDGET EXCEEDED (${budgetMin} min) — stopping the agent cleanly rather than letting the outer job get SIGKILLed.`);
@@ -234,7 +258,7 @@ child.stdout.on('data', (chunk) => {
             ? String(block.input?.command || '').slice(0, 140)
             : `${block.name} ${JSON.stringify(block.input || {}).slice(0, 100)}`;
           log(`→ ${summary}`);
-          patchStatus(summary.slice(0, 120));
+          patchStatus(friendlyStep(block.name, block.input));
         }
       }
     } else if (evt.type === 'result') {
