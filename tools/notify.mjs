@@ -178,6 +178,7 @@ ${scoreRows ? `<h3 style="margin:16px 0 6px">Scorecard</h3>
 ${links.length ? `<h3 style="margin:20px 0 6px">Links</h3><ul style="margin:4px 0;padding-left:20px">${links.join('')}</ul>` : ''}
 ${seoBlock}
 ${attachments.length ? `<p style="margin:16px 0 0;color:#555">Mobile + desktop screenshots are attached.</p>` : ''}
+<p style="margin:20px 0 0;color:#555">If this was worth your time, <a href="https://github.com/stuinfla/Repo-Explainer">a star on GitHub</a> genuinely helps other people find it. Something off? <a href="https://github.com/stuinfla/Repo-Explainer/issues">Tell me</a> and I'll fix it.</p>
 <p style="margin:24px 0 0;color:#999;font-size:12px">Sent by the explainmyrepo recipe (Station 9).</p>
 </body></html>`;
 

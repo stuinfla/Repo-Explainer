@@ -312,6 +312,9 @@ function finalSummary(outDir) {
     if (ctx.publish?.liveUrl) log(`${C.green}live: ${ctx.publish.liveUrl}${C.reset}`);
     if (ctx.publish?.explainerRepoUrl) log(`${C.dim}repo: ${ctx.publish.explainerRepoUrl}${C.reset}`);
     if (ctx.quality?.passed != null) log(`${C.dim}quality passed: ${ctx.quality.passed}${C.reset}`);
+    // The one ask, at the one moment it's earned. Most npx users never see the GitHub repo
+    // page (npm clones outnumber repo views 4:1) — this line is the only star prompt they get.
+    log(`\n${C.dim}If this was worth your time, a star helps others find it: ${C.reset}https://github.com/stuinfla/Repo-Explainer`);
   } catch { /* best-effort summary */ }
 }
 
