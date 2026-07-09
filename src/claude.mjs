@@ -10,9 +10,18 @@
 // the package installs and `node --test` stays green without an SDK. The key comes from the merged
 // env (ANTHROPIC_API_KEY, back-filled from CLAUDE_API_KEY by src/env.mjs); it is never logged.
 //
+// NO API KEY? THE BRAIN CAN RIDE CLAUDE CODE INSTEAD (2026-07-08, owner direction: "minimum
+// requirements"): when no Anthropic key is present but the `claude` CLI is installed and logged in,
+// brain calls are delegated to `claude -p --output-format json` — the same documented headless path
+// the hosted runner uses — so the judgment steps run on the user's Claude Code subscription with no
+// API key at all. Force with EXPLAINMYREPO_BRAIN=claude-cli, forbid with EXPLAINMYREPO_BRAIN=api.
+// (Temperature is not controllable over the CLI; authoring tolerates the default.)
+//
 // Interface (stable):
 //   callClaude({ apiKey, model?, system, user, maxTokens?, temperature?, timeoutMs? }) -> string
 //   callClaudeJSON({ …same… }) -> parsed JSON  (asks for JSON-only, strips fences, retries once)
+
+import { spawnSync } from 'node:child_process';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
@@ -33,13 +42,47 @@ const RETRY_DELAYS_MS = [2_000, 8_000];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Is a logged-in Claude Code CLI available to carry the brain? Cached for the process lifetime.
+let _cliAvailable = null;
+export function claudeCliAvailable() {
+  if (_cliAvailable !== null) return _cliAvailable;
+  try {
+    const r = spawnSync('claude', ['--version'], { encoding: 'utf8', timeout: 10_000 });
+    _cliAvailable = r.status === 0;
+  } catch { _cliAvailable = false; }
+  return _cliAvailable;
+}
+
+function callClaudeCli({ model, system, user, timeoutMs }) {
+  const args = ['-p', user, '--output-format', 'json', '--model', model];
+  if (system) args.push('--system-prompt', system);
+  const r = spawnSync('claude', args, {
+    encoding: 'utf8', timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024,
+    env: { ...process.env, CLAUDE_CODE_ENTRYPOINT: 'explainmyrepo' },
+  });
+  if (r.error && (r.error.code === 'ETIMEDOUT' || r.signal === 'SIGTERM')) {
+    const err = new Error(`claude CLI timed out after ${timeoutMs}ms`);
+    err.retryable = true;
+    throw err;
+  }
+  if (r.status !== 0) throw new Error(`claude CLI exited ${r.status ?? 'null'}: ${(r.stderr || '').trim().slice(-300)}`);
+  let j;
+  try { j = JSON.parse(r.stdout); } catch { throw new Error(`claude CLI returned non-JSON output: ${(r.stdout || '').slice(0, 200)}`); }
+  if (j.is_error) throw new Error(`claude CLI error: ${String(j.result || '').slice(0, 300)}`);
+  const text = String(j.result || '');
+  if (!text.trim()) throw new Error('claude CLI returned no text');
+  return text;
+}
+
 export async function callClaude({
   apiKey, model = DEFAULT_MODEL, system, user,
   maxTokens = 4096, temperature = 0.7, timeoutMs = 120_000,
   retryDelaysMs = RETRY_DELAYS_MS,
 }) {
-  if (!apiKey) {
-    throw new Error('no Anthropic API key — set ANTHROPIC_API_KEY (or CLAUDE_API_KEY) in .env');
+  const brainMode = process.env.EXPLAINMYREPO_BRAIN || '';
+  const useCli = brainMode === 'claude-cli' || (!apiKey && brainMode !== 'api' && claudeCliAvailable());
+  if (!apiKey && !useCli) {
+    throw new Error('no Anthropic API key and no Claude Code login — either set ANTHROPIC_API_KEY (or CLAUDE_API_KEY) in .env, or install Claude Code and log in (the brain then runs on your Claude subscription, no API key needed)');
   }
   let lastErr;
   for (let attempt = 0; attempt <= retryDelaysMs.length; attempt++) {
@@ -49,7 +92,9 @@ export async function callClaude({
       await sleep(delay);
     }
     try {
-      return await callClaudeOnce({ apiKey, model, system, user, maxTokens, temperature, timeoutMs });
+      return useCli
+        ? callClaudeCli({ model, system, user, timeoutMs })
+        : await callClaudeOnce({ apiKey, model, system, user, maxTokens, temperature, timeoutMs });
     } catch (e) {
       if (!e.retryable) throw e;
       lastErr = e;

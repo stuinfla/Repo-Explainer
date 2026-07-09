@@ -14,6 +14,8 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { run } from '../src/orchestrator.mjs';
+import { loadEnv, getSecret } from '../src/env.mjs';
+import { claudeCliAvailable } from '../src/claude.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 function version() {
@@ -56,15 +58,20 @@ STATIONS (ids for --from/--to/--only)
   generate-image · make-favicon · make-social-card · make-diagrams · assemble-page ·
   make-pack · quality-grade · deploy · publish-repo · repo-seo · readme-enhance · notify
 
-ENV (from .env, never printed)
-  ANTHROPIC_API_KEY|CLAUDE_API_KEY  (required — brain steps)
-  OPENAI_API_KEY|OPEN_AI_KEY        (images + vision grade)
-  NETLIFY_AUTH_TOKEN                (deploy)         gh auth / GH_TOKEN (publish, repo-seo, readme)
-  SMTP_USER/SMTP_PASS/EMAIL_TO      (notify — optional; failure is non-blocking)
+WHAT YOU NEED (checked up-front — you'll be told exactly what's missing and what to do)
+  Brain      ANTHROPIC_API_KEY in .env — OR just a logged-in Claude Code install: with no
+             key set, the judgment steps run on your Claude subscription automatically.
+  Visuals    OPENAI_API_KEY|OPEN_AI_KEY — hero art + the vision quality gate.
+  Live URL   NETLIFY_AUTH_TOKEN — optional: skip with --no-deploy and you still get the
+             complete page in your build folder.
+  GitHub     nothing for public repos; PRIVATE repos need "gh auth login" first.
+  (SMTP_USER/SMTP_PASS/EMAIL_TO — notify only, optional, failure is non-blocking.)
 
-TIP: run this inside a Claude Code session (in a project whose .env already holds these
-  keys) — the keys are picked up automatically and nothing needs to be re-exported.
-  Private repos: authenticate git first (gh auth login) or the clone will stop, loudly.
+WHICH DOOR IS FOR YOU
+  Public repo, zero setup      →  https://explainmyrepo.isovision.ai (paste the URL — done)
+  Private repo, or your keys   →  THIS command, run inside a VS Code / Claude Code session
+                                  in a project whose .env already holds the keys above —
+                                  everything is picked up automatically, nothing re-exported.
 
 EXAMPLES
   npx explainmyrepo https://github.com/owner/cool-lib
@@ -110,6 +117,7 @@ async function main() {
   if (opts.help || positional.length === 0) { process.stdout.write(HELP); process.exit(opts.help ? 0 : 2); }
 
   const url = positional[0];
+  preflight(opts);
   try {
     const res = await run(url, opts);
     process.exit(res.ok ? 0 : 1);
@@ -117,6 +125,44 @@ async function main() {
     process.stderr.write(`\n\x1b[31merror:\x1b[0m ${e.message}\n`);
     process.exit(1);
   }
+}
+
+// Up-front environment doctor (owner direction 2026-07-08: a missing key must never surface as a
+// mid-build crash 20 minutes in — say what's missing, what it's for, and the easiest way out, in
+// second zero). Mirrors the orchestrator's env resolution exactly (loadEnv = .env-over-ambient).
+function preflight(opts) {
+  if (opts.dryRun || opts['dry-run']) return;   // a dry run makes no API calls at all
+  const env = loadEnv(path.join(HERE, '..'));
+  const anthropic = getSecret(env, ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY']);
+  const openai = getSecret(env, ['OPENAI_API_KEY', 'OPEN_AI_KEY']);
+  const netlify = getSecret(env, ['NETLIFY_AUTH_TOKEN']);
+  const cli = anthropic ? false : claudeCliAvailable();
+  const inClaudeCode = process.env.CLAUDECODE === '1';
+  const noDeploy = Boolean(opts['no-deploy'] || opts.noDeploy);
+
+  const rows = [
+    ['Brain', anthropic ? 'ok — Anthropic API key' : cli ? 'ok — no API key, riding your Claude Code login' : 'MISSING'],
+    ['Visuals', openai ? 'ok — OpenAI key' : 'MISSING'],
+    ['Live URL', netlify ? 'ok — Netlify token' : noDeploy ? 'skipped (--no-deploy)' : 'MISSING'],
+  ];
+  const fatal = [];
+  if (!anthropic && !cli) fatal.push('Brain: set ANTHROPIC_API_KEY (or CLAUDE_API_KEY) in .env — or install Claude Code and log in, and the brain runs on your Claude subscription with no key at all.');
+  if (!openai) fatal.push('Visuals: set OPENAI_API_KEY in .env (hero art + the vision quality gate need it).');
+  if (!netlify && !noDeploy) fatal.push('Live URL: set NETLIFY_AUTH_TOKEN in .env — or re-run with --no-deploy to build the complete page locally with no Netlify account.');
+
+  if (!fatal.length) {
+    process.stderr.write(`preflight: ${rows.map(([k, v]) => `${k.toLowerCase()} ${v.split(' — ')[0]}`).join(' · ')}\n`);
+    return;
+  }
+  process.stderr.write('\nBefore this can run, a quick environment check:\n\n');
+  for (const [k, v] of rows) process.stderr.write(`  ${v.startsWith('MISSING') ? '✗' : '✓'} ${k.padEnd(9)} ${v}\n`);
+  process.stderr.write('\nWhat to do:\n');
+  for (const f of fatal) process.stderr.write(`  • ${f}\n`);
+  if (!inClaudeCode) {
+    process.stderr.write('\nRECOMMENDED: run this inside a VS Code / Claude Code session, in a project whose .env\nalready holds these keys — they are picked up automatically, nothing to re-export.\n');
+  }
+  process.stderr.write('\nPUBLIC repo and no keys at hand? The zero-setup path is the website:\n  https://explainmyrepo.isovision.ai\n\n');
+  process.exit(2);
 }
 
 main();

@@ -84,9 +84,15 @@ exports.handler = async function (event) {
   let repoSizeKb = 0;
   try {
     const r = await fetch("https://api.github.com/repos/" + owner + "/" + repo, { headers: gh(token) });
-    if (r.status === 404) return json(404, { error: "We can't access " + fullName + ". Check the URL — and if the repo is private, either make it public or share it with our GitHub account (stuinfla) and resubmit. We only ever build from your exact repo; if we can't see it, we stop rather than guess." });
+    if (r.status === 404) return json(404, { error: "We can't access " + fullName + ". Check the URL — the website builds PUBLIC repos. Private repo you own? Build it locally: npx explainmyrepo " + fullName + " in a VS Code / Claude Code session (gh auth login first). We only ever build from your exact repo; if we can't see it, we stop rather than guess." });
     if (!r.ok) return json(502, { error: "GitHub API returned " + r.status + " — try again shortly." });
     const repoMeta = await r.json();
+    // Policy (ADR-0007, owner decision 2026-07-08): the hosted door builds PUBLIC repos only — a
+    // hosted build publishes a public page, which must never quietly expose private code. Private
+    // repos are the local door's job, where the owner runs it under their own identity.
+    if (repoMeta.private === true) {
+      return json(400, { error: fullName + " is a private repo. The website publishes public explainer pages, so it only builds public repos. To build yours: run npx explainmyrepo " + fullName + " in a VS Code / Claude Code session (gh auth login first) — you keep full control, including whether it deploys at all." });
+    }
     repoSizeKb = Number(repoMeta.size) || 0;
   } catch { return json(502, { error: "Couldn't reach GitHub — try again shortly." }); }
 

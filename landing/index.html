@@ -160,7 +160,7 @@
 
         <div class="hero-actions">
           <div class="hero-request gs-request reveal-up" data-d="6" id="hero-request">
-            <p class="hr-kicker"><span class="badge-dot" aria-hidden="true"></span> Try it right now &mdash; no keys, no install</p>
+            <p class="hr-kicker"><span class="badge-dot" aria-hidden="true"></span> Try it right now &mdash; public repos, no keys, no install</p>
 
             <form class="rq-form hr-form" data-rq novalidate>
               <div class="rq-fields hr-fields">
@@ -196,7 +196,7 @@
           </div>
 
           <p class="hero-alt reveal-up" data-d="7">
-            <span>or bring your own keys:</span>
+            <span>private repo, or your own keys? run it in VS&nbsp;Code / Claude&nbsp;Code:</span>
             <span class="cmd hero-cmd">
               <span class="prompt" aria-hidden="true">$</span>
               <code class="cmd-code" id="hero-command"><span class="tok">npx explainmyrepo</span> <span class="arg">&lt;github-url&gt;</span><span class="caret" aria-hidden="true"></span></code>
@@ -505,29 +505,36 @@
           <p class="kicker"><span class="kicker-dot" aria-hidden="true"></span> One brain, three doors</p>
           <h2 id="doors-h">The judgment lives in one place.</h2>
           <p class="sub">The whole brain is a single Claude Code skill. Three thin doors run the
-            <em>identical</em> engine — improve the brain once, and it improves everywhere.</p>
+            <em>identical</em> engine — pick yours by one question: <em>is the repo public, and whose
+            keys should do the work?</em></p>
         </div>
         <div class="grid-3 doors-grid">
           <article class="card door-card reveal-up" data-d="1">
             <span class="card-glow" aria-hidden="true"></span>
             <span class="door-num" aria-hidden="true">01</span>
-            <h3>npx CLI</h3>
-            <p>The one-liner. Zero install, runs anywhere Node does, using your own keys.</p>
-            <code class="door-mono">npx explainmyrepo</code>
+            <h3>This website — public repos</h3>
+            <p><strong>The zero-setup door.</strong> Public repo? Paste the URL above — no keys, no
+              install, nothing to configure. We build it, host it, and email you the link.</p>
+            <code class="door-mono">explainmyrepo.isovision.ai</code>
           </article>
           <article class="card door-card reveal-up" data-d="2">
             <span class="card-glow" aria-hidden="true"></span>
             <span class="door-num" aria-hidden="true">02</span>
-            <h3>Claude Code plugin</h3>
-            <p>Install once, then explain any repo with a slash command from inside Claude Code.</p>
-            <code class="door-mono">/explainmyrepo &lt;github-url&gt;</code>
+            <h3>npx — private repos &amp; your keys</h3>
+            <p><strong>Best run inside VS&nbsp;Code / Claude&nbsp;Code</strong>, in a project whose
+              <code>.env</code> already holds an OpenAI key (art + grading) and a Netlify token (the
+              live URL — optional). Logged into Claude&nbsp;Code? The brain runs on your subscription —
+              no Anthropic key needed. Private repo: <code>gh auth login</code> first. The command
+              checks all of this up front and tells you exactly what's missing.</p>
+            <code class="door-mono">npx explainmyrepo &lt;github-url&gt;</code>
           </article>
           <article class="card door-card reveal-up" data-d="3">
             <span class="card-glow" aria-hidden="true"></span>
             <span class="door-num" aria-hidden="true">03</span>
-            <h3>Hosted website</h3>
-            <p>Paste a GitHub URL in the browser. Same engine, nothing to install.</p>
-            <code class="door-mono">explainmyrepo.isovision.ai</code>
+            <h3>Claude Code plugin</h3>
+            <p>Install once, then explain any repo with a slash command from inside Claude Code —
+              same brain, your session does the thinking.</p>
+            <code class="door-mono">/explainmyrepo &lt;github-url&gt;</code>
           </article>
         </div>
       </div>

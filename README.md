@@ -99,9 +99,14 @@ The judgment lives in **one** place — a Claude Code skill. The same core is ex
 
 <!-- DIAGRAM: three-doors (one skill = the brain → exposed as a Claude Code plugin · an npx CLI · a hosted website) -->
 
-- **Claude Code plugin** — run it from inside Claude Code.
-- **npx CLI** — the one-liner below.
-- **Hosted website** — paste a GitHub URL in the browser.
+- **Hosted website** — paste a GitHub URL in the browser. **Public repos, zero setup** — the easiest door.
+- **npx CLI** — the one-liner below. **Private repos and your own keys.**
+- **Claude Code plugin** — run it from inside Claude Code with a slash command.
+
+**Pick your door with one question — is the repo public, and whose keys should do the work?**
+Public repo and you just want the page: use the website, done. Private repo, or you want it on
+your own accounts: use the CLI — and run it **inside a VS Code / Claude Code session**, in a
+project whose `.env` already holds your keys, so everything is picked up automatically.
 
 ---
 
@@ -112,7 +117,18 @@ The judgment lives in **one** place — a Claude Code skill. The same core is ex
 npx explainmyrepo https://github.com/owner/repo
 ```
 
-**What you need:** Node 18+, a GitHub repo URL, and your own API keys (Anthropic for the authoring brain, OpenAI for `gpt-image-2` imagery).
+**What you need** (the command checks all of this up front and tells you exactly what's missing):
+
+| For | What | Notes |
+|---|---|---|
+| The brain | `ANTHROPIC_API_KEY` in `.env` — **or nothing**, if you're logged into Claude Code | with no key set, the judgment steps run on your Claude subscription via the `claude` CLI |
+| Art + quality gate | `OPENAI_API_KEY` in `.env` | hero imagery and the vision grader |
+| The live URL | `NETLIFY_AUTH_TOKEN` in `.env` — optional | skip with `--no-deploy` and you still get the complete page locally |
+| Private repos | `gh auth login` | public repos need nothing |
+
+**Recommended:** run it inside a **VS Code / Claude Code session** in a project whose `.env`
+already has these — nothing to export, nothing to paste, and Claude Code itself can carry the
+brain. In a bare terminal it works too; you'll just be told up front which keys to add.
 
 **What happens:** it reads the repo, understands it, art-directs and writes the page, generates the imagery and the real architecture + data-flow diagrams, grades the result on mobile and desktop until it clears the bar, then deploys it.
 

@@ -48,6 +48,11 @@ const ALIASES = {
 // Canonical aliases are then back-filled. Returns a NEW object (does not mutate process.env).
 export function loadEnv(repoRoot) {
   const fromFile = parseDotenv(path.join(repoRoot, '.env'));
+  // npx users run from THEIR project, whose .env is the one they mean ("run it where your keys
+  // already live" — the recommended flow). The package-root .env only exists on dev checkouts;
+  // when the two differ, the invoking project's .env wins.
+  const cwdDotenv = path.join(process.cwd(), '.env');
+  if (path.resolve(cwdDotenv) !== path.resolve(repoRoot, '.env')) Object.assign(fromFile, parseDotenv(cwdDotenv));
   const merged = { ...process.env, ...fromFile };
   for (const [canon, alts] of Object.entries(ALIASES)) {
     if (merged[canon] && String(merged[canon]).trim()) continue;

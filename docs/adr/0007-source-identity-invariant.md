@@ -1,7 +1,19 @@
 # ADR-0007: INV-21 Source-Identity — the submitted repo is the build, or there is no build
 
-Updated: 2026-07-08 18:55:00 EDT | Version 1.1.0
+Updated: 2026-07-08 19:50:00 EDT | Version 1.2.0
 Created: 2026-07-08 17:10:00 EDT
+
+> **v1.2.0 — the open question is RESOLVED (owner decision, same day): the hosted door builds
+> PUBLIC repos only.** A hosted build publishes a public page, which must never quietly expose
+> private code. The landing /build function now rejects private repos at submit time and routes
+> the owner to the local door: `npx explainmyrepo` inside a VS Code / Claude Code session
+> (`gh auth login` first), where they run under their own identity and control whether it deploys
+> at all. Positioning shipped with it (owner's "great first experience" mandate): the CLI gained
+> an up-front environment doctor (missing keys are named in second zero, with the fix), the brain
+> can now ride a logged-in Claude Code install when no Anthropic key is set (claude -p, the same
+> headless path the hosted runner uses — minimum requirements collapse to OpenAI + optional
+> Netlify), and the README + landing explain the door choice in one question: "is the repo
+> public, and whose keys should do the work?"
 
 **Status:** Accepted and implemented (same day — this is an incident-response ADR).
 
