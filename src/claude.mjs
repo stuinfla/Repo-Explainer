@@ -56,12 +56,16 @@ export function claudeCliAvailable() {
 function callClaudeCli({ model, system, user, timeoutMs }) {
   const args = ['-p', user, '--output-format', 'json', '--model', model];
   if (system) args.push('--system-prompt', system);
+  // The CLI brain is slower than the raw API: each call pays Claude Code session startup and
+  // cannot cap output tokens. First E2E (p-limit, 2026-07-08) had the content station time out
+  // at the API-calibrated 120s three times in a row — triple the budget with a 6-min floor.
+  const cliTimeoutMs = Math.max(timeoutMs * 3, 360_000);
   const r = spawnSync('claude', args, {
-    encoding: 'utf8', timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024,
+    encoding: 'utf8', timeout: cliTimeoutMs, maxBuffer: 32 * 1024 * 1024,
     env: { ...process.env, CLAUDE_CODE_ENTRYPOINT: 'explainmyrepo' },
   });
   if (r.error && (r.error.code === 'ETIMEDOUT' || r.signal === 'SIGTERM')) {
-    const err = new Error(`claude CLI timed out after ${timeoutMs}ms`);
+    const err = new Error(`claude CLI timed out after ${cliTimeoutMs}ms`);
     err.retryable = true;
     throw err;
   }

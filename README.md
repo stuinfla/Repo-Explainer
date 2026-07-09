@@ -16,7 +16,9 @@ This is the live site: the concept, the full process, and all six example explai
 
 </div>
 
-<!-- DIAGRAM: hero (a dense, unreadable repo on the left transformed into a clear, art-directed explainer page on the right) -->
+[![The agenticow explainer — a dark teal hero reading "Branch a million-vector memory in 0.5 ms and 162 bytes" beside a glowing branching-network diagram. Generated end to end by explainmyrepo.](assets/readme/agenticow.webp)](https://agenticow-explainer.netlify.app/)
+
+<p align="center"><em>↑ a real one — generated end to end from <a href="https://github.com/ruvnet/agenticow">ruvnet/agenticow</a>, no human design pass. <a href="https://agenticow-explainer.netlify.app/">Open it live.</a></em></p>
 
 ---
 
@@ -41,7 +43,7 @@ That's the bar. `explainmyrepo` exists to clear it, on every build.
 
 One command reads a repo and produces three things, each quality-gated:
 
-<!-- DIAGRAM: three-outputs (one GitHub URL → a live explainer page for humans + a GitHub repo you own + a downloadable AI knowledge pack for their AI) -->
+![One GitHub URL in, three quality-gated artifacts out: a live explainer page, a GitHub repo you own, and a downloadable AI knowledge pack.](assets/diagrams/three-outputs.svg)
 
 1. **A live explainer web page** — the link you share. A bespoke, art-directed walkthrough with a real architecture diagram and a real data-flow diagram drawn from the code itself.
 2. **A GitHub repo you own** — you're invited as a collaborator on the explainer's own repo, so you can edit it. It's yours.
@@ -55,7 +57,7 @@ One command reads a repo and produces three things, each quality-gated:
 
 The brain runs the repo through an ordered sequence. Each step has one job:
 
-<!-- DIAGRAM: pipeline (read → understand → conceive → author → visualize → assemble → grade ⟲ → ship) -->
+![The pipeline: read, understand, conceive, author, visualize, assemble, grade, ship — with a refine loop from grade back to author that reopens only the named weak slot.](assets/diagrams/pipeline.svg)
 
 1. **Read** — clone the repo and confirm it's reachable (public, private, or your own, via authenticated access).
 2. **Understand** — build a real RVF vector knowledge base from the actual code: structure-aware chunks, local 384-dim embeddings (`bge-small-en-v1.5`), plus an extracted symbol index, dependency graph, and entrypoints. Then author a plain-language primer. Everything downstream is grounded in this KB — **no invented capabilities**.
@@ -72,7 +74,7 @@ The brain runs the repo through an ordered sequence. Each step has one job:
 
 This is the part that makes the difference. A generic generator emits something and stops. `explainmyrepo` **does not ship until an independent critic and a set of operator questions both pass.**
 
-<!-- DIAGRAM: quality-gate (render @ 390px + 1440px → vision critic scores Gate A substance + Gate B craft → 5 operator YES/NO questions → refine loop until mean ≥ 90, min axis ≥ 85, all YES → ship) -->
+![The quality gate: real screenshots at 390px and 1440px go to an independent vision critic (Gate A substance, Gate B craft) and six operator questions; the bar is mean ≥ 90, min axis ≥ 85, all six YES — anything less loops back to refine the named weakness.](assets/diagrams/quality-gate.svg)
 
 The gate renders the live page in a real browser at **390px (mobile)** and **1440px (desktop)**, takes full-page screenshots, and scores them on **two independent rubrics**:
 
@@ -81,13 +83,14 @@ The gate renders the live page in a real browser at **390px (mobile)** and **144
 
 To pass, on **both devices**, the scorecard must hit an **exemplar-anchored bar: mean ≥ 90 and minimum axis ≥ 85**. The bar is pinned to the project's own praised example sites (~88 headline / ~92 mean on an honest harsh grader) — not an impossible "95 on everything." The minimum-axis floor is the anti-slop catch: one weak axis (a raw ASCII diagram, a pretty-but-empty image) scores ~50 and fails the whole build.
 
-On top of the numbers, the operator must answer **YES to all five questions** — a separate, independent gate:
+On top of the numbers, the operator must answer **YES to all six questions** — a separate, independent gate:
 
 1. Would this make me believe I understand this?
 2. Would this make it approachable?
 3. Would this explain it for somebody who doesn't understand it?
 4. Would it give me confidence I understand the architecture?
 5. Does it make me smile — "oh, that's cool"?
+6. Could someone who knows **nothing** about this domain read the first four sections and explain the problem and the solution back to me?
 
 A single axis below the bar, or a single NO, names the exact weakness, reopens just that slot, re-renders, and re-grades. **Iterating over a few revisions is expected by design** — it's how the build climbs to genuinely high quality. Three sets of eyes see the same pixels: the vision-model critic, the operator, and finally you (the owner) on delivery. If a repo genuinely can't reach the bar, the build **says so honestly** rather than shipping slop and calling it done.
 
@@ -97,7 +100,7 @@ A single axis below the bar, or a single NO, names the exact weakness, reopens j
 
 The judgment lives in **one** place — a Claude Code skill. The same core is exposed through three thin adapters that each run the *identical* skill; none of them contains explainer logic of its own. Improve the brain once, and it improves everywhere.
 
-<!-- DIAGRAM: three-doors (one skill = the brain → exposed as a Claude Code plugin · an npx CLI · a hosted website) -->
+![One brain, three doors: the website builds public repos with zero keys; npx handles private repos and your own keys (one key — OpenAI — inside Claude Code); the Claude Code plugin runs it with a slash command.](assets/diagrams/three-doors.svg)
 
 - **Hosted website** — paste a GitHub URL in the browser. **Public repos, zero setup** — the easiest door.
 - **npx CLI** — the one-liner below. **Private repos and your own keys.**
@@ -126,15 +129,20 @@ npx explainmyrepo https://github.com/owner/repo
 | The live URL | `NETLIFY_AUTH_TOKEN` in `.env` — optional | skip with `--no-deploy` and you still get the complete page locally |
 | Private repos | `gh auth login` | public repos need nothing |
 
+**The count, plainly:** website — **zero keys**. npx **inside Claude Code** (recommended) —
+**one key** (OpenAI); add a Netlify token only if you want the live URL. npx in a bare
+terminal — **two keys** (add Anthropic). Private repo — no extra key, just `gh auth login` once.
+
 **Recommended:** run it inside a **VS Code / Claude Code session** in a project whose `.env`
-already has these — nothing to export, nothing to paste, and Claude Code itself can carry the
-brain. In a bare terminal it works too; you'll just be told up front which keys to add.
+already has these — nothing to export, nothing to paste, and Claude Code itself carries the
+brain on your existing subscription. In a bare terminal it works too; you'll just be told up
+front which keys to add.
 
 **What happens:** it reads the repo, understands it, art-directs and writes the page, generates the imagery and the real architecture + data-flow diagrams, grades the result on mobile and desktop until it clears the bar, then deploys it.
 
 **What you get back:** a live URL (in your terminal and by email), a GitHub repo you're a collaborator on, and the downloadable AI knowledge pack — plus the scorecard and both screenshots, so you're the final set of eyes.
 
-> **Honest status:** the engine is built and proven. The `npx` package and the Claude Code plugin are **being published** — until that's live the one-liner above won't resolve from npm yet; today it runs as the Claude Code skill in this repo. We won't show the command as "done" until it actually installs.
+> **Status:** `npx explainmyrepo` is **live on npm** (v0.2+). The hosted website is live at [explainmyrepo.isovision.ai](https://explainmyrepo.isovision.ai). Found it valuable? **[A star on this repo](https://github.com/stuinfla/Repo-Explainer)** genuinely helps. Hit a problem? **[Open an issue](https://github.com/stuinfla/Repo-Explainer/issues)** — happy to help fix it and make it better.
 
 **Don't want to pay per token for the authoring brain?** The same skill runs through a **Codex** session signed in with a ChatGPT subscription, which drops the text-model cost to $0 (only `gpt-image-2` imagery stays metered, at cents per build). It also builds straight from a **local checkout**, so private source never leaves the machine. See [`docs/prompts/codex-explainer-build.md`](docs/prompts/codex-explainer-build.md) for the setup and a copy-paste prompt template.
 
@@ -150,8 +158,10 @@ The bar these are calibrated against — five hand-built explainers, five comple
 
 | | | |
 |---|---|---|
-| **PhotonLayer** — optical-AI: light computes the answer before any chip wakes up. | **ruqu** — a quantum-computing simulator in your browser (Rust + WASM). | **ruvn** — turns a question into a graded, cited evidence dossier. |
-| **MetaHarness** — gives any project its own AI assistant that knows *that* project. | **Agentic QE** — replaces manual testing with a fleet of specialist AI agents. | **agenticow** — git for agent memory: copy-on-write vector branching. |
+| [![PhotonLayer explainer](assets/readme/ex-photonlayer.webp)](https://photonlayer-explainer.vercel.app/) | [![ruqu explainer](assets/readme/ex-ruqu.webp)](https://ruqu-explainer.vercel.app/) | [![ruvn explainer](assets/readme/ex-ruvn.webp)](https://ruvn-explainer.vercel.app/) |
+| [**PhotonLayer**](https://photonlayer-explainer.vercel.app/) — optical-AI: light computes the answer before any chip wakes up. | [**ruqu**](https://ruqu-explainer.vercel.app/) — a quantum-computing simulator in your browser (Rust + WASM). | [**ruvn**](https://ruvn-explainer.vercel.app/) — turns a question into a graded, cited evidence dossier. |
+| [![MetaHarness explainer](assets/readme/ex-metaharness.webp)](https://metaharness-explainer.vercel.app/) | [![Agentic QE explainer](assets/readme/ex-agenticqe.webp)](https://agentic-qe-explainer.vercel.app/) | [![agenticow explainer](assets/readme/agenticow.webp)](https://agenticow-explainer.netlify.app/) |
+| [**MetaHarness**](https://metaharness-explainer.vercel.app/) — gives any project its own AI assistant that knows *that* project. | [**Agentic QE**](https://agentic-qe-explainer.vercel.app/) — replaces manual testing with a fleet of specialist AI agents. | [**agenticow**](https://agenticow-explainer.netlify.app/) — git for agent memory: copy-on-write vector branching. |
 
 ---
 

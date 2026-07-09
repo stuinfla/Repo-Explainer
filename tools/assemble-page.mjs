@@ -596,13 +596,17 @@ ${jsonLdScript}
     `<a class="dropzone" href="${esc(packZip)}" download><span class="dz-icon" aria-hidden="true">&darr;</span><strong>Give your AI the same understanding</strong><span class="dz-hint">${esc(packZip)}</span></a>`,
   ].filter(Boolean).join('\n      ')));
 
-  // ── mandated ISOvision attribution + CTA footer (verbatim per design-system §16b) ─────────────
+  // ── mandated ISOvision attribution + CTA footer (verbatim per design-system §16b; the
+  //    open-source + star/issue line added at the owner's direction, 2026-07-08) ─────────────────
   const footer = `
   <footer class="explainer-footer" role="contentinfo">
     <div class="wrap explainer-footer-inner">
       <p class="ef-credit">
         Explainer page created by <strong><a href="https://stuart-kerr-card.netlify.app" rel="author noopener" target="_blank">Stuart Kerr</a></strong> at
         <a href="https://isovision.ai" rel="noopener" target="_blank">ISOvision</a>
+        <span class="ef-fine">Built with the open-source <a href="https://github.com/stuinfla/Repo-Explainer" rel="noopener" target="_blank">explainmyrepo</a> engine.
+        Found this valuable? <a href="https://github.com/stuinfla/Repo-Explainer" rel="noopener" target="_blank">A star on GitHub</a> genuinely helps &mdash;
+        and if something's off, <a href="https://github.com/stuinfla/Repo-Explainer/issues" rel="noopener" target="_blank">open an issue</a>: happy to help fix it.</span>
       </p>
       <a class="ef-cta" href="https://explainmyrepo.isovision.ai" target="_blank" rel="noopener">
         <span class="ef-cta-lead">Would you like your own repo explainer page?</span>

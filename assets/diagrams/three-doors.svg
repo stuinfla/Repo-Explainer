@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 340" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1080" height="340" rx="16" fill="#0f172a" stroke="#1e293b"/>
+
+  <!-- the one brain -->
+  <rect x="330" y="30" width="420" height="62" rx="10" fill="#111c33" stroke="#7dd3fc"/>
+  <text x="540" y="57" text-anchor="middle" fill="#7dd3fc" font-size="14.5" font-weight="bold">ONE BRAIN &#8212; the explainmyrepo skill</text>
+  <text x="540" y="78" text-anchor="middle" fill="#94a3b8" font-size="11">all judgment lives here; improve it once, every door improves</text>
+
+  <g stroke="#64748b" stroke-width="2">
+    <line x1="420" y1="92" x2="200" y2="136" marker-end="url(#arr)"/>
+    <line x1="540" y1="92" x2="540" y2="136" marker-end="url(#arr)"/>
+    <line x1="660" y1="92" x2="880" y2="136" marker-end="url(#arr)"/>
+  </g>
+
+  <!-- door 1: website -->
+  <rect x="40" y="140" width="320" height="150" rx="10" fill="#0d2420" stroke="#34d399"/>
+  <text x="58" y="168" fill="#34d399" font-size="13.5" font-weight="bold">01 &#183; the website &#8212; PUBLIC repos</text>
+  <text x="58" y="192" fill="#e2e8f0" font-size="12">keys you need: ZERO</text>
+  <text x="58" y="214" fill="#94a3b8" font-size="11">paste the URL, we build + host + email</text>
+  <text x="58" y="231" fill="#94a3b8" font-size="11">you the link &#8212; nothing to install</text>
+  <text x="58" y="266" fill="#34d399" font-size="11.5">explainmyrepo.isovision.ai</text>
+
+  <!-- door 2: npx -->
+  <rect x="380" y="140" width="320" height="150" rx="10" fill="#0e2033" stroke="#7dd3fc"/>
+  <text x="398" y="168" fill="#7dd3fc" font-size="13.5" font-weight="bold">02 &#183; npx &#8212; private repos, your keys</text>
+  <text x="398" y="192" fill="#e2e8f0" font-size="12">keys: ONE (OpenAI) inside Claude Code</text>
+  <text x="398" y="214" fill="#94a3b8" font-size="11">the brain rides your Claude login; add a</text>
+  <text x="398" y="231" fill="#94a3b8" font-size="11">Netlify token only for a live URL. Private</text>
+  <text x="398" y="248" fill="#94a3b8" font-size="11">repo: gh auth login first.</text>
+  <text x="398" y="273" fill="#7dd3fc" font-size="11.5">npx explainmyrepo &lt;github-url&gt;</text>
+
+  <!-- door 3: plugin -->
+  <rect x="720" y="140" width="320" height="150" rx="10" fill="#2b2110" stroke="#fbbf24"/>
+  <text x="738" y="168" fill="#fbbf24" font-size="13.5" font-weight="bold">03 &#183; Claude Code plugin</text>
+  <text x="738" y="192" fill="#e2e8f0" font-size="12">keys: ONE (OpenAI)</text>
+  <text x="738" y="214" fill="#94a3b8" font-size="11">your session does the thinking; explain</text>
+  <text x="738" y="231" fill="#94a3b8" font-size="11">any repo with a slash command</text>
+  <text x="738" y="266" fill="#fbbf24" font-size="11.5">/explainmyrepo &lt;github-url&gt;</text>
+
+  <text x="540" y="322" text-anchor="middle" fill="#64748b" font-size="11.5">pick your door with one question: is the repo public, and whose keys should do the work?</text>
+</svg>

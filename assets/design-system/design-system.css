@@ -750,6 +750,13 @@ footer .fine { margin-top: var(--space-l); padding-top: var(--space-m); border-t
 }
 .ef-credit a:hover { color: var(--accent); text-decoration-color: currentColor; }
 
+/* line 1b — open-source + star/issue ask (owner direction 2026-07-08) */
+.ef-fine {
+  display: block; margin-top: 6px;
+  font-size: calc(var(--step-0) * 0.86); line-height: 1.55;
+  color: color-mix(in srgb, var(--muted) 82%, transparent);
+}
+
 /* line 2 — the "make your own" CTA */
 .ef-cta {
   display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px 9px;

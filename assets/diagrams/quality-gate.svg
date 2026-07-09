@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 360" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#34d399"/>
+    </marker>
+    <marker id="arrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#fb7185"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1080" height="360" rx="16" fill="#0f172a" stroke="#1e293b"/>
+  <text x="540" y="40" text-anchor="middle" fill="#e2e8f0" font-size="17" font-weight="bold">the quality gate &#8212; it does not ship until independent eyes say yes</text>
+
+  <!-- real screenshots -->
+  <rect x="36" y="92" width="66" height="120" rx="8" fill="#1e293b" stroke="#334155"/>
+  <rect x="46" y="102" width="46" height="86" rx="3" fill="#0f172a"/>
+  <text x="69" y="230" text-anchor="middle" fill="#94a3b8" font-size="11">390px</text>
+  <rect x="116" y="112" width="140" height="88" rx="8" fill="#1e293b" stroke="#334155"/>
+  <rect x="126" y="122" width="120" height="60" rx="3" fill="#0f172a"/>
+  <text x="186" y="230" text-anchor="middle" fill="#94a3b8" font-size="11">1440px</text>
+  <text x="146" y="262" text-anchor="middle" fill="#94a3b8" font-size="11">real browser, full-page</text>
+  <text x="146" y="278" text-anchor="middle" fill="#94a3b8" font-size="11">screenshots &#8212; both devices</text>
+
+  <line x1="260" y1="156" x2="308" y2="156" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- critic -->
+  <rect x="312" y="84" width="270" height="144" rx="10" fill="#111c33" stroke="#7dd3fc"/>
+  <text x="447" y="112" text-anchor="middle" fill="#7dd3fc" font-size="13.5" font-weight="bold">independent vision critic</text>
+  <text x="330" y="140" fill="#e2e8f0" font-size="12">Gate A &#183; substance</text>
+  <text x="330" y="157" fill="#94a3b8" font-size="10.5">"do they actually get it?" &#8212; 6 axes</text>
+  <text x="330" y="182" fill="#e2e8f0" font-size="12">Gate B &#183; craft (anti-slop)</text>
+  <text x="330" y="199" fill="#94a3b8" font-size="10.5">typography, spacing, imagery &#8212; 5 axes</text>
+
+  <line x1="582" y1="156" x2="630" y2="156" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- operators + bar -->
+  <rect x="634" y="84" width="270" height="144" rx="10" fill="#1e293b" stroke="#334155"/>
+  <text x="769" y="112" text-anchor="middle" fill="#e2e8f0" font-size="13.5" font-weight="bold">six operator questions</text>
+  <text x="652" y="138" fill="#94a3b8" font-size="10.5">believe I understand &#183; approachable &#183;</text>
+  <text x="652" y="155" fill="#94a3b8" font-size="10.5">novice &#183; architecture &#183; makes me smile &#183;</text>
+  <text x="652" y="172" fill="#e2e8f0" font-size="10.5">a zero-knowledge reader can follow it</text>
+  <text x="769" y="204" text-anchor="middle" fill="#fbbf24" font-size="12.5" font-weight="bold">mean &#8805; 90 &#183; min &#8805; 85 &#183; all six YES</text>
+
+  <!-- ship -->
+  <line x1="904" y1="156" x2="952" y2="156" stroke="#34d399" stroke-width="2.5" marker-end="url(#arrG)"/>
+  <rect x="956" y="126" width="92" height="60" rx="10" fill="#0d2420" stroke="#34d399"/>
+  <text x="1002" y="162" text-anchor="middle" fill="#34d399" font-size="14" font-weight="bold">SHIP</text>
+
+  <!-- refine loop -->
+  <path d="M 769 228 C 769 300, 200 310, 150 292" fill="none" stroke="#fb7185" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrR)"/>
+  <text x="480" y="318" text-anchor="middle" fill="#fb7185" font-size="12">one weak axis or one NO &#8594; name the exact weakness, reopen just that slot, re-render, re-grade</text>
+
+  <text x="540" y="345" text-anchor="middle" fill="#64748b" font-size="11">can't honestly reach the bar? the build SAYS SO &#8212; it never ships slop and calls it done</text>
+</svg>

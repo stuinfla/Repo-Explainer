@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 300" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1080" height="300" rx="16" fill="#0f172a" stroke="#1e293b"/>
+  <text x="540" y="40" text-anchor="middle" fill="#e2e8f0" font-size="17" font-weight="bold">one command in&#160;&#160;&#8594;&#160;&#160;three quality-gated artifacts out</text>
+
+  <!-- input -->
+  <rect x="40" y="120" width="240" height="64" rx="10" fill="#1e293b" stroke="#334155"/>
+  <text x="160" y="147" text-anchor="middle" fill="#94a3b8" font-size="12">any GitHub repo</text>
+  <text x="160" y="168" text-anchor="middle" fill="#e2e8f0" font-size="13">github.com/owner/name</text>
+
+  <line x1="280" y1="152" x2="360" y2="152" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- engine -->
+  <rect x="364" y="112" width="220" height="80" rx="10" fill="#111c33" stroke="#7dd3fc"/>
+  <text x="474" y="146" text-anchor="middle" fill="#7dd3fc" font-size="15" font-weight="bold">explainmyrepo</text>
+  <text x="474" y="170" text-anchor="middle" fill="#94a3b8" font-size="11.5">reads &#183; designs &#183; grades</text>
+
+  <line x1="584" y1="132" x2="672" y2="86" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="584" y1="152" x2="672" y2="152" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="584" y1="172" x2="672" y2="218" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- outputs -->
+  <rect x="680" y="52" width="360" height="62" rx="10" fill="#0d2420" stroke="#34d399"/>
+  <text x="700" y="78" fill="#34d399" font-size="13.5" font-weight="bold">1 &#183; live explainer page</text>
+  <text x="700" y="99" fill="#94a3b8" font-size="11.5">the link you share &#8212; real diagrams inside</text>
+
+  <rect x="680" y="122" width="360" height="62" rx="10" fill="#0e2033" stroke="#7dd3fc"/>
+  <text x="700" y="148" fill="#7dd3fc" font-size="13.5" font-weight="bold">2 &#183; a GitHub repo you own</text>
+  <text x="700" y="169" fill="#94a3b8" font-size="11.5">you're a collaborator &#8212; it's yours to edit</text>
+
+  <rect x="680" y="192" width="360" height="62" rx="10" fill="#2b2110" stroke="#fbbf24"/>
+  <text x="700" y="218" fill="#fbbf24" font-size="13.5" font-weight="bold">3 &#183; downloadable AI knowledge pack</text>
+  <text x="700" y="239" fill="#94a3b8" font-size="11.5">vector KB + search CLI + MCP server</text>
+</svg>

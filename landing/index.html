@@ -160,7 +160,7 @@
 
         <div class="hero-actions">
           <div class="hero-request gs-request reveal-up" data-d="6" id="hero-request">
-            <p class="hr-kicker"><span class="badge-dot" aria-hidden="true"></span> Try it right now &mdash; public repos, no keys, no install</p>
+            <p class="hr-kicker"><span class="badge-dot" aria-hidden="true"></span> Public repo? Easiest right here &mdash; no keys, no install</p>
 
             <form class="rq-form hr-form" data-rq novalidate>
               <div class="rq-fields hr-fields">
@@ -196,7 +196,7 @@
           </div>
 
           <p class="hero-alt reveal-up" data-d="7">
-            <span>private repo, or your own keys? run it in VS&nbsp;Code / Claude&nbsp;Code:</span>
+            <span>Private repo you own? Run this inside VS&nbsp;Code / Claude&nbsp;Code instead:</span>
             <span class="cmd hero-cmd">
               <span class="prompt" aria-hidden="true">$</span>
               <code class="cmd-code" id="hero-command"><span class="tok">npx explainmyrepo</span> <span class="arg">&lt;github-url&gt;</span><span class="caret" aria-hidden="true"></span></code>
@@ -624,17 +624,18 @@
       <div class="wrap">
         <div class="section-head reveal-up">
           <p class="kicker"><span class="kicker-dot" aria-hidden="true"></span> Get started</p>
-          <h2 id="gs-h">Two ways in. Same AI engine, same result.</h2>
-          <p class="sub">Let us build it for you on our keys &mdash; or run it yourself with your own. Either way you get the identical, quality-gated explainer.</p>
+          <h2 id="gs-h">One question decides your door: <em>is the repo public?</em></h2>
+          <p class="sub"><strong>Public repo</strong> &rarr; easiest right here: paste the URL, zero keys, we build it on ours.
+            <strong>Private repo you own</strong> &rarr; run the npx command inside VS&nbsp;Code / Claude&nbsp;Code, where your keys and your GitHub access already live. Same engine, same quality gate, either way.</p>
         </div>
 
         <div class="gs-two">
-          <!-- OPTION 1 — the website (recommended, no keys) -->
+          <!-- OPTION 1 — the website (public repos, no keys) -->
           <div class="gs-request reveal-up" data-d="1" id="request">
             <div class="rq-head">
-              <span class="door-tag hosted">recommended &middot; no setup</span>
-              <h3>Paste a repo. We build it for you.</h3>
-              <p>No keys, no install, no terminal. Drop a GitHub URL and we run the full AI build on
+              <span class="door-tag hosted">public repos &middot; zero keys &middot; easiest</span>
+              <h3>Public repo? Paste it. We build it for you.</h3>
+              <p>No keys, no install, no terminal. Drop a public GitHub URL and we run the full AI build on
                 <strong>our</strong> keys, then hand you the live link.</p>
             </div>
 
@@ -679,10 +680,10 @@
             </div>
           </div>
 
-          <!-- OPTION 2 — npx (developers, own keys) -->
+          <!-- OPTION 2 — npx (private repos + own keys, inside VS Code / Claude Code) -->
           <div class="cmd-card gs-dev reveal-up" data-d="2">
-            <div class="cmd-card-top"><span class="door-tag alt">for developers</span><h3>Run it yourself with npx</h3></div>
-            <p class="cmd-sub">Zero install, your own keys, runs anywhere Node does.</p>
+            <div class="cmd-card-top"><span class="door-tag alt">private repos &middot; your keys</span><h3>Private repo you own? Run it in VS&nbsp;Code.</h3></div>
+            <p class="cmd-sub">Recommended: run this <strong>inside a VS&nbsp;Code / Claude&nbsp;Code session</strong>, in a project whose <code>.env</code> already holds your keys &mdash; everything is picked up automatically. Private repo: <code>gh auth login</code> first.</p>
             <div class="cmd">
               <span class="prompt" aria-hidden="true">$</span>
               <code><span class="tok">npx explainmyrepo</span> <span class="arg">&lt;github-url&gt;</span> <span class="tok">--ship-best-effort</span></code>
@@ -692,13 +693,13 @@
               </button>
             </div>
             <div class="gs-keys">
-              <span class="gs-h">You bring the keys:</span>
+              <span class="gs-h">How many keys? Inside Claude&nbsp;Code: <strong>one.</strong></span>
               <ul>
-                <li><code>ANTHROPIC_API_KEY</code> &mdash; the authoring brain <em>(required)</em></li>
-                <li><code>OPENAI_API_KEY</code> &mdash; imagery + grading <em>(required)</em></li>
-                <li><code>NETLIFY_AUTH_TOKEN</code> &mdash; to deploy a live URL <em>(optional; omit with <code>--no-deploy</code> to build locally)</em></li>
+                <li><code>OPENAI_API_KEY</code> &mdash; imagery + the quality gate <em>(required)</em></li>
+                <li><code>ANTHROPIC_API_KEY</code> &mdash; <em>not needed in Claude&nbsp;Code</em>: the brain rides your Claude login. Bare terminal only.</li>
+                <li><code>NETLIFY_AUTH_TOKEN</code> &mdash; the live URL <em>(optional; <code>--no-deploy</code> builds the full page locally)</em></li>
               </ul>
-              <p class="cmd-eg">Set them in your shell or a <code>.env</code> &mdash; the CLI prompts if a required key is missing.</p>
+              <p class="cmd-eg">Set them in your project's <code>.env</code> &mdash; the CLI checks everything up front and tells you exactly what's missing and how to fix it.</p>
             </div>
           </div>
         </div>
@@ -810,6 +811,7 @@
       <p class="foot-credit">
         Built with care by <strong><a href="https://stuart-kerr-card.netlify.app" rel="author noopener" target="_blank">Stuart Kerr</a></strong> at
         <a href="https://isovision.ai" rel="noopener" target="_blank">ISOvision</a>.
+        <span class="foot-fine">Open source on <a href="https://github.com/stuinfla/Repo-Explainer" rel="noopener" target="_blank">GitHub</a> — found it valuable? <a href="https://github.com/stuinfla/Repo-Explainer" rel="noopener" target="_blank">A star</a> genuinely helps. Hit a snag? <a href="https://github.com/stuinfla/Repo-Explainer/issues" rel="noopener" target="_blank">Open an issue</a> — happy to help fix it.</span>
         <span class="foot-fine">&copy; 2026 <a href="https://isovision.ai" rel="noopener" target="_blank">isovision.ai</a> · Complex repos deserve clear introductions.</span>
       </p>
     </div>
