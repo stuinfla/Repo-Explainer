@@ -72,8 +72,10 @@ exports.handler = async function (event) {
   const url = (body.url || "").toString();
   const email = (body.email || "").toString().trim().toLowerCase();
 
-  const match = url.match(/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)/);
-  if (!match) return json(400, { error: "That doesn't look like a GitHub repo URL — try https://github.com/owner/name." });
+  // Accept the full URL or just "owner/name" — first real user's first ask (2026-07-09).
+  const match = url.trim().match(/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)/)
+    || url.trim().match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/);
+  if (!match) return json(400, { error: "That doesn't look like a GitHub repo — try owner/name or https://github.com/owner/name." });
   const owner = match[1];
   const repo = match[2].replace(/\.git$/, "");
   const fullName = owner + "/" + repo;

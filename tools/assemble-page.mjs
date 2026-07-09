@@ -473,7 +473,6 @@ ${jsonLdScript}
         </div>
         <figure class="hero-art">
           <img src="assets/${esc(heroFile)}" alt="${esc(heroAlt)}">
-          <figcaption>${esc(concept.heroConcept || concept.metaphor)}</figcaption>
         </figure>
       </div>
     </div>${plainBand}

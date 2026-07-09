@@ -589,6 +589,21 @@ main, .site-foot { position: relative; z-index: 1; }
 .ex-link .arr { transition: transform .25s var(--ease); }
 .ex-card:hover .ex-link .arr { transform: translate(2px,-2px); }
 
+/* the wall — one row per shipped page, scales as builds accumulate */
+.wall { margin-top: 34px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: 26px 28px; }
+.wall-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.wall-head h3 { font-family: var(--font-display); font-size: 19px; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
+.wall-head p { font-size: 13.5px; color: var(--ink-faint); }
+.wall-list { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 18px; padding: 0; margin: 0; }
+.wall-list a { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; border: 1px solid transparent; min-width: 0; transition: border-color .25s var(--ease), background .25s var(--ease); }
+.wall-list a:hover { border-color: rgba(61,242,199,.3); background: rgba(255,255,255,.02); }
+.wall-face { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); flex: none; background: var(--bg-3); }
+.wall-repo { font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wall-owner { font-size: 12px; color: var(--ink-faint); margin-left: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+.wall-go { color: var(--mint); font-size: 13px; flex: none; }
+.wall-cta { margin-top: 16px; font-size: 13.5px; color: var(--ink-dim); }
+.wall-cta a { color: var(--mint); font-weight: 600; }
+
 /* ===================== GET STARTED ===================== */
 .gs-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: clamp(24px,3.5vw,44px); align-items: start; }
 .gs-doors { display: flex; flex-direction: column; gap: 20px; }
@@ -655,6 +670,7 @@ main, .site-foot { position: relative; z-index: 1; }
   .gate-grid, .seen-grid { grid-template-columns: 1fr; }
   .gs-grid { grid-template-columns: 1fr; }
   .grid-3, .gallery { grid-template-columns: 1fr 1fr; }
+  .wall-list { grid-template-columns: 1fr 1fr; }
   .steps { grid-template-columns: 1fr; }
 }
 @media (max-width: 720px) {
@@ -671,6 +687,8 @@ main, .site-foot { position: relative; z-index: 1; }
 
   .grid-3, .gallery { grid-template-columns: 1fr; gap: 16px; }
   .grid-3 { gap: 14px; }
+  .wall-list { grid-template-columns: 1fr; gap: 4px; }
+  .wall { padding: 22px 18px; }
 
   /* lift the small body copy out of "microscopic" territory */
   .card { padding: 24px 22px; }
