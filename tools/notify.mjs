@@ -83,7 +83,7 @@ const user = (process.env.SMTP_USER || process.env.GMAIL_USER || '').trim();
 const pass = (process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '');
 const host = (process.env.SMTP_HOST || 'smtp.gmail.com').trim();
 const port = Number(process.env.SMTP_PORT || 465);
-const fromName = (process.env.EMAIL_FROM_NAME || 'explainmyrepo').trim();
+const fromName = (process.env.EMAIL_FROM_NAME || 'Stuart Kerr — explainmyrepo').trim();
 
 if (!to) fail('no recipient — set EMAIL_TO (or NOTIFY_TO / OWNER_EMAIL).');
 if (!user) fail('no SMTP user — set SMTP_USER (or GMAIL_USER).');
@@ -166,9 +166,13 @@ if (seo && (seo.topics?.length || seo.description)) {
     + `${seo.description ? `<p style="margin:4px 0"><b>Description:</b> ${esc(seo.description)}</p>` : ''}`;
 }
 
-const html = `<!doctype html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1a1a1a;line-height:1.5">
+const html = `<!doctype html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1a1a1a;line-height:1.5;max-width:640px">
+<div style="border-bottom:2px solid #0e111b;padding:0 0 12px;margin:0 0 20px">
+  <span style="font-size:18px;font-weight:700;letter-spacing:-0.01em">explainmyrepo</span>
+  <span style="font-size:12px;color:#888;margin-left:8px">by ISOVision &middot; complex repos deserve clear introductions</span>
+</div>
 <h2 style="margin:0 0 8px">Your repo explainer is ready ${overallPassed ? '✅' : '⚠️'}</h2>
-<p style="margin:0 0 16px;color:#555">${overallPassed ? 'It passed the dual gate on both devices.' : 'See the scorecard below for any line flagged honestly under 95.'}</p>
+<p style="margin:0 0 16px;color:#555">${overallPassed ? 'It passed our dual quality gate on both mobile and desktop — an independent vision critic graded the real rendered page before we let it ship.' : 'See the scorecard below for any line flagged honestly under the bar — we show you the real grades, never a rubber stamp.'}</p>
 ${scoreRows ? `<h3 style="margin:16px 0 6px">Scorecard</h3>
 <table style="border-collapse:collapse;font-size:14px"><thead><tr>
 <th style="text-align:left;padding:4px 12px 4px 0">Device</th>
@@ -179,7 +183,9 @@ ${links.length ? `<h3 style="margin:20px 0 6px">Links</h3><ul style="margin:4px 
 ${seoBlock}
 ${attachments.length ? `<p style="margin:16px 0 0;color:#555">Mobile + desktop screenshots are attached.</p>` : ''}
 <p style="margin:20px 0 0;color:#555">If this was worth your time, <a href="https://github.com/stuinfla/Repo-Explainer">a star on GitHub</a> genuinely helps other people find it. Something off? <a href="https://github.com/stuinfla/Repo-Explainer/issues">Tell me</a> and I'll fix it.</p>
-<p style="margin:24px 0 0;color:#999;font-size:12px">Sent by the explainmyrepo recipe (Station 9).</p>
+<p style="margin:20px 0 0;color:#333">This page was researched, written, illustrated, and quality-graded by an agentic pipeline I built — and I read every piece of feedback personally. If you're building something and want a hand telling its story, just reply to this email.</p>
+<p style="margin:16px 0 0;color:#333">Here to help you build great things,<br><b>Stuart Kerr</b> &middot; <a href="https://isovision.ai" style="color:#555">ISOVision</a></p>
+<p style="margin:24px 0 0;color:#999;font-size:12px">Sent by the explainmyrepo pipeline &middot; <a href="https://explainmyrepo.isovision.ai" style="color:#999">explainmyrepo.isovision.ai</a></p>
 </body></html>`;
 
 const subject = `Your repo explainer is ready${ctx.repo?.name ? ` — ${ctx.repo.name}` : ''}`;

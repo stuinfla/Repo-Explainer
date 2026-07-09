@@ -6,9 +6,10 @@
 # tells the landing site's Git deploy what to publish.
 
 [build]
-  # Treat landing/ as the project root. It has no package.json, so Netlify
-  # will NOT try to install deps or "build" the root pipeline — it just serves
-  # the static files. publish is relative to base.
+  # Treat landing/ as the project root. Its package.json exists ONLY to supply
+  # function deps (@netlify/blobs for the traffic counter); command stays empty,
+  # so Netlify installs those deps, bundles the functions, and serves the static
+  # files — it never "builds" the root pipeline. publish is relative to base.
   base = "landing"
   publish = "."
   command = ""

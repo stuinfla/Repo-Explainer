@@ -842,5 +842,14 @@
   </footer>
 
   <script src="app.js" defer></script>
+  <script>
+    // First-party view beacon (no cookies, no IPs, no third party) -> /.netlify/functions/track.
+    (function () { try {
+      var k = 'emr-seen'; var n = localStorage.getItem(k) ? 0 : 1; localStorage.setItem(k, '1');
+      var payload = JSON.stringify({ p: location.pathname, n: n, r: document.referrer || '' });
+      if (navigator.sendBeacon) navigator.sendBeacon('/.netlify/functions/track', payload);
+      else fetch('/.netlify/functions/track', { method: 'POST', body: payload, keepalive: true });
+    } catch (e) { /* analytics must never break the page */ } })();
+  </script>
 </body>
 </html>

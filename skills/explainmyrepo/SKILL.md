@@ -66,6 +66,12 @@ Authoritative sources (read them if anything here is ambiguous):
    the pin mechanically: `clone-repo` and `deploy` refuse any `repo.url` that doesn't match
    `EXPLAINER_SUBMITTED_REPO` when the harness sets it.
 
+6. **Credit the PERSON behind the repo.** `clone-repo` resolves the owner's public GitHub
+   profile into `repo.author` (real name, bio, company, blog). When it's a real person (not
+   an org), the page's attribution names them, and your copy should give the author honest
+   props where it's natural — people build these things, not handles. Use only what their
+   public profile says; never speculate about who someone is.
+
 ---
 
 ## How to run a tool (the uniform convention)

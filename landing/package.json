@@ -1,0 +1,8 @@
+{
+  "name": "explainmyrepo-landing",
+  "private": true,
+  "description": "Deps for the landing site's Netlify functions only — the pipeline itself lives at the repo root and stays zero-dep.",
+  "dependencies": {
+    "@netlify/blobs": "^10.7.9"
+  }
+}

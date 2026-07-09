@@ -60,6 +60,21 @@ async function writeGist(token, gistId, file, obj) {
   } catch (e) { console.error("meter write failed:", e && e.message); }
 }
 
+// Daily door tally (doors.json, same gist as the monthly counter): how many submissions were
+// accepted vs bounced for being private vs unreachable. Feeds the admin dashboard's
+// public/private intelligence. Best-effort — a tally failure must never block a build.
+async function bumpDoor(token, kind) {
+  const counterId = process.env.GLOBAL_COUNTER_GIST_ID;
+  if (!counterId) return;
+  try {
+    const doors = (await readGist(token, counterId, "doors.json")) || {};
+    const day = new Date().toISOString().slice(0, 10);
+    doors[day] = doors[day] || { accepted: 0, private: 0, notfound: 0 };
+    doors[day][kind] = (doors[day][kind] || 0) + 1;
+    await writeGist(token, counterId, "doors.json", doors);
+  } catch { /* never block the door on its own tally */ }
+}
+
 exports.handler = async function (event) {
   if (event.httpMethod === "OPTIONS") return json(204, {});
   if (event.httpMethod !== "POST") return json(405, { error: "Method not allowed" });
@@ -86,13 +101,17 @@ exports.handler = async function (event) {
   let repoSizeKb = 0;
   try {
     const r = await fetch("https://api.github.com/repos/" + owner + "/" + repo, { headers: gh(token) });
-    if (r.status === 404) return json(404, { error: "We can't access " + fullName + ". Check the URL — the website builds PUBLIC repos. Private repo you own? Build it locally: npx explainmyrepo " + fullName + " in a VS Code / Claude Code session (gh auth login first). We only ever build from your exact repo; if we can't see it, we stop rather than guess." });
+    if (r.status === 404) {
+      await bumpDoor(token, "notfound");
+      return json(404, { error: "We can't access " + fullName + ". Check the URL — the website builds PUBLIC repos. Private repo you own? Build it locally: npx explainmyrepo " + fullName + " in a VS Code / Claude Code session (gh auth login first). We only ever build from your exact repo; if we can't see it, we stop rather than guess." });
+    }
     if (!r.ok) return json(502, { error: "GitHub API returned " + r.status + " — try again shortly." });
     const repoMeta = await r.json();
     // Policy (ADR-0007, owner decision 2026-07-08): the hosted door builds PUBLIC repos only — a
     // hosted build publishes a public page, which must never quietly expose private code. Private
     // repos are the local door's job, where the owner runs it under their own identity.
     if (repoMeta.private === true) {
+      await bumpDoor(token, "private");
       return json(400, { error: fullName + " is a private repo. The website publishes public explainer pages, so it only builds public repos. To build yours: run npx explainmyrepo " + fullName + " in a VS Code / Claude Code session (gh auth login first) — you keep full control, including whether it deploys at all." });
     }
     repoSizeKb = Number(repoMeta.size) || 0;
@@ -183,5 +202,6 @@ exports.handler = async function (event) {
     await writeGist(token, counterId, "counter.json", c);
   }
 
+  await bumpDoor(token, "accepted");
   return json(200, { success: true, buildId, gistId, statusUrl: "/.netlify/functions/status?id=" + buildId + "&gist=" + gistId, repo: fullName });
 };

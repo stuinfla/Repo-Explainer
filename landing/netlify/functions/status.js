@@ -22,11 +22,13 @@ exports.handler = async function (event) {
   const gist = q.gist;
   if (!id || !gist) return json(400, { error: "Missing id or gist." });
 
+  const token = process.env.EXPLAINER_GH_TOKEN || process.env.GITHUB_TOKEN;
+  const headers = { Accept: "application/vnd.github+json", "User-Agent": "explainmyrepo-bot" };
+  if (token) headers.Authorization = "Bearer " + token; // 60/hr (anon) -> 5000/hr; the client polls this every 5s for up to 25min per build
+
   let data;
   try {
-    const r = await fetch("https://api.github.com/gists/" + gist, {
-      headers: { Accept: "application/vnd.github+json", "User-Agent": "explainmyrepo-bot" },
-    });
+    const r = await fetch("https://api.github.com/gists/" + gist, { headers });
     if (r.status === 404) return json(404, { error: "Build not found." });
     if (!r.ok) return json(502, { error: "Couldn't read build status — try again." });
     data = await r.json();

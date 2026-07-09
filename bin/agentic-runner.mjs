@@ -329,10 +329,35 @@ const reason = identityViolation
   : !liveUrl ? 'agent finished but no verified live URL was found in build.json'
   : 'unknown';
 
+// The status gist is each build's permanent public record, so the GRADES and the cost of
+// production travel with the result — the admin dashboard trends them across builds (owner
+// ask 2026-07-09: "grade every one 1-100 and tell yourself if you're getting better, worse,
+// or the same"). Extraction is defensive: a missing scorecard never blocks the ship.
+let scorecard = null;
+try {
+  const q = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8')).quality;
+  if (q && Array.isArray(q.scorecard) && q.scorecard.length) {
+    scorecard = {
+      passed: !!q.passed,
+      exemplary: !!q.exemplary,
+      iterations: Number.isInteger(q.iterations) ? q.iterations : null,
+      gradedAt: q.gradedAt || null,
+      devices: q.scorecard.map((c) => ({
+        device: c.deviceLabel || c.device || null,
+        headline: c.headlineScore ?? null,
+        gateA: c.gateA || null,
+        gateB: c.gateB || null,
+        operators: c.operatorQuestions || null,
+      })),
+    };
+  }
+} catch { /* build.json unreadable — already reflected in the liveUrl check */ }
+
 if (ok) {
   console.log(`LIVE: ${liveUrl}`);
   log(`SUCCESS — ${liveUrl} (cost $${totalCostUsd.toFixed(2)})`);
-  await patchStatus('Done — your explainer is live.', 'done', { liveUrl }, null);
+  await patchStatus('Done — your explainer is live.', 'done',
+    { liveUrl, scorecard, costUsd: Math.round(totalCostUsd * 100) / 100 }, null);
   // Notify runs HERE, not inside the agent (see the env allowlist above) — this is plain
   // deterministic code, not an LLM interpreting untrusted repo content, so it's the safe place to
   // hold SMTP creds. Non-blocking: a notify failure must never flip a successful build to failed.

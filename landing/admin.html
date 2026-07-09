@@ -34,6 +34,10 @@
     .chip.done { background: rgba(61,242,199,.14); color: var(--mint); }
     .chip.failed { background: rgba(255,110,110,.14); color: #ff9d9d; }
     .chip.other { background: rgba(255,255,255,.07); color: var(--ink-dim); }
+    .tile .tr { font-size: 13px; margin-left: 6px; }
+    .tr.up { color: var(--mint); } .tr.down { color: #ff9d9d; } .tr.flat { color: var(--ink-faint); }
+    .qline { font-size: 15px; color: var(--ink-2); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; }
+    .qline b { color: var(--ink); }
     @media (max-width: 860px) { .tiles { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
@@ -52,7 +56,32 @@
     </div>
 
     <div data-dash hidden>
-      <div class="tiles" data-tiles></div>
+      <div class="adm-sec" style="margin-top:0">
+        <h2>Today vs yesterday</h2>
+        <div class="tiles" data-pulse></div>
+      </div>
+
+      <div class="adm-sec">
+        <h2>Quality &mdash; is the factory getting better?</h2>
+        <p class="qline" data-quality></p>
+      </div>
+
+      <div class="adm-sec">
+        <h2>Totals</h2>
+        <div class="tiles" data-tiles></div>
+      </div>
+
+      <div class="adm-sec">
+        <h2>The door, last 7 days</h2>
+        <div class="tbl-scroll"><table class="adm" data-doors></table></div>
+        <p class="note">accepted = dispatched to a build &middot; private = bounced to the npx door (policy: hosted builds public repos only) &middot; unreachable = URL we couldn't see.</p>
+      </div>
+
+      <div class="adm-sec">
+        <h2>Website, last 14 days</h2>
+        <div class="tbl-scroll"><table class="adm" data-site></table></div>
+        <p class="note" data-site-note></p>
+      </div>
 
       <div class="adm-sec">
         <h2>Every build ever attempted</h2>
@@ -68,7 +97,7 @@
       <div class="adm-sec">
         <h2>Reach</h2>
         <div class="tiles" data-reach></div>
-        <p class="note">Website page-views are NOT tracked (no analytics on the landing page yet) — these are GitHub repo traffic and npm registry numbers, the only reach we can measure today.</p>
+        <p class="note">GitHub repo traffic and npm registry numbers. Repo clones include our own CI — every hosted build checks this repo out. Website views live in the section above (first-party beacon).</p>
       </div>
     </div>
   </main>
@@ -90,10 +119,46 @@
 
     function tile(v, label) { return '<div class="tile"><b>' + esc(v ?? '—') + '</b><span>' + esc(label) + '</span></div>'; }
 
+    function arrow(x) { return '<span class="tr ' + x.trend + '">' + (x.trend === 'up' ? '&#9650;' : x.trend === 'down' ? '&#9660;' : '&#8212;') + ' ' + esc(x.yesterday) + ' yday</span>'; }
+    function ptile(x, label) { return '<div class="tile"><b>' + esc(x.today) + arrow(x) + '</b><span>' + esc(label) + '</span></div>'; }
+
     function render(d) {
       $('[data-gate]').hidden = true;
       $('[data-dash]').hidden = false;
       $('[data-stamp]').textContent = 'generated ' + d.generatedAt;
+
+      $('[data-pulse]').innerHTML = [
+        ptile(d.deltas.siteViews, 'website views'),
+        ptile(d.deltas.newVisitors, 'first-time visitors'),
+        ptile(d.deltas.builds, 'build attempts'),
+        ptile(d.deltas.npmDownloads, 'npm downloads (lags ~1d)'),
+      ].join('');
+
+      var q = d.quality;
+      $('[data-quality]').innerHTML = q.gradedPages === 0
+        ? esc(q.note || 'No graded builds recorded yet.')
+        : 'Rolling synthesized score (all 11 axes, both devices): last 5 pages average <b>' + esc(q.avgLast5) + '</b>'
+          + (q.avgPrev5 != null ? ' vs previous 5 average <b>' + esc(q.avgPrev5) + '</b> &mdash; the factory is <b>' + esc(q.trend) + '</b>.' : ' &mdash; more graded builds needed for a trend.')
+          + ' (' + esc(q.gradedPages) + ' graded pages on record)';
+
+      var doorDays = Object.keys(d.doors || {}).sort().reverse().slice(0, 7);
+      $('[data-doors]').innerHTML = '<tr><th>day</th><th>accepted</th><th>private &rarr; npx</th><th>unreachable</th></tr>'
+        + (doorDays.length ? doorDays.map(function (k) {
+            var v = d.doors[k];
+            return '<tr><td>' + esc(k) + '</td><td>' + esc(v.accepted || 0) + '</td><td>' + esc(v.private || 0) + '</td><td>' + esc(v.notfound || 0) + '</td></tr>';
+          }).join('') : '<tr><td colspan="4">No door tallies yet &mdash; counting starts with the first submission after this deploy.</td></tr>');
+
+      if (Array.isArray(d.traffic.site)) {
+        $('[data-site]').innerHTML = '<tr><th>day</th><th>views</th><th>first-time</th><th>top referrers</th></tr>'
+          + d.traffic.site.map(function (t) {
+              var refs = Object.entries(t.referrers || {}).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 3)
+                .map(function (e) { return esc(e[0]) + ' (' + e[1] + ')'; }).join(', ');
+              return '<tr><td>' + esc(t.date) + '</td><td>' + esc(t.views) + '</td><td>' + esc(t.newVisitors) + '</td><td>' + (refs || '&mdash;') + '</td></tr>';
+            }).join('');
+        $('[data-site-note]').textContent = 'First-party beacon (no cookies, no IPs, no third party). Counting starts from this deploy — earlier visitors are unknowable.';
+      } else {
+        $('[data-site]').innerHTML = '<tr><td>Site traffic unavailable: ' + esc(d.traffic.siteUnavailable || 'unknown') + '</td></tr>';
+      }
 
       $('[data-tiles]').innerHTML = [
         tile(d.meter ? d.meter.builds + ' / ' + d.meter.hardCap : '—', 'builds this month (cap)'),
@@ -103,11 +168,15 @@
       ].join('');
 
       $('[data-builds]').innerHTML =
-        '<tr><th>repo</th><th>status</th><th>page</th><th>submitted</th></tr>' +
+        '<tr><th>repo</th><th>status</th><th>score</th><th>worst axis</th><th>cost</th><th>page</th><th>submitted</th></tr>' +
         d.builds.map((b) => {
           const cls = b.status === 'done' ? 'done' : b.status === 'failed' ? 'failed' : 'other';
+          const g = b.grades;
           return '<tr><td>' + esc(b.repo) + '</td>' +
-            '<td><span class="chip ' + cls + '">' + esc(b.status) + '</span></td>' +
+            '<td><span class="chip ' + cls + '">' + esc(b.status) + '</span>' + (g && g.exemplary ? ' <span class="chip done">exemplary</span>' : '') + '</td>' +
+            '<td>' + (g && g.overall != null ? esc(g.overall) : '—') + '</td>' +
+            '<td>' + (g && g.headline != null ? esc(g.headline) : '—') + '</td>' +
+            '<td>' + (b.costUsd != null ? '$' + esc(b.costUsd) : '—') + '</td>' +
             '<td>' + (b.liveUrl ? '<a href="' + esc(b.liveUrl) + '" target="_blank" rel="noopener">' + esc(b.liveUrl.replace('https://','')) + '</a>' : '—') + '</td>' +
             '<td>' + day(b.createdAt) + '</td></tr>';
         }).join('');

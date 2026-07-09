@@ -285,6 +285,13 @@ function main() {
   const owner = reqStr(repo.owner, 'repo.owner');
   const repoName = reqStr(ctx.content?.meta?.repoName || repo.name, 'repo.name');
   const repoUrl = reqStr(repo.url, 'repo.url');
+  // Credit the PERSON, not just the handle (owner ask 2026-07-09): when clone-repo resolved a
+  // real name from the GitHub profile, the attribution reads "Jane Smith (janedev)"; orgs and
+  // profiles without a public name fall back to the handle exactly as before.
+  const author = repo.author || null;
+  const authorCredit = author?.name && author.type !== 'Organization'
+    ? `${esc(author.name)} <span class="attrib-handle">(${esc(owner)})</span>`
+    : esc(owner);
 
   const concept = reqObj(ctx.concept, 'concept');
   const tagline = reqStr(concept.tagline, 'concept.tagline');
@@ -466,7 +473,7 @@ ${jsonLdScript}
           <h1>${headline}</h1>
           <p class="lede">${inline(hero.lede)}</p>
           ${hero.sub ? `<p class="sub">${inline(hero.sub)}</p>` : ''}
-          <p class="attrib-lede">An <strong>independent explainer</strong> for <strong>${esc(owner)}</strong>'s <a href="${esc(repoUrl)}" target="_blank" rel="noopener">${esc(repoName)}</a> — built to take you from "never seen it" to "ready to implement".</p>
+          <p class="attrib-lede">An <strong>independent explainer</strong> for <strong>${authorCredit}</strong>'s <a href="${esc(repoUrl)}" target="_blank" rel="noopener">${esc(repoName)}</a> — built to take you from "never seen it" to "ready to implement".</p>
           <div class="cta-row">
           ${ctaHtml}
           </div>${metaRow}

@@ -349,6 +349,7 @@ pre.code-block .s { color: var(--accent-2); }              /* string/flag   */
 }
 .attrib-lede strong { color: var(--ink); }
 .attrib-lede a { color: var(--accent-2); }
+.attrib-lede .attrib-handle { font-weight: 400; opacity: .75; }
 
 .meta-row {
   display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: var(--space-l);

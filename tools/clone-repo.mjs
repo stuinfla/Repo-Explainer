@@ -71,7 +71,7 @@ function defaultBranchFromSymref(lsRemoteStdout) {
   return m ? m[1] : null;
 }
 
-function main() {
+async function main() {
   const buildDir = process.argv[2];
   if (!buildDir) fail('usage: node tools/clone-repo.mjs <build-dir>  (missing build dir argument)');
   const buildDirAbs = path.resolve(buildDir);
@@ -153,6 +153,34 @@ function main() {
   }
   if (!defaultBranch) fail('cloned successfully but could not determine the default branch');
 
+  // The PERSON behind the handle (owner ask 2026-07-09: "give the person who wrote it props —
+  // not just the company"). Public profile fields only; best-effort — a profile fetch failure
+  // never blocks a clone. Downstream: assemble-page credits the human by real name, and the
+  // brain sees author context when writing the page.
+  let author = null;
+  if (host === 'github.com') {
+    try {
+      const token = (process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '').trim();
+      const headers = { Accept: 'application/vnd.github+json', 'User-Agent': 'explainmyrepo' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const r = await fetch(`https://api.github.com/users/${owner}`, { headers });
+      if (r.ok) {
+        const u = await r.json();
+        author = {
+          login: u.login || owner,
+          name: u.name || null,
+          type: u.type || null,          // 'User' vs 'Organization'
+          bio: u.bio || null,
+          company: u.company || null,
+          blog: u.blog || null,
+          twitter: u.twitter_username || null,
+          followers: u.followers ?? null,
+        };
+        console.error(`[clone-repo] author: ${author.name || author.login}${author.type === 'Organization' ? ' (org)' : ''}`);
+      }
+    } catch { /* best-effort */ }
+  }
+
   // ---- merge ONLY the repo slot (+ buildId, set first here) ----
   const repoSlot = {
     url,
@@ -163,6 +191,7 @@ function main() {
     defaultBranch,
     clonePath: dest,
     reachable: true,
+    author,
   };
   ctx.buildId = ctx.buildId || randomUUID();   // correlation + idempotency key; set first (clone-repo)
   ctx.repo = { ...(ctx.repo || {}), ...repoSlot };
@@ -173,4 +202,4 @@ function main() {
   done({ slot: 'repo', buildId: ctx.buildId, repo: repoSlot, clonePath: dest });
 }
 
-main();
+main().catch((e) => fail(`unexpected: ${e?.message || e}`));
