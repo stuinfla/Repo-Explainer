@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>explainmyrepo — admin</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* admin-only chrome, on top of the landing design tokens */
+    .adm-wrap { max-width: 1080px; margin: 0 auto; padding: 48px 22px 80px; }
+    .adm-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 26px; }
+    .adm-head h1 { font-family: var(--font-display); font-size: 26px; color: var(--ink); letter-spacing: -0.01em; }
+    .adm-head .stamp { font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint); }
+    .adm-gate { max-width: 420px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 28px; }
+    .adm-gate p { font-size: 14px; color: var(--ink-dim); margin-bottom: 14px; }
+    .adm-gate input { width: 100%; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font-family: var(--font-mono); font-size: 14px; padding: 10px 12px; margin-bottom: 12px; }
+    .adm-gate button { cursor: pointer; }
+    .adm-err { color: #ff8f8f; font-size: 13.5px; margin-top: 10px; min-height: 1.2em; }
+    .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 30px; }
+    .tile { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+    .tile b { display: block; font-family: var(--font-display); font-size: 28px; color: var(--ink); letter-spacing: -0.01em; }
+    .tile span { font-size: 12.5px; color: var(--ink-faint); }
+    .adm-sec { margin-top: 34px; }
+    .adm-sec h2 { font-family: var(--font-display); font-size: 18px; color: var(--ink); margin-bottom: 12px; }
+    .adm-sec .note { font-size: 13px; color: var(--ink-faint); margin: 8px 0 0; }
+    .tbl-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+    table.adm { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    table.adm th { text-align: left; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); padding: 12px 14px; border-bottom: 1px solid var(--line); }
+    table.adm td { padding: 10px 14px; border-bottom: 1px solid var(--line); color: var(--ink-2); vertical-align: top; }
+    table.adm tr:last-child td { border-bottom: none; }
+    table.adm a { color: var(--mint); }
+    .chip { font-family: var(--font-mono); font-size: 11px; border-radius: 100px; padding: 2px 9px; }
+    .chip.done { background: rgba(61,242,199,.14); color: var(--mint); }
+    .chip.failed { background: rgba(255,110,110,.14); color: #ff9d9d; }
+    .chip.other { background: rgba(255,255,255,.07); color: var(--ink-dim); }
+    @media (max-width: 860px) { .tiles { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="adm-wrap">
+    <div class="adm-head">
+      <h1>explainmyrepo — admin</h1>
+      <span class="stamp" data-stamp></span>
+    </div>
+
+    <div class="adm-gate" data-gate>
+      <p>Owner dashboard. Enter the admin key (set as <code>ADMIN_KEY</code> in Netlify).</p>
+      <input type="password" placeholder="admin key" data-key-input autocomplete="off" />
+      <button class="btn btn-primary" data-key-go>Open dashboard</button>
+      <p class="adm-err" data-err></p>
+    </div>
+
+    <div data-dash hidden>
+      <div class="tiles" data-tiles></div>
+
+      <div class="adm-sec">
+        <h2>Every build ever attempted</h2>
+        <div class="tbl-scroll"><table class="adm" data-builds></table></div>
+      </div>
+
+      <div class="adm-sec">
+        <h2>People (email ledger)</h2>
+        <div class="tbl-scroll"><table class="adm" data-people></table></div>
+        <p class="note">Emails are collected by the build form (5 free builds per email). This ledger and the monthly counter live in secret GitHub gists; the per-build status pages are public gists; the build registry copy lives in AgentDB on your Mac.</p>
+      </div>
+
+      <div class="adm-sec">
+        <h2>Reach</h2>
+        <div class="tiles" data-reach></div>
+        <p class="note">Website page-views are NOT tracked (no analytics on the landing page yet) — these are GitHub repo traffic and npm registry numbers, the only reach we can measure today.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+    const KEY_STORE = 'emr-admin-key';
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const day = (iso) => iso ? String(iso).slice(0, 10) : '—';
+
+    async function load(key) {
+      $('[data-err]').textContent = '';
+      const r = await fetch('/.netlify/functions/admin-stats', { headers: { 'x-admin-key': key } });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { $('[data-err]').textContent = j.error || ('HTTP ' + r.status); localStorage.removeItem(KEY_STORE); return; }
+      localStorage.setItem(KEY_STORE, key);
+      render(j);
+    }
+
+    function tile(v, label) { return '<div class="tile"><b>' + esc(v ?? '—') + '</b><span>' + esc(label) + '</span></div>'; }
+
+    function render(d) {
+      $('[data-gate]').hidden = true;
+      $('[data-dash]').hidden = false;
+      $('[data-stamp]').textContent = 'generated ' + d.generatedAt;
+
+      $('[data-tiles]').innerHTML = [
+        tile(d.meter ? d.meter.builds + ' / ' + d.meter.hardCap : '—', 'builds this month (cap)'),
+        tile(d.totals.buildAttempts, 'build attempts, lifetime'),
+        tile(d.totals.pagesLive, 'pages live'),
+        tile(d.totals.people, 'people (unique emails)'),
+      ].join('');
+
+      $('[data-builds]').innerHTML =
+        '<tr><th>repo</th><th>status</th><th>page</th><th>submitted</th></tr>' +
+        d.builds.map((b) => {
+          const cls = b.status === 'done' ? 'done' : b.status === 'failed' ? 'failed' : 'other';
+          return '<tr><td>' + esc(b.repo) + '</td>' +
+            '<td><span class="chip ' + cls + '">' + esc(b.status) + '</span></td>' +
+            '<td>' + (b.liveUrl ? '<a href="' + esc(b.liveUrl) + '" target="_blank" rel="noopener">' + esc(b.liveUrl.replace('https://','')) + '</a>' : '—') + '</td>' +
+            '<td>' + day(b.createdAt) + '</td></tr>';
+        }).join('');
+
+      $('[data-people]').innerHTML =
+        '<tr><th>email</th><th>builds</th><th>first seen</th><th>last seen</th><th>last repo</th></tr>' +
+        d.people.map((p) => '<tr><td>' + esc(p.email) + '</td><td>' + esc(p.count) + '</td><td>' + day(p.first) + '</td><td>' + day(p.last) + '</td><td>' + esc(p.lastRepo || '—') + '</td></tr>').join('');
+
+      $('[data-reach]').innerHTML = [
+        tile(d.repo ? d.repo.stars : null, 'GitHub stars'),
+        tile(d.repo ? d.repo.forks : null, 'forks'),
+        tile(d.traffic.views14d ? d.traffic.views14d.total + ' (' + d.traffic.views14d.uniques + ' uniq)' : null, 'repo views, 14d'),
+        tile(d.traffic.clones14d ? d.traffic.clones14d.total + ' (' + d.traffic.clones14d.uniques + ' uniq)' : null, 'repo clones, 14d'),
+        tile(d.npm.lastWeek, 'npm downloads, week'),
+        tile(d.npm.lastMonth, 'npm downloads, month'),
+        tile(d.repo ? d.repo.openIssues : null, 'open issues'),
+        tile(d.totals.distinctRepos, 'distinct repos built'),
+      ].join('');
+    }
+
+    $('[data-key-go]').addEventListener('click', () => load($('[data-key-input]').value.trim()));
+    $('[data-key-input]').addEventListener('keydown', (e) => { if (e.key === 'Enter') load($('[data-key-input]').value.trim()); });
+    const saved = localStorage.getItem(KEY_STORE);
+    if (saved) load(saved);
+  </script>
+</body>
+</html>

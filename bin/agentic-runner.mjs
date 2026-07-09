@@ -283,6 +283,9 @@ child.stdout.on('data', (chunk) => {
       totalCostUsd = evt.total_cost_usd || 0;
       finalResultText = evt.result || '';
       log(`agent finished: is_error=${evt.is_error} cost=$${totalCostUsd.toFixed(2)} turns=${evt.num_turns}`);
+      // Two builds failed on 2026-07-09 with nothing but "exited 1" in the log — when the
+      // session itself errors, its own words are the diagnosis. Log them.
+      if (evt.is_error) log(`agent error result: ${String(evt.result || '(no result text)').slice(0, 600)}`);
     }
   }
 });
