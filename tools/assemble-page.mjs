@@ -115,6 +115,54 @@ function safeCssValue(v, knob) {
   }
   return val;
 }
+// ── CTA legibility: derive --on-accent from the ACTUAL button fill (WCAG AA) ───────────────────
+// The skeleton hard-codes `--on-accent: #0a0a12` (near-black), but the per-repo theme overrides
+// `--accent` / `--spectrum` freely. A dark accent therefore paints near-black text on a near-black
+// button: the CTA label is invisible. Nothing validated that the ink could be READ on the fill —
+// only that `--accent` existed. Never trust a fixed default against a brain-chosen colour: measure
+// the contrast and pick the legible ink.
+const ON_ACCENT_DARK = '#0a0a12';
+const ON_ACCENT_LIGHT = '#f7f8fc';
+const AA_CONTRAST = 4.5;                    // WCAG AA for normal-weight label text
+
+function parseColor(v) {
+  if (!v) return null;
+  const s = String(v).trim();
+  const hex = s.match(/^#?([0-9a-f]{3,8})$/i) || s.match(/#([0-9a-f]{3,8})\b/i);
+  if (hex) {
+    let h = hex[1];
+    if (h.length === 3 || h.length === 4) h = h.slice(0, 3).split('').map((c) => c + c).join('');
+    if (h.length >= 6) return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+    return null;
+  }
+  const rgb = s.match(/rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i);
+  return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : null;
+}
+// A gradient carries several stops; the label must stay readable over EVERY one of them.
+function parseColors(v) {
+  if (!v) return [];
+  const s = String(v);
+  const found = [...(s.match(/#[0-9a-f]{3,8}\b/gi) || []), ...(s.match(/rgba?\([^)]*\)/gi) || [])];
+  return found.map(parseColor).filter(Boolean);
+}
+const srgb = (c) => { const x = c / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
+const luminance = (rgb) => { const [r, g, b] = rgb.map(srgb); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+function contrast(a, b) {
+  const [l1, l2] = [luminance(a), luminance(b)];
+  const [hi, lo] = l1 >= l2 ? [l1, l2] : [l2, l1];
+  return (hi + 0.05) / (lo + 0.05);
+}
+// Pick the ink whose WORST-CASE contrast across all fill stops is highest.
+function bestOnAccent(fills) {
+  let best = ON_ACCENT_DARK, bestMin = -1;
+  for (const cand of [ON_ACCENT_DARK, ON_ACCENT_LIGHT]) {
+    const rgb = parseColor(cand);
+    const min = Math.min(...fills.map((f) => contrast(f, rgb)));
+    if (min > bestMin) { bestMin = min; best = cand; }
+  }
+  return { color: best, minRatio: bestMin };
+}
+
 function buildTheme(concept) {
   const palette = reqObj(concept.palette, 'concept.palette');
   const decls = [];
@@ -128,6 +176,26 @@ function buildTheme(concept) {
     tokensUsed.push(`--${k}`);
   }
   if (!tokensUsed.includes('--accent')) throw new Error("concept.palette must define 'accent' (the cohesion anchor)");
+
+  // `.cta` paints its label with --on-accent over --spectrum (falling back to --accent). Derive the
+  // ink from whichever of those the theme actually set; refuse to ship a sub-AA explicit choice.
+  const get = (t) => (decls.find(([k]) => k === t) || [])[1];
+  let fillSrc = get('--spectrum');
+  let fills = parseColors(fillSrc);
+  if (!fills.length) { fillSrc = get('--accent'); fills = parseColors(fillSrc); }
+  if (fills.length) {
+    const { color: want, minRatio } = bestOnAccent(fills);
+    const explicit = get('--on-accent');
+    const explicitRgb = parseColor(explicit);
+    const explicitMin = explicitRgb ? Math.min(...fills.map((f) => contrast(f, explicitRgb))) : null;
+    if (!explicit) {
+      decls.push(['--on-accent', want]); tokensUsed.push('--on-accent');
+      process.stderr.write(`assemble-page: derived --on-accent ${want} for fill ${fillSrc} (${minRatio.toFixed(2)}:1)\n`);
+    } else if (explicitMin !== null && explicitMin < AA_CONTRAST) {
+      for (const d of decls) if (d[0] === '--on-accent') d[1] = want;
+      process.stderr.write(`assemble-page: concept.palette['on-accent']=${explicit} is only ${explicitMin.toFixed(2)}:1 on ${fillSrc} (below AA ${AA_CONTRAST}) — overriding with ${want} (${minRatio.toFixed(2)}:1)\n`);
+    }
+  }
 
   const tp = concept.typePersonality;
   let fontHref = null;
@@ -628,4 +696,14 @@ ${footer}
   });
 }
 
-try { main(); } catch (e) { fail(e.message || e); }
+// Import-safe entrypoint: run main() ONLY when invoked as a script, so the pure theme helpers can
+// be unit-tested. run-tool.mjs spawns `node <abs tool path> <build-dir>` (CONTRACT §b), so argv[1]
+// is this file and the CLI behaviour is unchanged. realpath-compared to survive symlinked paths;
+// if we cannot tell, we run — never silently skip the tool (INV-04).
+const isEntrypoint = (() => {
+  try { return Boolean(process.argv[1]) && fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url)); }
+  catch { return true; }
+})();
+if (isEntrypoint) { try { main(); } catch (e) { fail(e.message || e); } }
+
+export { buildTheme, bestOnAccent, contrast, parseColors };
