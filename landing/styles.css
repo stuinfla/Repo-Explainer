@@ -209,6 +209,35 @@ main, .site-foot { position: relative; z-index: 1; }
 .copy-btn:hover { color: var(--ink); border-color: rgba(61,242,199,.5); background: rgba(61,242,199,.1); }
 .copy-btn.copied { color: var(--mint); border-color: rgba(61,242,199,.6); }
 
+/* ── hero: the two-path fork (public → the form card above; private → this card) ── */
+.hero-path-private {
+  margin-top: 18px;
+  padding: clamp(20px, 2.6vw, 30px);
+  background: linear-gradient(135deg, rgba(139,125,255,.10), rgba(139,125,255,.03) 55%, transparent);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+}
+.hp-label {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 9px;
+  margin: 0 0 10px; font-size: 15px; color: var(--ink);
+}
+.hp-strong {
+  font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: #04130f; background: var(--mint);
+  border-radius: 100px; padding: 4px 12px;
+}
+.hp-strong.alt { background: var(--violet); color: #0a0814; }
+.badge-dot.alt { background: var(--violet); box-shadow: 0 0 12px var(--violet); }
+.hp-why {
+  margin: 0 0 16px; max-width: 620px;
+  color: var(--ink-2); font-size: 14.5px; line-height: 1.62;
+}
+.hero-path-private .hero-cmd { width: 100%; }
+
+/* real share-card image inside the link-preview demo */
+.rich-thumb img { display: block; width: 100%; height: auto; }
+
 /* generic cards */
 .card {
   position: relative; background: var(--card); border: 1px solid var(--line);

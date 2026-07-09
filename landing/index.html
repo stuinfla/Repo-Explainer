@@ -97,6 +97,7 @@
         <a href="#process">The process</a>
         <a href="#gate">The gate</a>
         <a href="#examples">Examples</a>
+        <a href="https://github.com/stuinfla/Repo-Explainer" target="_blank" rel="noopener" aria-label="explainmyrepo source code on GitHub">GitHub <span aria-hidden="true">&#8599;</span></a>
         <a class="nav-cta" href="#get-started">Get started <span aria-hidden="true">&rarr;</span></a>
       </nav>
     </div>
@@ -160,7 +161,7 @@
 
         <div class="hero-actions">
           <div class="hero-request gs-request reveal-up" data-d="6" id="hero-request">
-            <p class="hr-kicker"><span class="badge-dot" aria-hidden="true"></span> Public repo? Easiest right here &mdash; no keys, no install</p>
+            <p class="hr-kicker"><span class="badge-dot" aria-hidden="true"></span> <strong class="hp-strong">PUBLIC repo?</strong>&ensp;Build it right here &mdash; no keys, no install</p>
 
             <form class="rq-form hr-form" data-rq novalidate>
               <div class="rq-fields hr-fields">
@@ -195,8 +196,11 @@
             </div>
           </div>
 
-          <p class="hero-alt reveal-up" data-d="7">
-            <span>Private repo you own? Run this inside VS&nbsp;Code / Claude&nbsp;Code instead:</span>
+          <div class="hero-alt hero-path-private reveal-up" data-d="7">
+            <p class="hp-label"><span class="badge-dot alt" aria-hidden="true"></span> <strong class="hp-strong alt">PRIVATE repo you own?</strong>&ensp;Run it inside VS&nbsp;Code / Claude&nbsp;Code</p>
+            <p class="hp-why">Your editor already has everything this needs: the keys in your <code>.env</code>, the GitHub login
+              that can see your private repo, and your Claude&nbsp;Code subscription to do the thinking.
+              Add one OpenAI key and paste:</p>
             <span class="cmd hero-cmd">
               <span class="prompt" aria-hidden="true">$</span>
               <code class="cmd-code" id="hero-command"><span class="tok">npx explainmyrepo</span> <span class="arg">&lt;github-url&gt;</span><span class="caret" aria-hidden="true"></span></code>
@@ -205,7 +209,7 @@
                 <span class="copy-label">Copy</span>
               </button>
             </span>
-          </p>
+          </div>
 
           <ul class="hero-chips reveal-up" data-d="8" aria-label="What one run gives you">
             <li><span class="chip-ico" aria-hidden="true"></span> a page you forward</li>
@@ -357,7 +361,7 @@
           <figure class="gate-art reveal-up">
             <svg class="gate-svg" viewBox="0 0 460 420" role="img" aria-labelledby="gate-t gate-d">
               <title id="gate-t">The quality gate flow</title>
-              <desc id="gate-d">The live page is rendered at mobile and desktop sizes, an independent vision critic scores craft and substance, five operator questions must all answer yes, and only then does it ship. A back-arrow shows the refine loop.</desc>
+              <desc id="gate-d">The live page is rendered at mobile and desktop sizes, an independent vision critic scores craft and substance, six operator questions must all answer yes, and only then does it ship. A back-arrow shows the refine loop.</desc>
               <!-- render: two viewports -->
               <g class="g-step" style="--i:0">
                 <rect x="40" y="34" width="64" height="92" rx="8" fill="#11131d" stroke="rgba(255,255,255,.14)"/>
@@ -384,13 +388,14 @@
               <!-- five checks -->
               <g class="g-step" style="--i:2">
                 <rect x="40" y="280" width="380" height="44" rx="10" fill="#0f1422" stroke="rgba(255,255,255,.12)"/>
-                <text x="58" y="300" class="g-label" font-family="'JetBrains Mono',monospace" font-size="11" fill="#9da3b8">5 operator questions</text>
+                <text x="58" y="300" class="g-label" font-family="'JetBrains Mono',monospace" font-size="11" fill="#9da3b8">6 operator questions</text>
                 <g class="g-checks">
-                  <circle class="gc c1" cx="250" cy="302" r="10" fill="rgba(61,242,199,.14)" stroke="#3df2c7"/><path class="gck k1" d="M245 302 l4 4 l7 -8" fill="none" stroke="#3df2c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <circle class="gc c2" cx="282" cy="302" r="10" fill="rgba(61,242,199,.14)" stroke="#3df2c7"/><path class="gck k2" d="M277 302 l4 4 l7 -8" fill="none" stroke="#3df2c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <circle class="gc c3" cx="314" cy="302" r="10" fill="rgba(61,242,199,.14)" stroke="#3df2c7"/><path class="gck k3" d="M309 302 l4 4 l7 -8" fill="none" stroke="#3df2c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <circle class="gc c4" cx="346" cy="302" r="10" fill="rgba(61,242,199,.14)" stroke="#3df2c7"/><path class="gck k4" d="M341 302 l4 4 l7 -8" fill="none" stroke="#3df2c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  <circle class="gc c5" cx="378" cy="302" r="10" fill="rgba(61,242,199,.14)" stroke="#3df2c7"/><path class="gck k5" d="M373 302 l4 4 l7 -8" fill="none" stroke="#3df2c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle class="gc c1" cx="222" cy="302" r="10" fill="rgba(61,242,199,.14)" stroke="#3df2c7"/><path class="gck k1" d="M217 302 l4 4 l7 -8" fill="none" stroke="#3df2c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle class="gc c2" cx="254" cy="302" r="10" fill="rgba(61,242,199,.14)" stroke="#3df2c7"/><path class="gck k2" d="M249 302 l4 4 l7 -8" fill="none" stroke="#3df2c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle class="gc c3" cx="286" cy="302" r="10" fill="rgba(61,242,199,.14)" stroke="#3df2c7"/><path class="gck k3" d="M281 302 l4 4 l7 -8" fill="none" stroke="#3df2c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle class="gc c4" cx="318" cy="302" r="10" fill="rgba(61,242,199,.14)" stroke="#3df2c7"/><path class="gck k4" d="M313 302 l4 4 l7 -8" fill="none" stroke="#3df2c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle class="gc c5" cx="350" cy="302" r="10" fill="rgba(61,242,199,.14)" stroke="#3df2c7"/><path class="gck k5" d="M345 302 l4 4 l7 -8" fill="none" stroke="#3df2c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle class="gc c6" cx="382" cy="302" r="10" fill="rgba(61,242,199,.14)" stroke="#3df2c7"/><path class="gck k6" d="M377 302 l4 4 l7 -8" fill="none" stroke="#3df2c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </g>
               </g>
               <line class="g-flow f3" x1="230" y1="324" x2="230" y2="350" stroke="#9ff06a" stroke-width="2"/>
@@ -407,13 +412,14 @@
 
           <!-- right: the five questions, verbatim -->
           <div class="gate-questions reveal-up">
-            <p class="gq-lead">On both devices, the operator must answer <strong>YES</strong> to all five — looking at the real screenshots:</p>
+            <p class="gq-lead">On both devices, the operator must answer <strong>YES</strong> to all six — looking at the real screenshots:</p>
             <ol class="questions">
               <li><span class="q-no" aria-hidden="true">1</span><span class="q-text">Would this make me believe I understand this?</span></li>
               <li><span class="q-no" aria-hidden="true">2</span><span class="q-text">Would this make it approachable?</span></li>
               <li><span class="q-no" aria-hidden="true">3</span><span class="q-text">Would this explain it for somebody who doesn&rsquo;t understand it?</span></li>
               <li><span class="q-no" aria-hidden="true">4</span><span class="q-text">Would it give me confidence I understand the architecture?</span></li>
               <li><span class="q-no" aria-hidden="true">5</span><span class="q-text">Does it make me smile — &ldquo;oh, that&rsquo;s cool&rdquo;?</span></li>
+              <li><span class="q-no" aria-hidden="true">6</span><span class="q-text">Could someone who knows <em>nothing</em> about this domain read the first four sections and explain it back?</span></li>
             </ol>
             <div class="bar-strip">
               <div class="bar-num">90<small>mean · min axis 85</small></div>
@@ -471,24 +477,18 @@
             <div class="link-rich">
               <span class="lb-label good">with explainmyrepo</span>
               <div class="rich-card">
-                <div class="rich-thumb" aria-hidden="true">
-                  <svg viewBox="0 0 320 168" preserveAspectRatio="xMidYMid slice">
-                    <defs><linearGradient id="rc-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#11132a"/><stop offset="100%" stop-color="#0a1a1c"/></linearGradient></defs>
-                    <rect width="320" height="168" fill="url(#rc-bg)"/>
-                    <path d="M120 44 L156 104 L84 104 Z" fill="none" stroke="url(#ha-spec)" stroke-width="2.4" stroke-linejoin="round"/>
-                    <path d="M156 104 L210 78 M156 104 L214 104 M156 104 L210 130" stroke="#3df2c7" stroke-width="2" stroke-linecap="round"/>
-                    <text x="232" y="80" font-family="'Clash Display',sans-serif" font-weight="700" font-size="22" fill="#eceef7">your</text>
-                    <text x="232" y="104" font-family="'Clash Display',sans-serif" font-weight="700" font-size="22" fill="#3df2c7">project</text>
-                  </svg>
+                <div class="rich-thumb">
+                  <img src="assets/social-card-real.webp" width="800" height="420" loading="lazy" decoding="async"
+                    alt="The real share card generated for the agenticow explainer: a designed 1200 by 630 Open Graph image with the project's own art and tagline." />
                 </div>
                 <div class="rich-meta">
                   <span class="rich-fav" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><path d="M9 6 L16 12 L9 18 Z" fill="none" stroke="#3df2c7" stroke-width="2" stroke-linejoin="round"/></svg>
                   </span>
                   <div>
-                    <p class="rich-title">your-project — finally, an explainer people get</p>
-                    <p class="rich-desc">From &ldquo;never seen this&rdquo; to &ldquo;I want it&rdquo; — a guided walkthrough + an AI knowledge pack.</p>
-                    <p class="rich-domain">explainmyrepo.isovision.ai</p>
+                    <p class="rich-title">agenticow — git for agent memory</p>
+                    <p class="rich-desc">Branch a million-vector memory in 0.5 ms &mdash; a guided walkthrough + an AI knowledge pack.</p>
+                    <p class="rich-domain">agenticow-explainer.netlify.app</p>
                   </div>
                 </div>
               </div>
@@ -700,6 +700,8 @@
                 <li><code>NETLIFY_AUTH_TOKEN</code> &mdash; the live URL <em>(optional; <code>--no-deploy</code> builds the full page locally)</em></li>
               </ul>
               <p class="cmd-eg">Set them in your project's <code>.env</code> &mdash; the CLI checks everything up front and tells you exactly what's missing and how to fix it.</p>
+              <p class="cmd-eg">It&rsquo;s fully open source &mdash; pull it down, read it, run it, star it:
+                <a href="https://github.com/stuinfla/Repo-Explainer" target="_blank" rel="noopener">github.com/stuinfla/Repo-Explainer</a></p>
             </div>
           </div>
         </div>
