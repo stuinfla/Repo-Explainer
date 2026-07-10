@@ -65,6 +65,21 @@ if (!fs.existsSync(buildJsonPath)) {
 
 function log(msg) { process.stderr.write(`[agentic-runner] ${msg}\n`); }
 
+// Confirmed bug (tests/spawn-error-handling.test.mjs): none of this file's spawn() calls
+// registered an .on('error', ...) listener — a missing/misconfigured binary (a bad `claude`
+// PATH, a moved node executable) crashes the WHOLE process with a raw Node stack trace,
+// contradicting this file's own "never fail silently" contract. Fire-and-forget notification
+// spawns (alert-owner, notify, notify-failure) go through this: waits for close OR error,
+// logs either way, never throws, never hangs.
+function spawnAndWait(label, bin, args, opts) {
+  return new Promise((resolve) => {
+    const child = spawn(bin, args, opts);
+    let settled = false;
+    child.on('error', (e) => { if (settled) return; settled = true; log(`${label} FAILED TO START: ${e.message}`); resolve(-1); });
+    child.on('close', (code) => { if (settled) return; settled = true; resolve(code); });
+  });
+}
+
 // Canonical "owner/name" identity for a GitHub URL — what the whole build is pinned to (INV-21).
 function repoId(u) {
   const m = String(u || '').trim().replace(/\/+$/, '').match(/github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?$/i);
@@ -147,7 +162,7 @@ if (cloneRes.status !== 0 || !cloneOut?.ok) {
   log(`PREFLIGHT FAILED — ${why}`);
   await patchStatus('Stopped before building: we could not access this repo.', 'failed', null,
     `We couldn't access ${repoUrl}. If it's private, share it with our GitHub account or make it public, then rebuild. Nothing was built — we never build from a guess or a similar-looking repo.`);
-  const alert = spawn(process.execPath, [
+  await spawnAndWait('alert-owner', process.execPath, [
     path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
     '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),
     '--submitter', submitter || '(none)',
@@ -156,7 +171,6 @@ if (cloneRes.status !== 0 || !cloneOut?.ok) {
     '--reason', `repo inaccessible at preflight: ${why}`,
     '--elapsed-min', '0',
   ], { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
-  await new Promise((r) => alert.on('close', r));
   process.exit(1);
 }
 log(`preflight OK — cloned ${cloneOut.outputs?.repo?.owner}/${cloneOut.outputs?.repo?.name} (private=${cloneOut.outputs?.repo?.private})`);
@@ -224,11 +238,35 @@ const child = spawn(claudeBin, [
   stdio: ['ignore', 'pipe', 'inherit'],
 });
 
+// A missing/misconfigured `claude` binary previously crashed this whole process with an
+// unhandled 'error' throw and a raw Node stack trace — the exact "fail silently" this file's
+// own header comment forbids. spawnErrorMsg feeds the `reason` classification below; 'close'
+// never fires if spawn itself failed to start, so this also resolves exitCode instead of
+// hanging the build forever.
+let spawnErrorMsg = null;
+child.on('error', (e) => { spawnErrorMsg = e.message; log(`claude spawn FAILED TO START: ${e.message}`); });
+
 let killedForBudget = false;
 let lastActivity = Date.now();
 let totalCostUsd = 0;
 let finalResultText = '';
 let sawResultEvent = false;
+
+// Failure classification for the PUBLIC-facing message (owner mandate 2026-07-10: "don't just
+// fail silently — tell them why, and if it's a budget thing, tell them exactly that and point
+// to npx"). Distinct from `internalReason`, which carries the raw diagnostic for admin's eyes;
+// this is the honest, friendly line the submitter themselves sees and gets emailed.
+const NPX_LINE = 'Run it yourself with no wait and no budget limit: npx explainmyrepo <your-github-url> in a VS Code / Claude Code session (or Codex) — it uses your own API key and takes about 15 minutes.';
+function classifyFailure(reason) {
+  const r = String(reason || '');
+  if (/credit balance|insufficient.*balance|billing/i.test(r)) {
+    return `We ran this build for free, and it's been genuinely popular — the community budget is tapped out for the moment, not anything wrong with your repo. ${NPX_LINE}`;
+  }
+  if (/exceeded its.*budget|wall-clock/i.test(r)) {
+    return `Your repo needed more time than we could give it for free this round — not a failure of the build itself. ${NPX_LINE}`;
+  }
+  return `It didn't complete this time — not necessarily your repo's fault, our free hosted builds do sometimes hit a snag. ${NPX_LINE}`;
+}
 
 // The status gist is read by the submitter's browser — it gets a human progress line, never the
 // raw tool call (a reader watching their build saw `node tools/generate-image.mjs … PID=$!` as
@@ -293,7 +331,11 @@ child.stdout.on('data', (chunk) => {
   }
 });
 
-const exitCode = await new Promise((resolve) => child.on('close', resolve));
+const exitCode = await new Promise((resolve) => {
+  if (spawnErrorMsg) { resolve(-1); return; }
+  child.on('close', resolve);
+  child.on('error', () => resolve(-1)); // covers an 'error' that fires after this Promise is built
+});
 clearTimeout(hardTimer);
 
 // ── Determine outcome ────────────────────────────────────────────────────────────────────────────
@@ -325,6 +367,8 @@ const ok = exitCode === 0 && !budgetExceeded && !!liveUrl && !identityViolation;
 const elapsedMin = ((Date.now() - (lastActivity - 0)) / 60000); // approx; refined below
 const reason = identityViolation
   ? `SOURCE-IDENTITY VIOLATION: ${identityViolation} — treating any deploy from this run as invalid`
+  : spawnErrorMsg
+  ? `could not start the claude binary: ${spawnErrorMsg}`
   : budgetExceeded
   ? `exceeded its ${budgetMin}-minute budget before finishing`
   : agentReported && agentReported.ok === false ? agentReported.reason
@@ -366,13 +410,13 @@ if (ok) {
   // hold SMTP creds. Non-blocking: a notify failure must never flip a successful build to failed.
   if (submitter) {
     const notifyEnv = { ...process.env, EMAIL_TO: submitter };
-    const notify = spawn(process.execPath, [path.join(REPO_ROOT, 'tools', 'notify.mjs'), buildDir], { cwd: REPO_ROOT, env: notifyEnv, stdio: 'inherit' });
-    await new Promise((r) => notify.on('close', r));
+    await spawnAndWait('notify', process.execPath, [path.join(REPO_ROOT, 'tools', 'notify.mjs'), buildDir], { cwd: REPO_ROOT, env: notifyEnv, stdio: 'inherit' });
   }
   process.exit(0);
 } else {
   log(`FAILED — ${reason}`);
-  await patchStatus('The build could not finish.', 'failed', null, "It didn't complete this time. Try another repo, or try again in a bit.", reason);
+  const publicMessage = classifyFailure(reason);
+  await patchStatus('The build could not finish.', 'failed', null, publicMessage, reason);
   const alertArgs = [
     path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
     '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),
@@ -382,7 +426,19 @@ if (ok) {
     '--reason', reason,
     '--elapsed-min', String(Math.round(budgetMin)),
   ];
-  const alert = spawn(process.execPath, alertArgs, { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
-  await new Promise((r) => alert.on('close', r));
+  await spawnAndWait('alert-owner', process.execPath, alertArgs, { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
+  // The submitter used to hear NOTHING on failure beyond a status page most people stop
+  // watching after 20 minutes — the exact "silent failure" the owner flagged 2026-07-10.
+  // Non-blocking, mirrors alert-owner's own tolerance: an email failure must never invert
+  // the real build outcome.
+  if (submitter) {
+    const failNotifyArgs = [
+      path.join(REPO_ROOT, 'tools', 'notify-failure.mjs'),
+      '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),
+      '--to', submitter,
+      '--message', publicMessage,
+    ];
+    await spawnAndWait('notify-failure', process.execPath, failNotifyArgs, { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
+  }
   process.exit(1);
 }
