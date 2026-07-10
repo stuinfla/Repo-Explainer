@@ -122,15 +122,19 @@ exports.handler = async function (event) {
   // so a pre-flight signal is what's available here). Bigger repos get more wall-clock AND more $,
   // rather than the same fixed budget regardless of scale.
   //
-  // Floors measured live, twice (2026-07-04, 2026-07-06): a first smoke test at 15min on `chalk`
-  // got killed mid-image-generation; raised small to 25. Then a REAL production front-door run on
-  // `sindresorhus/p-map` (25min) ALSO got killed, this time deep in a quality-grade refine loop —
-  // small repos can still need real time once the agent starts iterating on copy/diagram fixes.
-  // Raised again. This floor has been wrong twice from a guess; don't lower it again without a real
+  // Floors measured live, THREE times now (2026-07-04, 2026-07-06, 2026-07-10): a first smoke
+  // test at 15min on `chalk` got killed mid-image-generation; raised small to 25. Then a REAL
+  // production front-door run on `sindresorhus/p-map` (25min) ALSO got killed, deep in a
+  // quality-grade refine loop; raised to 30. Then, same night as the credit-outage recovery,
+  // TWO more real repos (aiki-sh/cli, manjast/agentic-development-playbook) both timed out at
+  // 30min in the exact same spot — the refine loop's screenshot-vision-grade-fix round trips —
+  // and BOTH succeeded cleanly on the very next attempt at 40min (matching the existing medium
+  // tier). Three strikes on the same floor from three independent repos is a pattern, not noise.
+  // Raised small to match medium's proven-sufficient 40min. Don't lower it again without a real
   // measured run to justify it.
   const tier = repoSizeKb > 200000 ? "large" : repoSizeKb > 20000 ? "medium" : "small";
-  const budgetMin = tier === "large" ? 60 : tier === "medium" ? 40 : 30;
-  const budgetUsd = tier === "large" ? 18 : tier === "medium" ? 10 : 6;
+  const budgetMin = tier === "large" ? 60 : tier === "medium" ? 40 : 40;
+  const budgetUsd = tier === "large" ? 18 : tier === "medium" ? 10 : 7;
   // GitHub Actions expressions don't support arithmetic the way `fromJSON(x) + 10` implies (learned
   // the hard way — it rejects the dispatch outright, a YAML-structure check doesn't catch it since
   // it's an expression-syntax error, not a YAML one). Compute the +10min overhead buffer here in
