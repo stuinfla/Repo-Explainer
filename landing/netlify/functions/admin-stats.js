@@ -135,17 +135,30 @@ const delta = (today, yesterday) => ({
 exports.handler = async function (event) {
   if (event.httpMethod === "OPTIONS") return json(204, {});
 
-  const adminKey = process.env.ADMIN_KEY;
-  if (!adminKey) return json(503, { error: "ADMIN_KEY is not configured in Netlify env — the admin API stays closed until it is." });
-  // Header only — a ?key= fallback would leak the key into logs and browser history.
-  // Constant-time comparison closes the timing side channel (per security review).
-  const given = (event.headers && (event.headers["x-admin-key"] || event.headers["X-Admin-Key"])) || "";
-  const a = Buffer.from(String(given));
-  const b = Buffer.from(String(adminKey));
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return json(401, { error: "Wrong or missing admin key." });
-
   const token = process.env.EXPLAINER_GH_TOKEN || process.env.GITHUB_TOKEN;
   if (!token) return json(500, { error: "Server misconfigured: missing EXPLAINER_GH_TOKEN." });
+
+  // The password lives as a SALTED SHA-256 HASH in admin.json inside the secret counter gist
+  // (the Netlify MCP env-var write reported success but persisted nothing — 2026-07-10 — so the
+  // credential rides infrastructure this function already reads). ADMIN_KEY env still wins if
+  // someone sets it later. Header only — a ?key= fallback would leak into logs/history.
+  // timingSafeEqual closes the timing side channel (per security review).
+  const given = (event.headers && (event.headers["x-admin-key"] || event.headers["X-Admin-Key"])) || "";
+  let pass = false;
+  if (process.env.ADMIN_KEY) {
+    const a = Buffer.from(String(given));
+    const b = Buffer.from(String(process.env.ADMIN_KEY));
+    pass = a.length === b.length && crypto.timingSafeEqual(a, b);
+  } else {
+    const counterGist = process.env.GLOBAL_COUNTER_GIST_ID;
+    const cfg = counterGist ? await readGist(token, counterGist, "admin.json") : null;
+    if (!cfg || !cfg.salt || !cfg.hash) return json(503, { error: "Admin access is not configured — the admin API stays closed until it is." });
+    const h = crypto.createHash("sha256").update(cfg.salt + String(given)).digest("hex");
+    const a = Buffer.from(h);
+    const b = Buffer.from(String(cfg.hash));
+    pass = a.length === b.length && crypto.timingSafeEqual(a, b);
+  }
+  if (!pass) return json(401, { error: "Wrong or missing admin key." });
 
   try { connectLambda(event); } catch { /* v2 runtime wires itself */ }
 
