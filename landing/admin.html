@@ -39,6 +39,7 @@
     table.adm { width: 100%; border-collapse: collapse; font-size: 13.5px; }
     table.adm th { text-align: left; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); padding: 12px 14px; border-bottom: 1px solid var(--line); }
     table.adm td { padding: 10px 14px; border-bottom: 1px solid var(--line); color: var(--ink-2); vertical-align: top; }
+    table.adm td.nowrap { white-space: nowrap; }
     table.adm tr:last-child td { border-bottom: none; }
     table.adm a { color: var(--mint); }
     .chip { font-family: var(--font-mono); font-size: 11px; border-radius: 100px; padding: 2px 9px; }
@@ -97,9 +98,9 @@
       </div>
 
       <div class="adm-sec">
-        <h2>Website, last 14 days</h2>
-        <div class="tbl-scroll"><table class="adm" data-site></table></div>
-        <p class="note" data-site-note></p>
+        <h2>Reach &mdash; stars, forks, downloads</h2>
+        <div class="tiles" data-reach></div>
+        <p class="note">GitHub repo stats and npm registry numbers. Repo clones include our own CI &mdash; every hosted build checks this repo out, so that count runs high.</p>
       </div>
 
       <div class="adm-sec">
@@ -108,15 +109,15 @@
       </div>
 
       <div class="adm-sec">
-        <h2>People (email ledger)</h2>
-        <div class="tbl-scroll"><table class="adm" data-people></table></div>
-        <p class="note">Emails are collected by the build form (5 free builds per email). This ledger and the monthly counter live in secret GitHub gists; the per-build status pages are public gists; the build registry copy lives in AgentDB on your Mac.</p>
+        <h2>explainmyrepo.isovision.ai visitors, day by day</h2>
+        <div class="tbl-scroll"><table class="adm" data-site></table></div>
+        <p class="note" data-site-note></p>
       </div>
 
       <div class="adm-sec">
-        <h2>Reach</h2>
-        <div class="tiles" data-reach></div>
-        <p class="note">GitHub repo traffic and npm registry numbers. Repo clones include our own CI — every hosted build checks this repo out. Website views live in the section above (first-party beacon).</p>
+        <h2>People (email ledger)</h2>
+        <div class="tbl-scroll"><table class="adm" data-people></table></div>
+        <p class="note">Emails are collected by the build form (5 free builds per email). This ledger and the monthly counter live in secret GitHub gists; the per-build status pages are public gists; the build registry copy lives in AgentDB on your Mac.</p>
       </div>
     </div>
   </main>
@@ -126,6 +127,15 @@
     const KEY_STORE = 'emr-admin-key';
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     const day = (iso) => iso ? String(iso).slice(0, 10) : '—';
+    // Date + time, one line, in the viewer's own local timezone (a bare date told Stuart nothing
+    // about ordering within a busy night — owner ask 2026-07-10).
+    const dayTime = (iso) => {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return esc(String(iso));
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' }) + ' ' +
+        d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    };
 
     async function load(key) {
       $('[data-err]').textContent = '';
@@ -241,7 +251,7 @@
             '<td>' + (g && g.headline != null ? esc(g.headline) : '—') + '</td>' +
             '<td>' + (b.costUsd != null ? '$' + esc(b.costUsd) : '—') + '</td>' +
             '<td>' + (b.liveUrl ? '<a href="' + esc(b.liveUrl) + '" target="_blank" rel="noopener">' + esc(b.liveUrl.replace('https://','')) + '</a>' : '—') + '</td>' +
-            '<td>' + day(b.createdAt) + '</td></tr>';
+            '<td class="nowrap">' + dayTime(b.createdAt) + '</td></tr>';
         }).join('');
 
       $('[data-people]').innerHTML =
