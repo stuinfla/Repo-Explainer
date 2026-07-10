@@ -773,6 +773,31 @@ async function main() {
   }
   log('INV-20 ok: no unexplained acronyms in ladder rungs 1-4');
 
+  // Hard cap on refine iterations (owner mandate 2026-07-10). SKILL.md has always said "do NOT run
+  // the refine loop more than twice" — but that was PROMPT-ONLY, nothing enforced it, and live
+  // production logs proved the agent ignores it under pressure: manjast/agentic-development-
+  // playbook ran 4 iterations, markt-heximal/oia-model ran 6. Each iteration pays a full two-device
+  // render + GPT vision-grade round trip — the actual dominant cost of a hosted build's wall-clock
+  // time, confirmed by profiling those exact runs (NOT model authoring speed, which is fast).
+  // Enforced here the same way INV-21 enforces source identity: a prompt instruction is advice; a
+  // tool that refuses to run again is a guarantee. This is also what makes the standard 40-minute
+  // budget sufficient without per-repo bumps — the loop can no longer run away with the clock.
+  const MAX_QUALITY_ITERATIONS = 3; // 1 initial grade + 2 refines, matching the SKILL.md guidance
+  const priorIterations = Number.isInteger(ctx.quality?.iterations) ? ctx.quality.iterations : 0;
+  if (priorIterations >= MAX_QUALITY_ITERATIONS) {
+    log(`REFINE CAP REACHED (${priorIterations}/${MAX_QUALITY_ITERATIONS}) — refusing to re-render/re-grade (zero additional cost/wall-clock). Returning the last scorecard as final.`);
+    const capped = { ...(ctx.quality || {}), capReached: true };
+    return emit(true, {
+      quality: capped,
+      screenshots: capped.screenshots || {},
+      pageHeights: capped.pageHeights || {},
+      passed: !!capped.passed,
+      headline: {},
+      refineNoteCount: 0,
+      note: 'Refine iteration cap reached — this is the FINAL grade. Ship this page now (--ship-best-effort semantics apply); do not call quality-grade again.',
+    }, null);
+  }
+
   // --- Playwright at runtime (do NOT npm-install; loud if absent). ---
   let chromium;
   try { ({ chromium } = await import('playwright')); }
