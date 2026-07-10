@@ -11,6 +11,8 @@ const { getStore, connectLambda } = require("@netlify/blobs");
 const crypto = require("node:crypto");
 
 const REPO = "stuinfla/Repo-Explainer";
+const SITE_ID = "df4e3cd8-a71e-4668-8da7-c8d168edd341";
+const FEEDBACK_FORM_ID = "6a456c9b29c67900095b060f";
 
 function json(status, body) {
   return {
@@ -95,6 +97,7 @@ async function listBuilds(token) {
       liveUrl: null,
       costUsd: null,
       grades: null,
+      error: null,
     };
     try {
       const f = g.files && g.files["status.json"];
@@ -104,11 +107,42 @@ async function listBuilds(token) {
       base.liveUrl = (s.result && s.result.liveUrl) || null;
       base.costUsd = (s.result && s.result.costUsd) ?? null;
       base.grades = grades(s.result && s.result.scorecard);
+      // WHY it failed — the whole point of this table (owner, 2026-07-10: a wall of red "failed"
+      // chips with no reason reads as an active outage even when it's resolved history).
+      // internalReason (owner-only, added same day) is the real cause; the public `error` on
+      // the submitter's own status page is deliberately generic — prefer the real one here.
+      base.error = s.internalReason || s.error || null;
       return base;
     } catch { return base; }
   }));
   builds.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   return builds;
+}
+
+// The landing page's own feedback form (Netlify Forms, "How clearly did it land?" 1-5 + free
+// text) — needs a Netlify Personal Access Token (Netlify user settings -> Applications -> New
+// access token), NOT the GitHub token. Degrades honestly, never throws, if unset/expired.
+async function readSiteFeedback() {
+  const npat = process.env.NETLIFY_API_TOKEN;
+  if (!npat) return { configured: false, submissions: [] };
+  try {
+    const r = await fetch(`https://api.netlify.com/api/v1/forms/${FEEDBACK_FORM_ID}/submissions`, {
+      headers: { Authorization: `Bearer ${npat}` },
+    });
+    if (!r.ok) return { configured: false, submissions: [], error: `Netlify API ${r.status} — token may be expired` };
+    const rows = await r.json();
+    return {
+      configured: true,
+      submissions: rows.map((s) => ({
+        clarity: s.data?.clarity ? Number(s.data.clarity) : null,
+        thoughts: s.data?.thoughts || null,
+        email: s.data?.email || null,
+        at: s.created_at,
+      })).sort((a, b) => (a.at < b.at ? 1 : -1)),
+    };
+  } catch (e) {
+    return { configured: false, submissions: [], error: String(e && e.message || e) };
+  }
 }
 
 // Last N days of first-party page views from the traffic blob store (written by track.js).
@@ -165,12 +199,13 @@ exports.handler = async function (event) {
   const ledgerId = process.env.EMAIL_LEDGER_GIST_ID;
   const counterId = process.env.GLOBAL_COUNTER_GIST_ID;
 
-  const [ledger, counter, doors, builds, traffic, repoResp, viewsResp, clonesResp, npmRange] = await Promise.all([
+  const [ledger, counter, doors, builds, traffic, feedback, repoResp, viewsResp, clonesResp, npmRange] = await Promise.all([
     ledgerId ? readGist(token, ledgerId, "ledger.json") : null,
     counterId ? readGist(token, counterId, "counter.json") : null,
     counterId ? readGist(token, counterId, "doors.json") : null,
     listBuilds(token),
     readTraffic(14),
+    readSiteFeedback(),
     fetch(`https://api.github.com/repos/${REPO}`, { headers: gh(token) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
     fetch(`https://api.github.com/repos/${REPO}/traffic/views`, { headers: gh(token) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
     fetch(`https://api.github.com/repos/${REPO}/traffic/clones`, { headers: gh(token) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
@@ -200,8 +235,20 @@ exports.handler = async function (event) {
   const tToday = trafficArr.find((t) => t.date === today) || { views: 0, newVisitors: 0 };
   const tYest = trafficArr.find((t) => t.date === yesterday) || { views: 0, newVisitors: 0 };
 
+  // The single most important line on this page: is the hosted door doing anything RIGHT NOW,
+  // or is everything below history? (owner, 2026-07-10: a wall of "failed" chips read as an
+  // active outage when the door had been paused for hours — nothing here explained that.)
+  const newestBuild = builds[0] || null;
+  const doorStatus = {
+    paused: !!(counter && counter.pausedForCredits),
+    pausedReason: counter && counter.pausedForCredits ? "Anthropic API credit balance ran out — paused until topped up." : null,
+    mostRecentAttempt: newestBuild ? { repo: newestBuild.repo, status: newestBuild.status, at: newestBuild.createdAt } : null,
+  };
+
   return json(200, {
     generatedAt: new Date().toISOString(),
+    doorStatus,
+    feedback,
     meter: counter || null,
     totals: {
       buildAttempts: builds.length,

@@ -88,7 +88,7 @@ const ghToken = process.env.EXPLAINER_GH_TOKEN || process.env.GITHUB_TOKEN || ''
 // live. Progress is best-effort every ≥20s; terminal states retry through the limit.
 let lastProgressPatchAt = 0;
 
-async function patchStatus(stepName, status = 'building', result = null, error = null) {
+async function patchStatus(stepName, status = 'building', result = null, error = null, internalReason = null) {
   if (!gistId || !ghToken || !buildId) {
     if (status !== 'building') log(`patchStatus(${status}) SKIPPED — missing ${!gistId ? 'gistId' : !ghToken ? 'ghToken' : 'buildId'}`);
     return;
@@ -105,7 +105,10 @@ async function patchStatus(stepName, status = 'building', result = null, error =
       const resp = await fetch(`https://api.github.com/gists/${gistId}`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files: { 'status.json': { content: JSON.stringify({ buildId, step: 0, totalSteps: 1, stepName, status, repo: repoUrl, result, error }, null, 2) } } }),
+        // internalReason is the real diagnostic (e.g. "Credit balance is too low") — it rides in
+        // the same gist for the admin dashboard to read, but app.js (the submitter's own status
+        // page) only ever displays `error`, never this, so nothing internal leaks publicly.
+        body: JSON.stringify({ files: { 'status.json': { content: JSON.stringify({ buildId, step: 0, totalSteps: 1, stepName, status, repo: repoUrl, result, error, internalReason }, null, 2) } } }),
       });
       if (resp.ok) return;
       // A silent swallow here is exactly the anti-pattern this whole rebuild exists to close — a
@@ -369,7 +372,7 @@ if (ok) {
   process.exit(0);
 } else {
   log(`FAILED — ${reason}`);
-  await patchStatus('The build could not finish.', 'failed', null, "It didn't complete this time. Try another repo, or try again in a bit.");
+  await patchStatus('The build could not finish.', 'failed', null, "It didn't complete this time. Try another repo, or try again in a bit.", reason);
   const alertArgs = [
     path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
     '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),

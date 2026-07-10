@@ -11,8 +11,18 @@
     /* admin-only chrome, on top of the landing design tokens */
     .adm-wrap { max-width: 1080px; margin: 0 auto; padding: 48px 22px 80px; }
     .adm-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 26px; }
+    .adm-back { margin-left: auto; font-size: 13px; padding: 8px 14px; }
     .adm-head h1 { font-family: var(--font-display); font-size: 26px; color: var(--ink); letter-spacing: -0.01em; }
     .adm-head .stamp { font-family: var(--font-mono); font-size: 12px; color: var(--ink-faint); }
+    .door-banner { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-radius: var(--radius); margin-bottom: 28px; font-size: 14.5px; }
+    .door-banner.live { background: rgba(61,242,199,.10); border: 1px solid rgba(61,242,199,.3); color: var(--mint); }
+    .door-banner.paused { background: rgba(255,180,80,.10); border: 1px solid rgba(255,180,80,.35); color: #ffc978; }
+    .door-banner .dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; flex: none; }
+    .door-banner .dot.live { animation: pulse-dot 1.8s ease-in-out infinite; }
+    @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+    .err-cell { color: var(--ink-faint); font-size: 12.5px; max-width: 260px; }
+    tr.superseded { opacity: .45; }
+    tr.superseded .err-cell { font-style: italic; }
     .adm-gate { max-width: 420px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 28px; }
     .adm-gate p { font-size: 14px; color: var(--ink-dim); margin-bottom: 14px; }
     .adm-gate input { width: 100%; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font-family: var(--font-mono); font-size: 14px; padding: 10px 12px; margin-bottom: 12px; }
@@ -47,6 +57,7 @@
     <div class="adm-head">
       <h1>explainmyrepo — admin</h1>
       <span class="stamp" data-stamp></span>
+      <a class="btn btn-ghost adm-back" href="/">&larr; Back to site</a>
     </div>
 
     <div class="adm-gate" data-gate>
@@ -57,6 +68,7 @@
     </div>
 
     <div data-dash hidden>
+      <div class="door-banner" data-door-banner></div>
       <div class="adm-sec" style="margin-top:0">
         <h2>Today vs yesterday</h2>
         <div class="tiles" data-pulse></div>
@@ -65,6 +77,12 @@
       <div class="adm-sec">
         <h2>Quality &mdash; is the factory getting better?</h2>
         <p class="qline" data-quality></p>
+      </div>
+
+      <div class="adm-sec">
+        <h2>Site feedback &mdash; how people rate explainmyrepo itself</h2>
+        <p class="qline" data-feedback></p>
+        <div class="tbl-scroll" data-feedback-tbl-wrap hidden><table class="adm" data-feedback-tbl></table></div>
       </div>
 
       <div class="adm-sec">
@@ -123,10 +141,32 @@
     function arrow(x) { return '<span class="tr ' + x.trend + '">' + (x.trend === 'up' ? '&#9650;' : x.trend === 'down' ? '&#9660;' : '&#8212;') + ' ' + esc(x.yesterday) + ' yday</span>'; }
     function ptile(x, label) { return '<div class="tile"><b>' + esc(x.today) + arrow(x) + '</b><span>' + esc(label) + '</span></div>'; }
 
+    function timeAgo(iso) {
+      if (!iso) return '';
+      var ms = Date.now() - new Date(iso).getTime();
+      var m = Math.round(ms / 60000);
+      if (m < 60) return m + 'm ago';
+      var h = Math.round(m / 60);
+      if (h < 48) return h + 'h ago';
+      return Math.round(h / 24) + 'd ago';
+    }
+
     function render(d) {
       $('[data-gate]').hidden = true;
       $('[data-dash]').hidden = false;
       $('[data-stamp]').textContent = 'generated ' + d.generatedAt;
+
+      var ds = d.doorStatus || {};
+      var banner = $('[data-door-banner]');
+      if (ds.paused) {
+        banner.className = 'door-banner paused';
+        banner.innerHTML = '<span class="dot"></span><span><b>Hosted door is PAUSED</b> — ' + esc(ds.pausedReason || 'reason unknown') +
+          (ds.mostRecentAttempt ? ' Nothing has run since ' + esc(ds.mostRecentAttempt.repo) + ' (' + timeAgo(ds.mostRecentAttempt.at) + ') — everything below is history, not a live outage.' : '') + '</span>';
+      } else {
+        banner.className = 'door-banner live';
+        banner.innerHTML = '<span class="dot live"></span><span><b>Hosted door is LIVE</b> and accepting builds.' +
+          (ds.mostRecentAttempt ? ' Most recent attempt: ' + esc(ds.mostRecentAttempt.repo) + ' (' + esc(ds.mostRecentAttempt.status) + ', ' + timeAgo(ds.mostRecentAttempt.at) + ').' : '') + '</span>';
+      }
 
       $('[data-pulse]').innerHTML = [
         ptile(d.deltas.siteViews, 'website views'),
@@ -141,6 +181,24 @@
         : 'Rolling synthesized score (all 11 axes, both devices): last 5 pages average <b>' + esc(q.avgLast5) + '</b>'
           + (q.avgPrev5 != null ? ' vs previous 5 average <b>' + esc(q.avgPrev5) + '</b> &mdash; the factory is <b>' + esc(q.trend) + '</b>.' : ' &mdash; more graded builds needed for a trend.')
           + ' (' + esc(q.gradedPages) + ' graded pages on record)';
+
+      var fb = d.feedback || { configured: false, submissions: [] };
+      if (!fb.configured) {
+        $('[data-feedback]').innerHTML = 'Not connected yet &mdash; set <code>NETLIFY_API_TOKEN</code> (a Netlify personal access token, not the GitHub one) in Netlify env to pull the on-site feedback form.' + (fb.error ? ' (' + esc(fb.error) + ')' : '');
+        $('[data-feedback-tbl-wrap]').hidden = true;
+      } else if (!fb.submissions.length) {
+        $('[data-feedback]').innerHTML = 'No feedback submitted yet.';
+        $('[data-feedback-tbl-wrap]').hidden = true;
+      } else {
+        var ratings = fb.submissions.map(function (s) { return s.clarity; }).filter(function (x) { return x != null; });
+        var avg = ratings.length ? (ratings.reduce(function (a, b) { return a + b; }, 0) / ratings.length).toFixed(1) : null;
+        $('[data-feedback]').innerHTML = (avg != null ? 'Average clarity rating: <b>' + esc(avg) + ' / 5</b> across ' + esc(fb.submissions.length) + ' response' + (fb.submissions.length === 1 ? '' : 's') + '.' : esc(fb.submissions.length) + ' response(s), no ratings.');
+        $('[data-feedback-tbl-wrap]').hidden = false;
+        $('[data-feedback-tbl]').innerHTML = '<tr><th>when</th><th>clarity</th><th>comment</th><th>email</th></tr>' +
+          fb.submissions.map(function (s) {
+            return '<tr><td>' + day(s.at) + '</td><td>' + (s.clarity != null ? esc(s.clarity) + '/5' : '—') + '</td><td>' + (s.thoughts ? esc(s.thoughts) : '<span style="opacity:.5">no comment left</span>') + '</td><td>' + (s.email ? esc(s.email) : '<span style="opacity:.5">anonymous</span>') + '</td></tr>';
+          }).join('');
+      }
 
       var doorDays = Object.keys(d.doors || {}).sort().reverse().slice(0, 7);
       $('[data-doors]').innerHTML = '<tr><th>day</th><th>accepted</th><th>private &rarr; npx</th><th>unreachable</th></tr>'
@@ -169,12 +227,16 @@
       ].join('');
 
       $('[data-builds]').innerHTML =
-        '<tr><th>repo</th><th>status</th><th>score</th><th>worst axis</th><th>cost</th><th>page</th><th>submitted</th></tr>' +
+        '<tr><th>repo</th><th>status</th><th>why</th><th>score</th><th>worst axis</th><th>cost</th><th>page</th><th>submitted</th></tr>' +
         d.builds.map((b) => {
           const cls = b.status === 'done' ? 'done' : b.status === 'failed' ? 'failed' : 'other';
           const g = b.grades;
-          return '<tr><td>' + esc(b.repo) + '</td>' +
+          // A build superseded by a later queue submission isn't a distinct failure — it's
+          // bookkeeping. Mute it so the eye lands on failures that actually need attention.
+          const superseded = /superseded|replaced in the queue/i.test(b.error || '');
+          return '<tr' + (superseded ? ' class="superseded"' : '') + '><td>' + esc(b.repo) + '</td>' +
             '<td><span class="chip ' + cls + '">' + esc(b.status) + '</span>' + (g && g.exemplary ? ' <span class="chip done">exemplary</span>' : '') + '</td>' +
+            '<td class="err-cell">' + (b.error ? esc(b.error) : '—') + '</td>' +
             '<td>' + (g && g.overall != null ? esc(g.overall) : '—') + '</td>' +
             '<td>' + (g && g.headline != null ? esc(g.headline) : '—') + '</td>' +
             '<td>' + (b.costUsd != null ? '$' + esc(b.costUsd) : '—') + '</td>' +
