@@ -242,12 +242,12 @@ function figureHtml(base, alt, caption, opts = {}) {
   const cls = opts.diagram ? (opts.concept ? 'figure diagram concept' : 'figure diagram') : 'figure';
   const tier = opts.tier ? `\n        <span class="tier ${opts.tier.cls}">${esc(opts.tier.label)}</span>` : '';
   const cap = caption ? `\n        <figcaption>${inline(caption)}</figcaption>` : '';
-  // Diagrams carry real fine print (module names, code, labels) that's illegible at card size —
-  // they're vector SVGs, so a click-to-enlarge costs nothing in quality and fixes exactly that.
-  // Added 2026-07-12 after direct feedback that small-and-uninspectable is "worthless."
-  const img = opts.diagram
-    ? `<button type="button" class="diagram-zoom" data-src="assets/${esc(base)}" data-alt="${esc(alt)}" aria-label="Enlarge: ${esc(alt)}"><img src="assets/${esc(base)}" alt="${esc(alt)}" loading="lazy"></button>`
-    : `<img src="assets/${esc(base)}" alt="${esc(alt)}" loading="lazy">`;
+  // EVERY figure image is click-to-enlarge — rasters included (2026-07-13, owner: "whenever I
+  // click on an image, I should get a larger image… every image should be zoomable"). The
+  // 2026-07-12 version wrapped only diagrams; rasters shipped bare and unzoomable. Same button
+  // class for all so the one lightbox handler covers everything; the build-time guard below
+  // fails the build if any figure <img> ever ships outside the zoom button again.
+  const img = `<button type="button" class="diagram-zoom" data-src="assets/${esc(base)}" data-alt="${esc(alt)}" aria-label="Enlarge: ${esc(alt)}"><img src="assets/${esc(base)}" alt="${esc(alt)}" loading="lazy"></button>`;
   return `\n      <figure class="${cls}">${tier}\n        ${img}${cap}\n      </figure>`;
 }
 function tableHtml(t) {
@@ -697,6 +697,13 @@ ${footer}
   const leakRe = /\{\{|\}\}|\$\{|\[object Object\]|(?:^|[\s">])(?:undefined|NaN)(?:[\s"<]|$)|lorem ipsum|\bTODO\b|\bPLACEHOLDER\b/i;
   const leak = scannable.match(leakRe);
   if (leak) throw new Error(`unresolved token / placeholder leaked into the page: "${leak[0].trim()}"`);
+  // Every figure image must sit inside the click-to-enlarge button — an unzoomable image is a
+  // shipped bug (owner, 2026-07-13: "every image should be zoomable, especially the smaller ones").
+  for (const fig of html.matchAll(/<figure[\s\S]*?<\/figure>/g)) {
+    if (/<img\b/.test(fig[0]) && !fig[0].includes('class="diagram-zoom"')) {
+      throw new Error(`figure image shipped without click-to-enlarge: ${fig[0].slice(0, 140)}…`);
+    }
+  }
   for (const m of html.matchAll(/(?:src|href)="(assets\/[^"]+)"/g)) {
     const ref = path.join(siteDir, m[1]);
     if (!fs.existsSync(ref)) throw new Error(`dangling asset reference: ${m[1]} (no file at ${ref})`);

@@ -530,7 +530,10 @@ section { scroll-margin-top: calc(var(--head-h) + 1rem); }
   padding: 0; max-width: 96vw; max-height: 92vh; box-shadow: var(--emboss);
 }
 .diagram-lightbox::backdrop { background: color-mix(in srgb, var(--bg) 82%, transparent); }
-.diagram-lightbox img { display: block; max-width: 94vw; max-height: 88vh; width: auto; height: auto; }
+/* width:auto rendered SVGs at INTRINSIC size — often SMALLER than inline, so "enlarge" didn't
+   enlarge (owner-reported 2026-07-13). Fill the viewport: SVGs scale crisply at any size;
+   rasters are generated at >=1024px so ~94vw stays acceptable. */
+.diagram-lightbox img { display: block; width: min(94vw, 1600px); max-height: 88vh; height: auto; object-fit: contain; }
 .lightbox-close {
   position: absolute; top: 10px; right: 10px; z-index: 1;
   width: 34px; height: 34px; border-radius: 999px; border: 1px solid var(--ridge);
