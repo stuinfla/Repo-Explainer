@@ -153,6 +153,41 @@ async function main() {
   if (!bc.page?.dir) throw new Error('page.dir missing in build.json (run assemble-page first)');
   if (!fs.existsSync(path.join(pageDir, 'index.html'))) throw new Error(`page.dir has no index.html: ${pageDir}`);
 
+  // SHIP-BAR RAIL (2026-07-13) — deploy is where the gate's verdict becomes ENFORCED, not advisory.
+  // Incident, same day: an agent at its refine cap deployed a page the gate had FAILED (B5=58,
+  // passed=false) and the runner reported SUCCESS; a human had to roll it back within minutes. The
+  // ship decision is deterministic and lives HERE, at the boundary, like the INV-21 pin above:
+  //   exemplar bar: quality.passed === true, OR
+  //   ship-best-effort bar (the brief's floor): mean >= 82 AND min axis >= 70 on EVERY graded
+  //   device AND all operator questions true.
+  // No quality slot at all → refuse (an ungraded page is not deployable). Manual redeploys of a
+  // previously-passing build sail through on their recorded verdict; DEPLOY_FORCE=1 is the explicit,
+  // logged override for emergency ops.
+  if (process.env.DEPLOY_FORCE === '1') {
+    console.error('[deploy] DEPLOY_FORCE=1 — ship-bar rail bypassed EXPLICITLY (emergency override)');
+  } else {
+    const q = bc.quality;
+    if (!q || !Array.isArray(q.scorecard) || q.scorecard.length === 0) {
+      throw new Error('SHIP BAR: refusing to deploy — build.json has no quality scorecard (run quality-grade first; an ungraded page never ships).');
+    }
+    if (q.passed !== true) {
+      const failures = [];
+      for (const dev of q.scorecard) {
+        const axes = [...Object.values(dev.gateA || {}), ...Object.values(dev.gateB || {})].filter((n) => typeof n === 'number');
+        const mean = axes.reduce((a, b) => a + b, 0) / (axes.length || 1);
+        const min = Math.min(...axes);
+        const opsOk = Object.values(dev.operatorQuestions || {}).every(Boolean);
+        if (mean < 82) failures.push(`${dev.device}: mean ${mean.toFixed(1)} < 82`);
+        if (min < 70) failures.push(`${dev.device}: min axis ${min} < 70`);
+        if (!opsOk) failures.push(`${dev.device}: operator questions not all true`);
+      }
+      if (failures.length) {
+        throw new Error(`SHIP BAR: refusing to deploy — gate verdict is below the ship-best-effort floor (${failures.join('; ')}). Fix the page and re-grade; the bar is not negotiable at this boundary.`);
+      }
+      console.error('[deploy] ship-best-effort bar met (gate not exemplar-passed but mean>=82, min>=70, operators true) — shipping the best honest version');
+    }
+  }
+
   const provider = await resolveProvider();
   const adapter = ADAPTERS[provider];
   if (!adapter) throw new Error(`unknown DEPLOY_PROVIDER '${provider}' (supported: ${Object.keys(ADAPTERS).join(', ')})`);
