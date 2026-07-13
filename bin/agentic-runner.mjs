@@ -175,6 +175,71 @@ if (cloneRes.status !== 0 || !cloneOut?.ok) {
 }
 log(`preflight OK — cloned ${cloneOut.outputs?.repo?.owner}/${cloneOut.outputs?.repo?.name} (private=${cloneOut.outputs?.repo?.private})`);
 
+// CREDENTIAL PREFLIGHT — live-verify every key this run will need BEFORE any expensive work.
+// A rotated key discovered at agent turn 1 costs minutes; discovered at deploy (minute ~9) it
+// costs the whole build; discovered here it costs three parallel HTTP probes (~2s total).
+// Learned live 2026-07-13: a stale ANTHROPIC_API_KEY in the caller's shell env killed a local
+// build on its first turn while a valid key sat unused in the repo .env — the runner trusted
+// the env instead of proving it. Images note: generate-image.mjs self-loads GROK_AI_KEY from
+// the repo .env as its own fallback, so Grok is probed through the same resolution order and
+// a dead Grok key only WARNS (gpt-image fallback exists) — a dead OpenAI key FAILS (it also
+// backs vision grading, which has no fallback).
+function envOrDotenv(...names) {
+  for (const n of names) if (process.env[n]) return { val: process.env[n], src: `process env ${n}` };
+  try {
+    const txt = fs.readFileSync(path.join(REPO_ROOT, '.env'), 'utf8');
+    for (const n of names) {
+      const m = txt.match(new RegExp(`^${n}=("?)(.*?)\\1\\s*$`, 'm'));
+      if (m?.[2]) return { val: m[2], src: `.env ${n}` };
+    }
+  } catch { /* no .env in CI — env-only is the normal hosted case */ }
+  return null;
+}
+async function probeCred(label, cred, url, headers) {
+  if (!cred) return { label, ok: false, why: 'not set anywhere (process env or repo .env)' };
+  try {
+    const r = await fetch(url, { headers: headers(cred.val), signal: AbortSignal.timeout(5000) });
+    return { label, ok: r.ok, why: r.ok ? `OK via ${cred.src}` : `HTTP ${r.status} via ${cred.src} — key is dead/rotated` };
+  } catch (e) { return { label, ok: false, why: `unreachable (${e.message}) via ${cred.src}` }; }
+}
+{
+  const anthropic = envOrDotenv('ANTHROPIC_API_KEY', 'CLAUDE_API_KEY');
+  // The spawned agent authenticates from its own env allowlist — make sure the key we just
+  // verified is the one it actually receives (covers the local case where only .env has it).
+  if (anthropic && !process.env.ANTHROPIC_API_KEY) process.env.ANTHROPIC_API_KEY = anthropic.val;
+  const netlify = envOrDotenv('NETLIFY_AUTH_TOKEN');
+  if (netlify && !process.env.NETLIFY_AUTH_TOKEN) process.env.NETLIFY_AUTH_TOKEN = netlify.val;
+  const openai = envOrDotenv('OPENAI_API_KEY', 'OPEN_AI_KEY');
+  if (openai && !process.env.OPENAI_API_KEY) process.env.OPENAI_API_KEY = openai.val;
+  const grok = envOrDotenv('GROK_AI_KEY', 'GROK_API_KEY');
+  const bearer = (v) => ({ Authorization: `Bearer ${v}` });
+  const [a, n, o, g] = await Promise.all([
+    probeCred('ANTHROPIC_API_KEY (agent reasoning)', anthropic, 'https://api.anthropic.com/v1/models', (v) => ({ 'x-api-key': v, 'anthropic-version': '2023-06-01' })),
+    probeCred('NETLIFY_AUTH_TOKEN (deploy)', netlify, 'https://api.netlify.com/api/v1/user', bearer),
+    probeCred('OPENAI_API_KEY (vision grading + image fallback)', openai, 'https://api.openai.com/v1/models', bearer),
+    probeCred('GROK_AI_KEY (primary image engine)', grok, 'https://api.x.ai/v1/models', bearer),
+  ]);
+  for (const r of [a, n, o, g]) log(`credential preflight: ${r.ok ? '✓' : '✗'} ${r.label} — ${r.why}`);
+  if (!g.ok) log('credential preflight: WARN — Grok unavailable, images will use the gpt-image fallback');
+  const fatal = [a, n, o].filter((r) => !r.ok);
+  if (fatal.length) {
+    const why = fatal.map((r) => `${r.label}: ${r.why}`).join('; ');
+    log(`PREFLIGHT FAILED — dead/missing credentials, stopping before any cost is incurred: ${why}`);
+    await patchStatus('Stopped before building: a required service credential is invalid.', 'failed', null,
+      'A service credential this build needs is missing or expired. Nothing was built and nothing was charged. The operator has been alerted with specifics.');
+    await spawnAndWait('alert-owner', process.execPath, [
+      path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
+      '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),
+      '--submitter', submitter || '(none)',
+      '--build-id', buildId || '(none)',
+      '--run-url', runUrl || '(none)',
+      '--reason', `credential preflight failed: ${why}`,
+      '--elapsed-min', '0',
+    ], { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
+    process.exit(1);
+  }
+}
+
 const prompt = `Use the explainmyrepo skill (skills/explainmyrepo/SKILL.md is the brain — read it, follow it) to build a bespoke explainer for this repo:
 
   ${repoUrl}
