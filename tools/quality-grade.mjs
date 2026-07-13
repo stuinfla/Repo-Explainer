@@ -375,6 +375,12 @@ const HEADER_OFFSET = 90; // clears the sticky .site-head so the section heading
 // sections, which the grader was structurally incapable of seeing. Every rewrite of those sections was
 // therefore invisible to the gate, which is exactly why those two operators never moved no matter what
 // anyone wrote. The ladder rungs are now captured, in document order, and LABELLED as such.
+// The four ladder rungs the RUBRIC's beginner-persona pass PROMISES the grader it will be shown.
+// tests/ladder.test.mjs asserts CROP_SECTIONS actually captures every one of them: the text gate
+// (extractRungText) and the VISION gate must never again disagree about what 'the first four
+// sections' means — that divergence is what made the novice operators unpassable.
+const LADDER_RUNGS = ['hero', 'problem', 'whatItIs', 'insight'];
+
 const CROP_SECTIONS = [
   { key: 'hero',       selector: '.hero, #top',   label: 'LADDER RUNG 1 of 4 — Hero: the opening', rung: true },
   { key: 'problem',    selector: '#problem',      label: 'LADDER RUNG 2 of 4 — Problem: why this exists', rung: true },
@@ -941,4 +947,4 @@ if (isDirectRun) {
   main().catch((e) => emit(false, {}, `unexpected error: ${e?.stack || e?.message || e}`));
 }
 
-export { RUBRIC, RESPONSE_SPEC, CRITERIA_A, CRITERIA_B, gradeCrops, loadOpenAiKey };
+export { RUBRIC, RESPONSE_SPEC, CRITERIA_A, CRITERIA_B, gradeCrops, loadOpenAiKey, CROP_SECTIONS, LADDER_RUNGS };

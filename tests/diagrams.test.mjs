@@ -87,3 +87,102 @@ test('INV-18 — make-diagrams renders the PROCESS/DATA-FLOW diagram as REAL vec
     'A real flow diagram needs step boxes (>=2 <rect>) or arrows (<path>/<line>).',
   );
 });
+
+// ── REGRESSION: a diagram must CARRY INFORMATION or not be drawn (2026-07-12) ─────────────────────
+// chalk, stronghold, agenticow AND ternlight each shipped a gorgeous, animated "N modules · 0
+// internal links" — a truthful picture of an EMPTY GRAPH. "Grounded in the repo's real structure" is
+// necessary, not sufficient: it is entirely possible to draw an accurate picture of nothing. The
+// renderer drew whatever the graph handed it and nobody asked whether the graph SAID anything.
+function makeDegenerateFixture() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'emr-degen-'));
+  const kb = path.join(dir, 'kb');
+  fs.mkdirSync(kb, { recursive: true });
+  fs.writeFileSync(path.join(kb, 'dep-graph.json'), JSON.stringify({
+    nodes: [{ name: 'thing' }, { name: 'thing-monorepo' }],
+    internalEdges: [],                       // <- 0 edges: a dependency map here shows NOTHING
+    componentCount: 2, internalEdgeCount: 0, ecosystems: ['rust'],
+    externalDepNames: ['libm'], externalDepCount: 1,
+  }));
+  fs.writeFileSync(path.join(kb, 'entrypoints.json'), JSON.stringify({
+    install: ['cargo build'], commands: [{ category: 'test', cmd: 'cargo test' }],
+    binaries: [], quickstart: [], workspace: { kind: 'single' },
+  }));
+  fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify({
+    understanding: { repoName: 'thing' },
+    kb: { depGraphPath: path.join(kb, 'dep-graph.json'), entrypointsPath: path.join(kb, 'entrypoints.json') },
+    visuals: {
+      bigIdeaDiagram: { ascii: 'Big Idea\n[A] -> [B]' },
+      insightDiagram: { ascii: 'The Insight\nclever' },
+    },
+  }, null, 2));
+  return dir;
+}
+
+test('a dep-graph with 0 internal edges REFUSES to draw a dependency map (no picture of nothing)', () => {
+  const dir = makeDegenerateFixture();
+  assert.throws(() => runMakeDiagrams(dir), (err) => {
+    const out = String(err.stdout || '') + String(err.stderr || '');
+    assert.match(out, /0 internal edges|would show nothing|empty graph/i,
+      'must fail LOUD, naming the empty graph — never silently render a 2-box "dependency map"');
+    assert.match(out, /architectureDiagram\.rows/,
+      'the failure must tell the brain exactly what to author instead (the CONCEPT of how it is built)');
+    return true;
+  });
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('a degenerate dep-graph WITH authored concept rows renders the concept, not an empty map', () => {
+  const dir = makeDegenerateFixture();
+  const bj = path.join(dir, 'build.json');
+  const b = JSON.parse(fs.readFileSync(bj, 'utf8'));
+  b.visuals.architectureDiagram = {
+    title: 'Four parts',
+    rows: [{ items: ['your text', 'the engine', 'a small file', 'your page'], connect: true }],
+  };
+  fs.writeFileSync(bj, JSON.stringify(b, null, 2));
+  runMakeDiagrams(dir);
+  const svg = fs.readFileSync(path.join(dir, 'assets', 'architecture.svg'), 'utf8');
+  assert.ok(!/Module dependency map/.test(svg), 'must NOT fall back to the empty dependency map');
+  assert.ok(!/0 internal links/.test(svg), 'must never ship the "0 internal links" caption');
+  assert.match(svg, /the engine/, 'must draw the authored concept instead');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+// ── REGRESSION: the hero animation is PER-REPO and must never be borrowed (2026-07-12) ────────────
+// For about twenty minutes the animation's content (ternlight's own ternary weights, "it never
+// multiplies", "4.6 MB") was a CONSTANT inside make-diagrams — which would have stapled ternlight's
+// animation onto every other repo's hero. Same class of defect as shipping a lookalike repo.
+test('no visuals.heroAnim => NO animation is emitted (never another repo\'s)', () => {
+  const dir = makeFixture();                       // fixture has no heroAnim
+  runMakeDiagrams(dir);
+  assert.ok(!fs.existsSync(path.join(dir, 'assets', 'refusal.svg')),
+    'a repo that authored no heroAnim must get NO animation band — never a borrowed one');
+  const b = JSON.parse(fs.readFileSync(path.join(dir, 'build.json'), 'utf8'));
+  assert.ok(!b.visuals.heroAnim, 'must not invent a heroAnim slot');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('the hero animation renders THIS repo\'s authored content, with no ternlight residue', () => {
+  const dir = makeFixture();
+  const bj = path.join(dir, 'build.json');
+  const b = JSON.parse(fs.readFileSync(bj, 'utf8'));
+  b.visuals.heroAnim = {
+    label: 'Before',
+    chips: [
+      { before: 'slow', after: 'fast', op: 'cached', kind: 'pos' },
+      { before: 'big', after: 'small', op: 'trimmed', kind: 'neg' },
+      { before: 'noisy', after: 'quiet', op: 'dropped', kind: 'zero' },
+    ],
+    verdict: { label: 'The cost it kills', symbol: '×', dead: 'never paid' },
+    kicker: 'this repo does not do the expensive thing',
+  };
+  fs.writeFileSync(bj, JSON.stringify(b, null, 2));
+  runMakeDiagrams(dir);
+  const svg = fs.readFileSync(path.join(dir, 'assets', 'refusal.svg'), 'utf8');
+  assert.match(svg, /this repo does not do the expensive thing/, 'renders the authored kicker');
+  assert.match(svg, /cached/, 'renders the authored ops');
+  for (const leak of ['0.0731', 'never multiplies', '4.6 MB', 'ternlight']) {
+    assert.ok(!svg.includes(leak), `ternlight residue leaked into another repo's animation: "${leak}"`);
+  }
+  fs.rmSync(dir, { recursive: true, force: true });
+});

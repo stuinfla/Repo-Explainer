@@ -60,3 +60,60 @@ test('INV-20 — extractRungText scans rungs 1-4 only (deep sections keep full a
   assert.deepEqual(findUnexplainedAcronyms(text), ['RVF'],
     'RVF in the problem rung must be flagged; HNSW/SIMD in how-it-works must NOT be scanned');
 });
+
+// ── REGRESSION: the gate must SEE what it claims to judge (2026-07-12) ────────────────────────────
+// The bug that made explainsToNovice / zeroKnowledgeReader unpassable on EVERY build ever shipped:
+// the RUBRIC told the vision model "judge the novice questions on the first four sections (hero,
+// problem, what-it-is, insight)", but CROP_SECTIONS never captured #problem or #the-insight. So the
+// model judged "can a newcomer follow this?" against whatever four images arrived first — which
+// included the ARCHITECTURE DIAGRAM — and reported, correctly for what it was shown, that the reader
+// meets "Rust engine"/"BitLinear" with no grounding. The grounding was on the page, in the two
+// sections the grader was structurally incapable of seeing.
+//
+// Note the shape of the miss: a test ALREADY asserted the TEXT gate (extractRungText) scans exactly
+// rungs 1-4. Nobody asserted the VISION gate captured the same four. The two halves of one gate
+// drifted apart in silence. These tests bind them together.
+test('INV-06/O6 — CROP_SECTIONS captures EVERY ladder rung the RUBRIC promises the grader', async () => {
+  const { CROP_SECTIONS, LADDER_RUNGS } = await import('../tools/quality-grade.mjs');
+  const captured = new Set(CROP_SECTIONS.map((c) => c.key));
+  for (const rung of LADDER_RUNGS) {
+    assert.ok(captured.has(rung),
+      `ladder rung "${rung}" is NOT in CROP_SECTIONS — the RUBRIC tells the grader it will see this `
+      + `section and judge the novice operators on it. If it is never captured, those operators can `
+      + `never pass, no matter what is written in that section.`);
+  }
+});
+
+test('O6 — every ladder-rung crop is LABELLED as one, so the grader can tell them from deep sections', async () => {
+  const { CROP_SECTIONS, LADDER_RUNGS, RUBRIC } = await import('../tools/quality-grade.mjs');
+  for (const rung of LADDER_RUNGS) {
+    const spec = CROP_SECTIONS.find((c) => c.key === rung);
+    assert.ok(spec.rung === true, `crop "${rung}" must be marked rung:true`);
+    assert.match(spec.label, /LADDER RUNG/,
+      `crop "${rung}" label must say "LADDER RUNG" — the RUBRIC instructs the model to judge the `
+      + `novice operators ONLY on crops with that label`);
+  }
+  // and the RUBRIC must actually reference the label it relies on
+  assert.match(RUBRIC, /LADDER RUNG/,
+    'RUBRIC must tell the grader to judge the novice operators on the LADDER RUNG crops');
+});
+
+test('A6 — get-started is captured WHOLE, not as a viewport slice that cuts off the example', async () => {
+  const { CROP_SECTIONS } = await import('../tools/quality-grade.mjs');
+  const gs = CROP_SECTIONS.find((c) => c.key === 'getStarted');
+  assert.ok(gs && gs.whole === true,
+    'get-started must be captured as a whole element: a 390x844 viewport slice ends above the runnable '
+    + 'example, so the grader marks down "no complete program" for a program that is simply below the '
+    + 'crop edge (this held A6 at 68 on mobile; capturing the whole section took it to 97).');
+});
+
+test('INV-20 — ordinary words in display caps are NOT acronyms (INSIDE / MODEL / MOVE)', async () => {
+  const { findUnexplainedAcronyms } = await import('../tools/quality-grade.mjs');
+  // the inlined hero animation set these in uppercase; INV-20 read them as unexplained acronyms and
+  // failed the build BEFORE the vision pass. An English word in caps is styling, not an acronym.
+  const hits = findUnexplainedAcronyms('The numbers INSIDE the MODEL. The one expensive MOVE.');
+  assert.deepEqual(hits, [], `display-caps English words must not trip INV-20 (got: ${hits.join(', ')})`);
+  // ...but a real unglossed acronym still must
+  assert.ok(findUnexplainedAcronyms('It compiles to WASM at build time.').includes('WASM'),
+    'a genuinely unglossed acronym must still be caught');
+});
