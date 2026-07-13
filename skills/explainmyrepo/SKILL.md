@@ -192,8 +192,19 @@ optional and quarantined.
   then stop with an honest reason.
 
 ### Station 2 — CONCEIVE (pure judgment — the art-direction brief; no tool)
-Before any rendering, invent **THIS repo's** brief and write it into the `concept`
-slot of `build.json`. Each explainer is **unique by default, reliable by
+
+**IF `concept.tournament` EXISTS (2026-07-13 build economics):** the concept was chosen by the
+pre-agent text-mode tournament — three models competed, a judge ranked them, and the winner is
+already seeded in `build.json.concept`. Your Station-2 job becomes VALIDATE, not invent:
+check the winning spec against the full KB (the tournament only saw the README + tree). Keep it
+unless the KB contradicts it — if a claim is wrong (the metaphor hinges on a capability the code
+doesn't have), fix the minimum and record why in `concept.tournamentOverride`. Fill any missing
+fields (e.g. `rejectedDirections` from the tournament's losing candidates). Do NOT discard a
+validated winner to invent your own — the premium judgment already happened, in text, at text
+prices. Skip the three-directions step below; the tournament WAS it.
+
+Otherwise (no tournament ran — it fails open), before any rendering, invent **THIS repo's**
+brief and write it into the `concept` slot of `build.json`. Each explainer is **unique by default, reliable by
 construction** — never cookie-cutter, never templated (a templated look is a Gate-B
 failure). The brief, grounded in what the KB revealed:
 

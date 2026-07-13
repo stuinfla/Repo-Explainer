@@ -55,7 +55,12 @@ const budgetUsd = Number(args['budget-usd'] || 8);
 const submitter = args.submitter || '';
 const runUrl = args['run-url'] || '';
 const buildId = args['build-id'] || '';
-const model = args.model || 'claude-fable-5'; // was claude-sonnet-5; upgraded 2026-07-13 at the owner's direction — the product IS creative judgment (concept, metaphor, visual storytelling), so the top-tier model is the correct spend. Verified live via GET /v1/models 2026-07-13. Cost note: raises per-build agent cost; the $ budget cap still governs.
+// Executor model economics (owner directive 2026-07-13, "build-economics-text-first"): the
+// premium creative judgment happens in the TEXT-MODE CONCEPT TOURNAMENT below (Fable/Sonnet/Sol
+// compete on specs for cents; a cheap judge ranks them) — so the implementation agent runs on
+// the low-cost tier. All-Fable implementation measured $7-9/page; tournament + Sonnet executor
+// targets $2.50-4.00 at the same gate bar. Both IDs verified live via GET /v1/models 2026-07-13.
+const model = args.model || 'claude-sonnet-5';
 
 fs.mkdirSync(buildDir, { recursive: true });
 const buildJsonPath = path.join(buildDir, 'build.json');
@@ -240,7 +245,25 @@ async function probeCred(label, cred, url, headers) {
   }
 }
 
+// THE CONCEPT TOURNAMENT (owner directive 2026-07-13): concepts compete as TEXT before any
+// expensive work — three models spec, a cheap judge ranks, the winner seeds build.json.concept.
+// Fail-open by design: a skipped/failed tournament logs loud and the agent invents the concept
+// itself (the old path); it never blocks a build. Skipped entirely on resume (concept exists).
+if (!JSON.parse(fs.readFileSync(buildJsonPath, 'utf8')).concept) {
+  log('concept tournament: starting (text-mode, pre-agent)');
+  const tRes = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'concept-tournament.mjs'), buildDir],
+    { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: 300_000 });
+  if (tRes.status === 0) {
+    const seeded = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8')).concept;
+    log(seeded?.tournament ? `concept tournament: winner ${seeded.tournament.winnerModel}` : 'concept tournament: skipped (agent will invent the concept)');
+  } else {
+    log(`concept tournament FAILED (exit ${tRes.status}) — proceeding, agent will invent the concept`);
+  }
+}
+
 const prompt = `Use the explainmyrepo skill (skills/explainmyrepo/SKILL.md is the brain — read it, follow it) to build a bespoke explainer for this repo:
+
+TOKEN ECONOMY: skills/explainmyrepo/TOOLS-CONTRACT.md is the complete toolbox reference (every tool's own header docs: usage, flags, gotchas). Read THAT instead of tool source files — open a tool's source ONLY if the contract is genuinely ambiguous about something you need. Re-deriving tool interfaces from source has measured at ~25% of build spend; it is waste.
 
   ${repoUrl}
 
