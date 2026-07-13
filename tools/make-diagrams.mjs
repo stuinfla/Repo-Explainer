@@ -102,8 +102,8 @@ const FM = 'ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consola
 const measure = (s, size, { bold = false, mono = false } = {}) =>
   String(s == null ? '' : s).length * size * (mono ? 0.6 : bold ? 0.6 : 0.55);
 function txt(x, y, s, o = {}) {
-  const { size = 14, fill = PAL.ink, weight = 400, anchor = 'start', mono = false, ls, opacity, dom, extra } = o;
-  return `<text x="${x}" y="${y}" font-family="${mono ? FM : FH}" font-size="${size}" font-weight="${weight}"`
+  const { size = 14, fill = PAL.ink, weight = 400, anchor = 'start', mono = false, ls, opacity, dom, extra, cls } = o;
+  return `<text${cls ? ` class="${cls}"` : ''} x="${x}" y="${y}" font-family="${mono ? FM : FH}" font-size="${size}" font-weight="${weight}"`
     + ` fill="${fill}" text-anchor="${anchor}"${dom ? ` dominant-baseline="${dom}"` : ''}`
     + `${ls != null ? ` letter-spacing="${ls}"` : ''}${opacity != null ? ` opacity="${opacity}"` : ''}${extra ? ` ${extra}` : ''}>${escapeXml(s)}</text>`;
 }
@@ -157,8 +157,8 @@ function glassChip(x, y, w, h, col, label, sub, { r = 12 } = {}) {
   const parts = [];
   parts.push(`  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="rgba(11,15,23,0.7)" stroke="${tint(col, 0.45)}" stroke-width="1.25" filter="url(#cardSh)"/>`);
   parts.push(`  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="url(#sheen)" opacity="0.4"/>`);
-  // a calm node dot (small halo, not a flare)
-  parts.push(`  <circle cx="${cx}" cy="${y + h / 2}" r="4.5" fill="${col}" opacity="0.4" filter="url(#glowS)"/>`);
+  // a pulsing node dot — every card's "alive" signal, independent of whether it has any edges
+  parts.push(`  <circle class="node-pulse" cx="${cx}" cy="${y + h / 2}" r="4.5" fill="${col}" opacity="0.4" filter="url(#glowS)"/>`);
   parts.push(`  <circle cx="${cx}" cy="${y + h / 2}" r="3.2" fill="${mix(col, '#ffffff', 0.35)}"/>`);
   const tx = cx + 16;
   if (sub) {
@@ -171,16 +171,17 @@ function glassChip(x, y, w, h, col, label, sub, { r = 12 } = {}) {
 }
 
 // glowing connector beam (vertical or horizontal) with a chevron arrowhead at the destination
-function beam(x1, y1, x2, y2, col) {
+function beam(x1, y1, x2, y2, col, delay = null) {
   const ang = Math.atan2(y2 - y1, x2 - x1);
   const ax = x2 - Math.cos(ang) * 0, ay = y2 - Math.sin(ang) * 0;
   const wing = 9;
   const lx = ax - Math.cos(ang - 0.5) * wing, ly = ay - Math.sin(ang - 0.5) * wing;
   const rx = ax - Math.cos(ang + 0.5) * wing, ry = ay - Math.sin(ang + 0.5) * wing;
   const bright = mix(col, '#ffffff', 0.25);
+  const delayAttr = delay != null ? ` style="animation-delay:${delay.toFixed(2)}s"` : '';
   return [
     `  <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="9" opacity="0.3" filter="url(#glow)" stroke-linecap="round"/>`,
-    `  <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${bright}" stroke-width="2.4" stroke-linecap="round"/>`,
+    `  <line class="flow-line"${delayAttr} x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${bright}" stroke-width="2.4" stroke-linecap="round"/>`,
     `  <path d="M ${lx.toFixed(1)} ${ly.toFixed(1)} L ${ax.toFixed(1)} ${ay.toFixed(1)} L ${rx.toFixed(1)} ${ry.toFixed(1)}" fill="none" stroke="${bright}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`,
   ].join('\n');
 }
@@ -194,11 +195,129 @@ function header(cx, top, eyebrow, title, pal) {
   return out.join('\n');
 }
 
-function wrapSvg(W, H, body, title, desc, ascii) {
+// Traveling-dash flow animation on connector lines — added 2026-07-12. Purposeful, not
+// decorative: these diagrams' whole job is showing dependency/process DIRECTION, and a
+// static arrow asks the reader to mentally simulate motion that isn't there. This shows it.
+// Baked directly into the SVG (not page CSS) because these files are embedded via <img> —
+// external stylesheets can't reach inside them. Respects prefers-reduced-motion natively
+// (SVG <style> supports the same media query as any stylesheet).
+// 2026-07-12, round 2: the first pass (thin-line dash only) was too weak to register, and on
+// diagrams with zero dependency edges (this real repo's architecture graph: 2 modules, 0 links)
+// there was literally nothing for it to animate — a real miss, not just subtlety. Fixed with a
+// SECOND, independent animation on the node/badge glow circles — present on EVERY card and EVERY
+// flow step regardless of edge count, so it can never go silent. Bold on purpose: opacity 0.35->1
+// AND a 1.5x scale pulse, not a flicker.
+const FLOW_STYLE = `  <style>
+    .flow-line { stroke-dasharray: 8 10; stroke-width: 3; animation: flow-dash 1.1s linear infinite; }
+    @keyframes flow-dash { to { stroke-dashoffset: -36; } }
+    .node-pulse { transform-box: fill-box; transform-origin: center; animation: node-pulse 2.1s cubic-bezier(0.4,0,0.2,1) infinite; }
+    @keyframes node-pulse { 0%, 100% { opacity: 0.35; transform: scale(1); } 50% { opacity: 1; transform: scale(1.6); } }
+    @media (prefers-reduced-motion: reduce) { .flow-line, .node-pulse { animation: none; } }
+  </style>`;
+
+// ── THE REFUSAL (hero animation) ────────────────────────────────────────────────────────────────
+// Motion that carries the ARGUMENT, not decoration. Every previous attempt animated the chrome —
+// crawling dashed lines — and rightly read as filler. This performs the single idea the whole page
+// rests on, above the fold, in nine seconds and no words from the reader:
+//   the model's messy decimal weights SNAP to −1 / 0 / +1  →  each becomes subtract / skip / add
+//   →  the multiply sign is struck through and dies  →  "it never multiplies."
+// One shared 9s timeline (every element keys off the same duration, expressing its beat as a
+// percentage) so nothing can drift out of phase on a long-running loop — the failure mode you get
+// from per-element durations + delays. Honours prefers-reduced-motion by settling on the END state
+// (ternary values + ops visible, multiply already dead), which is the state that carries the meaning.
+// THIS IS PER-REPO CONTENT AND MUST COME FROM build.json — NEVER a constant in this file.
+// (2026-07-12: it WAS a constant here for about twenty minutes — ternlight's own ternary weights,
+// hardcoded — which would have stapled ternlight's animation onto every other repo's hero. Same class
+// of defect as shipping a lookalike repo. The brain authors `visuals.heroAnim`; no heroAnim, no band.)
+// Shape:
+//   visuals.heroAnim = {
+//     label:  'The numbers inside the model',            // what the strip is showing
+//     chips:  [{ before:'0.0731', after:'0', op:'skip', kind:'zero'|'neg'|'pos' }, ... 3-6 of them],
+//     verdict:{ label:'The one expensive move', symbol:'×', dead:'never used' },  // the thing REMOVED
+//     kicker: 'it never multiplies — and that is why it fits in 4.6 MB',
+//   }
+// The shape is generic on purpose: it animates a BEFORE -> AFTER transformation plus the cost it kills.
+// That is a shape most interesting repos have (the trick they pull), not a ternary-specific one.
+const REFUSAL_W = 1180, REFUSAL_H = 300;
+
+function renderRefusal(pal, spec) {
+  const chips = (Array.isArray(spec.chips) ? spec.chips : []).slice(0, 6)
+    .map((c) => ({ dec: String(c.before ?? ''), tern: String(c.after ?? ''), op: String(c.op ?? ''), kind: c.kind || 'zero' }))
+    .filter((c) => c.dec && c.tern);
+  if (chips.length < 3) die('visuals.heroAnim.chips needs at least 3 entries of { before, after, op, kind } — refusing to draw a half-empty animation');
+  const CW = 148, CH = 68, GAP = 22;
+  const n = chips.length;
+  const stripW = n * CW + (n - 1) * GAP;
+  const x0 = 56, yChip = 96;
+  const colOf = (k) => (k === 'pos' ? pal.accents[0] : k === 'neg' ? (pal.accents[2] || pal.accents[1]) : pal.muted);
+
+  const css = [];
+  const body = [background(REFUSAL_W, REFUSAL_H, pal)];
+
+  body.push(txt(x0, 52, String(spec.label || 'Before'), { size: 12.5, mono: true, weight: 700, fill: pal.muted, anchor: 'start', ls: 2.2 }));
+
+  chips.forEach((c, i) => {
+    const x = x0 + i * (CW + GAP), cx = x + CW / 2, col = colOf(c.kind);
+    // each chip snaps on its own beat, staggered across 18%→38% of the shared timeline
+    const t0 = 18 + i * 4;              // snap start, %
+    const t1 = t0 + 5;                  // snap end, %
+    const tOp = t1 + 6;                 // the op word lands after the snap
+    body.push(glassPanel(x, yChip, CW, CH, col, { r: 14, fillA: 0.16, depth: 8, aura: 0.45 }));
+    // decimal (fades OUT on the snap) and ternary value (pops IN) share the chip's centre
+    body.push(txt(cx, yChip + CH / 2, c.dec, { size: 19, mono: true, weight: 600, fill: pal.ink, anchor: 'middle', dom: 'central', cls: `dec d${i}` }));
+    body.push(txt(cx, yChip + CH / 2, c.tern, { size: 26, weight: 800, fill: col, anchor: 'middle', dom: 'central', cls: `ter t${i}` }));
+    body.push(txt(cx, yChip + CH + 40, c.op, { size: 15.5, mono: true, weight: 700, fill: col, anchor: 'middle', cls: `op o${i}` }));
+    css.push(
+      `@keyframes dec${i}{0%,${t0}%{opacity:1;transform:scale(1)}${t1}%,100%{opacity:0;transform:scale(0.82)}}`,
+      `@keyframes ter${i}{0%,${t0}%{opacity:0;transform:scale(0.6)}${t1}%{opacity:1;transform:scale(1.18)}${t1 + 4}%,100%{opacity:1;transform:scale(1)}}`,
+      `@keyframes op${i}{0%,${tOp}%{opacity:0;transform:translateY(6px)}${tOp + 5}%,100%{opacity:1;transform:translateY(0)}}`,
+      `.d${i}{animation:dec${i} 9s linear infinite}`,
+      `.t${i}{animation:ter${i} 9s cubic-bezier(.2,1.6,.35,1) infinite}`,
+      `.o${i}{animation:op${i} 9s ease-out infinite}`,
+    );
+  });
+
+  // the verdict panel: the multiply sign, struck out and killed
+  const vx = x0 + stripW + 54, vcx = vx + 92;
+  const V = spec.verdict || {};
+  body.push(txt(vcx, 52, String(V.label || 'The expensive move'), { size: 12.5, mono: true, weight: 700, fill: pal.muted, anchor: 'middle', ls: 2.2 }));
+  body.push(txt(vcx, yChip + CH / 2, String(V.symbol || '\u00d7'), { size: 74, weight: 800, fill: pal.ink, anchor: 'middle', dom: 'central', cls: 'mul' }));
+  body.push(`  <line class="strike" x1="${vcx - 46}" y1="${yChip + CH / 2 + 34}" x2="${vcx + 46}" y2="${yChip + CH / 2 - 34}" stroke="${pal.accents[0]}" stroke-width="6" stroke-linecap="round"/>`);
+  body.push(txt(vcx, yChip + CH + 40, String(V.dead || 'never used'), { size: 15.5, mono: true, weight: 700, fill: pal.accents[0], anchor: 'middle', cls: 'verdict' }));
+
+  body.push(txt(REFUSAL_W / 2, 258, String(spec.kicker || ''), { size: 17, weight: 700, fill: pal.ink, anchor: 'middle', cls: 'kicker' }));
+
+  css.push(
+    // the strike is DRAWN across the × (dash-offset), then the × dies back
+    `.strike{stroke-dasharray:130;stroke-dashoffset:130;animation:strike 9s ease-in-out infinite}`,
+    `@keyframes strike{0%,58%{stroke-dashoffset:130}68%,100%{stroke-dashoffset:0}}`,
+    `.mul{transform-box:fill-box;transform-origin:center;animation:mul 9s ease-in-out infinite}`,
+    `@keyframes mul{0%,58%{opacity:0.95;transform:scale(1)}70%{opacity:0.95;transform:scale(1)}78%,100%{opacity:0.16;transform:scale(0.9)}}`,
+    `@keyframes verdict{0%,72%{opacity:0;transform:translateY(6px)}80%,100%{opacity:1;transform:translateY(0)}}`,
+    `.verdict{animation:verdict 9s ease-out infinite}`,
+    `@keyframes kicker{0%,80%{opacity:0}88%,100%{opacity:1}}`,
+    `.kicker{animation:kicker 9s ease-out infinite}`,
+    // transforms must pivot on each glyph, not the SVG origin
+    `.dec,.ter,.op,.verdict,.kicker{transform-box:fill-box;transform-origin:center}`,
+    // reduced motion: settle on the END state — the meaning, with no movement
+    `@media (prefers-reduced-motion:reduce){.dec,.ter,.op,.mul,.strike,.verdict,.kicker{animation:none}`
+      + `.dec{opacity:0}.ter,.op,.verdict,.kicker{opacity:1}.mul{opacity:0.16}.strike{stroke-dashoffset:0}}`,
+  );
+
+  const style = `  <style>\n    ${css.join('\n    ')}\n  </style>`;
+  const desc = `${spec.label || 'Before'}: ${chips.map((c) => `${c.dec} becomes ${c.tern} (${c.op})`).join('; ')}. `
+    + `${(spec.verdict || {}).label || 'The expensive move'} — shown as "${(spec.verdict || {}).symbol || '\u00d7'}" — is struck through and goes dark: `
+    + `${(spec.verdict || {}).dead || 'never used'}. ${spec.kicker || ''}`;
+  return { W: REFUSAL_W, H: REFUSAL_H, body: body.join('\n'), desc, style };
+}
+
+function wrapSvg(W, H, body, title, desc, ascii, extraStyle) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="d-title d-desc">
   <title id="d-title">${escapeXml(title)}</title>
   <desc id="d-desc">${escapeXml(desc)}</desc>
-${ascii ? `  <metadata><![CDATA[\n${String(ascii).replace(/]]>/g, ']]&gt;')}\n]]></metadata>\n` : ''}${defs(PAL)}
+${ascii ? `  <metadata><![CDATA[\n${String(ascii).replace(/]]>/g, ']]&gt;')}\n]]></metadata>\n` : ''}${FLOW_STYLE}
+${extraStyle || ''}
+${defs(PAL)}
 ${body}
 </svg>
 `;
@@ -208,14 +327,15 @@ const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 // a directional dependency edge: a smooth bezier that LEAVES the source straight down and ARRIVES at
 // the target straight down, so a downward chevron arrowhead is always correct. Glow underlay + bright core.
-function curve(x1, y1, x2, y2, col, { w = 1.9, op = 0.82, glow = true } = {}) {
+function curve(x1, y1, x2, y2, col, { w = 1.9, op = 0.82, glow = true, delay = null } = {}) {
   const dy = Math.max(18, (y2 - y1) * 0.26);           // gentler bend = less awkward tracing
   const tip = y2, base = y2 - 10;                      // stop the line at the arrowhead base, tip at the node
   const d = `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${x1.toFixed(1)} ${(y1 + dy).toFixed(1)}, ${x2.toFixed(1)} ${(tip - dy).toFixed(1)}, ${x2.toFixed(1)} ${base.toFixed(1)}`;
   const bright = mix(col, '#ffffff', 0.2);
+  const delayAttr = delay != null ? ` style="animation-delay:${delay.toFixed(2)}s"` : '';
   const parts = [];
   if (glow) parts.push(`  <path d="${d}" fill="none" stroke="${col}" stroke-width="${w + 2}" opacity="0.06" filter="url(#glow)"/>`);
-  parts.push(`  <path d="${d}" fill="none" stroke="${bright}" stroke-width="${w}" opacity="${op}" stroke-linecap="round"/>`);
+  parts.push(`  <path class="flow-line"${delayAttr} d="${d}" fill="none" stroke="${bright}" stroke-width="${w}" opacity="${op}" stroke-linecap="round"/>`);
   const aw = 6, ah = 9.5;                              // crisp solid triangular arrowhead = unambiguous direction
   parts.push(`  <path d="M ${(x2 - aw).toFixed(1)} ${(tip - ah).toFixed(1)} L ${x2.toFixed(1)} ${tip.toFixed(1)} L ${(x2 + aw).toFixed(1)} ${(tip - ah).toFixed(1)} Z" fill="${bright}" opacity="${op}"/>`);
   return parts.join('\n');
@@ -279,15 +399,18 @@ function renderArchitecture(eyebrow, title, model, caption, pal) {
   for (const k in outg) outg[k].sort((a, b) => (pos[a.to] ? pos[a.to].cx : 0) - (pos[b.to] ? pos[b.to].cx : 0));
   for (const k in inc) inc[k].sort((a, b) => (pos[a.from] ? pos[a.from].cx : 0) - (pos[b.from] ? pos[b.from].cx : 0));
 
-  // REAL dependency edges drawn FIRST (behind the cards) — each module→module link, coloured by source
-  for (const e of edges) {
+  // REAL dependency edges drawn FIRST (behind the cards) — each module→module link, coloured by
+  // source, and REVEALED IN SEQUENCE (staggered delay) so the animation traces "here's what depends
+  // on what" one link at a time instead of every edge flickering together.
+  edges.forEach((e, ei) => {
     const a = pos[e.from], b = pos[e.to];
-    if (!a || !b) continue;
+    if (!a || !b) return;
     const sx = portX(a, outg[e.from], e), tx = portX(b, inc[e.to], e);
+    const edgeDelay = (ei % 6) * 0.35;
     body.push(b.top > a.bot
-      ? curve(sx, a.bot + 3, tx, b.top - 3, a.col, { glow: false })
-      : curve(sx, a.bot + 3, tx, b.bot + 3, a.col, { w: 1.6, op: 0.55, glow: false }));
-  }
+      ? curve(sx, a.bot + 3, tx, b.top - 3, a.col, { glow: false, delay: edgeDelay })
+      : curve(sx, a.bot + 3, tx, b.bot + 3, a.col, { w: 1.6, op: 0.55, glow: false, delay: edgeDelay }));
+  });
 
   // left depth axis — a real "deeper = more foundational / more depended-on" gauge, not a bolted-on rail
   const axX = AR.LEFT - 34;
@@ -372,12 +495,14 @@ function tokenPill(cx, y, kind, label, col) {
   ].join('\n');
 }
 
-function flowCard(x, y, col, n, s) {
+function flowCard(x, y, col, n, s, delay = null) {
   const w = FL.CARD_W, h = FL.CARD_H;
   const parts = [glassPanel(x, y, w, h, col, { r: 16, fillA: 0.07, depth: 6, aura: 0.16 })];
-  // number badge (subtle glow, not an arcade slab)
+  // number badge — pulses on a delay so stage N "activates" after stage N-1, telling the real
+  // execution-order story instead of a uniform decorative flicker.
   const bx = x + 50, by = y + h / 2;
-  parts.push(`  <circle cx="${bx}" cy="${by}" r="22" fill="${col}" opacity="0.28" filter="url(#glowS)"/>`);
+  const delayAttr = delay != null ? ` style="animation-delay:${delay.toFixed(2)}s"` : '';
+  parts.push(`  <circle class="node-pulse"${delayAttr} cx="${bx}" cy="${by}" r="22" fill="${col}" opacity="0.28" filter="url(#glowS)"/>`);
   parts.push(`  <circle cx="${bx}" cy="${by}" r="20" fill="${tint(col, 0.2)}" stroke="${col}" stroke-width="1.75"/>`);
   parts.push(txt(bx, by + 1, String(n), { size: 20, weight: 800, fill: mix(col, '#ffffff', 0.55), anchor: 'middle', dom: 'central' }));
   // stage name + the transformation verb
@@ -410,19 +535,23 @@ function renderFlow(eyebrow, title, model, caption, pal) {
   const cardX = (cw - FL.CARD_W) / 2, spine = cardX + FL.CARD_W / 2;
   const body = [background(S, S, pal), `  <g transform="translate(${ox.toFixed(1)},${oy.toFixed(1)})">`, header(spine, 30, eyebrow, title, pal)];
 
+  // Staggered activation delay: stage N's beam-in + badge fire STEP later than stage N-1's, so the
+  // loop reads as one token/request traveling the pipeline in real execution order, not everything
+  // flickering at once. STEP tuned to the beam (1.1s) + pulse (2.1s) durations so the wave is legible.
+  const STEP = 0.55;
   let y = FL.TOP;
   body.push(tokenPill(spine, y, 'SOURCE', model.source, accent(0)));
   y += FL.TOK_H;
   for (let i = 0; i < n; i++) {
     const wcol = mix(accent(Math.max(0, i - 1)), accent(i), 0.5);
-    body.push(beam(spine, y + 4, spine, y + FL.VGAP - 4, wcol));
+    body.push(beam(spine, y + 4, spine, y + FL.VGAP - 4, wcol, i * STEP));
     // the wire carries the artifact the previous stage produced (its OUT) into this one — data, moving
     if (i >= 1) body.push(wireTag(spine, y + FL.VGAP / 2, clip(steps[i - 1].out, 22), wcol));
     y += FL.VGAP;
-    body.push(flowCard(cardX, y, accent(i), i + 1, steps[i]));
+    body.push(flowCard(cardX, y, accent(i), i + 1, steps[i], i * STEP + STEP * 0.4));
     y += FL.CARD_H;
   }
-  body.push(beam(spine, y + 4, spine, y + FL.VGAP - 4, accent(n - 1)));
+  body.push(beam(spine, y + 4, spine, y + FL.VGAP - 4, accent(n - 1), n * STEP));
   body.push(wireTag(spine, y + FL.VGAP / 2, clip(steps[n - 1].out, 22), accent(n - 1)));
   y += FL.VGAP;
   body.push(tokenPill(spine, y, 'RESULT', model.result, accent(n - 1)));
@@ -695,13 +824,19 @@ function asciiRows(ascii) {
 }
 
 const DIAGRAMS = [
-  { key: 'architectureDiagram', file: 'architecture.svg', title: 'Architecture', grounded: 'architecture' },
-  { key: 'flowDiagram', file: 'flow.svg', title: 'Process / Data Flow', grounded: 'flow' },
-  { key: 'bigIdeaDiagram', file: 'big-idea.svg', title: 'Big Idea', grounded: null },
-  { key: 'insightDiagram', file: 'insight.svg', title: 'The Insight', grounded: null },
+  { key: 'architectureDiagram', file: 'architecture.svg', title: 'Architecture', grounded: 'architecture',
+    conceptEyebrow: 'ARCHITECTURE', conceptHeading: 'How it is built' },
+  { key: 'flowDiagram', file: 'flow.svg', title: 'Process / Data Flow', grounded: 'flow',
+    conceptEyebrow: 'DATA FLOW', conceptHeading: 'What happens to your data' },
+  { key: 'bigIdeaDiagram', file: 'big-idea.svg', title: 'Big Idea', grounded: null,
+    conceptEyebrow: 'THE BIG IDEA', conceptHeading: 'How it all fits together' },
+  { key: 'insightDiagram', file: 'insight.svg', title: 'The Insight', grounded: null,
+    conceptEyebrow: 'THE INSIGHT', conceptHeading: 'The clever move' },
 ];
 
-function defaultAltText(spec, dg, ep, name, fallbackDesc, archModel) {
+function defaultAltText(spec, dg, ep, name, fallbackDesc, archModel, asConcept) {
+  // a demoted grounded diagram is a concept drawing now — never describe it as a dependency map / pipeline
+  if (asConcept) return fallbackDesc || `${spec.title} diagram for ${name}`;
   if (spec.grounded === 'architecture') {
     const ecos = (Array.isArray(dg.ecosystems) ? dg.ecosystems : []).join('/') || 'one ecosystem';
     const hub = archModel && archModel.hub ? `, with ${archModel.hub} as the core module the most others depend on` : '';
@@ -709,7 +844,7 @@ function defaultAltText(spec, dg, ep, name, fallbackDesc, archModel) {
   }
   if (spec.grounded === 'flow') {
     const bins = (Array.isArray(ep.binaries) ? ep.binaries : []).map((b) => b && b.name).filter(Boolean).slice(0, 3).join(', ');
-    return `${name} data-flow pipeline: the repo source flows through install (→ dependencies), build (→ compiled artifacts), run the entry point${bins ? ` (${bins})` : ''}, and verify (→ pass/fail), with each stage's input and output artifact labelled so you can see what data changes at every step.`;
+    return `${name} build & run lifecycle: the repo source flows through install (→ dependencies), build (→ compiled artifacts), run the entry point${bins ? ` (${bins})` : ''}, and verify (→ pass/fail), with each stage's input and output artifact labelled so you can see what changes at every step.`;
   }
   return fallbackDesc || `${spec.title} diagram for ${name}`;
 }
@@ -766,16 +901,38 @@ function main() {
   const totalModules = dg.componentCount ?? dg.nodes.length;
   const archCaption = `${totalModules} modules · ${dg.internalEdgeCount ?? archModel.edges.length} internal links · ${ecos}`
     + (archModel.trimmed ? `  ·  showing the ${totalModules - archModel.trimmed} most-connected` : '');
+
+  // A dependency map with NO internal edges is a picture of nothing: chalk, stronghold, agenticow and
+  // ternlight each shipped a beautifully-styled "N modules · 0 internal links" — decoration around an
+  // empty statement, because the renderer drew whatever the graph gave it and never asked whether the
+  // graph said anything. Same principle the flow diagram already applies above (skipFlow refuses to
+  // invent a runtime flow for a library): a diagram must carry information or it must not be drawn.
+  // Here we don't skip — INV-18 requires an architecture diagram — we DEMOTE to the concept renderer
+  // and draw what the repo actually IS, from rows the brain authored. Trivial graph => explain the
+  // idea, not the (nonexistent) wiring.
+  const archDegenerate = archModel.edges.length === 0;
+  if (archDegenerate) warn(`dep-graph has 0 internal edges (${totalModules} module${totalModules === 1 ? '' : 's'}) — a dependency map would show nothing; drawing the authored CONCEPT architecture instead`);
+
+  // The flow model is derived from install/build/run/test commands — that is a BUILD LIFECYCLE, not the
+  // runtime data-flow its old "Data-flow pipeline" title claimed. Shipping it under that title is what the
+  // vision grader kept catching as a caption/content mismatch. Prefer a real runtime flow the brain
+  // authored; only fall back to the lifecycle, and when we do, NAME IT HONESTLY.
+  const flowAuthored = Array.isArray((visualsIn.flowDiagram || {}).rows) && visualsIn.flowDiagram.rows.length > 0;
   const flowCaption = flowModel ? `${flowModel.steps.length} stages · derived from the project's ${ecos} entrypoints` : null;
 
   for (const spec of DIAGRAMS) {
     if (spec.grounded === 'flow' && skipFlow) continue;  // library repo: no runtime flow to draw
     const existing = (visualsIn[spec.key] && typeof visualsIn[spec.key] === 'object') ? visualsIn[spec.key] : {};
     let rendered, asciiSrc = null, conceptBack = null;
-    if (spec.grounded === 'architecture') {
+    // A grounded diagram falls through to the CONCEPT renderer when its grounded model has nothing to
+    // say (architecture with 0 edges) or when the brain authored something truer (a real runtime flow).
+    const asConcept = (spec.grounded === 'architecture' && archDegenerate)
+      || (spec.grounded === 'flow' && flowAuthored);
+    if (spec.grounded === 'architecture' && !asConcept) {
       rendered = renderArchitecture(`${name.toUpperCase()} · DEPENDENCY MAP`, 'Module dependency map', archModel, archCaption, PAL);
-    } else if (spec.grounded === 'flow') {
-      rendered = renderFlow(`${name.toUpperCase()} · PIPELINE`, 'Data-flow pipeline', flowModel, flowCaption, PAL);
+    } else if (spec.grounded === 'flow' && !asConcept) {
+      // honest title: this model IS the build lifecycle (install → build → run → verify), so say so.
+      rendered = renderFlow(`${name.toUpperCase()} · LIFECYCLE`, 'Build & run lifecycle', flowModel, flowCaption, PAL);
     } else {
       // big-idea / insight: DRAW real glass concept-cards from a structured rows model (renderConcept) —
       // never typeset ASCII. Prefer the brain's structured .rows; otherwise parse a legacy .ascii source
@@ -789,6 +946,20 @@ function main() {
           connectWithin: r && r.connect !== false,
         })).filter((r) => r.items.length);
       }
+      if ((!rows || !rows.length) && spec.grounded) {
+        // A DEMOTED grounded diagram must have authored ROWS. Never fall back to .ascii here: for these
+        // keys the stored ascii/asciiFallback is a prose *description* (round-tripped by this tool as the
+        // accessible text), so accepting it typesets a paragraph as a picture — the exact slop the concept
+        // renderer exists to prevent. Structure or nothing.
+        // NOTE the shape: renderConcept stacks items VERTICALLY and only draws a connecting arrow between
+        // items *within the same row*. So a connected chain is ONE row of N items — NOT N rows of one item
+        // (that renders as four floating cards with no arrows, which reads as a bulleted list, not a structure).
+        die(`${spec.key}: this repo's dep-graph has ${totalModules} module(s) and 0 internal edges, so a dependency map would show nothing. `
+          + `Author visuals.${spec.key}.rows — the CONCEPT of how the thing is built (the 3-4 parts a reader must hold in their head, in order) — `
+          + `not the package wiring, and not a paragraph. Shape: one connected chain is ONE row of many items, e.g. `
+          + `"rows":[{"items":["your text","tokenizer","ternary engine","384 numbers"],"connect":true}]. `
+          + `Refusing to ship a diagram of an empty graph.`);
+      }
       if (!rows || !rows.length) {
         const ascii = (typeof existing.ascii === 'string' && existing.ascii.trim()) ? existing.ascii
           : (typeof existing.asciiFallback === 'string' && existing.asciiFallback.trim()) ? existing.asciiFallback : null;
@@ -797,9 +968,9 @@ function main() {
         rows = asciiRows(ascii).rows;
       }
       if (!rows.length) die(`could not build a concept model for ${spec.key}: no usable rows/items`);
-      const eyebrow = spec.key === 'bigIdeaDiagram' ? 'THE BIG IDEA' : 'THE INSIGHT';
+      const eyebrow = spec.grounded ? `${name.toUpperCase()} · ${spec.conceptEyebrow}` : spec.conceptEyebrow;
       const heading = (typeof existing.title === 'string' && existing.title.trim()) ? existing.title.trim()
-        : (spec.key === 'bigIdeaDiagram' ? 'How it all fits together' : 'The clever move');
+        : spec.conceptHeading;
       // the brain's altText is the one-line TAKEAWAY — render it as the caption so the diagram tells a story
       const cap = (typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText.trim() : null;
       rendered = renderConcept(eyebrow, heading, rows, cap, PAL);
@@ -809,12 +980,29 @@ function main() {
       // textual fallback (accessibility / AI) — synthesize from the structured rows when there is no ASCII
       if (!asciiSrc) asciiSrc = rows.map((r) => r.items.map((it) => it.label).join(r.connectWithin ? ' -> ' : '   ·   ')).join('\n');
     }
-    const altText = (typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText : defaultAltText(spec, dg, ep, name, rendered.desc, archModel);
+    const altText = (typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText : defaultAltText(spec, dg, ep, name, rendered.desc, archModel, asConcept);
     const svg = wrapSvg(rendered.W, rendered.H, rendered.body, `${name} — ${spec.title}`, altText, asciiSrc || rendered.desc);
     const svgPath = path.join(assetsDir, spec.file);
     fs.writeFileSync(svgPath, svg, 'utf8');
     assertXmllintClean(svgPath, spec.key);
     merged[spec.key] = { svgPath, altText, asciiFallback: asciiSrc || rendered.desc, format: 'svg-vector-dark', xmllintOK: true, ...(conceptBack || {}) };
+  }
+
+  // THE REFUSAL — the hero animation. Emitted ONLY when the brain authored `visuals.heroAnim` for THIS
+  // repo. No heroAnim => no band. It must never fall back to another repo's animation, and there is no
+  // generic default worth showing: an animation that does not perform THIS project's one idea is the
+  // decoration we spent all of 2026-07-12 removing.
+  const animSpec = (visualsIn.heroAnim && typeof visualsIn.heroAnim === 'object') ? visualsIn.heroAnim : null;
+  if (animSpec) {
+    const r = renderRefusal(PAL, animSpec);
+    const svg = wrapSvg(r.W, r.H, r.body, `${name} — the one idea, in motion`, r.desc, null, r.style);
+    const p = path.join(assetsDir, 'refusal.svg');
+    fs.writeFileSync(p, svg, 'utf8');
+    assertXmllintClean(p, 'heroAnim');
+    merged.heroAnim = { ...animSpec, svgPath: p, altText: r.desc, format: 'svg-vector-animated', xmllintOK: true };
+    process.stderr.write(`${TOOL}: refusal.svg — hero animation (9s loop, reduced-motion safe)\n`);
+  } else {
+    process.stderr.write(`${TOOL}: no visuals.heroAnim authored — skipping the hero animation (never borrowing another repo's)\n`);
   }
 
   buildJson.visuals = { ...visualsIn, ...merged };

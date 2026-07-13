@@ -36,7 +36,7 @@
 //
 // Usage: node tools/quality-grade.mjs <build-dir>
 //   env: OPENAI_API_KEY            (required — without it the page CANNOT be graded)
-//        QUALITY_VISION_MODEL      (optional, default "gpt-4o")
+//        QUALITY_VISION_MODEL      (optional, default "gpt-5.6-sol")
 //        OPENAI_BASE_URL           (optional, default "https://api.openai.com/v1")
 
 import fs from 'node:fs';
@@ -140,10 +140,19 @@ GATE B — "Did someone who gives a shit make this?" (craft / anti-slop):
   typeset as a picture (a screenshot of monospace text boxes) is SLOP — score B5 below 40 and set
   makesMeSmile=false; real diagrams are DRAWN (shapes, cards, arrows), not typeset text.
 
-BEGINNER PERSONA PASS (ADR-0006 D4) — before answering the operator questions, re-read the FIRST
-FOUR crops (hero, problem, what-it-is, insight) role-playing a smart developer from a DIFFERENT
-domain who knows NOTHING about this project's field. Note every sentence you could not follow and
-every term you would have to already know — judge question (6) from that persona, not as yourself.
+BEGINNER PERSONA PASS (ADR-0006 D4) — before answering the operator questions, re-read ONLY the crops
+whose label begins "LADDER RUNG" (there are four: hero, problem, what-it-is, insight), role-playing a
+smart developer from a DIFFERENT domain who knows NOTHING about this project's field. Note every
+sentence you could not follow and every term you would have to already know — judge questions (3) and
+(6) from that persona, not as yourself.
+
+CRITICAL — WHERE THE NOVICE BAR APPLIES. Questions (3) explainsToNovice and (6) zeroKnowledgeReader are
+judged ON THE FOUR "LADDER RUNG" CROPS ONLY. Crops labelled "BEYOND THE LADDER" (how-it-works,
+get-started, pack) and the dedicated DIAGRAM crops are DELIBERATELY allowed to descend one technical
+level and to name real technical terms, PROVIDED each is glossed in plain words at first use. Do NOT
+fail (3) or (6) because a term like "tokenizer", "WASM" or a named algorithm appears in a
+BEYOND-THE-LADDER or DIAGRAM crop — that is by design, not a defect. Fail them only when a LADDER RUNG
+crop itself demands knowledge the newcomer cannot have, or when a term appears there with no gloss.
 
 OPERATOR QUALITATIVE GATE — six YES/NO questions (the owner's words). As a harsh critic, answer each
 true/false from the crops; ALL six must be true for the page to be done, independent of the numeric
@@ -344,11 +353,25 @@ function startServer(rootDir) {
 // MANDATORY diagrams are captured separately as dedicated element crops (below) so the
 // grader always SEES them in full, not pushed off the bottom of a viewport.
 const HEADER_OFFSET = 90; // clears the sticky .site-head so the section heading is visible
+// 2026-07-12 — THE BUG THAT MADE explainsToNovice / zeroKnowledgeReader UNPASSABLE ON EVERY BUILD.
+// The prompt tells the grader "judge the novice operators on the first four crops (hero, problem,
+// what-it-is, insight)". This list did not contain #problem OR #the-insight — they were NEVER captured
+// and NEVER sent. So the model dutifully judged "can a newcomer follow this?" on whatever four images
+// arrived first, which were hero, what-it-is, get-started and then the ARCHITECTURE DIAGRAM — and then
+// (correctly, given what it was shown) reported that the reader meets "Rust engine" and "BitLinear"
+// before any plain-language grounding. The grounding WAS on the page, in the problem and insight
+// sections, which the grader was structurally incapable of seeing. Every rewrite of those sections was
+// therefore invisible to the gate, which is exactly why those two operators never moved no matter what
+// anyone wrote. The ladder rungs are now captured, in document order, and LABELLED as such.
 const CROP_SECTIONS = [
-  { key: 'hero',       selector: '.hero, #top', label: 'Hero — the opening' },
-  { key: 'whatItIs',   selector: '#what-it-is', label: 'What it is — substance + the big-idea diagram' },
-  { key: 'getStarted', selector: '#get-started', label: 'Get started — how to begin' },
-  { key: 'pack',       selector: '#the-pack',   label: 'AI knowledge pack — the download block' },
+  { key: 'hero',       selector: '.hero, #top',   label: 'LADDER RUNG 1 of 4 — Hero: the opening', rung: true },
+  { key: 'problem',    selector: '#problem',      label: 'LADDER RUNG 2 of 4 — Problem: why this exists', rung: true },
+  { key: 'whatItIs',   selector: '#what-it-is',   label: 'LADDER RUNG 3 of 4 — What it is: substance + the big-idea diagram', rung: true },
+  { key: 'insight',    selector: '#the-insight',  label: 'LADDER RUNG 4 of 4 — The insight: the clever move', rung: true },
+  { key: 'howItWorks', selector: '#how-it-works', label: 'BEYOND THE LADDER — How it works (may descend ONE technical level)' },
+  // whole: A6 asks "could I actually DO this?" — it must see the complete example, not the first screenful.
+  { key: 'getStarted', selector: '#get-started',  label: 'BEYOND THE LADDER — Get started: how to begin (FULL section)', whole: true },
+  { key: 'pack',       selector: '#the-pack',     label: 'BEYOND THE LADDER — AI knowledge pack: the download block' },
 ];
 
 // ----------------------------------------------------------------------------
@@ -489,14 +512,21 @@ async function renderDevice(chromium, url, device, assetsDir) {
     const domInv18 = await checkDiagramsInDom(page);
 
     const crops = [];
-    // (3a) viewport-segment SECTION crops — sharp, capped at the device viewport
+    // (3a) SECTION crops. Default: a viewport-height segment anchored at the section top — sharp, never
+    // downscaled. But a section marked `whole: true` is captured as the FULL ELEMENT instead, because a
+    // viewport slice would cut it in half and the grader would mark down content it cannot see. This bit
+    // A6 (get-started) on mobile for every build: the section's runnable example, expected output and
+    // next-step all sit BELOW the fold of a 390x844 slice, so the grader — shown only the install line —
+    // correctly reported "does not show the complete runnable program". The program was always there. The
+    // crop ended above it. Same failure mode the diagram element-crops below already exist to prevent.
     for (const sec of CROP_SECTIONS) {
       const loc = page.locator(sec.selector).first();
       if (!(await loc.count())) { log(`  crop ${sec.key}: selector "${sec.selector}" not found — skipped`); continue; }
       try {
         await scrollToTop(page, loc, HEADER_OFFSET);
         const cropPath = path.join(assetsDir, `grade-${device.tag}-${sec.key}.png`);
-        await page.screenshot({ path: cropPath, fullPage: false }); // exactly the device viewport
+        if (sec.whole) await loc.screenshot({ path: cropPath });          // whole section, never clipped
+        else await page.screenshot({ path: cropPath, fullPage: false });  // exactly the device viewport
         crops.push({ key: sec.key, label: sec.label, path: cropPath });
       } catch (e) {
         log(`  crop ${sec.key}: capture failed (${e?.message || e}) — skipped`);
@@ -746,7 +776,7 @@ async function main() {
   // --- SECRET from env (never from build.json). No key → CANNOT evaluate → loud. ---
   const apiKey = loadOpenAiKey();
   if (!apiKey) return emit(false, {}, 'no OpenAI key found (set OPENAI_API_KEY / OPEN_AI_KEY in the environment or repo-root .env) — the page cannot be graded; refusing to emit a silent PASS');
-  const model = process.env.QUALITY_VISION_MODEL || 'gpt-5.5'; // latest vision model, VERIFIED live via GET /v1/models 2026-06-29 (gpt-4o is deprecated; never assume from training data)
+  const model = process.env.QUALITY_VISION_MODEL || 'gpt-5.6-sol'; // latest flagship vision model, VERIFIED live via GET /v1/models 2026-07-10 (gpt-5.5 superseded by the gpt-5.6 family — Sol/Terra/Luna — 2026-07-09; gpt-4o deprecated; never assume from training data)
   const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 
   // --- INV-20 UnexplainedAcronymZero (ADR-0006 D3) — deterministic, BEFORE the vision pass. ---
@@ -827,19 +857,30 @@ async function main() {
   const screenshots = {};
   const pageHeights = {};
   try {
+    // Render both devices first (local Playwright work — kept sequential, simple & deterministic logs).
+    const rendered = [];
     for (const d of DEVICES) {
       log(`rendering ${d.label} → full-page artifact + section crops`);
       const { domInv18, fullPagePath, crops, pageHeight } = await renderDevice(chromium, baseHref, d, assetsDir);
       screenshots[d.isMobile ? 'mobile' : 'desktop'] = fullPagePath;
       pageHeights[d.isMobile ? 'mobile' : 'desktop'] = pageHeight;
       log(`${d.label}: pageHeight=${pageHeight}px, crops=${crops.map((c) => c.key).join(',')}, DOM inv18 arch(present=${domInv18.architecturePresent},vis=${domInv18.architectureVisible}) flow(present=${domInv18.flowPresent},vis=${domInv18.flowVisible})`);
+      rendered.push({ d, domInv18, fullPagePath, crops });
+    }
 
-      log(`grading ${d.label} with ${model} from ${crops.length} full-res crops …`);
-      const graded = await gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel: d.label });
-      const { scorecard: card, refineNotes: notes } = buildScorecard(d.label, graded, domInv18, fullPagePath, crops.map((c) => c.path), flowExpected);
+    // Grade both devices CONCURRENTLY — two independent vision-API round-trips with no data
+    // dependency between them; this was a serial for-loop, doubling every grade cycle's
+    // wall-clock for zero reason (pure concurrency win — same tokens, same $, same model).
+    log(`grading ${rendered.length} device(s) with ${model} concurrently …`);
+    const gradedAll = await Promise.all(rendered.map((r) =>
+      gradeCrops({ apiKey, model, baseUrl, crops: r.crops, deviceLabel: r.d.label })
+    ));
+    for (let i = 0; i < rendered.length; i++) {
+      const r = rendered[i];
+      const { scorecard: card, refineNotes: notes } = buildScorecard(r.d.label, gradedAll[i], r.domInv18, r.fullPagePath, r.crops.map((c) => c.path), flowExpected);
       scorecard.push(card);
       refineNotes.push(...notes);
-      log(`${d.label}: headline=${card.headlineScore} inv18=${card.inv18.passed ? 'ok' : 'FAIL'} passed=${card.passed}`);
+      log(`${r.d.label}: headline=${card.headlineScore} inv18=${card.inv18.passed ? 'ok' : 'FAIL'} passed=${card.passed}`);
     }
   } catch (e) {
     started.server.close();

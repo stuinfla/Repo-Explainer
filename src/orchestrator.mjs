@@ -163,7 +163,7 @@ async function preflight(list, env, repoRoot) {
       envKey: 'ANTHROPIC_API_KEY', aliases: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'] });
   }
   if ((ids.has('generate-image') || ids.has('quality-grade')) && !has(['OPENAI_API_KEY', 'OPEN_AI_KEY'])) {
-    problems.push({ fatal: true, need: 'OPENAI_API_KEY (or OPEN_AI_KEY)', why: 'the atmospheric images (gpt-image-2) and the visual quality grade (gpt-5.5) need it',
+    problems.push({ fatal: true, need: 'OPENAI_API_KEY (or OPEN_AI_KEY)', why: 'the atmospheric images (gpt-image-2) and the visual quality grade (gpt-5.6-sol) need it',
       how: 'add OPENAI_API_KEY=sk-… to .env — create one at https://platform.openai.com/api-keys',
       envKey: 'OPENAI_API_KEY', aliases: ['OPENAI_API_KEY', 'OPEN_AI_KEY'] });
   }

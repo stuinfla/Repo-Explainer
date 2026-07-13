@@ -26,10 +26,12 @@ import { spawnSync } from 'node:child_process';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
 
-// Verified live via GET /v1/models on 2026-06-29 (claude-sonnet-4-6 present). Sonnet is the
-// authoring default: strong judgment for concept/content at a sane cost. Override with --model or
-// EXPLAINMYREPO_MODEL / ANTHROPIC_MODEL.
-export const DEFAULT_MODEL = 'claude-sonnet-4-6';
+// Verified live via GET /v1/models on 2026-07-12 (claude-sonnet-5 present, created 2026-06-29;
+// the prior default claude-sonnet-4-6 — created 2026-02-17 — is now the STALE one, caught late:
+// tonight's model-freshness sweep checked OpenAI's family and missed our own Anthropic default).
+// Sonnet is the authoring default: strong judgment for concept/content at a sane cost. Override
+// with --model or EXPLAINMYREPO_MODEL / ANTHROPIC_MODEL.
+export const DEFAULT_MODEL = 'claude-sonnet-5';
 
 export function resolveModel(env = {}, override) {
   return override || env.EXPLAINMYREPO_MODEL || env.ANTHROPIC_MODEL || DEFAULT_MODEL;

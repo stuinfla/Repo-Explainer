@@ -1,36 +1,62 @@
 #!/usr/bin/env node
 // generate-image.mjs — Station 4 (VISUALIZE): generate the EMOTIONAL raster rungs.
 //
-// One pure tool over the verified OpenAI image engine. Reads the brain-authored emotional
-// rungs from the BuildContext (`visuals.hero` + every entry in `visuals.sections[]`), generates
-// each as a real raster image, and merges ONLY its own two slots back into build.json. The
-// STRUCTURAL rungs (architecture/flow/big-idea/insight SVGs) are make-diagrams' job, not this one.
+// One pure tool over a probed image engine. Reads the brain-authored emotional rungs from the
+// BuildContext (`visuals.hero` + every entry in `visuals.sections[]`), generates each as a real
+// raster image, and merges ONLY its own two slots back into build.json. The STRUCTURAL rungs
+// (architecture/flow/big-idea/insight SVGs) are make-diagrams' job, not this one.
 //
-// Image engine (ADR-0005 D7 / Station 4): PRIMARY = gpt-image-2 (verified real + available in this
-// project 2026-06-28 via GET /v1/models/gpt-image-2 -> HTTP 200), quality "high". FALLBACK =
-// gpt-image-1, used ONLY if a build-time availability probe of gpt-image-2 fails. If the whole
-// OpenAI chain 404s we STOP LOUD with the failing IDs — never a silent substitution, never a
-// placeholder. (Deeper cross-provider fallbacks imagen-3 -> gemini-2.x-image are out of scope for
-// this OpenAI-keyed tool; their absence is a loud stop, not a fake image.)
+// Image engine (2026-07-11, real evidence — see the QUALITY comment below for the A/B numbers):
+// PRIMARY = grok-imagine-image-quality (xAI). Live-measured 5-10s/image vs gpt-image-2's 44-120s
+// (10-23x faster), same visual quality tier for this flat-illustrative content, verified once the
+// correct params were found (Grok takes `aspect_ratio`+`resolution`, NOT `size` — that's OpenAI's
+// shape and Grok hard-rejects it). Native output can exceed our target px by design (we request a
+// resolution tier >= target so we only ever downscale via sharp, never upscale-blur) — see
+// GROK_PX_MAP. FALLBACK (if the Grok key/probe is unavailable) = gpt-image-2, quality "medium",
+// then gpt-image-1 if THAT probe fails too. If everything 404s we STOP LOUD with the failing IDs —
+// never a silent substitution, never a placeholder.
 //
-// Sizes: hero = 1536x1024; raster sections = 1024x1024 (valid gpt-image sizes: 1024x1024,
-// 1024x1536, 1536x1024, auto — the DALL·E-3 1792x1024 is rejected).
+// Sizes: hero = 1536x1024; raster sections = 1024x1024 (valid sizes: 1024x1024, 1024x1536,
+// 1536x1024, auto — the DALL·E-3 1792x1024 is rejected). `auto` has no Grok mapping (falls
+// through to OpenAI) since no rung in this pipeline actually declares it.
 //
-// CONTRACT (tools/CONTRACT.md): pure (reads only `visuals` rungs + `concept.palette` + the OpenAI
-// key from env), fail-loud (non-zero exit + clear message, NEVER a placeholder asset), single JSON
-// result object on stdout, diagnostics on stderr, merges ONLY visuals.hero + visuals.sections[].
+// CONTRACT (tools/CONTRACT.md): pure (reads only `visuals` rungs + `concept.palette` + the
+// Grok/OpenAI keys from env), fail-loud (non-zero exit + clear message, NEVER a placeholder
+// asset), single JSON result object on stdout, diagnostics on stderr, merges ONLY visuals.hero +
+// visuals.sections[].
 //
 // Usage: node tools/generate-image.mjs <build-dir>
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import sharp from 'sharp';
 
 const TOOLS_DIR = path.dirname(fileURLToPath(import.meta.url)); // tools/
 const ROOT = path.resolve(TOOLS_DIR, '..');
 
 const API_URL = 'https://api.openai.com/v1';
-const QUALITY = 'high';                      // owner requirement: max quality
+const GROK_API_URL = 'https://api.x.ai/v1';
+const GROK_MODEL = 'grok-imagine-image-quality';
+// Grok has no per-pixel `size` param — it takes aspect_ratio + resolution. Mapped so the native
+// output is >= our target px (downscale-only). Verified live 2026-07-11: 1536x1024 -> "3:2"@"2k"
+// natively returns 2496x1664 (same 1.5 ratio); 1024x1024 -> "1:1"@"1k" returns EXACTLY 1024x1024.
+const GROK_PX_MAP = {
+  '1536x1024': { aspect_ratio: '3:2', resolution: '2k' },
+  '1024x1536': { aspect_ratio: '2:3', resolution: '2k' },
+  '1024x1024': { aspect_ratio: '1:1', resolution: '1k' },
+};
+// Was 'high' ("owner requirement: max quality"). Reversed 2026-07-10 on real evidence, not a
+// guess: a live timed A/B (same prompt, same size) measured high=119.6s vs medium=43.6s per
+// image (2.7x), and the medium output was viewed directly — full-bleed, correct dimensions, no
+// visible quality loss for this flat-vector-icon content type. Checked and rejected the
+// alternatives first: grok-imagine-image-quality is 23x faster but its API hard-rejects a `size`
+// param (confirmed via live 400 "Argument not supported: size") — can't meet the 1536x1024
+// hero / 1024x1024 section contract, disqualified on a technical constraint, not taste.
+// gemini-3.1-flash-image is 14x faster but added an unrequested padded frame instead of filling
+// the canvas — a real defect, not fixed, flagged as a future candidate once that's resolved.
+// Meta's Emu has no public API at all (app-only, watermarked) — not usable regardless of quality.
+const QUALITY = 'medium';
 const PRIMARY_MODEL = 'gpt-image-2';         // verified primary (ADR-0005 D7)
 const FALLBACK_MODEL = 'gpt-image-1';        // safety net only if the probe fails
 const VALID_SIZES = new Set(['1024x1024', '1024x1536', '1536x1024', 'auto']);
@@ -70,6 +96,13 @@ function loadOpenAiKey() {
   if (fromProc && fromProc.trim()) return fromProc.trim();
   const dotenv = parseEnvFile(path.join(ROOT, '.env'), ['OPENAI_API_KEY', 'OPEN_AI_KEY']);
   const fromFile = dotenv.OPENAI_API_KEY || dotenv.OPEN_AI_KEY;
+  return fromFile && fromFile.trim() ? fromFile.trim() : null;
+}
+function loadGrokKey() {
+  const fromProc = process.env.GROK_AI_KEY || process.env.GROK_API_KEY;
+  if (fromProc && fromProc.trim()) return fromProc.trim();
+  const dotenv = parseEnvFile(path.join(ROOT, '.env'), ['GROK_AI_KEY', 'GROK_API_KEY']);
+  const fromFile = dotenv.GROK_AI_KEY || dotenv.GROK_API_KEY;
   return fromFile && fromFile.trim() ? fromFile.trim() : null;
 }
 
@@ -123,6 +156,71 @@ async function generateOne(model, prompt, size, apiKey) {
   const buf = Buffer.from(b64, 'base64');
   if (buf.length === 0) throw new Error(`image API returned an empty image (${model}, ${size})`);
   if (!buf.subarray(0, 8).equals(PNG_MAGIC)) throw new Error(`image API returned non-PNG bytes (${model}, ${size})`);
+  return buf;
+}
+
+// Probe: does this key have live access to the Grok image model? xAI has no per-ID model endpoint
+// like OpenAI's (confirmed live 2026-07-10) — list all models and check membership instead.
+async function probeGrok(apiKey) {
+  let res;
+  try {
+    res = await fetchWithTimeout(`${GROK_API_URL}/models`, { headers: { Authorization: `Bearer ${apiKey}` } }, PROBE_TIMEOUT_MS);
+  } catch (e) {
+    console.error(`[generate-image] probe grok: network error — ${e?.message || e}`);
+    return false;
+  }
+  if (res.status !== 200) { console.error(`[generate-image] probe grok: HTTP ${res.status} (unavailable)`); return false; }
+  let json;
+  try { json = JSON.parse(await res.text()); } catch { console.error('[generate-image] probe grok: non-JSON model list'); return false; }
+  const ok = Array.isArray(json?.data) && json.data.some((m) => m.id === GROK_MODEL);
+  console.error(`[generate-image] probe grok: ${ok ? 'HTTP 200 (available)' : 'model not in live list'}`);
+  return ok;
+}
+
+// One pure Grok image call. Two things Grok does differently from OpenAI, found via a real
+// end-to-end test (2026-07-11), not assumed: (1) native output may exceed the target px by design
+// (see GROK_PX_MAP); (2) response format is NOT guaranteed PNG — the response carries a real
+// `mime_type` field and was observed returning JPEG (JFIF magic bytes) for one prompt while
+// another returned PNG. So the buffer is ALWAYS piped through sharp -> png() regardless of source
+// format or whether dimensions already match — this simultaneously normalizes format AND size in
+// one step, rather than trusting either. Throws (no placeholder), same contract as generateOne.
+async function generateOneGrok(prompt, targetPx, apiKey) {
+  const grokParams = GROK_PX_MAP[targetPx];
+  if (!grokParams) throw new Error(`no Grok aspect-ratio mapping for px="${targetPx}"`);
+  let res;
+  try {
+    res = await fetchWithTimeout(`${GROK_API_URL}/images/generations`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: GROK_MODEL, prompt, n: 1, response_format: 'b64_json', ...grokParams }),
+    }, GEN_TIMEOUT_MS);
+  } catch (e) {
+    throw new Error(`Grok image API request failed (${targetPx}): ${e?.message || e}`);
+  }
+  const bodyText = await res.text();
+  if (res.status !== 200) {
+    let msg = bodyText;
+    try { msg = JSON.parse(bodyText)?.error?.message || bodyText; } catch { /* keep raw */ }
+    throw new Error(`Grok image API HTTP ${res.status} (${targetPx}): ${msg}`);
+  }
+  let json;
+  try { json = JSON.parse(bodyText); } catch { throw new Error(`Grok image API returned non-JSON: ${bodyText.slice(0, 200)}`); }
+  const item = json?.data?.[0];
+  const b64 = item?.b64_json;
+  if (!b64) throw new Error(`Grok image API 200 but no b64_json image in response (${targetPx})`);
+  const rawBuf = Buffer.from(b64, 'base64');
+  if (rawBuf.length === 0) throw new Error(`Grok image API returned an empty image (${targetPx}, mime_type=${item?.mime_type || 'unknown'})`);
+
+  // Normalize format AND size in one pass — never trust the source is already PNG at the right
+  // dimensions (see the function comment: observed both PNG and JPEG from this same endpoint).
+  const [wantW, wantH] = targetPx.split('x').map(Number);
+  let buf;
+  try {
+    buf = await sharp(rawBuf).resize(wantW, wantH).png().toBuffer();
+  } catch (e) {
+    throw new Error(`Grok image (mime_type=${item?.mime_type || 'unknown'}) failed to decode/normalize for ${targetPx}: ${e?.message || e}`);
+  }
+  if (!buf.subarray(0, 8).equals(PNG_MAGIC)) throw new Error(`normalized output is not valid PNG (${targetPx})`);
   return buf;
 }
 
@@ -185,27 +283,83 @@ async function main() {
   const palette = (build.concept && typeof build.concept === 'object') ? build.concept.palette : null;
   const colourSuffix = paletteSuffix(palette);
 
+  // ---- probe the engine: Grok (fast primary, 2026-07-11) -> gpt-image-2 -> gpt-image-1 -> loud stop ----
+  // Grok chosen as primary on real measured evidence, not preference: ~5-10s/image vs gpt-image-2's
+  // ~44-120s (10-23x), same visual quality tier for this content type — see the header comment.
+  // OpenAI stays the fully-proven fallback if the Grok key is missing or the probe fails.
+  //
+  // ENGINE CHOICE IS PER-RUNG, on the READER's terms, not the pipeline's (2026-07-12).
+  // The hero is the ONE image above the fold: it is the first thing a stranger sees and it decides
+  // whether they scroll at all. Every hero on the wall that landed well was a gpt-image-2 render; the
+  // first build to ship a Grok hero (ternlight) came back from Stuart as "a 4 out of 10". Grok's real,
+  // measured win is SPEED (~5-10s vs gpt-image-2's ~44-120s) — and speed is worth having on the two
+  // secondary rasters, which nobody's first impression rests on. Making the hero fast was optimising
+  // the one place where slow was worth paying for.
+  //   hero     -> quality engine (gpt-image-2), ~1 extra minute, spent where it buys the most
+  //   sections -> fast engine (Grok), 10-23x faster, quality tier is fine for supporting art
+  // Either engine covers for the other if its probe fails, so a missing key degrades, never dies.
+  let generateFn = null;
+  const engines = {};
+  const grokKey = loadGrokKey();
+  const grokOK = !!grokKey && await probeGrok(grokKey);
   const apiKey = loadOpenAiKey();
-  if (!apiKey) return fail('no OpenAI key found (set OPENAI_API_KEY / OPEN_AI_KEY in the environment or repo-root .env)');
-
-  // ---- probe the engine: gpt-image-2 (verified primary) -> gpt-image-1 (fallback) -> loud stop ----
-  let engine = null;
-  if (await probeModel(PRIMARY_MODEL, apiKey)) engine = PRIMARY_MODEL;
-  else if (await probeModel(FALLBACK_MODEL, apiKey)) {
-    engine = FALLBACK_MODEL;
-    console.error(`[generate-image] gpt-image-2 probe failed — falling back to ${FALLBACK_MODEL}`);
-  } else {
-    return fail(`image-engine probe failed for the whole OpenAI chain (${PRIMARY_MODEL}, ${FALLBACK_MODEL}) — both unavailable on these keys; refusing to substitute or fake an image`);
+  let openaiModel = null;
+  if (apiKey) {
+    if (await probeModel(PRIMARY_MODEL, apiKey)) openaiModel = PRIMARY_MODEL;
+    else if (await probeModel(FALLBACK_MODEL, apiKey)) {
+      openaiModel = FALLBACK_MODEL;
+      console.error(`[generate-image] gpt-image-2 probe failed — falling back to ${FALLBACK_MODEL}`);
+    }
   }
+  if (!grokOK && !openaiModel) {
+    return fail(`image-engine probe failed for Grok AND the whole OpenAI chain (${PRIMARY_MODEL}, ${FALLBACK_MODEL}) — refusing to substitute or fake an image`);
+  }
+  const grokFn = grokOK ? (prompt, px) => generateOneGrok(prompt, px, grokKey) : null;
+  const openaiFn = openaiModel ? (prompt, px) => generateOne(openaiModel, prompt, px, apiKey) : null;
+
+  // 2026-07-12, REVISED SAME DAY on real evidence: the section rasters get the QUALITY engine too.
+  // The speed split above was right in principle and wrong in fact — the section images are full-width,
+  // on-page, and a reader looks straight at them; they are not "supporting art". Shipping them on the fast
+  // engine produced a problem-section image nobody could decode. Grok stays as the FALLBACK (it is genuinely
+  // 10-23x faster and a fine safety net), but it is no longer the default for anything a reader sees big.
+  // Cost of this decision: ~2 extra minutes per build. That is the correct trade and we measured it.
+  engines.hero = openaiModel || GROK_MODEL;
+  engines.section = openaiModel || GROK_MODEL;
+  const heroFn = openaiFn || grokFn;
+  const sectionFn = openaiFn || grokFn;
+  generateFn = (prompt, px, kind) => (kind === 'hero' ? heroFn : sectionFn)(prompt, px);
+  const engine = `hero:${engines.hero} + sections:${engines.section}`;
+  console.error(`[generate-image] engines — hero: ${engines.hero} (quality, above the fold) · sections: ${engines.section} (speed)`);
 
   const assetsDir = path.join(absBuildDir, 'assets');
   fs.mkdirSync(assetsDir, { recursive: true });
 
-  // ---- generate every rung SEQUENTIALLY; ANY failure is a loud stop (no partial slot merge) ----
-  // Sequential (not concurrent): the image endpoint 502s / stalls when several high-quality
-  // renders peak at once, so one request would starve and abort. One-at-a-time is slower but
-  // reliable. Failures are still collected across ALL rungs (not fail-fast), so the loud-stop
-  // below reports every missing image at once — same contract as the previous Promise.allSettled.
+  // ---- generate rungs with BOUNDED concurrency; ANY failure is a loud stop (no partial merge) ----
+  // Was a strict sequential for-loop: the endpoint 502s/stalls when several HIGH-quality renders
+  // peak at once, so concurrency was disabled entirely. Two things changed 2026-07-10: (1) QUALITY
+  // dropped to 'medium' (see above) — a lighter request than what caused those stalls; (2) SKILL.md
+  // was ALSO telling the agent to fire "one call per rung, in parallel" as separate `generate-image`
+  // processes — but this file never had a per-rung CLI arg, so those were redundant full-script
+  // invocations racing on the same output files, papered over by the resume-cache check and a
+  // `until ls *.png; do sleep 5; done` polling loop the agent improvised (measured: ~6min of a
+  // ~12min image station was that polling + one 302s blocking call). Fixed at the source instead of
+  // patching the workaround: ONE process call now handles every rung with real bounded concurrency.
+  // Cap of 3 is a conservative starting point (medium-quality concurrent stability is untested past
+  // this) — raise it only after a real measured run shows headroom, don't guess it higher.
+  const IMAGE_CONCURRENCY = 3;
+  async function mapWithConcurrency(items, limit, fn) {
+    const out = new Array(items.length);
+    let next = 0;
+    async function worker() {
+      while (next < items.length) {
+        const i = next++;
+        try { out[i] = { status: 'fulfilled', value: await fn(items[i]) }; }
+        catch (reason) { out[i] = { status: 'rejected', reason }; }
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+    return out;
+  }
   async function renderRung(r) {
     const label = `${r.kind}${r.kind === 'section' ? `(${r.id})` : ''}`;
     const fileName = `${safeName(r.kind === 'hero' ? 'hero' : r.id)}.png`;
@@ -220,7 +374,7 @@ async function main() {
     } catch { /* not cached — generate below */ }
     let buf, lastErr;
     for (let attempt = 1; attempt <= GEN_ATTEMPTS; attempt++) {
-      try { buf = await generateOne(engine, String(r.prompt) + colourSuffix, r.px, apiKey); break; }
+      try { buf = await generateFn(String(r.prompt) + colourSuffix, r.px, r.kind); break; }
       catch (e) {
         lastErr = e;
         if (attempt < GEN_ATTEMPTS) {
@@ -235,11 +389,7 @@ async function main() {
     return { rung: r, filePath, bytes: buf.length };
   }
 
-  const results = [];
-  for (const r of rungs) {
-    try { results.push({ status: 'fulfilled', value: await renderRung(r) }); }
-    catch (reason) { results.push({ status: 'rejected', reason }); }
-  }
+  const results = await mapWithConcurrency(rungs, IMAGE_CONCURRENCY, renderRung);
 
   const failures = results.map((res, i) => (res.status === 'rejected' ? `${rungs[i].kind}${rungs[i].kind === 'section' ? `(${rungs[i].id})` : ''}: ${res.reason?.message || res.reason}` : null)).filter(Boolean);
   if (failures.length) return fail(`image generation failed for ${failures.length} rung(s): ${failures.join(' | ')}`);
@@ -254,7 +404,8 @@ async function main() {
   const newSections = [];
   for (let i = 0; i < results.length; i++) {
     const { rung, filePath, bytes } = results[i].value;
-    const entry = { role: rung.role, prompt: rung.prompt, file: filePath, px: rung.px, engine, http200: true, bytes };
+    const rungEngine = rung.kind === 'hero' ? engines.hero : engines.section;
+    const entry = { role: rung.role, prompt: rung.prompt, file: filePath, px: rung.px, engine: rungEngine, http200: true, bytes };
     if (rung.kind === 'hero') {
       fresh.visuals.hero = entry;
     } else {
@@ -269,7 +420,7 @@ async function main() {
   const files = results.map((res) => res.value.filePath);
   succeed({
     engine,
-    quality: QUALITY,
+    quality: engine === GROK_MODEL ? 'n/a (Grok has no quality param; see px for the aspect_ratio/resolution tier used)' : QUALITY,
     rungs: results.map((res) => ({ id: res.value.rung.id, kind: res.value.rung.kind, px: res.value.rung.px, file: res.value.filePath, http200: true })),
     files,
     slots: ['visuals.hero', 'visuals.sections'],

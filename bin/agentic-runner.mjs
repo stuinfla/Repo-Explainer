@@ -55,7 +55,7 @@ const budgetUsd = Number(args['budget-usd'] || 8);
 const submitter = args.submitter || '';
 const runUrl = args['run-url'] || '';
 const buildId = args['build-id'] || '';
-const model = args.model || 'claude-sonnet-4-6';
+const model = args.model || 'claude-sonnet-5'; // was claude-sonnet-4-6 (stale since 2026-02-17); fixed 2026-07-12, verified live via GET /v1/models
 
 fs.mkdirSync(buildDir, { recursive: true });
 const buildJsonPath = path.join(buildDir, 'build.json');

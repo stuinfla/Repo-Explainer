@@ -40,3 +40,7 @@ explainer-builds/
 
 # npm pack tarballs
 *.tgz
+
+# agent tooling scratch (databases, locks, run logs) — not source
+.agentic-qe/
+.ruvnet-brain/

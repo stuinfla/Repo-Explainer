@@ -34,7 +34,7 @@ ARGUMENTS
 
 OPTIONS
   --out <dir>            build directory (default: ./explainer-builds/<repo>)
-  --model <id>           Anthropic model for the brain steps (default: claude-sonnet-4-6)
+  --model <id>           Anthropic model for the brain steps (default: claude-sonnet-5)
   --no-deploy            skip the deploy station (build + grade locally only)
   --no-publish           skip publish-repo + repo-seo (no GitHub explainer repo)
   --no-notify            skip the email notify station

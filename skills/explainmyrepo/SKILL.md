@@ -209,6 +209,16 @@ failure). The brief, grounded in what the KB revealed:
   metaphor's voice.
 - **`layoutRhythm`** — the ordered section archetypes (the page's cadence).
 - **`heroConcept`** — the single emotional opening-image idea.
+  - **THE HERO PROMPT MUST *BE* THE METAPHOR** (2026-07-12, learned the hard way). When you author
+    `visuals.hero.prompt` in S4, it renders **`concept.metaphor`, literally and concretely** — the
+    metaphor is not decoration you invent and then discard. ternlight authored a genuinely good one
+    ("a maritime signal lamp flashing exactly three states — −1, 0, +1 — across dark water") and then
+    shipped a hero of *generic glowing dots in space*: the stock embedding-space cliché, connected to
+    nothing. The reader's verdict was exact — **"I don't know what the lights are meant to be"** — and
+    they were right: the lights meant nothing, because the image had abandoned the idea. If a stranger
+    cannot look at the hero and get the ONE idea, the hero has failed, however pretty it is. Never
+    reach for a generic "abstract glowing network / constellation / neural mesh" — that is the tell
+    that you stopped thinking.
 - **`copyVoice`** — the tone/register for all authored text.
 - **`tagline`** — the one line baked into the social card + `og:description`.
 
@@ -264,11 +274,19 @@ parallel.
   that build-time probe **fails** does it fall back to `gpt-image-1` (then the
   deeper `imagen-3` → `gemini-2.x-image`). Never proceed on an unverified ID; if the
   whole chain 404s, **stop loud** with the failing ID.
-- **Raster rungs (emotional) — `generate-image`, one call per rung, fired in
-  parallel:** the **hero (1536×1024)**, the **problem (1024×1024)**, and the
-  **use-case scenario (1024×1024)** at quality `high`. Valid `gpt-image-2` sizes:
-  `1024×1024`, `1024×1536`, `1536×1024`, `auto` (the DALL·E-3 `1792×1024` is
-  rejected — never use it).
+- **Raster rungs (emotional) — `generate-image`, ONE call, no rung argument:**
+  the tool reads every declared rung (`visuals.hero` + `visuals.sections[]`) from
+  `build.json` itself and generates all of them internally with bounded
+  concurrency (2026-07-10: firing multiple separate `generate-image` processes —
+  one per rung — is WRONG; the tool has no per-rung CLI argument, and doing this
+  produced redundant concurrent processes racing on the same output files, papered
+  over by shell-level `sleep`-polling. Call it once and let it finish). Covers the
+  **hero (1536×1024)**, the **problem (1024×1024)**, and the **use-case scenario
+  (1024×1024)** at quality `medium` (dropped from `high` 2026-07-10 — measured
+  2.7x faster with no visible quality loss for this content type; see the QUALITY
+  comment in `tools/generate-image.mjs` for the A/B evidence). Valid `gpt-image-2`
+  sizes: `1024×1024`, `1024×1536`, `1536×1024`, `auto` (the DALL·E-3 `1792×1024`
+  is rejected — never use it).
 - **Structural rungs (explanatory) — `make-diagrams`, vector SVG via the
   `ascii-to-svg` skill, NEVER raster:** the big-idea diagram, the "aha" insight,
   and the **two diagrams that are MANDATORY on every explainer (INV-18 — the three
@@ -282,6 +300,28 @@ parallel.
   ASCII (it already fell out of S3); `make-diagrams` converts to crisp, accessible,
   xmllint-clean SVGs. **These SVGs are emitted once and reused by both the page AND
   the README (S8b)** — author once, share.
+
+- **A DIAGRAM MUST CARRY INFORMATION, OR IT MUST NOT BE DRAWN** (2026-07-12 — the deepest
+  quality bug this pipeline has had). "Grounded in the repo's real structure" is necessary,
+  not sufficient: it is entirely possible to draw a *truthful picture of nothing*. chalk,
+  stronghold, agenticow and ternlight each shipped a gorgeous, animated **"N modules · 0
+  internal links"** dependency map — a diagram of an empty graph — because the renderer drew
+  whatever the graph handed it and nobody asked whether the graph *said* anything. Two rules
+  now enforced in `make-diagrams`:
+  1. **Trivial dep-graph (0 internal edges) → the dependency map is REFUSED** (loud fail). You
+     must author **`visuals.architectureDiagram.rows`**: the *concept* of how the thing is
+     built — the 3-4 parts a reader must hold in their head — not the package wiring.
+  2. **The flow diagram is the RUNTIME data-flow** — *what happens to the reader's data* —
+     authored as `visuals.flowDiagram.rows`. If you leave it unauthored, the tool falls back
+     to the install→build→run→test model and **honestly retitles it "Build & run lifecycle"**,
+     because that is what it is. Shipping a build lifecycle captioned "Data-flow pipeline" is a
+     lie the vision grader has caught repeatedly. Author the real flow.
+
+  **`rows` shape (a footgun — read this):** `renderConcept` stacks items vertically and draws a
+  connecting arrow **only between items *within the same row***. So a connected chain is **ONE
+  row of N items**, not N rows of one item (that renders as floating cards with no arrows — a
+  bulleted list, not a structure):
+  `"rows": [{ "items": ["your sentence", "tokenizer", "add · skip · subtract", "384 numbers"], "connect": true }]`
 - **Cue:** every raster image is **valid + HTTP 200**, every structural SVG
   **renders crisp with its accessible text fallback**, and **each visual answers its
   assigned arc question** at the right altitude (high → low). A visual that is
@@ -436,7 +476,9 @@ parallel.
 Scheduling only — it never lets one station read another's files; everything lands
 in its `BuildContext` slot.
 
-- **S4 raster images all fire at once** (parallel `generate-image` calls).
+- **S4 raster images all fire at once** — internally, inside ONE `generate-image`
+  call (bounded concurrency in the tool itself, not multiple parallel processes —
+  see Station 4 above).
 - **The structural SVGs are authored during S3** (their ASCII falls out of
   authoring) and converted in parallel with the raster generation — not after it.
 - **Favicon + the 1200×630 social card (S5) start the moment the hero returns**,

@@ -104,8 +104,12 @@
   --step-0:  clamp(1rem,    0.97rem + 0.16vw, 1.0625rem); /* 16 → 17    body         */
   --step-1:  clamp(1.15rem, 1.06rem + 0.40vw, 1.35rem);   /* 18 → 21.5  lede         */
   --step-2:  clamp(1.35rem, 1.15rem + 0.85vw, 1.85rem);   /* 21 → 30    h3           */
-  --step-3:  clamp(1.7rem,  1.32rem + 1.62vw, 2.6rem);    /* 27 → 42    h2           */
-  --step-4:  clamp(2.4rem,  1.66rem + 3.15vw, 4.4rem);    /* 38 → 70    h1           */
+  /* Mobile floors lowered 2026-07-12: at 390px the old floors (h1 38px, h2 27px) rendered "extremely
+     large" type that stretched every prose section into an endless vertical scroll — the grader marked
+     mobile B1/B3 down for exactly this while desktop scored 92/90 on the same axes. Desktop (the vw
+     term and the max) is untouched; only the small end tightens. */
+  --step-3:  clamp(1.5rem,  1.32rem + 1.62vw, 2.6rem);    /* 24 → 42    h2           */
+  --step-4:  clamp(2rem,    1.66rem + 3.15vw, 4.4rem);    /* 32 → 70    h1           */
 
   /* --- Fluid SPACE scale (t-shirt). Vertical rhythm + section padding. --- */
   --space-2xs: 0.5rem;
@@ -261,6 +265,14 @@ pre.code-block {
 pre.code-block code {
   background: none; border: 0; box-shadow: none; padding: 0;
   font-size: inherit; color: inherit; white-space: pre;
+}
+/* On a phone, `overflow-x: auto` means a long command is simply CUT at the right edge — the reader
+   cannot see the rest of the line, and a horizontal scrollbar inside a vertically-scrolling page is
+   nearly undiscoverable on touch. The vision grader caught this on the Knowledge Pack block ("visibly
+   overflows or clips content at the right", mobile B2). Wrap instead of clip: nothing is ever hidden. */
+@media (max-width: 640px) {
+  pre.code-block { max-width: 100%; }
+  pre.code-block code { white-space: pre-wrap; overflow-wrap: anywhere; }
 }
 pre.code-block .c { color: var(--faint); }                 /* comment       */
 pre.code-block .k { color: var(--accent); font-weight: 500; } /* keyword     */
@@ -495,17 +507,49 @@ section { scroll-margin-top: calc(var(--head-h) + 1rem); }
   border: 1px solid var(--ridge); border-radius: var(--radius-s);
   background: var(--surface-2); padding: 14px; box-shadow: var(--emboss);
 }
-.figure > img, .figure > svg { width: 100%; height: auto; display: block; border-radius: 7px; }
+.figure > img, .figure > svg,
+.figure > .diagram-zoom > img, .figure > .diagram-zoom > svg { width: 100%; height: auto; display: block; border-radius: 7px; }
 .figure.diagram { background: var(--bg); }   /* SVG-on-dark plate */
+/* Diagram images sit behind a zoom button (2026-07-12): fine print (module names, code, labels)
+   is illegible at card size on a real screen — direct feedback called this "worthless." SVGs cost
+   nothing to enlarge, so click-to-inspect-at-full-size is the fix, not just shrinking the text. */
+.diagram-zoom {
+  display: block; width: 100%; border: 0; padding: 0; margin: 0; background: none; cursor: zoom-in;
+  position: relative; transition: filter 0.16s var(--ease);
+}
+.diagram-zoom:hover, .diagram-zoom:focus-visible { filter: brightness(1.08); }
+.diagram-zoom::after {
+  content: "⤢ enlarge"; position: absolute; right: 8px; bottom: 8px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.03em; color: var(--ink);
+  background: color-mix(in srgb, var(--bg) 78%, transparent); border: 1px solid var(--ridge);
+  border-radius: 999px; padding: 3px 9px; opacity: 0; transition: opacity 0.16s var(--ease);
+}
+.diagram-zoom:hover::after, .diagram-zoom:focus-visible::after { opacity: 1; }
+.diagram-lightbox {
+  border: 1px solid var(--ridge); border-radius: var(--radius); background: var(--surface-2);
+  padding: 0; max-width: 96vw; max-height: 92vh; box-shadow: var(--emboss);
+}
+.diagram-lightbox::backdrop { background: color-mix(in srgb, var(--bg) 82%, transparent); }
+.diagram-lightbox img { display: block; max-width: 94vw; max-height: 88vh; width: auto; height: auto; }
+.lightbox-close {
+  position: absolute; top: 10px; right: 10px; z-index: 1;
+  width: 34px; height: 34px; border-radius: 999px; border: 1px solid var(--ridge);
+  background: var(--surface-2); color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer;
+}
+.lightbox-close:hover { background: var(--fill); }
 /* All diagrams FIT THE COLUMN WIDTH on both mobile and desktop. We previously rendered "dense"
    maps at natural size inside a horizontally-pannable plate on mobile — but a first view (and the
    vision quality grader) never pans, so a panned diagram always reads as horizontally CLIPPED
-   (title cut off, right side offscreen → INV-18 fail). Fit-to-width shows the WHOLE diagram, and
-   the renderers keep labels legible well past the worst downscale (verified by looking: architecture
-   568px @0.63x and flow 772px @0.46x both fully readable on a 390px screen). Inherits width:100%
-   from `.figure > img` above; we only need to neutralise any pan plumbing and the drag hint. */
+   (title cut off, right side offscreen → INV-18 fail). Fit-to-width shows the WHOLE diagram.
+   CORRECTION 2026-07-12: the prior claim here ("verified by looking, fully readable at 390px")
+   did NOT hold up against real feedback — fit-to-width at card size reads as illegible fine print,
+   not "fully readable". That's why `.diagram-zoom` (above) exists now: fit-to-width for the
+   at-a-glance shape, click-to-enlarge for actually reading it. Don't re-claim "readable" from a
+   downscale percentage without looking at a real screenshot again. Inherits width:100% from
+   `.figure > img` above; we only need to neutralise any pan plumbing and the drag hint. */
 .figure.diagram { overflow-x: visible; }
-.figure.diagram > img, .figure.diagram > svg { width: 100%; height: auto; max-width: 100%; min-width: 0; }
+.figure.diagram > img, .figure.diagram > svg,
+.figure.diagram > .diagram-zoom > img, .figure.diagram > .diagram-zoom > svg { width: 100%; height: auto; max-width: 100%; min-width: 0; }
 .figure.diagram > figcaption::after { content: ""; }
 .figure figcaption {
   margin-top: 11px; color: var(--muted); font-size: var(--step--1); line-height: 1.5;
@@ -819,6 +863,56 @@ footer .fine { margin-top: var(--space-l); padding-top: var(--space-m); border-t
 @media (min-width: 64em) {
   .hero-grid { grid-template-columns: 1.12fr 0.88fr; }
   .gallery .grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ============================================================================
+   17b · MOTION — ambient hero animation. Added 2026-07-12. Always-on CSS
+   keyframes (not scroll-triggered), so it renders correctly in every context
+   including the automated screenshot pipeline. The global reduced-motion
+   override below (§18) already zeroes every animation duration site-wide.
+   (A scroll-triggered section-reveal was tried and reverted the same day —
+   confirmed via direct Playwright test that IntersectionObserver does not
+   reliably fire during quality-grade's scroll-stepping pass, which would have
+   shipped sections invisible in the grading screenshots. Real motion for the
+   architecture/flow diagrams is the next real step — those are separate SVG
+   files embedded via <img>, so it needs to be baked in at generation time in
+   make-diagrams.mjs, not bolted on here.)
+   ============================================================================ */
+/* 2026-07-12, round 3: the first pass (1.5% scale drift, no glow) was invisible even live, let
+   alone in a screenshot (which can never show motion at all — that's a hard constraint of a static
+   image, not a strength/weakness of the CSS). This is the hero, top of the page, the one shot at
+   grabbing someone — it needs to be UNMISSABLE the moment the page loads, not a detail you'd only
+   notice if you were already staring at it. Two effects: (1) a one-time entrance on load (fade +
+   scale-up + brightness sweep, ~1.1s) so there's an obvious "the page just came alive" moment;
+   (2) a strong, continuous pulsing aura around the frame (box-shadow, not clipped by the image's own
+   overflow:hidden) in the hero's own gold/teal accents — sized and timed to be seen at a glance, not
+   discovered on close inspection. */
+/* THE REFUSAL — the hero animation band. Full-width under the hero grid, still above the fold. */
+.hero-refusal {
+  margin-top: var(--space-xl);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m);
+  background: var(--fill);
+  padding: 6px;
+  overflow: hidden;
+  box-shadow: var(--shadow-deep);
+  animation: hero-enter 1.1s cubic-bezier(0.16,1,0.3,1) 0.25s both;
+}
+.hero-refusal svg { display: block; width: 100%; height: auto; border-radius: calc(var(--radius-m) - 6px); }
+
+.hero-art { animation: hero-enter 1.1s cubic-bezier(0.16,1,0.3,1) both, hero-aura 4.5s ease-in-out 1.1s infinite; }
+.hero-art img { animation: hero-breathe 6s var(--ease) infinite; }
+@keyframes hero-enter {
+  0% { opacity: 0; transform: scale(0.93); filter: brightness(0.6) saturate(0.7); }
+  100% { opacity: 1; transform: scale(1); filter: brightness(1) saturate(1); }
+}
+@keyframes hero-aura {
+  0%, 100% { box-shadow: var(--shadow-deep), 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); }
+  50% { box-shadow: var(--shadow-deep), 0 0 46px 14px color-mix(in srgb, var(--accent) 45%, transparent); }
+}
+@keyframes hero-breathe {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.035) translateY(-10px); }
 }
 
 /* ============================================================================

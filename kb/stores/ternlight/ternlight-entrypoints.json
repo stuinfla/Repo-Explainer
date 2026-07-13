@@ -1,0 +1,135 @@
+{
+  "target": "ternlight",
+  "metaName": "ternlight",
+  "generated": "2026-07-13T01:05:30.745Z",
+  "workspace": {
+    "kind": "mixed",
+    "members": [
+      "engine"
+    ]
+  },
+  "components": [
+    {
+      "name": "repo",
+      "path": "",
+      "kind": "crate",
+      "description": null,
+      "bins": [],
+      "examples": []
+    },
+    {
+      "name": "@ternlight/base",
+      "path": "packages/base",
+      "kind": "package",
+      "description": "On-device semantic embeddings for JavaScript — the quality tier. 1.58-bit BitNet-style sentence embedder via WASM. ~7 MB on the wire, <5 ms per embedding, no API calls.",
+      "scripts": {
+        "build": "PKG=packages/base BIN=training/pack/out/d384/model-int4.bin bash ../../scripts/build-engine.sh",
+        "test": "node --test tests/"
+      },
+      "bins": [],
+      "deps": []
+    },
+    {
+      "name": "@ternlight/mini",
+      "path": "packages/mini",
+      "kind": "package",
+      "description": "On-device semantic embeddings for JavaScript — the small, fast tier. 1.58-bit BitNet-style sentence embedder via WASM. ~5 MB on the wire, ~2.5 ms per embedding, no API calls.",
+      "scripts": {
+        "build": "PKG=packages/mini BIN=training/pack/out/model-int4.bin bash ../../scripts/build-engine.sh",
+        "test": "node --test tests/"
+      },
+      "bins": [],
+      "deps": []
+    }
+  ],
+  "binaries": [],
+  "commands": [
+    {
+      "cmd": "npm run build",
+      "raw": "PKG=packages/base BIN=training/pack/out/d384/model-int4.bin bash ../../scripts/build-engine.sh",
+      "category": "build",
+      "source": "packages/base/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "node --test tests/",
+      "category": "test",
+      "source": "packages/base/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "PKG=packages/mini BIN=training/pack/out/model-int4.bin bash ../../scripts/build-engine.sh",
+      "category": "build",
+      "source": "packages/mini/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "node --test tests/",
+      "category": "test",
+      "source": "packages/mini/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm install @ternlight/base",
+      "category": "install",
+      "source": "README.md",
+      "note": "quality tier  — 7 MB wire, ~5 ms/embed"
+    },
+    {
+      "cmd": "npm install @ternlight/mini",
+      "category": "install",
+      "source": "README.md",
+      "note": "small tier    — 5 MB wire, ~2.5 ms/embed"
+    },
+    {
+      "cmd": "npm package (`ternlight`)",
+      "category": "other",
+      "source": "docs/architecture.md",
+      "note": null
+    },
+    {
+      "cmd": "wasm-pack build --target nodejs --features emb_int4",
+      "category": "build",
+      "source": "engine/README.md",
+      "note": "primary ship"
+    },
+    {
+      "cmd": "wasm-pack build --target nodejs --features emb_int8",
+      "category": "build",
+      "source": "engine/README.md",
+      "note": "higher-quality variant"
+    },
+    {
+      "cmd": "wasm-pack build --target nodejs --features emb_ternary",
+      "category": "build",
+      "source": "engine/README.md",
+      "note": "size-extreme variant"
+    },
+    {
+      "cmd": "wasm-pack build --target nodejs --features emb_fp32",
+      "category": "build",
+      "source": "engine/README.md",
+      "note": "parity reference (not for users)"
+    },
+    {
+      "cmd": "node tests/test_embed.js",
+      "category": "other",
+      "source": "engine/README.md",
+      "note": null
+    },
+    {
+      "cmd": "node ../eval/benchmarks/smoke.js",
+      "category": "other",
+      "source": "engine/README.md",
+      "note": null
+    }
+  ],
+  "install": [
+    "npm install @ternlight/base",
+    "npm install @ternlight/mini"
+  ],
+  "quickstart": []
+}

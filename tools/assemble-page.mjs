@@ -242,7 +242,13 @@ function figureHtml(base, alt, caption, opts = {}) {
   const cls = opts.diagram ? (opts.concept ? 'figure diagram concept' : 'figure diagram') : 'figure';
   const tier = opts.tier ? `\n        <span class="tier ${opts.tier.cls}">${esc(opts.tier.label)}</span>` : '';
   const cap = caption ? `\n        <figcaption>${inline(caption)}</figcaption>` : '';
-  return `\n      <figure class="${cls}">${tier}\n        <img src="assets/${esc(base)}" alt="${esc(alt)}" loading="lazy">${cap}\n      </figure>`;
+  // Diagrams carry real fine print (module names, code, labels) that's illegible at card size —
+  // they're vector SVGs, so a click-to-enlarge costs nothing in quality and fixes exactly that.
+  // Added 2026-07-12 after direct feedback that small-and-uninspectable is "worthless."
+  const img = opts.diagram
+    ? `<button type="button" class="diagram-zoom" data-src="assets/${esc(base)}" data-alt="${esc(alt)}" aria-label="Enlarge: ${esc(alt)}"><img src="assets/${esc(base)}" alt="${esc(alt)}" loading="lazy"></button>`
+    : `<img src="assets/${esc(base)}" alt="${esc(alt)}" loading="lazy">`;
+  return `\n      <figure class="${cls}">${tier}\n        ${img}${cap}\n      </figure>`;
 }
 function tableHtml(t) {
   if (!t || !Array.isArray(t.head) || !Array.isArray(t.rows)) return '';
@@ -448,6 +454,19 @@ ${jsonLdScript}
   // ── hero ────────────────────────────────────────────────────────────────────────────────────
   const hero = reqObj(S.hero, 'content.sections.hero');
   const headline = hero.headlineHtml ? hero.headlineHtml : inline(reqStr(hero.headline, 'content.sections.hero.headline'));
+
+  // THE REFUSAL — the hero animation, INLINED (not <img>) so it is crisp at any width and its <style>
+  // participates in the page. It is the one piece of motion on the page and it exists to perform the
+  // argument, not to decorate: the model's decimal weights snap to −1/0/+1, each becomes subtract/skip/add,
+  // and the multiply sign is struck out and dies. Above the fold, because that is where the reader decides.
+  let refusalHtml = '';
+  {
+    const rp = visuals.heroAnim && visuals.heroAnim.svgPath;
+    if (rp && fs.existsSync(rp)) {
+      const raw = fs.readFileSync(rp, 'utf8').replace(/<\?xml[^>]*\?>\s*/i, '');
+      refusalHtml = `\n      <div class="hero-refusal" role="img" aria-label="${esc(visuals.heroAnim.altText || 'The one idea, in motion')}">${raw}</div>`;
+    }
+  }
   reqStr(hero.lede, 'content.sections.hero.lede');
   const ctas = Array.isArray(hero.ctas) && hero.ctas.length ? hero.ctas : [
     { label: 'See how it works →', href: '#how-it-works' },
@@ -481,7 +500,7 @@ ${jsonLdScript}
         <figure class="hero-art">
           <img src="assets/${esc(heroFile)}" alt="${esc(heroAlt)}">
         </figure>
-      </div>
+      </div>${refusalHtml}
     </div>${plainBand}
   </section>`;
 
@@ -637,6 +656,27 @@ ${heroSection}
     </div>
   </main>
 ${footer}
+  <dialog class="diagram-lightbox" id="diagram-lightbox" aria-label="Enlarged diagram">
+    <button type="button" class="lightbox-close" data-close aria-label="Close">&times;</button>
+    <img id="diagram-lightbox-img" src="" alt="">
+  </dialog>
+  <script>
+  (function () {
+    var dlg = document.getElementById('diagram-lightbox');
+    if (!dlg || typeof dlg.showModal !== 'function') return;
+    var img = document.getElementById('diagram-lightbox-img');
+    document.querySelectorAll('.diagram-zoom').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        img.src = btn.getAttribute('data-src');
+        img.alt = btn.getAttribute('data-alt') || '';
+        dlg.showModal();
+      });
+    });
+    dlg.addEventListener('click', function (e) {
+      if (e.target === dlg || e.target.hasAttribute('data-close')) dlg.close();
+    });
+  })();
+  </script>
 </body>
 </html>
 `;
@@ -647,9 +687,13 @@ ${footer}
   // render leak. For this renderer a literal `${` in the output can ONLY come from esc()'d data (every
   // `${x}` in the renderer's own template strings is evaluated when the HTML is built), so masking the
   // <pre>/<code> regions removes the false positives while still catching real leaks in prose/markup.
+  // <style> is masked for the same reason as <pre>/<code>: a CSS rule set legitimately ENDS in `}}`
+  // (`@keyframes x{ 0%{opacity:0} }` closes both the block and the at-rule), which the leak regex reads
+  // as a Handlebars-style placeholder. The inlined hero animation is real CSS, not a render leak.
   const scannable = html
     .replace(/<pre[\s\S]*?<\/pre>/gi, '')
-    .replace(/<code[\s\S]*?<\/code>/gi, '');
+    .replace(/<code[\s\S]*?<\/code>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '');
   const leakRe = /\{\{|\}\}|\$\{|\[object Object\]|(?:^|[\s">])(?:undefined|NaN)(?:[\s"<]|$)|lorem ipsum|\bTODO\b|\bPLACEHOLDER\b/i;
   const leak = scannable.match(leakRe);
   if (leak) throw new Error(`unresolved token / placeholder leaked into the page: "${leak[0].trim()}"`);

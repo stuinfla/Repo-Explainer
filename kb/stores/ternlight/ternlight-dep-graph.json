@@ -1,0 +1,72 @@
+{
+  "target": "ternlight",
+  "metaName": "ternlight",
+  "generated": "2026-07-13T01:05:30.671Z",
+  "ecosystems": [
+    "rust",
+    "npm"
+  ],
+  "componentCount": 2,
+  "internalEdgeCount": 0,
+  "externalDepCount": 4,
+  "nodes": [
+    {
+      "name": "tern-engine",
+      "version": "0.1.0",
+      "description": "Wasm inference engine for the tern semantic embedding model. Compiles to wasm32-unknown-unknown via wasm-pack.",
+      "manifest": "engine/Cargo.toml",
+      "targets": [
+        {
+          "name": "tern_engine",
+          "kinds": [
+            "cdylib",
+            "rlib"
+          ]
+        }
+      ],
+      "isLib": false,
+      "bins": [],
+      "ecosystem": "rust"
+    },
+    {
+      "name": "ternlight-monorepo",
+      "version": "0.0.0",
+      "description": "Root tooling for the tern monorepo. Not published to npm — the published packages live under packages/.",
+      "manifest": "package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [],
+  "externalDeps": {
+    "tern-engine": [
+      {
+        "name": "libm",
+        "req": "^0.2",
+        "kind": "normal"
+      },
+      {
+        "name": "sha2",
+        "req": "^0.10",
+        "kind": "normal"
+      },
+      {
+        "name": "tokenizers",
+        "req": "^0.19",
+        "kind": "normal"
+      },
+      {
+        "name": "wasm-bindgen",
+        "req": "^0.2",
+        "kind": "normal"
+      }
+    ],
+    "ternlight-monorepo": []
+  },
+  "externalDepNames": [
+    "libm",
+    "sha2",
+    "tokenizers",
+    "wasm-bindgen"
+  ]
+}
