@@ -222,6 +222,18 @@ failure). The brief, grounded in what the KB revealed:
 - **`copyVoice`** — the tone/register for all authored text.
 - **`tagline`** — the one line baked into the social card + `og:description`.
 
+- **THREE DIRECTIONS, THEN A VERDICT (2026-07-13 — anti-sameness is a design step, not a hope).**
+  A single concept pass converges on the house style (dark editorial, cream serif, warm inserts —
+  the wall proves it). So author **THREE genuinely divergent art directions** before choosing:
+  different metaphor FAMILY (mechanical / spatial / document / organic / optical…), different
+  palette temperature, different layout rhythm. For each, one line of "why it fits THIS repo."
+  Then judge for repo-fit and commit to ONE. Two hard rules on the verdict:
+  1. **The house look is never the default.** Dark-editorial-with-serif may WIN, but only by
+     argument from this repo's own domain — never because it's what the last build did.
+  2. **NEVER open another build's `build.json` or page for creative direction.** The exemplar
+     bar (INV-05) is a QUALITY bar, not a style guide — imitating a prior build's concept is how
+     the wall became one page in seven costumes. Record the two rejected directions (one line
+     each) in `concept.rejectedDirections` so the choice is auditable.
 - **Cue:** the brief is **specific to THIS repo** and the **metaphor genuinely
   fits**. A generic brief is a failure **here**, not at the gate.
 
@@ -275,16 +287,23 @@ problem it kills. `howItWorks` may descend ONE technical level (terms still defi
 what the experience looks like. Grounding (INV-06) supplies the FACTS, not the
 VOCABULARY: translate insider terms; cite the passage, don't parrot its jargon.
 
+**SHOW, THEN SAY (2026-07-13 — the reader's verdict on a text-heavy page: "their README is
+better than this").** No section may run more than ~120 visible words before a visual, a code
+block, a real artifact, or a structural element carries the next beat. When a mechanism takes
+more words than that to explain, the words are describing a diagram you haven't drawn yet —
+draw it, label it, and cut the prose to what the diagram can't say. The page must beat the
+repo's own README on scannability or it has no reason to exist.
+
 Author all eight sections:
 
 | Reader's question | Section | Medium of its image |
 |---|---|---|
-| What world am I in? | `hero` | raster (metaphor, emotional, HIGH) |
-| Why does this exist? | `problem` | raster (a human, relatable problem) |
+| What world am I in? | `hero` | raster (the metaphor performed — every element maps to a named concept of THIS repo) |
+| Why does this exist? | `problem` | raster (the pain shown through ITS OWN artifacts — the leaked token, the 47 configs, the tangled wiring — never a person reacting to it) |
 | What does it actually do? | `whatItIs` | SVG (the big-idea, whole-thing diagram) |
 | Why is it elegant/clever? | `insight` | SVG (the ONE clever move — the "aha") |
 | How is it built / works? | `howItWorks` | SVG (**architecture + flow**, descend ONE level) |
-| Could I use this? | `useCases` | raster (someone like the reader succeeding) |
+| Could I use this? | `useCases` | **REAL ARTIFACT FIRST** (screenshot/capture of the repo's own UI, CLI, or output actually running — see the image contract below); generated raster only when the repo has no visible surface, and then it must teach |
 | How do I start? | `getStarted` | SVG (quickstart path to first run) |
 | (my AI gets it too) | `pack` | SVG (the dual-output: page for humans, KB for their AI) |
 
@@ -300,6 +319,35 @@ parallel.
   to YOU"** (cure engineer-blindness — never assume the reader already cares).
 
 ### Station 4 — VISUALIZE (feeling = raster, structure = SVG)
+
+- **THE IMAGE CONTRACT (INV-22, 2026-07-13 — every image must teach, or it must not exist.)**
+  Born from a real verdict on a shipped page: a warm, competent photo of a man pointing at a
+  laptop scored 91 at the gate and the owner correctly called it "generic drivel — what am I
+  supposed to take away from this?" The gate measured beauty; nobody measured payload. Rules,
+  in force for every raster on the page:
+  1. **Every raster brief MUST carry a `takeaway:` line** — the one sentence a stranger should
+     be able to say about THIS repo after looking at the finished image (not the caption — the
+     pixels). No stateable takeaway → the image is decoration → do not generate it; give the
+     section a diagram, a real artifact, or nothing.
+  2. **The swap test kills generics:** if the finished image could ship unchanged on a
+     DIFFERENT repo's page, it fails. A person at a laptop passes the swap test for every repo
+     on earth — which is exactly why it is banned.
+  3. **BANNED imagery (the AI-slop list — these have all shipped and all read as slop):**
+     person at a laptop/desk/screen · hands typing · generic office or cafe scenes · glowing
+     abstract networks/particles · fake UI floating on a fake device · concerned-developer
+     stock moods. The model WILL drift back toward these under a vague brief; the brief is
+     where you stop it.
+  4. **REAL ARTIFACTS BEAT GENERATED SCENES.** The repo is cloned and on disk; playwright and
+     a shell are right there. If the repo ships anything visible — a web UI, a TUI, CLI
+     output, rendered artifacts — RUN IT and capture the real thing (compose/crop/annotate;
+     dark-theme it to the page palette if its UI allows). An authentic screenshot with one
+     annotation arrow teaches more than any generated scene, and it is the one image class no
+     other repo's page can have. Generated rasters are for what cannot be photographed: the
+     metaphor (hero) and the pain made visible (problem).
+  5. **Metaphor discipline (before any raster brief):** name the visual metaphor AND write the
+     element map — which visual element stands for which named concept of this repo. An
+     element that maps to no concept is decoration; cut it. (This is the paperbanana
+     discipline: find the real-world analogy first, then draw only its load-bearing parts.)
 - **Precondition (probe, fail loud).** Before generating raster, the
   `generate-image` tool probes the **verified primary `gpt-image-2`**
   (`GET /v1/models/gpt-image-2` → expected HTTP 200, confirmed 2026-06-28). Only if

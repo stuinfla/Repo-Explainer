@@ -139,6 +139,17 @@ GATE B — "Did someone who gives a shit make this?" (craft / anti-slop):
   judged for delight + craft. A "diagram" that is merely ASCII / box-drawing / pipe characters
   typeset as a picture (a screenshot of monospace text boxes) is SLOP — score B5 below 40 and set
   makesMeSmile=false; real diagrams are DRAWN (shapes, cards, arrows), not typeset text.
+  THE PER-IMAGE INTERROGATION (INV-22, 2026-07-13): for EVERY raster image on the page, answer two
+  questions in your B5 rationale before scoring:
+  (a) TAKEAWAY — ignoring its caption, what does a stranger LEARN about THIS specific project from
+      the pixels alone? "Nothing — it sets a mood" is a failing answer.
+  (b) THE SWAP TEST — could this exact image ship unchanged on a DIFFERENT project's page? A person
+      at a laptop, hands typing, a generic office, glowing abstract networks, fake UI on a fake
+      device: these pass the swap test everywhere and are therefore AI slop.
+  ANY raster failing both (no takeaway AND swappable) caps B5 at 55 and sets makesMeSmile=false —
+  regardless of how professionally lit, composed, or on-palette it is. Beauty without payload is
+  the precise failure mode this criterion exists to kill. A REAL screenshot of the project's own
+  UI/CLI/output, legible and annotated, automatically passes (a) — no other repo can have it.
 
 BEGINNER PERSONA PASS (ADR-0006 D4) — before answering the operator questions, re-read ONLY the crops
 whose label begins "LADDER RUNG" (there are four: hero, problem, what-it-is, insight), role-playing a
