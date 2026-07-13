@@ -367,10 +367,42 @@ parallel.
   comment in `tools/generate-image.mjs` for the A/B evidence). Valid `gpt-image-2`
   sizes: `1024×1024`, `1024×1536`, `1536×1024`, `auto` (the DALL·E-3 `1792×1024`
   is rejected — never use it).
-- **Structural rungs (explanatory) — `make-diagrams`, vector SVG via the
-  `ascii-to-svg` skill, NEVER raster:** the big-idea diagram, the "aha" insight,
-  and the **two diagrams that are MANDATORY on every explainer (INV-18 — the three
-  questions every developer asks):**
+- **STRUCTURAL RUNGS ARE BESPOKE, AUTHORED, ANIMATED SVG (INV-23, 2026-07-13 — rails on
+  truth, never on form).** The old path funneled every diagram through one renderer and the
+  owner's verdict on the result was exact: "four different versions of the same process map."
+  A vertical pill-stack is a LIST wearing a costume; an information shape must dictate its
+  form. New contract — YOU author each diagram as a standalone SVG file (same output paths:
+  `assets/big-idea.svg`, `assets/insight.svg`, `assets/architecture.svg`, `assets/flow.svg`):
+  1. **Pick each diagram's ARCHETYPE from the menu and declare it** as `data-archetype` on the
+     root `<svg>` AND in `visuals.<slot>.archetype`: `journey` (something travels and
+     transforms, left→right) · `containment` (boxes within boxes, layers) · `field` (a
+     population of many small things, a few highlighted) · `fan` (one radiating to many) ·
+     `tree` (hierarchy) · `exchange` (two sides, a broker between). **No two diagrams on one
+     page may share an archetype** — the gate fails repetition.
+  2. **The flow diagram must SHOW the thesis motion, not name stages.** For a repo whose trick
+     is spatial ("the key never leaves the vault"), the invariant must be VISIBLE: the request
+     dot travels the full journey while the key glyph stays pulsing inside the vault boundary.
+     If a stranger can't see the trick happen, it's a list of stages — rejected.
+  3. **Animate INSIDE the SVG** (CSS keyframes / SMIL in a `<style>` block — no external JS;
+     honor `prefers-reduced-motion` with a static end-state). The data-flow diagram IS the
+     page's animation. A dot crawling along a dotted line is NOT animation of the argument —
+     it is the banned decoration (see heroAnim rules) in diagram form.
+  4. **Craft bar:** real `<text>` (≥13px at rendered size), `<title>` + `<desc>` accessibility
+     fallback, `viewBox` set, palette from `concept`, validate every file with
+     `xmllint --noout` before installing. Budget ≤60KB per SVG.
+  5. **THE ENGINE DUEL (flagship diagrams: big-idea + flow):** author your version, then
+     request a competing standalone SVG from GPT-5.6-Sol via the OpenAI API (same brief, same
+     archetype + palette constraints — plain `curl` with `$OPENAI_API_KEY`; benchmarks show
+     Sol is genuinely strong at UI polish). Judge both with the same vision model the gate
+     uses, on takeaway + legibility + craft; install the winner and record
+     `visuals.<slot>.engine` = `fable|sol` with one line of why. If the Sol call fails,
+     proceed with yours — never block the build on the duel.
+  6. **Fallback, loud:** if your bespoke SVG fails xmllint or legibility twice, fall back to
+     `make-diagrams` for that slot and say so in `visuals.<slot>.fallback` — a working plain
+     diagram beats a broken beautiful one, but the fallback is an admission, not a choice.
+- **The prior `make-diagrams` path below remains ONLY as that fallback** — the big-idea
+  diagram, the "aha" insight, and the **two diagrams that are MANDATORY on every explainer
+  (INV-18 — the three questions every developer asks):**
   1. an **ARCHITECTURE diagram** (*how is it constructed* — modules / components /
      dependencies), built from `<slug>-dep-graph.json` + `<slug>-symbols.json`, and
   2. a **PROCESS / DATA-FLOW diagram** (*how does it work* — the runtime flow),
@@ -428,6 +460,18 @@ parallel.
   deterministic INV-20 acronym gate reads an uppercase word as an acronym and will fail the build
   before the vision pass. **No `heroAnim` → no animation band**, and the tool will NEVER substitute
   another repo's (this content is per-repo and lives in `build.json`, never in the tool).
+
+  **THE CHIPS BAND IS THE FLOOR, NOT THE CEILING (2026-07-13 — owner's verdict on a shipped
+  chips band: "the animation is nothing more than a dotted line. That's worthless. You
+  punted.").** For any repo whose trick is spatial or mechanical (most), author a **bespoke
+  animated SVG SCENE** instead (`visuals.heroAnim.sceneSvg` → `assets/hero-scene.svg`, same
+  in-SVG CSS/SMIL rules as INV-23): a 6–10s loop in which the mechanism VISIBLY HAPPENS — for
+  a credential broker, the request plug travels the switchboard and returns with a result
+  while the key never crosses the vault line; for a quantizer, the messy weights snap to
+  three states. The chips band is the fallback for repos whose trick is genuinely abstract.
+  Banned as "performance": a dot moving along a path, pulsing glows, crawling dashes — motion
+  must CHANGE something the argument depends on (a value, a position across a boundary, a
+  state), not merely travel.
 - **Cue:** every raster image is **valid + HTTP 200**, every structural SVG
   **renders crisp with its accessible text fallback**, and **each visual answers its
   assigned arc question** at the right altitude (high → low). A visual that is

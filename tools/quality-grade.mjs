@@ -150,6 +150,17 @@ GATE B — "Did someone who gives a shit make this?" (craft / anti-slop):
   regardless of how professionally lit, composed, or on-palette it is. Beauty without payload is
   the precise failure mode this criterion exists to kill. A REAL screenshot of the project's own
   UI/CLI/output, legible and annotated, automatically passes (a) — no other repo can have it.
+  THE DIAGRAM-FORM INTERROGATION (INV-23, 2026-07-13): look at ALL the diagrams on the page
+  TOGETHER and answer in your B5 rationale:
+  (c) FORM DIVERSITY — do two or more diagrams share the same basic layout form (e.g. a vertical
+      stack of boxes with arrows, restyled)? An architecture, a data flow, a catalog, and a big
+      idea are DIFFERENT information shapes (containment, journey, field, fan…) and must LOOK
+      structurally different. Two-or-more same-form diagrams caps B5 at 60 — a page of one
+      diagram wearing four costumes is templated slop however polished each copy is.
+  (d) THE THESIS MOTION — does the flow diagram SHOW the project's key claim happening (the
+      thing moving, transforming, or pointedly NOT crossing a boundary), or does it merely name
+      stages in sequence? Stages-in-boxes with arrows is a list, not a flow; note it and score
+      accordingly.
 
 BEGINNER PERSONA PASS (ADR-0006 D4) — before answering the operator questions, re-read ONLY the crops
 whose label begins "LADDER RUNG" (there are four: hero, problem, what-it-is, insight), role-playing a
