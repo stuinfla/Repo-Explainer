@@ -44,6 +44,12 @@ jobs:
       # node:test with no browser launches, so playwright's browser download isn't needed.
       - run: npm ci --ignore-scripts
 
+      # The diagram tests (tests/diagrams.test.mjs, added 2026-07-12) spawn make-diagrams, which
+      # shells out to graphviz's `dot` and `xmllint` — present locally and in build-explainer.yml
+      # but not on a bare runner. Their absence failed the v0.4.0 release's test job (execSync
+      # ENOENT) with a green suite locally; system deps here must mirror what the tools invoke.
+      - run: sudo apt-get update && sudo apt-get install -y graphviz libxml2-utils
+
       - run: npm test
 
   publish:

@@ -498,7 +498,7 @@ ${jsonLdScript}
           </div>${metaRow}
         </div>
         <figure class="hero-art">
-          <img src="assets/${esc(heroFile)}" alt="${esc(heroAlt)}">
+          <button type="button" class="diagram-zoom" data-src="assets/${esc(heroFile)}" data-alt="${esc(heroAlt)}" aria-label="Enlarge: ${esc(heroAlt)}"><img src="assets/${esc(heroFile)}" alt="${esc(heroAlt)}"></button>
         </figure>
       </div>${refusalHtml}
     </div>${plainBand}
