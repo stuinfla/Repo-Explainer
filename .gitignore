@@ -44,3 +44,6 @@ explainer-builds/
 # agent tooling scratch (databases, locks, run logs) — not source
 .agentic-qe/
 .ruvnet-brain/
+
+# repaired-db backups (local recovery artifacts, not source)
+.swarm/*.corrupt-bak-*
