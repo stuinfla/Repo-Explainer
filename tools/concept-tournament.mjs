@@ -79,7 +79,7 @@ const SPEC_FIELDS = `{
   "rejectedIdea": "<one direction you considered and rejected, with the reason>"
 }`;
 
-const candidatePrompt = (dig) => `You are art-directing a bespoke explainer page for a GitHub repo. Below is the repo's essence. Produce ONE concept spec as pure JSON (no markdown fence, no commentary) with exactly these fields:\n${SPEC_FIELDS}\n\nHard rules: the concept must fail the "swap test" — if it could describe a different repo, it is wrong. Banned: generic glowing networks/particles, person-at-laptop imagery, dark-editorial-because-everyone-does-it (a dark palette needs a reason from the metaphor). The animation design is the most important field.\n\n${dig}`;
+const candidatePrompt = (dig) => `You are art-directing a bespoke explainer page for a GitHub repo. Below is the repo's essence. Produce ONE concept spec as pure JSON (no markdown fence, no commentary) with exactly these fields:\n${SPEC_FIELDS}\n\nHard rules: the concept must fail the "swap test" — if it could describe a different repo, it is wrong. Banned: generic glowing networks/particles, person-at-laptop imagery, dark-editorial-because-everyone-does-it (a dark palette needs a reason from the metaphor). SURFACE MODE IS A CHOICE, NOT A DEFAULT (owner, 2026-07-13: "not everything needs to be dark"): consider light/paper/warm surfaces seriously — pick the mode the METAPHOR lives in (a blueprint lives on paper; a darkroom lives in the dark), and say why in whyItFits. The animation design is the most important field.\n\n${dig}`;
 
 async function callAnthropic(model, prompt) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
