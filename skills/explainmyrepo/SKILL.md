@@ -225,6 +225,38 @@ failure). The brief, grounded in what the KB revealed:
 - **Cue:** the brief is **specific to THIS repo** and the **metaphor genuinely
   fits**. A generic brief is a failure **here**, not at the gate.
 
+### Station 2b — THE STORY SPEC (do this BEFORE authoring a single section)
+**Write the thesis and the arc FIRST, then write sections to serve them.** The failure this
+prevents (2026-07-12, cost a whole night): the page was authored section-by-section from repo
+facts, so it opened INSIDE THE MACHINE — multiplication counts, tokenizers, WASM — for a reader
+who has never heard of any of it. Three independent judges, shown three competing story angles,
+were unanimous on the cause: **"you cannot rescue an insider-ordered story with better sentences."**
+No amount of rewriting fixed it, because the defect was the ORDER, not the words.
+
+Write into `concept.story` before Station 3:
+- **`thesis`** — ONE plain sentence a stranger understands, that the whole page proves. Zero jargon.
+  Not "a 1.58-bit quantized embedding engine" — *"a 4.6 MB file, loaded into a web page like an
+  image, that can tell which sentences mean the same thing — with no server and nothing leaving
+  your computer."*
+- **`arc`** — the beats, and they open in **THE READER'S WORLD**, not the machine's. The winning
+  shape, every time: **a pain they have personally shipped** (a search box that returns nothing for
+  "my card got declined" when the article says "payment failed") → **the fix they'd reach for and
+  hate** (rent a hosted AI: a key, a bill, their users' text leaving the box) → **the artifact**
+  (a 4.6 MB file you ship with your page) → **and ONLY THEN the trick**, which now arrives as the
+  ANSWER to a question they are already asking ("how can that possibly be small enough?").
+  Trick-as-payoff, never trick-as-premise.
+- **`closeTheLoop`** — the concrete example from the opening beat MUST reappear at the end of the
+  flow diagram. The reader verifies their own comprehension against the pain they were shown 30
+  seconds earlier instead of taking the payoff on trust. ("Nearest point wins — finds *payment
+  failed*.")
+- **Cue:** if your opening beat would mean nothing to someone who has never heard of this field,
+  you have written an insider story. Start again.
+
+**When the repo is genuinely hard to frame, run the bake-off:** author 3 story angles in parallel
+(subtraction / reader's-world / one-physical-object are good seeds), judge them with 3 distinct
+lenses (zero-knowledge reader · skeptical editor · art director), and take the winner. It cost 4
+minutes and beat an hour of hand-patching.
+
 ### Station 3 — AUTHOR (pure judgment — the content; no tool)
 Write the content along the **comprehension arc** into the `content` slot. The
 reader asks a sequence of questions; every section answers the **next** one as it
@@ -322,6 +354,32 @@ parallel.
   row of N items**, not N rows of one item (that renders as floating cards with no arrows — a
   bulleted list, not a structure):
   `"rows": [{ "items": ["your sentence", "tokenizer", "add · skip · subtract", "384 numbers"], "connect": true }]`
+
+- **THE HERO ANIMATION (`visuals.heroAnim`) — motion that PERFORMS the argument.** Author this for
+  every repo that has a "trick" (almost all of them do). It renders above the fold as a 9s loop and
+  it is the only motion on the page. **Animate the ARGUMENT, never the chrome.** Crawling dashed
+  lines and pulsing dots are decoration; they were shipped twice and correctly called "the weakest
+  sauce I've seen". What earns its place is the project's one idea, *performed*: for ternlight, the
+  model's messy decimal weights (`0.0731`, `−1.24`) **snap** to exactly `0` / `−1` / `+1`; as each
+  lands, the word beneath it appears — **skip · subtract · add**; then the multiply sign is struck
+  through and goes dark: **never used**.
+
+  The shape is deliberately generic — a **BEFORE → AFTER transformation, plus the cost it kills** —
+  because that is the shape of most interesting repos' tricks, not a ternary-specific one:
+  ```json
+  "heroAnim": {
+    "label":   "The numbers inside the model",
+    "chips":   [{ "before": "0.0731", "after": "0",  "op": "skip",     "kind": "zero" },
+                { "before": "−1.24",  "after": "−1", "op": "subtract", "kind": "neg"  },
+                { "before": "3.90",   "after": "+1", "op": "add",      "kind": "pos"  }],
+    "verdict": { "label": "The one expensive move", "symbol": "×", "dead": "never used" },
+    "kicker":  "it never multiplies — and that is why it fits in 4.6 MB"
+  }
+  ```
+  Rules: 3–6 chips. `kind` ∈ `zero|neg|pos` (drives colour). **Sentence case, never ALL-CAPS** — the
+  deterministic INV-20 acronym gate reads an uppercase word as an acronym and will fail the build
+  before the vision pass. **No `heroAnim` → no animation band**, and the tool will NEVER substitute
+  another repo's (this content is per-repo and lives in `build.json`, never in the tool).
 - **Cue:** every raster image is **valid + HTTP 200**, every structural SVG
   **renders crisp with its accessible text fallback**, and **each visual answers its
   assigned arc question** at the right altitude (high → low). A visual that is

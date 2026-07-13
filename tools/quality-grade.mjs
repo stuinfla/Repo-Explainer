@@ -222,11 +222,23 @@ export const INV20_WHITELIST = new Set([
   'RAM', 'GB', 'MB', 'TB', // universal hardware units — NOT 'KB' (this product uses KB = knowledge base; it must be glossed)
 ]);
 // ALL-CAPS English words that are styling/emphasis, not acronyms.
+// An ordinary English word set in UPPERCASE is a STYLING choice (an eyebrow, a label), not an acronym.
+// The detector cannot tell them apart from shape alone, so the stopword list carries the ordinary words
+// we actually use in display type. 2026-07-12: the inlined hero animation tripped this with "INSIDE",
+// "MODEL" and "MOVE" — a false INV-20 failure that blocked the vision pass entirely. (It only surfaced
+// once an SVG was INLINED into the page; diagram text inside <img> is invisible to this scan.)
 const CAPS_STOPWORDS = new Set([
   'A', 'AN', 'THE', 'AND', 'OR', 'NOT', 'NO', 'YES', 'OK', 'ALL', 'ANY', 'ONE',
   'TWO', 'NEW', 'GET', 'RUN', 'SEE', 'HOW', 'WHY', 'WHAT', 'WHO', 'YOU', 'YOUR',
   'FOR', 'ON', 'IN', 'IT', 'IS', 'TO', 'OF', 'VS', 'BY', 'AT', 'AS', 'BE', 'DO',
   'IF', 'SO', 'UP', 'OUT', 'NOW', 'FREE', 'FAST', 'REAL', 'ZERO', 'FROM', 'WITH',
+  // ordinary words that show up in eyebrows / diagram labels / display type
+  'INSIDE', 'MODEL', 'MOVE', 'NUMBERS', 'NUMBER', 'DATA', 'FLOW', 'STEP', 'STEPS',
+  'THIS', 'THAT', 'THEN', 'ONLY', 'EVERY', 'NEVER', 'ALWAYS', 'MORE', 'LESS', 'MOST',
+  'ONE', 'FIRST', 'NEXT', 'LAST', 'BEFORE', 'AFTER', 'START', 'END', 'ADD', 'SKIP',
+  'BIG', 'IDEA', 'THREE', 'FOUR', 'FIVE', 'SIX', 'PARTS', 'PART', 'CORE', 'MAP',
+  'WHERE', 'WHEN', 'WHICH', 'INTO', 'OVER', 'UNDER', 'EXPENSIVE', 'CHEAP', 'SMALL',
+  'LIVE', 'LOCAL', 'OFFLINE', 'ONLINE', 'PAGE', 'FILE', 'SIZE', 'TIME', 'COST',
 ]);
 
 // Extract the visible text of ladder rungs 1-4 from the assembled page HTML.
