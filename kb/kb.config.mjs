@@ -1679,6 +1679,34 @@ export const targets = {
       ] },
     ],
   },
+  "open-connector": {
+    "slug": "open-connector",
+    "metaName": "OpenConnector",
+    "embed": {
+      "model": "Xenova/bge-small-en-v1.5",
+      "dim": 384,
+      "pooling": "mean",
+      "queryPrefix": "Represent this sentence for searching relevant passages: ",
+      "rankScale": 0.6,
+      "rvfSuffix": ".rvf"
+    },
+    "productNames": ["OpenConnector", "open-connector"],
+    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/open-connector/repo",
+    "scopeExclude": [
+      "node_modules", "dist", "target", ".git", "coverage", "pkg", ".next",
+      "__pycache__", ".venv", "venv", "providers", "public", "assets", ".wrangler"
+    ],
+    "codeExt": [".ts", ".tsx", ".js", ".mjs"],
+    "fullTextExt": [".md", ".mdx", ".txt"],
+    "templateExt": [],
+    "componentRoots": ["src", "web/src", "scripts", "docs"],
+    "componentWord": ["module", "service", "gateway", "provider"],
+    "include": [
+      { "rule": "mdSweepFullText", "roots": ["."] },
+      { "rule": "literalFiles", "files": ["README.md", "package.json", "docs/runtime-api.md", "docs/quickstart.md", "docs/catalog-format.md", "docs/credentials.md", "docs/cloudflare.md", "docs/configuration.md", "src/providers/attio/definition.ts", "src/providers/attio/actions.ts"] },
+      { "rule": "sourceBodies", "roots": ["src", "web/src", "scripts"], "ext": [".ts", ".tsx", ".js", ".mjs"] }
+    ]
+  },
 };
 
 /** Default target for CLI scripts that omit --target while only one repo is in scope [L]. */

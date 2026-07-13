@@ -1,0 +1,378 @@
+{
+  "target": "open-connector",
+  "metaName": "OpenConnector",
+  "generated": "2026-07-13T13:56:43.323Z",
+  "workspace": {
+    "kind": "npm",
+    "members": []
+  },
+  "components": [
+    {
+      "name": "@oomol-lab/open-connector",
+      "path": "",
+      "kind": "package",
+      "description": null,
+      "scripts": {
+        "postinstall": "node scripts/ensure-generated.ts",
+        "dev": "node scripts/dev-local.ts",
+        "dev:api": "node scripts/ensure-generated.ts && node src/server/index.ts",
+        "build": "npm run typecheck",
+        "build:web": "npm run build --workspace web",
+        "dev:cloudflare": "npm run generate:catalog && npm run build:web && node scripts/copy-catalog-assets.ts && wrangler dev --config wrangler.local.jsonc",
+        "deploy:cloudflare": "npm run generate:catalog && npm run build:web && node scripts/copy-catalog-assets.ts && wrangler deploy --config wrangler.local.jsonc --minify",
+        "start": "node scripts/ensure-generated.ts && node src/server/index.ts",
+        "test": "vitest run",
+        "typecheck": "npm run generate:registry && node scripts/typecheck.ts src scripts-all examples",
+        "generate:registry": "node scripts/generate-provider-registry.ts",
+        "generate:catalog": "npm run generate:registry && node scripts/generate-catalog.ts",
+        "generate:provider": "node scripts/generate-provider.ts",
+        "runtime:data": "node scripts/runtime-data.ts",
+        "lint": "oxlint .",
+        "lint:fix": "oxlint . --fix",
+        "format": "oxfmt --check .",
+        "format:fix": "oxfmt .",
+        "fix": "npm run lint:fix && npm run format:fix",
+        "fix-check": "npm run fix && npm run typecheck"
+      },
+      "bins": [],
+      "deps": [
+        "@cfworker/json-schema",
+        "@hono/node-server",
+        "@modelcontextprotocol/sdk",
+        "@scalar/hono-api-reference",
+        "ali-oss",
+        "fast-xml-parser",
+        "hono",
+        "imapflow",
+        "mailparser",
+        "mdast-util-from-markdown",
+        "mdast-util-gfm",
+        "mdast-util-to-markdown",
+        "micromark-extension-gfm",
+        "minisearch",
+        "nodemailer",
+        "pino",
+        "rss-parser",
+        "zod"
+      ]
+    }
+  ],
+  "binaries": [],
+  "commands": [
+    {
+      "cmd": "npm run postinstall",
+      "raw": "node scripts/ensure-generated.ts",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev",
+      "raw": "node scripts/dev-local.ts",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev:api",
+      "raw": "node scripts/ensure-generated.ts && node src/server/index.ts",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "npm run typecheck",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:web",
+      "raw": "npm run build --workspace web",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev:cloudflare",
+      "raw": "npm run generate:catalog && npm run build:web && node scripts/copy-catalog-assets.ts && wrangler dev --config wrangler.local.jsonc",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run deploy:cloudflare",
+      "raw": "npm run generate:catalog && npm run build:web && node scripts/copy-catalog-assets.ts && wrangler deploy --config wrangler.local.jsonc --minify",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run start",
+      "raw": "node scripts/ensure-generated.ts && node src/server/index.ts",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "vitest run",
+      "category": "test",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run typecheck",
+      "raw": "npm run generate:registry && node scripts/typecheck.ts src scripts-all examples",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run generate:registry",
+      "raw": "node scripts/generate-provider-registry.ts",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run generate:catalog",
+      "raw": "npm run generate:registry && node scripts/generate-catalog.ts",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run generate:provider",
+      "raw": "node scripts/generate-provider.ts",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run runtime:data",
+      "raw": "node scripts/runtime-data.ts",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "oxlint .",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint:fix",
+      "raw": "oxlint . --fix",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run format",
+      "raw": "oxfmt --check .",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run format:fix",
+      "raw": "oxfmt .",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run fix",
+      "raw": "npm run lint:fix && npm run format:fix",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run fix-check",
+      "raw": "npm run fix && npm run typecheck",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "docker compose up",
+      "category": "other",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "docker compose -f docker-compose.yml -f docker-compose.build.yml up --build",
+      "category": "build",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm install",
+      "category": "install",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run fix-check",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm test",
+      "category": "test",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:web",
+      "category": "build",
+      "source": "docs/QUICKSTART.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run start",
+      "category": "run",
+      "source": "docs/QUICKSTART.md",
+      "note": null
+    },
+    {
+      "cmd": "npx wrangler d1 create open-connector",
+      "category": "run",
+      "source": "docs/QUICKSTART.md",
+      "note": null
+    },
+    {
+      "cmd": "npx wrangler r2 bucket create open-connector-transit-files",
+      "category": "run",
+      "source": "docs/QUICKSTART.md",
+      "note": null
+    },
+    {
+      "cmd": "npx wrangler d1 migrations apply open-connector --local --config wrangler.local.jsonc",
+      "category": "run",
+      "source": "docs/QUICKSTART.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev:cloudflare",
+      "category": "run",
+      "source": "docs/QUICKSTART.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run deploy:cloudflare",
+      "category": "run",
+      "source": "docs/QUICKSTART.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run generate:catalog",
+      "category": "run",
+      "source": "CONTRIBUTING.md",
+      "note": null
+    },
+    {
+      "cmd": "npx wrangler login",
+      "category": "run",
+      "source": "docs/cloudflare.md",
+      "note": null
+    },
+    {
+      "cmd": "npx wrangler kv namespace create open-connector-transit-files",
+      "category": "run",
+      "source": "docs/cloudflare.md",
+      "note": null
+    },
+    {
+      "cmd": "npx wrangler d1 migrations apply open-connector --remote --config wrangler.local.jsonc",
+      "category": "run",
+      "source": "docs/cloudflare.md",
+      "note": null
+    },
+    {
+      "cmd": "npx wrangler secret put OOMOL_CONNECT_ADMIN_TOKEN --config wrangler.local.jsonc",
+      "category": "run",
+      "source": "docs/cloudflare.md",
+      "note": null
+    },
+    {
+      "cmd": "npx wrangler secret put OOMOL_CONNECT_ENCRYPTION_KEY --config wrangler.local.jsonc",
+      "category": "run",
+      "source": "docs/cloudflare.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run runtime:data -- reset --yes",
+      "category": "run",
+      "source": "docs/credentials.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run runtime:data -- rotate-key",
+      "category": "run",
+      "source": "docs/credentials.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run runtime:data -- rotate-key --plain",
+      "category": "run",
+      "source": "docs/credentials.md",
+      "note": null
+    },
+    {
+      "cmd": "docker pull ghcr.io/oomol-lab/open-connector:latest",
+      "category": "other",
+      "source": "docs/docker-ghcr.md",
+      "note": null
+    },
+    {
+      "cmd": "docker run -d \\",
+      "category": "run",
+      "source": "docs/docker-ghcr.md",
+      "note": null
+    },
+    {
+      "cmd": "npm install @oomol-lab/connector",
+      "category": "install",
+      "source": "docs/gmail-oauth-sdk.md",
+      "note": null
+    },
+    {
+      "cmd": "npm install -D @oomol-lab/connector-types",
+      "category": "install",
+      "source": "docs/gmail-oauth-sdk.md",
+      "note": null
+    }
+  ],
+  "install": [
+    "npm install",
+    "npm install @oomol-lab/connector",
+    "npm install -D @oomol-lab/connector-types"
+  ],
+  "quickstart": [
+    "npm run dev",
+    "npm run dev:api",
+    "npm run start",
+    "npm run typecheck",
+    "npm run generate:catalog",
+    "npm run fix",
+    "npm run fix-check",
+    "npx wrangler d1 create open-connector",
+    "npx wrangler r2 bucket create open-connector-transit-files",
+    "npx wrangler d1 migrations apply open-connector --local --config wrangler.local.jsonc",
+    "npm run dev:cloudflare",
+    "npm run deploy:cloudflare"
+  ]
+}

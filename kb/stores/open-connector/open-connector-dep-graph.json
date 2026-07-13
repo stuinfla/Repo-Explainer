@@ -1,0 +1,155 @@
+{
+  "target": "open-connector",
+  "metaName": "OpenConnector",
+  "generated": "2026-07-13T13:56:43.268Z",
+  "ecosystems": [
+    "npm"
+  ],
+  "componentCount": 1,
+  "internalEdgeCount": 0,
+  "externalDepCount": 18,
+  "nodes": [
+    {
+      "name": "@oomol-lab/open-connector",
+      "version": "1.1.0",
+      "description": null,
+      "manifest": "package.json",
+      "deps": [
+        "@cfworker/json-schema",
+        "@hono/node-server",
+        "@modelcontextprotocol/sdk",
+        "@scalar/hono-api-reference",
+        "ali-oss",
+        "fast-xml-parser",
+        "hono",
+        "imapflow",
+        "mailparser",
+        "mdast-util-from-markdown",
+        "mdast-util-gfm",
+        "mdast-util-to-markdown",
+        "micromark-extension-gfm",
+        "minisearch",
+        "nodemailer",
+        "pino",
+        "rss-parser",
+        "zod"
+      ],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [],
+  "externalDeps": {
+    "@oomol-lab/open-connector": [
+      {
+        "name": "@cfworker/json-schema",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@hono/node-server",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@modelcontextprotocol/sdk",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@scalar/hono-api-reference",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "ali-oss",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "fast-xml-parser",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "hono",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "imapflow",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "mailparser",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "mdast-util-from-markdown",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "mdast-util-gfm",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "mdast-util-to-markdown",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "micromark-extension-gfm",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "minisearch",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "nodemailer",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "pino",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "rss-parser",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "zod",
+        "req": "*",
+        "kind": "normal"
+      }
+    ]
+  },
+  "externalDepNames": [
+    "@cfworker/json-schema",
+    "@hono/node-server",
+    "@modelcontextprotocol/sdk",
+    "@scalar/hono-api-reference",
+    "ali-oss",
+    "fast-xml-parser",
+    "hono",
+    "imapflow",
+    "mailparser",
+    "mdast-util-from-markdown",
+    "mdast-util-gfm",
+    "mdast-util-to-markdown",
+    "micromark-extension-gfm",
+    "minisearch",
+    "nodemailer",
+    "pino",
+    "rss-parser",
+    "zod"
+  ]
+}
