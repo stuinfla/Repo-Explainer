@@ -64,7 +64,11 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
+          # NO registry-url here (removed 2026-07-13): setup-node's registry-url writes an
+          # .npmrc bound to a placeholder NODE_AUTH_TOKEN, and npm 12.0.1 prefers that dead
+          # token over the OIDC exchange — v0.4.2's publish 404'd exactly there. Trusted
+          # publishing's documented setup is: configure NO token anywhere; npm's OIDC flow
+          # authenticates on its own (id-token: write above is the only credential).
 
       # OIDC trusted publishing needs npm >= 11.5.1; node 22 ships an older one. Pinned —
       # an unpinned @latest would hand publish trust to whatever npm ships that day.
