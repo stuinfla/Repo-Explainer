@@ -85,7 +85,7 @@ async function callAnthropic(model, prompt) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model, max_tokens: 1400, messages: [{ role: 'user', content: prompt }] }),
+    body: JSON.stringify({ model, max_tokens: 8000, messages: [{ role: 'user', content: prompt }] }),
     signal: AbortSignal.timeout(90_000),
   });
   if (!r.ok) throw new Error(`anthropic ${model}: HTTP ${r.status}`);
@@ -96,7 +96,7 @@ async function callOpenAI(model, prompt) {
   const r = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { Authorization: `Bearer ${openaiKey}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ model, max_completion_tokens: 1400, messages: [{ role: 'user', content: prompt }] }),
+    body: JSON.stringify({ model, max_completion_tokens: 6000, messages: [{ role: 'user', content: prompt }] }),
     signal: AbortSignal.timeout(90_000),
   });
   if (!r.ok) throw new Error(`openai ${model}: HTTP ${r.status}`);
@@ -104,9 +104,9 @@ async function callOpenAI(model, prompt) {
   return j.choices?.[0]?.message?.content || '';
 }
 function parseSpec(text, model) {
-  const m = text.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error(`${model}: no JSON object in response`);
-  return JSON.parse(m[1 - 1]);
+  const m = String(text).match(/\{[\s\S]*\}/);
+  if (!m) throw new Error(`${model}: no JSON object in response (len=${String(text).length}, head=${JSON.stringify(String(text).slice(0, 160))})`);
+  return JSON.parse(m[0]);
 }
 
 const CANDIDATES = [
