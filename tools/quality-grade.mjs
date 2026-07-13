@@ -255,6 +255,15 @@ export function extractRungText(html) {
   return chunks.join('\n')
     .replace(/<script[\s\S]*?<\/script>/g, ' ')
     .replace(/<style[\s\S]*?<\/style>/g, ' ')
+    // A LOOPHOLE, closed 2026-07-13. INV-20 asks "would a newcomer hit a term they cannot decode?" — that
+    // is a question about what a reader SEES. Screen-reader-only text (assemble-page renders <caption> as
+    // class="visually-hidden") was being scanned, so glossing an acronym THERE satisfied the linter while a
+    // sighted reader still met bare "POST /agents/{id}/chat" and "Streaming SSE chat" with nothing to
+    // explain them. Two independent authors — a subagent and me — both reached for that caption as the
+    // place to put the gloss, which is the tell that the gate was rewarding the wrong thing. A check you
+    // can satisfy without helping the reader is worse than no check: it manufactures false confidence.
+    // Hidden text is now stripped BEFORE the scan, so a gloss only counts if the reader can actually read it.
+    .replace(/<[^>]*class="[^"]*\bvisually-hidden\b[^"]*"[^>]*>[\s\S]*?<\/[a-zA-Z]+>/g, ' ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/&(?:rsquo|lsquo|#8217|#8216);/g, "'").replace(/&(?:mdash|#8212);/g, '—')

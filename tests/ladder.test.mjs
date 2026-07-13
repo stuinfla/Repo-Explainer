@@ -117,3 +117,31 @@ test('INV-20 — ordinary words in display caps are NOT acronyms (INSIDE / MODEL
   assert.ok(findUnexplainedAcronyms('It compiles to WASM at build time.').includes('WASM'),
     'a genuinely unglossed acronym must still be caught');
 });
+
+// ── REGRESSION: a gloss the reader cannot SEE does not count (2026-07-13) ─────────────────────────
+// assemble-page renders a table <caption> as class="visually-hidden" (screen-reader only). INV-20 was
+// scanning it, so glossing an acronym THERE satisfied the linter while a sighted reader still met a bare
+// "POST /agents/{id}/chat" and "Streaming SSE chat" with nothing to decode them. Two independent authors
+// (a subagent, and me) both reached for that caption as the natural place to put the gloss — which is the
+// tell that the CHECK was rewarding the wrong thing, not that the authors were careless. A gate you can
+// satisfy without helping the reader is worse than no gate: it manufactures false confidence.
+test('INV-20 — a gloss hidden from sighted readers (visually-hidden) does NOT satisfy the gate', async () => {
+  const { extractRungText, findUnexplainedAcronyms } = await import('../tools/quality-grade.mjs');
+
+  const hiddenGloss = `<section class="hero"><h1>Hi</h1></section>
+    <details class="section" id="what-it-is"><table>
+      <caption class="visually-hidden">every row is a web request that sends data (POST)</caption>
+      <tr><td>POST /agents/chat</td></tr>
+    </table></details>`;
+  assert.ok(findUnexplainedAcronyms(extractRungText(hiddenGloss)).includes('POST'),
+    'a gloss inside visually-hidden text must NOT count — the sighted reader still sees bare "POST"');
+
+  const visibleGloss = `<section class="hero"><h1>Hi</h1></section>
+    <details class="section" id="what-it-is">
+      <p>Each row begins with the request that hands the service something to do (POST).</p>
+      <table><caption class="visually-hidden">The service's web addresses.</caption>
+      <tr><td>POST /agents/chat</td></tr></table>
+    </details>`;
+  assert.deepEqual(findUnexplainedAcronyms(extractRungText(visibleGloss)), [],
+    'the SAME gloss in visible prose must satisfy the gate');
+});
