@@ -308,6 +308,17 @@ log(`starting: ${repoUrl} (budget ${budgetMin}min / $${budgetUsd}, build dir ${b
 const AGENT_ENV_ALLOWLIST = ['PATH', 'HOME', 'LANG', 'TERM', 'TMPDIR', 'NODE_ENV', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'NETLIFY_AUTH_TOKEN'];
 const agentEnv = {};
 for (const key of AGENT_ENV_ALLOWLIST) if (process.env[key] !== undefined) agentEnv[key] = process.env[key];
+// --executor-auth subscription (owner ask 2026-07-15, verified live: headless `claude -p` with no
+// ANTHROPIC_API_KEY answers on the machine's logged-in Claude subscription session): for LOCAL,
+// OWNER-INITIATED builds only, strip the API key from the agent env so the executor's reasoning —
+// the $3-5 slice of every build — rides the subscription instead of metered billing. Hybrid by
+// design: the concept tournament and every OpenAI/Netlify tool still use API keys (raw API calls
+// have no subscription path). NEVER set this on CI/hosted builds — a fresh runner has no OAuth
+// session (it would just fail), and third-party traffic on a consumer plan violates its terms.
+if (args['executor-auth'] === 'subscription') {
+  delete agentEnv.ANTHROPIC_API_KEY;
+  log('executor-auth=subscription — agent reasoning rides the local Claude login; API keys stay with tournament/tools only');
+}
 // Not a secret — the INV-21 identity pin. clone-repo.mjs and deploy.mjs refuse to run against any
 // repo.url that doesn't match it, so even a misbehaving agent cannot swap the source mid-build.
 agentEnv.EXPLAINER_SUBMITTED_REPO = submittedRepoId;
