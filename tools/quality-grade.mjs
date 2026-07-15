@@ -838,10 +838,16 @@ async function main() {
       device: 'both', criterion: 'operator:zeroKnowledgeReader', score: 0,
       note: `INV-20 UnexplainedAcronymZero: the first four sections (hero, problem, what-it-is, insight) use ${inv20Violations.join(', ')} with no plain-words gloss at first use. The reader is a smart developer from a DIFFERENT domain — define each term inline (e.g. "SSG (pre-building pages as plain files)") or replace it with plain language.`,
     }];
+    // NO iteration charge and NO scorecard wipe (fixed 2026-07-15): the cap exists to bound the
+    // EXPENSIVE two-device vision round trip, but this path costs zero tokens — and on the
+    // autonomous-wealth-builder build it silently ate 2 of the 3 allowed grades, so the agent's
+    // real fixes were never vision-graded at all. A $0 refusal keeps the budget and the record.
     const quality = {
-      scorecard: [], passed: false, exemplary: false,
-      iterations: (Number.isInteger(ctx.quality?.iterations) ? ctx.quality.iterations : 0) + 1,
-      visionModel: model, screenshots: {}, pageHeights: {}, refineNotes,
+      scorecard: ctx.quality?.scorecard || [], passed: false, exemplary: false,
+      iterations: Number.isInteger(ctx.quality?.iterations) ? ctx.quality.iterations : 0,
+      visionModel: model,
+      screenshots: ctx.quality?.screenshots || {}, pageHeights: ctx.quality?.pageHeights || {},
+      refineNotes,
       inv20: { passed: false, violations: inv20Violations },
       gradedAt: new Date().toISOString(),
     };
