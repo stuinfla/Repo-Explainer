@@ -9,9 +9,37 @@
 
 const { getStore, connectLambda } = require("@netlify/blobs");
 
+// 1x1 transparent GIF for the email-open pixel (owner ask 2026-07-15: "tell me the email's
+// been read"). GET /track?open=<message-id> logs an open event to the same traffic store.
+// Caveat by design: privacy relays (duck.com strips trackers) and image-blocking clients
+// won't fire it — an open ping is proof of reading; silence is not proof of not-reading.
+const PIXEL = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");
+
 exports.handler = async function (event) {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 204, headers: cors(), body: "" };
+  }
+  if (event.httpMethod === "GET" && event.queryStringParameters && event.queryStringParameters.open) {
+    try {
+      try { connectLambda(event); } catch { /* v2 runtime wires itself */ }
+      const store = getStore("traffic");
+      const id = String(event.queryStringParameters.open).slice(0, 120);
+      const key = "email-open:" + id;
+      const cur = (await store.get(key, { type: "json" })) || { opens: 0, first: null, last: null };
+      cur.opens += 1;
+      const now = new Date().toISOString();
+      if (!cur.first) cur.first = now;
+      cur.last = now;
+      await store.setJSON(key, cur);
+    } catch (e) {
+      console.error("open-pixel failed:", e && e.message);
+    }
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "image/gif", "Cache-Control": "no-store, no-cache, must-revalidate", ...cors() },
+      body: PIXEL.toString("base64"),
+      isBase64Encoded: true,
+    };
   }
   if (event.httpMethod !== "POST") return { statusCode: 405, headers: cors(), body: "" };
 
