@@ -1,83 +1,61 @@
-# chalk Primer
+# chalk — orientation primer
 
-## 1. What is chalk?
+## What it is
+`chalk` is a small, zero-dependency JavaScript library (Node.js, ESM) that colors and styles
+terminal text. `chalk.red('Error!')` returns a string wrapped in ANSI escape codes — the
+invisible on/off switches a terminal reads to turn color on before the text and back off after
+it. It has no runtime dependencies, is used by roughly 115,000 npm packages, and its current
+major version is 5.6.2 (source/index.js + two small vendored helpers: ansi-styles and
+supports-color).
 
-chalk is a Node.js library for styling terminal output — adding colors, bold text, underlines, and other formatting to strings you print to the console. Instead of memorizing obscure ANSI escape sequences (raw byte strings that terminals interpret as "turn on red" or "make bold"), chalk gives you a clean, chainable JavaScript API: chalk.red.bold("error!").
+## The core concept
+Every style (`.red`, `.bold`, `.bgBlue`, `.hex('#fff')`, `.rgb(1,2,3)`) is a lazily-evaluated
+getter on a chainable proxy-like function object. Accessing `chalk.red` builds a "styler" — a
+tiny record of `{ open, close, parent }` ANSI codes — and links it to whatever styler came
+before it in the chain (`chalk.blue.bold` → bold's styler points at blue's). Calling the final
+result with a string applies `openAll + string + closeAll`, where `openAll`/`closeAll` are the
+full accumulated chain of codes from every parent styler.
 
-It is used by over 115,000 npm packages as of July 2024. Tools you already depend on — ESLint, Jest, create-react-app, Vite, and thousands of CLI tools — rely on chalk to make their output readable and human-friendly.
+## The clever move (why nesting doesn't break)
+If you write raw ANSI by hand and nest a highlighted word inside a colored sentence, the inner
+word's "reset" code doesn't just end the inner style — a real terminal reads it as "reset
+EVERYTHING," so the rest of the outer sentence goes back to plain default color too. chalk's
+`applyStyle` (source/index.js) checks whether the string being wrapped already contains escape
+codes (i.e. it has a nested chalk call inside it). If so, it walks up the parent chain and
+replaces every occurrence of that parent's `close` code already present in the string with that
+parent's `open` code instead — so the moment the nested style ends, the outer style is
+re-asserted rather than left reset. That single repair (`stringReplaceAll`, source/utilities.js)
+is the entire trick; there is no stack machine or state you manage yourself.
 
-## 2. What can chalk do for you?
+## Color-support detection
+`supports-color` (vendored, source/source/vendor/supports-color) sniffs environment variables
+(`TERM`, `COLORTERM`, CI flags, `FORCE_COLOR`) and stream TTY-ness to decide a `level` 0–3: 0 =
+no color, 1 = 16 colors (ansi), 2 = 256 colors, 3 = 16 million colors (truecolor). `chalk.level`
+picks the right ANSI code family (`ansiStyles.color[name].ansi / ansi256 / ansi16m`) automatically
+so the same `chalk.hex('#DEADED')` call degrades gracefully on an old terminal instead of printing
+garbage codes.
 
-- Named colors: chalk.red(), chalk.blue(), chalk.green() — 16 standard foreground and background colors
-- 256-color mode: chalk.ansi256(194)() — for terminals supporting the extended 256-color palette
-- Truecolor (16 million colors): chalk.hex("#DEADED")() and chalk.rgb(123, 45, 67)() — any CSS hex or RGB value
-- Text modifiers: bold, italic, underline, strikethrough, dim, inverse, hidden, visible
-- Style chaining: combine any styles — chalk.bold.red.bgWhite("text")
-- Style nesting: nest chalk calls inside each other — chalk.red("Hello", chalk.blue.underline("world"))
-- Theme creation: save chalk.bold.red to a variable and reuse it as const error = chalk.bold.red
-- Auto-detection: automatically detects the terminal color capability level and degrades gracefully
-- Separate stderr instance: chalkStderr configured for the stderr stream
+## Maturity & scope
+Actively maintained by Sindre Sorhus + community; MIT licensed; no runtime dependencies; ships
+TypeScript types; test suite via `xo` (lint) + `ava` (tests) + `tsd` (type tests); a `matcha`
+micro-benchmark (`benchmark.js`). Chalk 5 is ESM-only — CommonJS/TypeScript-bundler users are
+pointed at Chalk 4.
 
-## 3. What is chalk made of?
+## How to use it end-to-end
+```sh
+npm install chalk
+```
+```js
+import chalk from 'chalk';
+console.log(chalk.blue('Hello world!'));
+console.log(chalk.green('All systems ' + chalk.blue.bold('nominal') + ' — still green.'));
+```
+Chain styles in any order (`chalk.red.bold.underline(...)`), nest them freely, or use
+`chalk.hex()` / `chalk.rgb()` for exact colors. `chalk.level` can be forced per-instance via
+`new Chalk({level: 0-3})` for library authors who must not mutate the global default.
 
-chalk v5 is a focused, zero-runtime-dependency ESM package. Its source is in source/:
-
-- source/index.js — the core: Chalk class, chalkFactory, createBuilder, createStyler, and applyStyle (~200 lines)
-- source/utilities.js — two helpers: stringReplaceAll and stringEncaseCRLFWithFirstIndex
-- source/vendor/ansi-styles/ — vendored copy providing every ANSI open/close escape code pair for each style name
-- source/vendor/supports-color/ — vendored copy detecting the terminal color level (0-3) via environment signals
-
-## 4. How the chainable API works step by step
-
-chalk uses a lazy prototype chain. Here is the mental model:
-
-Step 1 — Creating the chalk object: chalk (the default export) is a function whose prototype is createChalk.prototype, which has all 60+ styles defined as lazy getter properties.
-
-Step 2 — Accessing a style: Writing chalk.blue fires a getter that calls createBuilder(this, createStyler(blueOpen, blueClose, this[STYLER]), this[IS_EMPTY]). This creates a new builder function whose prototype is also createChalk.prototype (so it has all style getters too), plus three private symbols carrying the generator, styler chain, and isEmpty flag.
-
-Step 3 — Chaining more styles: Each additional .bold or .underline on the builder fires another getter, creating another builder with a new styler node whose parent is the previous styler. openAll accumulates all open codes; closeAll accumulates close codes in reverse.
-
-Step 4 — Calling the builder: chalk.blue.bold("Hello") calls applyStyle(builder, "Hello"), which: checks level (returns unstyled if 0), handles nested ANSI codes (replaces close sequences with close+open to ensure nested styles resume correctly), applies the macOS line-break fix (closes before each newline and reopens after), then returns openAll + string + closeAll.
-
-Color model downsampling: When you call chalk.hex("#FF0000") on a terminal supporting only 16 colors, chalk automatically downsamples the hex value to the nearest 16-color ANSI code.
-
-## 5. Is it production-ready?
-
-chalk v5.6.2 is extremely mature — among the most downloaded npm packages in the world (billions of downloads). Its scope is intentionally narrow: styling strings for terminal output only.
-
-It does NOT style HTML, parse/strip ANSI codes, animate text, or act as a logger.
-
-Important: chalk v5 is ESM-only (import, not require). Use chalk v4 for CommonJS projects.
-
-## 6. Where do I read more?
-
-- README (readme.md) — all style names, API, color levels, 256/Truecolor details, browser support, FAQ
-- Source (source/index.js) — the full implementation, short and readable
-- Tests (test/) — Ava test suite showing expected behavior and edge cases
-
-## 7. How do I install and use it end-to-end?
-
-Install: npm install chalk
-
-Requires Node.js 12.17+, 14.13+, or 16+. For CommonJS: npm install chalk@4
-
-Basic usage:
-import chalk from "chalk";
-console.log(chalk.blue("Hello world!"));
-
-Chain styles:
-console.log(chalk.bold.red.bgWhite("Error!"));
-
-Create reusable themes:
-const error = chalk.bold.red;
-const warning = chalk.hex("#FFA500");
-console.log(error("Something failed"));
-console.log(warning("Check this"));
-
-Truecolor:
-console.log(chalk.rgb(123, 45, 67).underline("Reddish color"));
-console.log(chalk.hex("#DEADED").bold("Gray-lavender"));
-
-Force disable for CI: FORCE_COLOR=0 node yourscript.js
-
-What you see: styled text appears immediately in the console. No build step, no config file. If the terminal does not support colors (like when piped to a file), chalk automatically falls back to unstyled text.
+## Where the docs are
+`readme.md` (usage, full API, style list, FAQ) · `source/index.d.ts` (types) ·
+`examples/` (rainbow.js, screenshot.js) · `source/vendor/ansi-styles` and
+`source/vendor/supports-color` (the two small internal helpers, vendored to keep dependency
+count at zero).

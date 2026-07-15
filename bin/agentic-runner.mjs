@@ -189,41 +189,48 @@ log(`preflight OK — cloned ${cloneOut.outputs?.repo?.owner}/${cloneOut.outputs
 // the repo .env as its own fallback, so Grok is probed through the same resolution order and
 // a dead Grok key only WARNS (gpt-image fallback exists) — a dead OpenAI key FAILS (it also
 // backs vision grading, which has no fallback).
-function envOrDotenv(...names) {
-  for (const n of names) if (process.env[n]) return { val: process.env[n], src: `process env ${n}` };
+// Every source that HAS a value, in priority order (process env first, then repo .env),
+// deduped by value. The probe walks this list and the first LIVE key wins — learned live
+// 2026-07-14: a dead key PRESENT in process env shadowed a proven-live .env key, so
+// "first that exists" failed a build that "first that works" would have started.
+function credCandidates(...names) {
+  const out = [];
+  for (const n of names) if (process.env[n]) out.push({ val: process.env[n], src: `process env ${n}` });
   try {
     const txt = fs.readFileSync(path.join(REPO_ROOT, '.env'), 'utf8');
     for (const n of names) {
       const m = txt.match(new RegExp(`^${n}=("?)(.*?)\\1\\s*$`, 'm'));
-      if (m?.[2]) return { val: m[2], src: `.env ${n}` };
+      if (m?.[2] && !out.some((c) => c.val === m[2])) out.push({ val: m[2], src: `.env ${n}` });
     }
   } catch { /* no .env in CI — env-only is the normal hosted case */ }
-  return null;
+  return out;
 }
-async function probeCred(label, cred, url, headers) {
-  if (!cred) return { label, ok: false, why: 'not set anywhere (process env or repo .env)' };
-  try {
-    const r = await fetch(url, { headers: headers(cred.val), signal: AbortSignal.timeout(5000) });
-    return { label, ok: r.ok, why: r.ok ? `OK via ${cred.src}` : `HTTP ${r.status} via ${cred.src} — key is dead/rotated` };
-  } catch (e) { return { label, ok: false, why: `unreachable (${e.message}) via ${cred.src}` }; }
+async function probeCred(label, candidates, url, headers) {
+  if (!candidates.length) return { label, ok: false, why: 'not set anywhere (process env or repo .env)' };
+  const dead = [];
+  for (const cred of candidates) {
+    try {
+      const r = await fetch(url, { headers: headers(cred.val), signal: AbortSignal.timeout(5000) });
+      if (r.ok) return { label, ok: true, val: cred.val, why: dead.length ? `OK via ${cred.src} — self-healed past: ${dead.join('; ')}` : `OK via ${cred.src}` };
+      dead.push(`${cred.src} HTTP ${r.status}`);
+    } catch (e) { dead.push(`${cred.src} unreachable (${e.message})`); }
+  }
+  return { label, ok: false, why: `every source dead: ${dead.join('; ')}` };
 }
 {
-  const anthropic = envOrDotenv('ANTHROPIC_API_KEY', 'CLAUDE_API_KEY');
-  // The spawned agent authenticates from its own env allowlist — make sure the key we just
-  // verified is the one it actually receives (covers the local case where only .env has it).
-  if (anthropic && !process.env.ANTHROPIC_API_KEY) process.env.ANTHROPIC_API_KEY = anthropic.val;
-  const netlify = envOrDotenv('NETLIFY_AUTH_TOKEN');
-  if (netlify && !process.env.NETLIFY_AUTH_TOKEN) process.env.NETLIFY_AUTH_TOKEN = netlify.val;
-  const openai = envOrDotenv('OPENAI_API_KEY', 'OPEN_AI_KEY');
-  if (openai && !process.env.OPENAI_API_KEY) process.env.OPENAI_API_KEY = openai.val;
-  const grok = envOrDotenv('GROK_AI_KEY', 'GROK_API_KEY');
   const bearer = (v) => ({ Authorization: `Bearer ${v}` });
   const [a, n, o, g] = await Promise.all([
-    probeCred('ANTHROPIC_API_KEY (agent reasoning)', anthropic, 'https://api.anthropic.com/v1/models', (v) => ({ 'x-api-key': v, 'anthropic-version': '2023-06-01' })),
-    probeCred('NETLIFY_AUTH_TOKEN (deploy)', netlify, 'https://api.netlify.com/api/v1/user', bearer),
-    probeCred('OPENAI_API_KEY (vision grading + image fallback)', openai, 'https://api.openai.com/v1/models', bearer),
-    probeCred('GROK_AI_KEY (primary image engine)', grok, 'https://api.x.ai/v1/models', bearer),
+    probeCred('ANTHROPIC_API_KEY (agent reasoning)', credCandidates('ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'), 'https://api.anthropic.com/v1/models', (v) => ({ 'x-api-key': v, 'anthropic-version': '2023-06-01' })),
+    probeCred('NETLIFY_AUTH_TOKEN (deploy)', credCandidates('NETLIFY_AUTH_TOKEN'), 'https://api.netlify.com/api/v1/user', bearer),
+    probeCred('OPENAI_API_KEY (vision grading + image fallback)', credCandidates('OPENAI_API_KEY', 'OPEN_AI_KEY'), 'https://api.openai.com/v1/models', bearer),
+    probeCred('GROK_AI_KEY (primary image engine)', credCandidates('GROK_AI_KEY', 'GROK_API_KEY'), 'https://api.x.ai/v1/models', bearer),
   ]);
+  // The spawned agent and every tool authenticate from process.env — hand each the PROVEN-LIVE
+  // value, OVERWRITING whatever was there (a dead value present is exactly the failure mode).
+  if (a.ok) process.env.ANTHROPIC_API_KEY = a.val;
+  if (n.ok) process.env.NETLIFY_AUTH_TOKEN = n.val;
+  if (o.ok) process.env.OPENAI_API_KEY = o.val;
+  if (g.ok) process.env.GROK_AI_KEY = g.val;
   for (const r of [a, n, o, g]) log(`credential preflight: ${r.ok ? '✓' : '✗'} ${r.label} — ${r.why}`);
   if (!g.ok) log('credential preflight: WARN — Grok unavailable, images will use the gpt-image fallback');
   const fatal = [a, n, o].filter((r) => !r.ok);

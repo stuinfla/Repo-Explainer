@@ -1,0 +1,26 @@
+{
+  "target": "agentic-kit",
+  "metaName": "agentic-kit",
+  "generated": "2026-07-15T02:56:33.888Z",
+  "ecosystems": [
+    "npm"
+  ],
+  "componentCount": 1,
+  "internalEdgeCount": 0,
+  "externalDepCount": 0,
+  "nodes": [
+    {
+      "name": "@pacphi/agentic-kit",
+      "version": "4.0.0-alpha.4",
+      "description": "Machine-level setup, healing, and verification kit for your AI agent stack (ruflo/claude-flow, agentic-qe, Claude Code glue) — cross-platform, zero-dependency",
+      "manifest": "package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [],
+  "externalDeps": {
+    "@pacphi/agentic-kit": []
+  },
+  "externalDepNames": []
+}

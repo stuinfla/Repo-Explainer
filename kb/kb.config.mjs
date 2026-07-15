@@ -1707,6 +1707,34 @@ export const targets = {
       { "rule": "sourceBodies", "roots": ["src", "web/src", "scripts"], "ext": [".ts", ".tsx", ".js", ".mjs"] }
     ]
   },
+  "agentic-kit": {
+    "slug": "agentic-kit",
+    "metaName": "agentic-kit",
+    "embed": {
+      "model": "Xenova/bge-small-en-v1.5",
+      "dim": 384,
+      "pooling": "mean",
+      "queryPrefix": "Represent this sentence for searching relevant passages: ",
+      "rankScale": 0.6,
+      "rvfSuffix": ".rvf"
+    },
+    "productNames": ["agentic-kit", "@pacphi/agentic-kit", "ak"],
+    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/agentic-kit/repo",
+    "scopeExclude": [
+      "node_modules", "dist", "target", ".git", "coverage", "pkg", ".next",
+      "__pycache__", ".venv", "venv"
+    ],
+    "codeExt": [".mjs", ".js", ".cjs"],
+    "fullTextExt": [".md", ".mdx", ".txt"],
+    "templateExt": [],
+    "componentRoots": ["src", "src/commands", "src/lib", "src/tools", "bin", "claude"],
+    "componentWord": ["module", "command", "guard", "healer"],
+    "include": [
+      { "rule": "mdSweepFullText", "roots": ["."] },
+      { "rule": "literalFiles", "files": ["README.md", "package.json", "docs/TROUBLESHOOTING.md", "CLAUDE.md", "MAINTAINER.md"] },
+      { "rule": "sourceBodies", "roots": ["src", "bin"], "ext": [".mjs", ".js", ".cjs"] }
+    ]
+  },
 };
 
 /** Default target for CLI scripts that omit --target while only one repo is in scope [L]. */

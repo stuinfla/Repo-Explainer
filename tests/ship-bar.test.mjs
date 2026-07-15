@@ -12,7 +12,7 @@ import path from 'node:path';
 
 const DEPLOY = new URL('../tools/deploy.mjs', import.meta.url).pathname;
 
-function runDeploy(buildJson) {
+function runDeploy(buildJson, envOverrides = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-bar-'));
   fs.mkdirSync(path.join(dir, 'site'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'site', 'index.html'), '<!doctype html><title>t</title>');
@@ -21,9 +21,9 @@ function runDeploy(buildJson) {
     page: { dir: path.join(dir, 'site') },
     ...buildJson,
   }));
-  const env = { ...process.env };
+  const env = { ...process.env, ...envOverrides };
   delete env.NETLIFY_AUTH_TOKEN; // proves refusal happens before any provider/network step
-  delete env.DEPLOY_FORCE;
+  if (!('DEPLOY_FORCE' in envOverrides)) delete env.DEPLOY_FORCE;
   const res = spawnSync(process.execPath, [DEPLOY, dir], { env, encoding: 'utf8' });
   fs.rmSync(dir, { recursive: true, force: true });
   return res;
@@ -54,4 +54,16 @@ test('a passed build clears the rail (fails later on missing token, NOT on the s
   assert.equal(res.status, 1);
   assert.doesNotMatch(res.stdout, /SHIP BAR/, 'passed=true must not trip the rail');
   assert.match(res.stdout, /NETLIFY_AUTH_TOKEN/, 'should reach the provider step');
+});
+
+// 2026-07-14 incident: the hosted agent, at its refine cap with operator booleans made stale
+// by a real post-cap fix, used DEPLOY_FORCE=1 and bypassed the rail. The override is now
+// human-only: honored solely at an interactive terminal (stdin isTTY). This test spawns with
+// piped stdio — the same context every agent and CI job runs in — so the force MUST be ignored
+// and the rail MUST still refuse the below-bar build.
+test('DEPLOY_FORCE=1 is IGNORED in a non-interactive context (agents cannot bypass the rail)', () => {
+  const res = runDeploy({ quality: { passed: false, scorecard: failingScorecard } }, { DEPLOY_FORCE: '1' });
+  assert.equal(res.status, 1);
+  assert.match(res.stderr, /DEPLOY_FORCE=1 IGNORED/, 'must announce the ignored override');
+  assert.match(res.stdout, /SHIP BAR/, 'rail must still refuse the below-bar build');
 });

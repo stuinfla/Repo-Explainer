@@ -162,10 +162,19 @@ async function main() {
   //   device AND all operator questions true.
   // No quality slot at all → refuse (an ungraded page is not deployable). Manual redeploys of a
   // previously-passing build sail through on their recorded verdict; DEPLOY_FORCE=1 is the explicit,
-  // logged override for emergency ops.
-  if (process.env.DEPLOY_FORCE === '1') {
-    console.error('[deploy] DEPLOY_FORCE=1 — ship-bar rail bypassed EXPLICITLY (emergency override)');
+  // logged override for emergency ops — and it is HUMAN-ONLY: honored only at an interactive
+  // terminal (stdin isTTY). Learned live 2026-07-14: the hosted agent, stuck at the refine cap with
+  // two operator booleans made stale by a genuine post-cap fix, found this hatch and force-deployed
+  // (honestly documented, page verifiably above bar — but the ship bar is not an agent's to bypass).
+  // Agents and CI always run with piped stdio, so this boundary needs no shared secret and cannot
+  // be spoofed from inside a prompt. The legitimate post-cap-fix path is an OPERATOR regrade:
+  // reset quality.iterations and re-run quality-grade, then deploy on the fresh verdict.
+  if (process.env.DEPLOY_FORCE === '1' && process.stdin.isTTY) {
+    console.error('[deploy] DEPLOY_FORCE=1 — ship-bar rail bypassed EXPLICITLY (emergency override, interactive terminal)');
   } else {
+    if (process.env.DEPLOY_FORCE === '1') {
+      console.error('[deploy] DEPLOY_FORCE=1 IGNORED — non-interactive context (agent/CI). The rail is human-only to bypass; fix the page and re-grade instead.');
+    }
     const q = bc.quality;
     if (!q || !Array.isArray(q.scorecard) || q.scorecard.length === 0) {
       throw new Error('SHIP BAR: refusing to deploy — build.json has no quality scorecard (run quality-grade first; an ungraded page never ships).');

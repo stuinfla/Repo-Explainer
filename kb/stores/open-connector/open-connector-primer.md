@@ -1,57 +1,87 @@
-# OpenConnector — primer
+# OpenConnector — Primer
 
 ## What it is
-OpenConnector (`@oomol-lab/open-connector`) is an open-source connector gateway for AI agents and
-applications — a self-hosted alternative to Composio. It sits between AI agents/apps and the real
-online accounts they need to touch (GitHub, Gmail, Notion, Slack, BigQuery, Airtable, and 1,000+
-other providers), exposing a shared catalog of 10,000+ pre-built "Actions" (e.g. `github.create_issue`,
-`gmail.send_message`) behind one runtime boundary.
 
-## The core idea
-Real credentials (API keys, OAuth tokens) are connected once, at the gateway, and stored encrypted.
-Agents never receive the real credential. Instead they call the gateway with a runtime token
-(scoped, revocable, logged) via the Connector SDK, the `oo` CLI relay, MCP, or plain HTTP/OpenAPI.
-The gateway enforces an action allow/block policy (`ActionPolicyService`, `src/core/action-policy.ts`)
-before invoking the matching provider's open-source executor. The agent gets back the action's result
-and a safe, redacted account label — never the underlying secret.
+OpenConnector (`oomol-lab/open-connector`, Apache-2.0, by OOMOL Lab) is an **open-source connector
+gateway for AI agents** — an alternative to Composio. You connect user app accounts (GitHub, Gmail,
+Notion, Slack, BigQuery, Supabase, Airtable, and ~1,000+ more) **once**, and the gateway then exposes
+a shared catalog of 10,000+ prebuilt, schema-typed **Actions** to agents and applications — through
+MCP, plain HTTP/OpenAPI, the Connector SDK, the `oo` CLI, and a Web Console for administration.
+
+The core promise: **provider secrets stay behind the runtime boundary.** Agents receive action
+metadata, safe account labels, and execution results — never the API keys or OAuth tokens.
+
+## The problem it solves
+
+Agents need durable access to the tools users already use. Today you either paste API keys into the
+agent's environment (every prompt, log, and tool call is one leak away from your credentials) or you
+hand-build each integration — the OAuth dance, token refresh, request schemas, scopes — per service.
+OpenConnector centralizes all of that in one inspectable, self-hostable runtime.
+
+## Core concepts
+
+- **Provider** — one external service (e.g. `github`, `hackernews`). Lives in
+  `src/providers/<service>/` as `definition.ts` (catalog source: auth types, credential fields,
+  action schemas, required scopes) + `executors.ts` (lazy-loaded code that actually calls the
+  provider's API). ~1,086 provider directories in-repo.
+- **Action** — one typed operation (`github.get_current_user`, `hackernews.get_top_stories`) with a
+  JSON-schema input/output contract, required scopes, and an agent-readable markdown guide at
+  `/api/actions/:actionId/agent.md`.
+- **Connection** — a stored credential for a provider (`api_key`, `oauth2`, `custom_credential`, or
+  virtual `no_auth`), managed by `src/connection-service.ts`. Named connections allow multiple
+  accounts per service; agents select by alias, never by secret.
+- **Credential boundary** — credentials are stored in SQLite (local/Fly) or D1 (Cloudflare),
+  encrypted with AES-256-GCM when `OOMOL_CONNECT_ENCRYPTION_KEY` is set. OAuth client secrets and
+  token refresh live in `src/oauth/`. Run logs are redacted.
+- **Policy & tokens** — `src/core/action-policy.ts` enforces allow/block lists per action; runtime
+  tokens (`oct_...` bearer tokens) gate `/v1/*` and `/mcp`; an admin token gates the console/`/api/*`.
+- **Access surfaces** — MCP at `POST /mcp` (tools: `list_apps`, `search_actions`, `get_action_guide`,
+  `execute_action`), HTTP runtime API at `/v1/*`, generated OpenAPI at `/openapi.json`, and the Web
+  Console (Vite app under `web/`).
+
+## How a call works (runtime flow)
+
+1. Agent calls an action (MCP `execute_action` or `POST /v1/actions/<service>.<action>`).
+2. Gateway authenticates the runtime token, then `action-policy` checks allow/block.
+3. `src/core/validation.ts` validates input against the action's JSON schema.
+4. `connection-service` resolves the selected connection and decrypts the credential.
+5. The provider's lazy-loaded executor makes the real API call with the credential.
+6. The result returns to the agent; the run is logged with secrets redacted. The credential never
+   crosses back to the caller.
 
 ## How it's built
-- `src/server/` — the Hono-based HTTP app (`connect-server.ts`, `connect-app.ts`), API routes, MCP
-  endpoint (`src/mcp.ts`), Cloudflare adapter (`server/cloudflare.ts`), storage adapters
-  (SQLite locally / Fly volume; D1 + R2 on Cloudflare).
-- `src/core/` — catalog assembly (`catalog.ts`, `catalog-store.ts`), the action policy engine
-  (`action-policy.ts`), request/schema validation (`json-schema.ts`, `validation.ts`), provider/action
-  types (`types.ts`, `provider-definition.ts`).
-- `src/oauth/` — OAuth client config + token refresh services.
-- `src/connection-service.ts` — the "front desk ledger": connection identity, scopes, runtime tokens.
-- `src/providers/<service>/` — one directory per provider (1,000+), each with `definition.ts`
-  (schema/scopes/metadata), `actions.ts`, and `executors.ts` (the actual open-source call-out code),
-  generated into a registry/catalog at build time (`scripts/generate-provider-registry.ts`,
-  `generate-catalog.ts`).
-- `web/` — the React Web Console (provider browsing, credential setup, runtime tokens, Action
-  debugging, run logs), served by Vite locally or from the built runtime/Static Assets on Cloudflare.
-- `migrations/` — SQL migrations for the runtime's SQLite/D1 state (connections, tokens, run logs).
 
-## Maturity / status
-v1.1.0, Apache-2.0, actively maintained by OOMOL Lab. Ships with tests (`vitest`), typecheck, lint
-(`oxlint`), and a generated OpenAPI 3.1 document served at `/docs`. Deployable via Docker/Docker
-Compose (published GHCR image), Fly.io (Node + persistent SQLite volume), or Cloudflare Workers
-(D1 + R2 + Static Assets), or usable hosted via OOMOL with the same provider/Action contracts.
+TypeScript, Node 22+ (native TS execution — no bundler), Hono for the HTTP server,
+`@modelcontextprotocol/sdk` for MCP, zod + `@cfworker/json-schema` for validation, minisearch for
+action search. Storage adapters target SQLite locally and Cloudflare D1/R2 on Workers.
+Key modules: `src/server/` (routes, secrets codec, storage, Cloudflare adapter), `src/core/`
+(catalog, execution, validation, policy, search), `src/oauth/`, `src/providers/`, `web/` (console).
+
+## Maturity & deployment
+
+v1.1.0, active. Four deployment paths: local Docker (`docker compose up`, pulls
+`ghcr.io/oomol-lab/open-connector:latest`) or Node (`npm install && npm run dev`); Fly.io with a
+persistent SQLite volume; Cloudflare Workers with D1/R2/Static Assets (`npm run deploy:cloudflare`);
+or OOMOL's hosted runtime with the same contracts. Console at `http://localhost:3000`, API docs at
+`/docs`.
 
 ## Where the docs are
-`README.md` (overview, quick start), `docs/quickstart.md`, `docs/runtime-api.md` (HTTP/OpenAPI/MCP
-surface), `docs/credentials.md` (API key/OAuth/custom credential handling), `docs/configuration.md`
-(policy, tokens), `docs/catalog-format.md` (provider/action schema shape), `docs/cloudflare.md`,
-`docs/fly-io.md`, `docs/docker-ghcr.md`, `docs/sdk-cli.md` (Connector SDK + `oo` CLI), `CONTRIBUTING.md`.
 
-## How to use it end-to-end
-1. `docker compose up` (pulls `ghcr.io/oomol-lab/open-connector:latest`), or `npm install && npm run dev`
-   for local Node development (API on `:3000`, Web Console dev server on `:5173`).
-2. Open `http://localhost:3000` (console) and `http://localhost:3000/docs` (API reference).
-3. Verify with a no-auth Action: `POST /v1/actions/hackernews.get_top_stories`.
-4. Connect a real provider (e.g. GitHub via `PUT /api/connections/github` with an API key, or OAuth
-   for providers like Gmail), then call a credentialed Action such as `github.get_current_user`.
-5. Give an agent a scoped runtime token (not the real credential) via the SDK/CLI/MCP/HTTP, set an
-   action allow/block policy, and review run logs and access from the Web Console.
-6. For production, redeploy the same runtime to Fly.io or Cloudflare Workers, or point the same
-   provider/Action contracts at OOMOL's hosted runtime.
+`README.md` (overview), `docs/quickstart.md`, `docs/credentials.md`, `docs/runtime-api.md`,
+`docs/configuration.md`, `docs/cloudflare.md`, `docs/fly-io.md`, `docs/catalog-format.md`,
+`docs/sdk-cli.md`, `docs/docker-ghcr.md`.
+
+## Use it end-to-end (fastest path)
+
+```bash
+docker compose up                      # gateway on http://localhost:3000
+curl -s -X POST http://localhost:3000/v1/actions/hackernews.get_top_stories \
+  -H 'content-type: application/json' -d '{"input":{}}'   # no-auth action works immediately
+# connect GitHub with a personal access token:
+curl -s -X PUT http://localhost:3000/api/connections/github \
+  -H 'content-type: application/json' \
+  -d '{"authType":"api_key","values":{"apiKey":"github_pat_..."}}'
+curl -s -X POST http://localhost:3000/v1/actions/github.get_current_user \
+  -H 'content-type: application/json' -d '{"input":{}}'
+# point any MCP-capable agent host at http://localhost:3000/mcp
+```

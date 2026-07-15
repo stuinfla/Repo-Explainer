@@ -1,0 +1,119 @@
+{
+  "target": "agentic-kit",
+  "metaName": "agentic-kit",
+  "generated": "2026-07-15T02:56:33.939Z",
+  "workspace": {
+    "kind": "npm",
+    "members": []
+  },
+  "components": [
+    {
+      "name": "@pacphi/agentic-kit",
+      "path": "",
+      "kind": "package",
+      "description": "Machine-level setup, healing, and verification kit for your AI agent stack (ruflo/claude-flow, agentic-qe, Claude Code glue) — cross-platform, zero-dependency",
+      "scripts": {
+        "test": "node --test \"tests/kit/*.test.mjs\" && node tests/statusline-segments.test.cjs"
+      },
+      "bins": [
+        "agentic-kit",
+        "ak"
+      ],
+      "deps": []
+    }
+  ],
+  "binaries": [
+    {
+      "name": "agentic-kit",
+      "component": "@pacphi/agentic-kit",
+      "path": "",
+      "kind": "npm-bin"
+    },
+    {
+      "name": "ak",
+      "component": "@pacphi/agentic-kit",
+      "path": "",
+      "kind": "npm-bin"
+    }
+  ],
+  "commands": [
+    {
+      "cmd": "npm run test",
+      "raw": "node --test \"tests/kit/*.test.mjs\" && node tests/statusline-segments.test.cjs",
+      "category": "test",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm install -g @pacphi/agentic-kit@next",
+      "category": "install",
+      "source": "README.md",
+      "note": "alpha channel until 4.0.0 GA"
+    },
+    {
+      "cmd": "node tests/statusline-segments.test.cjs",
+      "category": "test",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "pnpm install",
+      "category": "install",
+      "source": "MAINTAINER.md",
+      "note": "dev only; repo is zero-dependency so this is tiny"
+    },
+    {
+      "cmd": "node bin/agentic-kit.mjs --help --all",
+      "category": "other",
+      "source": "MAINTAINER.md",
+      "note": null
+    },
+    {
+      "cmd": "node bin/agentic-kit.mjs status --json",
+      "category": "other",
+      "source": "MAINTAINER.md",
+      "note": "exercise a command directly"
+    },
+    {
+      "cmd": "npm link",
+      "category": "other",
+      "source": "MAINTAINER.md",
+      "note": "then `ak status`, `ak setup`, …  (npm, not pnpm, to match target)"
+    },
+    {
+      "cmd": "pnpm test",
+      "category": "test",
+      "source": "MAINTAINER.md",
+      "note": "the full gate — exactly what CI runs"
+    },
+    {
+      "cmd": "node --test \"tests/kit/*.test.mjs\" && node tests/statusline-segments.test.cjs",
+      "category": "test",
+      "source": "MAINTAINER.md",
+      "note": null
+    },
+    {
+      "cmd": "node bin/agentic-kit.mjs --version",
+      "category": "other",
+      "source": "MAINTAINER.md",
+      "note": "-> 4.0.0-alpha.5"
+    },
+    {
+      "cmd": "npm dist-tag ls @pacphi/agentic-kit",
+      "category": "other",
+      "source": "MAINTAINER.md",
+      "note": null
+    },
+    {
+      "cmd": "npm view @pacphi/agentic-kit@4.0.0-alpha.5 version dist.tarball",
+      "category": "other",
+      "source": "MAINTAINER.md",
+      "note": null
+    }
+  ],
+  "install": [
+    "npm install -g @pacphi/agentic-kit@next",
+    "pnpm install"
+  ],
+  "quickstart": []
+}
