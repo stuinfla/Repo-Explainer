@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Grade your explainer — explainmyrepo</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; }
+  body { background:#0b0f14; color:#e8edf3; font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+         display:flex; min-height:100vh; align-items:center; justify-content:center; padding:24px; }
+  .card { width:100%; max-width:560px; background:#11161d; border:1px solid #232c37; border-radius:16px; padding:32px; }
+  h1 { font-size:22px; margin-bottom:6px; }
+  .repo { font-family: ui-monospace, Menlo, monospace; color:#4fd1b3; font-size:14px; margin-bottom:22px; word-break:break-all; }
+  label { display:block; font-size:13px; color:#8b97a5; margin:18px 0 8px; letter-spacing:.4px; text-transform:uppercase; }
+  .scoreRow { display:flex; align-items:center; gap:18px; }
+  input[type=range] { flex:1; accent-color:#4fd1b3; }
+  .big { font-size:44px; font-weight:800; min-width:86px; text-align:right; font-variant-numeric: tabular-nums; }
+  textarea, input[type=email] { width:100%; background:#0b0f14; border:1px solid #232c37; border-radius:10px;
+         color:#e8edf3; padding:12px 14px; font:inherit; }
+  textarea { min-height:110px; resize:vertical; }
+  button { margin-top:24px; width:100%; padding:14px; border:0; border-radius:10px; background:#1d4e79;
+           color:#fff; font:600 16px/1 inherit; cursor:pointer; }
+  button:hover { background:#26639a; }
+  .done { text-align:center; padding:28px 0 12px; display:none; }
+  .done h2 { font-size:26px; margin-bottom:10px; }
+  .muted { color:#8b97a5; font-size:14px; }
+  .hp { position:absolute; left:-9999px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <form name="build-rating" method="POST" data-netlify="true" netlify-honeypot="hp-field" id="f">
+    <input type="hidden" name="form-name" value="build-rating">
+    <input type="hidden" name="build_id" id="build_id" value="">
+    <input type="hidden" name="repo" id="repo_hidden" value="">
+    <p class="hp"><input name="hp-field"></p>
+
+    <h1>How did we do?</h1>
+    <div class="repo" id="repoLabel"></div>
+
+    <label for="score">Your score, 1&ndash;100</label>
+    <div class="scoreRow">
+      <input type="range" id="score" name="score" min="1" max="100" value="80"
+             oninput="document.getElementById('big').textContent=this.value">
+      <div class="big" id="big">80</div>
+    </div>
+
+    <label for="thoughts">What worked? What didn&rsquo;t? What would make it a 100?</label>
+    <textarea id="thoughts" name="thoughts" placeholder="Anything — one word or an essay."></textarea>
+
+    <label for="email">Email (optional — only if you&rsquo;d like a reply)</label>
+    <input type="email" id="email" name="email" placeholder="you@example.com">
+
+    <button type="submit">Send my grade</button>
+  </form>
+  <div class="done" id="done">
+    <h2>Thank you 🙏</h2>
+    <p class="muted">Your grade goes straight into how the next pages get made.<br>
+    Want another repo explained? <a href="/" style="color:#4fd1b3">explainmyrepo.isovision.ai</a></p>
+  </div>
+</div>
+<script>
+  // Prefill from the email link: /rate.html?repo=owner/name&build=<id>
+  var qp = new URLSearchParams(location.search);
+  var repo = (qp.get('repo') || '').slice(0, 120);
+  var build = (qp.get('build') || '').slice(0, 60);
+  document.getElementById('repo_hidden').value = repo;
+  document.getElementById('build_id').value = build;
+  document.getElementById('repoLabel').textContent = repo ? 'your explainer for ' + repo : '';
+
+  // AJAX submit so the thank-you is instant and stays on-page.
+  document.getElementById('f').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var data = new URLSearchParams(new FormData(e.target));
+    fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: data.toString() })
+      .finally(function () {
+        document.getElementById('f').style.display = 'none';
+        document.getElementById('done').style.display = 'block';
+      });
+  });
+</script>
+</body>
+</html>

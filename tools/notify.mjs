@@ -156,6 +156,14 @@ const prUrl = ctx.readmePr?.prUrl;
 if (prUrl && prUrl !== 'declined') {
   links.push(`<li><b>README pull request (optional):</b> <a href="${esc(prUrl)}">${esc(prUrl)}</a></li>`);
 }
+// The closed loop (owner ask 2026-07-15: "capture their 1-100 and comments so you get smarter"):
+// every success email carries a one-click grade link; ratings land in the build-rating Netlify
+// form, show next to OUR grades on /admin, and feed the learning store as human ground truth.
+{
+  const repoSlug = `${ctx.repo?.owner || ''}/${ctx.repo?.name || ''}`.replace(/^\/$/, '');
+  const rateUrl = `https://explainmyrepo.isovision.ai/rate.html?repo=${encodeURIComponent(repoSlug)}&build=${encodeURIComponent(process.env.BUILD_ID || ctx.buildId || '')}`;
+  links.push(`<li><b>Grade this page (30 seconds):</b> <a href="${esc(rateUrl)}">${esc(rateUrl)}</a> — your 1–100 + a sentence directly shapes how the next pages get made.</li>`);
+}
 
 const seo = publish.sourceRepoSeoSuggested;
 let seoBlock = '';

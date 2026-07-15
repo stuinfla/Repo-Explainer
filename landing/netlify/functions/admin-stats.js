@@ -104,6 +104,7 @@ async function listBuilds(token) {
       if (!f || !f.raw_url) return base;
       const s = await (await fetch(f.raw_url)).json();
       base.status = s.status || "unknown";
+      base.buildId = s.buildId || null;
       base.liveUrl = (s.result && s.result.liveUrl) || null;
       base.costUsd = (s.result && s.result.costUsd) ?? null;
       base.grades = grades(s.result && s.result.scorecard);
@@ -143,6 +144,37 @@ async function readSiteFeedback() {
   } catch (e) {
     return { configured: false, submissions: [], error: String(e && e.message || e) };
   }
+}
+
+// Submitter ratings — the closed loop (owner ask 2026-07-15: "capture their 1-100 and comments
+// so you get smarter"). /rate.html posts to the build-rating Netlify form; the form id is
+// resolved BY NAME at call time (ids change if a form is ever recreated), and each rating rides
+// with repo + build_id so it can sit next to OUR grade in the builds table.
+async function readBuildRatings() {
+  const npat = process.env.NETLIFY_API_TOKEN;
+  if (!npat) return { configured: false, ratings: [] };
+  try {
+    const fr = await fetch("https://api.netlify.com/api/v1/forms", { headers: { Authorization: `Bearer ${npat}` } });
+    if (!fr.ok) return { configured: false, ratings: [], error: `forms list ${fr.status}` };
+    const forms = await fr.json();
+    const form = forms.find((f) => f.name === "build-rating");
+    if (!form) return { configured: true, ratings: [], note: "no build-rating form registered yet (first submission after deploy creates it)" };
+    const r = await fetch(`https://api.netlify.com/api/v1/forms/${form.id}/submissions`, { headers: { Authorization: `Bearer ${npat}` } });
+    if (!r.ok) return { configured: false, ratings: [], error: `submissions ${r.status}` };
+    const rows = await r.json();
+    return {
+      configured: true,
+      ratings: rows.map((s) => ({
+        id: s.id,
+        repo: s.data?.repo || null,
+        buildId: s.data?.build_id || null,
+        score: s.data?.score != null ? Number(s.data.score) : null,
+        thoughts: s.data?.thoughts || null,
+        email: s.data?.email || null,
+        at: s.created_at,
+      })).sort((a, b) => (a.at < b.at ? 1 : -1)),
+    };
+  } catch (e) { return { configured: false, ratings: [], error: String(e && e.message || e) }; }
 }
 
 // Last N days of first-party page views from the traffic blob store (written by track.js).
@@ -199,13 +231,14 @@ exports.handler = async function (event) {
   const ledgerId = process.env.EMAIL_LEDGER_GIST_ID;
   const counterId = process.env.GLOBAL_COUNTER_GIST_ID;
 
-  const [ledger, counter, doors, builds, traffic, feedback, repoResp, viewsResp, clonesResp, npmRange] = await Promise.all([
+  const [ledger, counter, doors, builds, traffic, feedback, buildRatings, repoResp, viewsResp, clonesResp, npmRange] = await Promise.all([
     ledgerId ? readGist(token, ledgerId, "ledger.json") : null,
     counterId ? readGist(token, counterId, "counter.json") : null,
     counterId ? readGist(token, counterId, "doors.json") : null,
     listBuilds(token),
     readTraffic(14),
     readSiteFeedback(),
+    readBuildRatings(),
     fetch(`https://api.github.com/repos/${REPO}`, { headers: gh(token) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
     fetch(`https://api.github.com/repos/${REPO}/traffic/views`, { headers: gh(token) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
     fetch(`https://api.github.com/repos/${REPO}/traffic/clones`, { headers: gh(token) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
@@ -249,6 +282,7 @@ exports.handler = async function (event) {
     generatedAt: new Date().toISOString(),
     doorStatus,
     feedback,
+    buildRatings,
     meter: counter || null,
     totals: {
       buildAttempts: builds.length,

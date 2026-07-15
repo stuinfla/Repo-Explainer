@@ -264,10 +264,20 @@
         tile(d.totals.people, 'people (unique emails)'),
       ].join('');
 
+      // Their score vs ours (the closed loop): submitter ratings from /rate.html, matched to the
+      // build by build_id when present, else newest rating for the same repo.
+      var ratings = (d.buildRatings && d.buildRatings.ratings) || [];
+      function ratingFor(b) {
+        var m = ratings.find(function (r) { return r.buildId && b.buildId && r.buildId === b.buildId; });
+        if (!m) m = ratings.find(function (r) { return r.repo && r.repo === b.repo; });
+        return m || null;
+      }
+
       $('[data-builds]').innerHTML =
-        '<tr><th>repo</th><th>status</th><th>why</th><th>score</th><th>worst axis</th><th>cost</th><th>page</th><th>submitted</th></tr>' +
+        '<tr><th>repo</th><th>status</th><th>why</th><th>score</th><th>theirs</th><th>worst axis</th><th>cost</th><th>page</th><th>submitted</th></tr>' +
         d.builds.map((b) => {
           const cls = b.status === 'done' ? 'done' : b.status === 'failed' ? 'failed' : 'other';
+          const rr = ratingFor(b);
           const g = b.grades;
           // A build superseded by a later queue submission isn't a distinct failure — it's
           // bookkeeping. Mute it so the eye lands on failures that actually need attention.
@@ -276,6 +286,7 @@
             '<td><span class="chip ' + cls + '">' + esc(b.status) + '</span>' + (g && g.exemplary ? ' <span class="chip done">exemplary</span>' : '') + '</td>' +
             '<td class="err-cell">' + (b.error ? esc(b.error) : '—') + '</td>' +
             '<td>' + (g && g.overall != null ? esc(g.overall) : '—') + '</td>' +
+            '<td>' + (rr && rr.score != null ? '<span title="' + esc(rr.thoughts || '') + '">' + esc(rr.score) + (rr.thoughts ? ' 💬' : '') + '</span>' : '—') + '</td>' +
             '<td>' + (g && g.headline != null ? esc(g.headline) : '—') + '</td>' +
             '<td>' + (b.costUsd != null ? '$' + esc(b.costUsd) : '—') + '</td>' +
             '<td>' + (b.liveUrl ? '<a href="' + esc(b.liveUrl) + '" target="_blank" rel="noopener">' + esc(b.liveUrl.replace('https://','')) + '</a>' : '—') + '</td>' +
