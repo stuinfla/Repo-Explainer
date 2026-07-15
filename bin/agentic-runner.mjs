@@ -457,6 +457,47 @@ try {
   if (finalId !== submittedRepoId) identityViolation = `build ended on "${finalCtx?.repo?.url}" but was submitted for ${submittedRepoId}`;
 } catch { /* unreadable build.json already fails the liveUrl check */ }
 
+// THE OPERATOR'S GRADE (2026-07-15) — mechanizes what was done by hand for agentic-kit: the
+// refine cap bounds the AGENT's spend, not the truth. When the agent ends UNSHIPPED at the cap
+// but documented a genuine post-cap fix (quality.postCapManualFix), the RUNNER — trusted
+// deterministic code, outside the agent — spends exactly ONE fresh grade and, if the page now
+// honestly passes, deploys through the ship-bar rail (no force; the rail stays the judge).
+// Fires at most once per run; a page that fails its operator grade stays refused. Without a
+// documented fix there is nothing new to verify, so it does NOT fire on plain B5 stalls.
+if (exitCode === 0 && !killedForBudget && !liveUrl && !identityViolation) {
+  try {
+    const bc = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
+    const q = bc.quality;
+    if (q && q.postCapManualFix && q.passed !== true && Number.isInteger(q.iterations) && q.iterations >= 3
+        && fs.existsSync(path.join(buildDir, 'site', 'index.html'))) {
+      log(`operator grade: agent ended at the refine cap WITH a documented post-cap fix — spending one runner-authorized regrade`);
+      const savedNote = q.postCapManualFix;
+      bc.quality.iterations = q.iterations - 1;
+      fs.writeFileSync(buildJsonPath, JSON.stringify(bc, null, 2) + '\n');
+      const g = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'quality-grade.mjs'), buildDir],
+        { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: 420_000 });
+      const after = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
+      after.quality.postCapManualFix = savedNote;
+      after.quality.operatorRegrade = { authorizedBy: 'runner (deterministic post-cap verification)', gradeExit: g.status };
+      fs.writeFileSync(buildJsonPath, JSON.stringify(after, null, 2) + '\n');
+      if (g.status === 0 && after.quality?.passed === true) {
+        log(`operator grade: PASSED fresh — deploying through the ship-bar rail`);
+        const d = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'deploy.mjs'), buildDir],
+          { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: 180_000 });
+        const shipped = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
+        if (d.status === 0 && shipped.publish?.liveUrl && shipped.publish?.http200) {
+          liveUrl = shipped.publish.liveUrl;
+          log(`operator grade: cured and shipped — ${liveUrl}`);
+        } else {
+          log(`operator grade: regrade passed but deploy refused/failed (exit ${d.status}) — leaving run as failed`);
+        }
+      } else {
+        log(`operator grade: page still below the bar on a fresh grade (passed=${after.quality?.passed}) — refusal stands, honestly`);
+      }
+    }
+  } catch (e) { log(`operator grade: skipped on error (${e?.message || e}) — run outcome unchanged`); }
+}
+
 const budgetExceeded = killedForBudget;
 const ok = exitCode === 0 && !budgetExceeded && !!liveUrl && !identityViolation;
 const elapsedMin = ((Date.now() - (lastActivity - 0)) / 60000); // approx; refined below
@@ -512,13 +553,28 @@ if (ok) {
   log(`FAILED — ${reason}`);
   const publicMessage = classifyFailure(reason);
   await patchStatus('The build could not finish.', 'failed', null, publicMessage, reason);
+  // Gate-refusal alerts must carry the grader's ACTUAL complaints (learned 2026-07-15:
+  // autonomous-wealth-builder's alert said "B5 stayed at 56/58" but not WHY, so the operator
+  // couldn't judge whether it was worth curing without re-running the whole build). Append the
+  // rationale of every floor-failing axis + false operator questions from the final scorecard.
+  let gateDetail = '';
+  try {
+    const q = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8')).quality;
+    for (const dev of q?.scorecard || []) {
+      for (const [axis, score] of Object.entries({ ...dev.gateA, ...dev.gateB })) {
+        if (score < 70) gateDetail += `\n[${dev.device} ${axis}=${score}] ${String(dev.rationales?.[axis] || '').slice(0, 500)}`;
+      }
+      const falseOps = Object.entries(dev.operatorQuestions || {}).filter(([, v]) => !v).map(([k]) => k);
+      if (falseOps.length) gateDetail += `\n[${dev.device} operators false] ${falseOps.join(', ')}`;
+    }
+  } catch { /* no scorecard — nothing to append */ }
   const alertArgs = [
     path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
     '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),
     '--submitter', submitter || '(none)',
     '--build-id', buildId || '(none)',
     '--run-url', runUrl || '(none)',
-    '--reason', reason,
+    '--reason', gateDetail ? `${reason}\n\nGATE DETAIL (grader's own words):${gateDetail}` : reason,
     '--elapsed-min', String(Math.round(budgetMin)),
   ];
   await spawnAndWait('alert-owner', process.execPath, alertArgs, { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });

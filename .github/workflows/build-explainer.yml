@@ -145,3 +145,20 @@ jobs:
             tail -c 2000 /tmp/build.log || true
             exit 1
           fi
+
+      # A failed run's assembled work is NOT garbage (learned 2026-07-15: autonomous-wealth-builder
+      # built a complete grounded site, stalled at B5 56/58, and the runner's _temp dir evaporated
+      # with the job — the whole spend was lost when a 10-minute operator cure could have finished
+      # it). Preserve the curable core (site + build.json + graded assets; NOT the repo clone, NOT
+      # logs) so the operator can download, fix, re-grade, and deploy without a rebuild.
+      - name: Preserve curable build on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: failed-build-${{ github.event.inputs.build_id || github.run_id }}
+          path: |
+            ${{ runner.temp }}/hosted-build/site
+            ${{ runner.temp }}/hosted-build/assets
+            ${{ runner.temp }}/hosted-build/build.json
+          retention-days: 7
+          if-no-files-found: warn
