@@ -266,6 +266,9 @@ exports.handler = async function (event) {
       gradedPages: graded.length,
       avgLast5: last5,
       avgPrev5: prev5,
+      // Chronological series for the admin chart (owner ask 2026-07-15: "the quality should be
+      // a graph that shows me the totals over time", not a two-number sentence).
+      series: graded.slice().reverse().map((b) => ({ at: (b.createdAt || "").slice(0, 10), repo: b.repo, overall: b.grades.overall })),
       trend: last5 == null || prev5 == null ? "not enough graded builds yet" : last5 > prev5 ? "better" : last5 < prev5 ? "worse" : "same",
       note: graded.length === 0 ? "Grades attach to each build's status record from v0.2.5 onward — older builds predate score persistence." : null,
     },

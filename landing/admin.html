@@ -185,12 +185,40 @@
         ptile(d.deltas.npmDownloads, 'npm downloads (lags ~1d)'),
       ].join('');
 
+      // Quality over time as a GRAPH (owner ask 2026-07-15) — inline SVG, no libraries.
+      // One point per graded page, chronological; dashed line = the 82 ship bar.
+      function qualityChart(series) {
+        var W = 720, H = 170, L = 34, R = 10, T = 14, B = 26;
+        var lo = Math.min(70, Math.min.apply(null, series.map(function (s) { return s.overall; })) - 4);
+        var x = function (i) { return L + (W - L - R) * (series.length === 1 ? 0.5 : i / (series.length - 1)); };
+        var y = function (v) { return T + (H - T - B) * (1 - (v - lo) / (100 - lo)); };
+        var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:820px;display:block;margin-top:14px" role="img" aria-label="Synthesized quality score per graded page, in build order">';
+        [80, 90, 100].forEach(function (g) {
+          if (g < lo) return;
+          svg += '<line x1="' + L + '" y1="' + y(g) + '" x2="' + (W - R) + '" y2="' + y(g) + '" stroke="rgba(255,255,255,0.08)"/>'
+               + '<text x="' + (L - 6) + '" y="' + (y(g) + 3.5) + '" font-size="10" fill="#7c8aa0" text-anchor="end">' + g + '</text>';
+        });
+        svg += '<line x1="' + L + '" y1="' + y(82) + '" x2="' + (W - R) + '" y2="' + y(82) + '" stroke="#d4a94c" stroke-width="1" stroke-dasharray="5 5"/>'
+             + '<text x="' + (W - R) + '" y="' + (y(82) - 4) + '" font-size="10" fill="#d4a94c" text-anchor="end">ship bar 82</text>';
+        svg += '<polyline fill="none" stroke="#4fd1b3" stroke-width="2" points="'
+             + series.map(function (s, i) { return x(i) + ',' + y(s.overall); }).join(' ') + '"/>';
+        series.forEach(function (s, i) {
+          svg += '<circle cx="' + x(i) + '" cy="' + y(s.overall) + '" r="4" fill="#4fd1b3"><title>'
+               + esc(s.repo) + ' — ' + esc(s.overall) + ' (' + esc(s.at) + ')</title></circle>';
+        });
+        var first = series[0], last = series[series.length - 1];
+        svg += '<text x="' + L + '" y="' + (H - 8) + '" font-size="10" fill="#7c8aa0">' + esc(first.at) + '</text>'
+             + '<text x="' + (W - R) + '" y="' + (H - 8) + '" font-size="10" fill="#7c8aa0" text-anchor="end">' + esc(last.at) + '</text>';
+        return svg + '</svg>';
+      }
+
       var q = d.quality;
       $('[data-quality]').innerHTML = q.gradedPages === 0
         ? esc(q.note || 'No graded builds recorded yet.')
         : 'Rolling synthesized score (all 11 axes, both devices): last 5 pages average <b>' + esc(q.avgLast5) + '</b>'
           + (q.avgPrev5 != null ? ' vs previous 5 average <b>' + esc(q.avgPrev5) + '</b> &mdash; the factory is <b>' + esc(q.trend) + '</b>.' : ' &mdash; more graded builds needed for a trend.')
-          + ' (' + esc(q.gradedPages) + ' graded pages on record)';
+          + ' (' + esc(q.gradedPages) + ' graded pages on record)'
+          + (q.series && q.series.length > 1 ? qualityChart(q.series) : '');
 
       var fb = d.feedback || { configured: false, submissions: [] };
       if (!fb.configured) {
