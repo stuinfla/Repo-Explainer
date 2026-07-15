@@ -536,6 +536,24 @@ try {
   }
 } catch { /* build.json unreadable — already reflected in the liveUrl check */ }
 
+// ADR-174 oracle feed (2026-07-15): the memory distiller PROMOTES patterns only from
+// execution-observed outcomes, judged by the `feedback` namespace — and no build ever wrote one,
+// so all 282 distilled patterns sat proxy-tier (promoted: 0). Every completed build now records
+// its MEASURED result (real vision-graded axes, verified deploy, cost) as a feedback entry.
+// Best-effort by design: ruflo is a machine-global binary, absent on CI runners (which have no
+// memory substrate anyway) — a miss must never touch the build outcome.
+try {
+  const fb = {
+    kind: 'explainer-build-outcome', repo: repoUrl, ok, reason: ok ? null : reason.slice(0, 400),
+    passed: scorecard?.passed ?? null, exemplary: scorecard?.exemplary ?? null,
+    devices: scorecard?.devices?.map((d) => ({ device: d.device, gateA: d.gateA, gateB: d.gateB, operators: d.operators })) ?? null,
+    costUsd: Math.round(totalCostUsd * 100) / 100, liveUrl: liveUrl || null,
+  };
+  const fbRes = spawnSync('ruflo', ['memory', 'store', '-k', `build-outcome-${buildId || Date.now()}`,
+    '--value', JSON.stringify(fb), '--namespace', 'feedback'], { cwd: REPO_ROOT, timeout: 20_000, stdio: 'ignore' });
+  if (fbRes.status === 0) log('build outcome recorded to feedback namespace (ADR-174 oracle tier — distiller promotes from these)');
+} catch { /* telemetry never inverts a build outcome */ }
+
 if (ok) {
   console.log(`LIVE: ${liveUrl}`);
   log(`SUCCESS — ${liveUrl} (cost $${totalCostUsd.toFixed(2)})`);
