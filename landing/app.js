@@ -198,3 +198,11 @@
     }
   }
 })();
+
+// Truthful social proof (owner ask 2026-07-15): the shipped-page count in the wall header is
+// computed from the wall list itself at render time — it can never overstate or go stale.
+(function () {
+  var n = document.querySelectorAll('.wall-list li').length;
+  var el = document.querySelector('[data-wall-count]');
+  if (el && n > 0) el.textContent = n;
+})();
