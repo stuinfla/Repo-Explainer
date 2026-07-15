@@ -154,7 +154,8 @@ async function readBuildRatings() {
   const npat = process.env.NETLIFY_API_TOKEN;
   if (!npat) return { configured: false, ratings: [] };
   try {
-    const fr = await fetch("https://api.netlify.com/api/v1/forms", { headers: { Authorization: `Bearer ${npat}` } });
+    // Forms must be listed per-site — the bare /api/v1/forms endpoint 404s (learned live 2026-07-15).
+    const fr = await fetch("https://api.netlify.com/api/v1/sites/df4e3cd8-a71e-4668-8da7-c8d168edd341/forms", { headers: { Authorization: `Bearer ${npat}` } });
     if (!fr.ok) return { configured: false, ratings: [], error: `forms list ${fr.status}` };
     const forms = await fr.json();
     const form = forms.find((f) => f.name === "build-rating");

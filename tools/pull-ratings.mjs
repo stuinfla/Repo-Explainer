@@ -29,7 +29,11 @@ function envOrDotenv(name) {
 const token = envOrDotenv('NETLIFY_AUTH_TOKEN');
 if (!token) { console.error('pull-ratings: no NETLIFY_AUTH_TOKEN in env or .env'); process.exit(1); }
 
-const forms = await (await fetch('https://api.netlify.com/api/v1/forms', { headers: { Authorization: `Bearer ${token}` } })).json();
+// Forms must be listed per-site — the bare /api/v1/forms endpoint 404s (learned live 2026-07-15).
+const SITE_ID = 'df4e3cd8-a71e-4668-8da7-c8d168edd341'; // the landing site (explainmyrepo.isovision.ai)
+const fRes = await fetch(`https://api.netlify.com/api/v1/sites/${SITE_ID}/forms`, { headers: { Authorization: `Bearer ${token}` } });
+if (!fRes.ok) { console.error(`pull-ratings: forms list HTTP ${fRes.status}`); process.exit(1); }
+const forms = await fRes.json();
 const form = Array.isArray(forms) ? forms.find((f) => f.name === 'build-rating') : null;
 if (!form) { console.log(JSON.stringify({ ok: true, outputs: { ingested: 0, note: 'build-rating form not registered yet' } })); process.exit(0); }
 
