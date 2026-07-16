@@ -26,14 +26,25 @@ function envOrDotenv(name) {
     return m?.[2] || null;
   } catch { return null; }
 }
-const token = envOrDotenv('NETLIFY_AUTH_TOKEN');
-if (!token) { console.error('pull-ratings: no NETLIFY_AUTH_TOKEN in env or .env'); process.exit(1); }
-
-// Forms must be listed per-site — the bare /api/v1/forms endpoint 404s (learned live 2026-07-15).
+// Verify-driven resolution (stored lesson, 2026-07-14 — and immediately violated by this tool's
+// first version, which grabbed a dead shell token over the live .env one): probe every candidate
+// source and use the first token that actually WORKS, never the first that merely exists.
 const SITE_ID = 'df4e3cd8-a71e-4668-8da7-c8d168edd341'; // the landing site (explainmyrepo.isovision.ai)
-const fRes = await fetch(`https://api.netlify.com/api/v1/sites/${SITE_ID}/forms`, { headers: { Authorization: `Bearer ${token}` } });
-if (!fRes.ok) { console.error(`pull-ratings: forms list HTTP ${fRes.status}`); process.exit(1); }
-const forms = await fRes.json();
+function dotenvVal(name) {
+  try {
+    const m = fs.readFileSync(path.join(ROOT, '.env'), 'utf8').match(new RegExp(`^${name}=("?)(.*?)\\1\\s*$`, 'm'));
+    return m?.[2] || null;
+  } catch { return null; }
+}
+const candidates = [process.env.NETLIFY_AUTH_TOKEN, dotenvVal('NETLIFY_AUTH_TOKEN')].filter(Boolean);
+if (!candidates.length) { console.error('pull-ratings: no NETLIFY_AUTH_TOKEN in env or .env'); process.exit(1); }
+let token = null, forms = null;
+for (const cand of candidates) {
+  const r = await fetch(`https://api.netlify.com/api/v1/sites/${SITE_ID}/forms`, { headers: { Authorization: `Bearer ${cand}` } });
+  if (r.ok) { token = cand; forms = await r.json(); break; }
+  console.error(`pull-ratings: candidate token rejected (HTTP ${r.status}) — trying next source`);
+}
+if (!token) { console.error('pull-ratings: every token candidate is dead'); process.exit(1); }
 const form = Array.isArray(forms) ? forms.find((f) => f.name === 'build-rating') : null;
 if (!form) { console.log(JSON.stringify({ ok: true, outputs: { ingested: 0, note: 'build-rating form not registered yet' } })); process.exit(0); }
 

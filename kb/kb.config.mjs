@@ -104,6 +104,100 @@ export const targets = {
       }
     ]
   },
+  "autonomous-wealth-builder": {
+    "slug": "autonomous-wealth-builder",
+    "metaName": "Autonomous Wealth Builder (MTWM)",
+    "embed": {
+      "model": "Xenova/bge-small-en-v1.5",
+      "dim": 384,
+      "pooling": "mean",
+      "queryPrefix": "Represent this sentence for searching relevant passages: ",
+      "rankScale": 0.6,
+      "rvfSuffix": ".rvf"
+    },
+    "productNames": [
+      "Autonomous Wealth Builder",
+      "MTWM",
+      "gateway-v2"
+    ],
+    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/autonomous-wealth-builder/repo",
+    "scopeExclude": [
+      "node_modules",
+      "dist",
+      "build",
+      ".next",
+      "target",
+      ".git",
+      "coverage",
+      "pkg",
+      "__pycache__",
+      ".venv",
+      "venv"
+    ],
+    "codeExt": [
+      ".ts",
+      ".tsx",
+      ".js",
+      ".mjs",
+      ".py",
+      ".sh",
+      ".sql"
+    ],
+    "fullTextExt": [
+      ".md",
+      ".mdx",
+      ".txt"
+    ],
+    "templateExt": [],
+    "componentRoots": [
+      "services",
+      "mtwm-ui",
+      "webhook-worker",
+      "scripts",
+      "deploy"
+    ],
+    "componentWord": [
+      "service",
+      "package",
+      "module",
+      "component"
+    ],
+    "include": [
+      {
+        "rule": "mdSweepFullText",
+        "roots": [
+          "."
+        ]
+      },
+      {
+        "rule": "literalFiles",
+        "files": [
+          "README.md",
+          "CLAUDE.md",
+          "package.json"
+        ]
+      },
+      {
+        "rule": "sourceBodies",
+        "roots": [
+          "services",
+          "mtwm-ui",
+          "webhook-worker",
+          "scripts",
+          "deploy"
+        ],
+        "ext": [
+          ".ts",
+          ".tsx",
+          ".js",
+          ".mjs",
+          ".py",
+          ".sh",
+          ".sql"
+        ]
+      }
+    ]
+  },
   "AgentBBS": {
     "slug": "AgentBBS",
     "metaName": "AgentBBS",

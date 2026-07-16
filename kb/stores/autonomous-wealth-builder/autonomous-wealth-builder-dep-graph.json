@@ -1,0 +1,376 @@
+{
+  "target": "autonomous-wealth-builder",
+  "metaName": "Autonomous Wealth Builder (MTWM)",
+  "generated": "2026-07-15T16:49:13.624Z",
+  "ecosystems": [
+    "npm"
+  ],
+  "componentCount": 6,
+  "internalEdgeCount": 0,
+  "externalDepCount": 35,
+  "nodes": [
+    {
+      "name": "mtwm-services",
+      "version": "1.0.0",
+      "description": null,
+      "manifest": "services/package.json",
+      "deps": [
+        "@ag-ui/client",
+        "@ag-ui/core",
+        "@anthropic-ai/sdk",
+        "@types/pg",
+        "@xenova/transformers",
+        "agentdb",
+        "better-sqlite3",
+        "date-fns",
+        "discord.js",
+        "eventemitter3",
+        "express",
+        "goalie",
+        "node-cron",
+        "pg",
+        "ruv-swarm",
+        "sublinear-time-solver",
+        "uuid",
+        "ws",
+        "zod"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "mtwm-ui",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "mtwm-ui/package.json",
+      "deps": [
+        "@heroui/react",
+        "@react-three/drei",
+        "@react-three/fiber",
+        "@types/pg",
+        "@types/three",
+        "clsx",
+        "date-fns",
+        "framer-motion",
+        "hamburger-react",
+        "lucide-react",
+        "next",
+        "next-themes",
+        "pg",
+        "react",
+        "react-dom",
+        "react-force-graph-3d",
+        "recharts",
+        "three",
+        "zustand"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "mtwm-webhook-worker",
+      "version": "1.0.0",
+      "description": null,
+      "manifest": "webhook-worker/package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "mtwm-ui",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "mtwm-ui/package.json",
+      "deps": [
+        "@heroui/react",
+        "@react-three/drei",
+        "@react-three/fiber",
+        "@types/pg",
+        "@types/three",
+        "clsx",
+        "date-fns",
+        "framer-motion",
+        "hamburger-react",
+        "lucide-react",
+        "next",
+        "next-themes",
+        "pg",
+        "react",
+        "react-dom",
+        "react-force-graph-3d",
+        "recharts",
+        "three",
+        "zustand"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "mtwm-services",
+      "version": "1.0.0",
+      "description": null,
+      "manifest": "services/package.json",
+      "deps": [
+        "@ag-ui/client",
+        "@ag-ui/core",
+        "@anthropic-ai/sdk",
+        "@types/pg",
+        "@xenova/transformers",
+        "agentdb",
+        "better-sqlite3",
+        "date-fns",
+        "discord.js",
+        "eventemitter3",
+        "express",
+        "goalie",
+        "node-cron",
+        "pg",
+        "ruv-swarm",
+        "sublinear-time-solver",
+        "uuid",
+        "ws",
+        "zod"
+      ],
+      "ecosystem": "npm"
+    },
+    {
+      "name": "mtwm-webhook-worker",
+      "version": "1.0.0",
+      "description": null,
+      "manifest": "webhook-worker/package.json",
+      "deps": [],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [],
+  "externalDeps": {
+    "mtwm-services": [
+      {
+        "name": "@ag-ui/client",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@ag-ui/core",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@anthropic-ai/sdk",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@types/pg",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@xenova/transformers",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "agentdb",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "better-sqlite3",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "date-fns",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "discord.js",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "eventemitter3",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "express",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "goalie",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "node-cron",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "pg",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "ruv-swarm",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "sublinear-time-solver",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "uuid",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "ws",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "zod",
+        "req": "*",
+        "kind": "normal"
+      }
+    ],
+    "mtwm-ui": [
+      {
+        "name": "@heroui/react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@react-three/drei",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@react-three/fiber",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@types/pg",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@types/three",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "clsx",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "date-fns",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "framer-motion",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "hamburger-react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "lucide-react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "next",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "next-themes",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "pg",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-dom",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-force-graph-3d",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "recharts",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "three",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "zustand",
+        "req": "*",
+        "kind": "normal"
+      }
+    ],
+    "mtwm-webhook-worker": []
+  },
+  "externalDepNames": [
+    "@ag-ui/client",
+    "@ag-ui/core",
+    "@anthropic-ai/sdk",
+    "@heroui/react",
+    "@react-three/drei",
+    "@react-three/fiber",
+    "@types/pg",
+    "@types/three",
+    "@xenova/transformers",
+    "agentdb",
+    "better-sqlite3",
+    "clsx",
+    "date-fns",
+    "discord.js",
+    "eventemitter3",
+    "express",
+    "framer-motion",
+    "goalie",
+    "hamburger-react",
+    "lucide-react",
+    "next",
+    "next-themes",
+    "node-cron",
+    "pg",
+    "react",
+    "react-dom",
+    "react-force-graph-3d",
+    "recharts",
+    "ruv-swarm",
+    "sublinear-time-solver",
+    "three",
+    "uuid",
+    "ws",
+    "zod",
+    "zustand"
+  ]
+}

@@ -1,0 +1,349 @@
+{
+  "target": "autonomous-wealth-builder",
+  "metaName": "Autonomous Wealth Builder (MTWM)",
+  "generated": "2026-07-15T16:49:13.674Z",
+  "workspace": {
+    "kind": "npm",
+    "members": []
+  },
+  "components": [
+    {
+      "name": "mtwm-ui",
+      "path": "mtwm-ui",
+      "kind": "package",
+      "description": null,
+      "scripts": {
+        "predev": "rm -f .next/dev/lock",
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "eslint"
+      },
+      "bins": [],
+      "deps": [
+        "@heroui/react",
+        "@react-three/drei",
+        "@react-three/fiber",
+        "@types/pg",
+        "@types/three",
+        "clsx",
+        "date-fns",
+        "framer-motion",
+        "hamburger-react",
+        "lucide-react",
+        "next",
+        "next-themes",
+        "pg",
+        "react",
+        "react-dom",
+        "react-force-graph-3d",
+        "recharts",
+        "three",
+        "zustand"
+      ]
+    },
+    {
+      "name": "mtwm-services",
+      "path": "services",
+      "kind": "package",
+      "description": null,
+      "scripts": {
+        "dev": "tsx watch gateway-v2/src/index.ts",
+        "build": "tsc && npm run verify:sell-paths",
+        "start": "node dist/gateway-v2/src/index.js",
+        "dev:all": "concurrently \"tsx watch gateway-v2/src/index.ts\" \"tsx watch midstream/src/server.ts\"",
+        "verify:sell-paths": "node --import tsx/esm gateway-v2/tests/verify-sell-paths.ts",
+        "trident:note": "node --import tsx/esm gateway-v2/scripts/record-learning-note.ts",
+        "reconcile:readonly": "node --import tsx/esm gateway-v2/scripts/reconcile-readonly.ts",
+        "sync:open-buys": "node --import tsx/esm gateway-v2/scripts/sync-open-system-buys.ts",
+        "stops:ensure": "node --import tsx/esm gateway-v2/scripts/ensure-protective-stops.ts"
+      },
+      "bins": [],
+      "deps": [
+        "@ag-ui/client",
+        "@ag-ui/core",
+        "@anthropic-ai/sdk",
+        "@types/pg",
+        "@xenova/transformers",
+        "agentdb",
+        "better-sqlite3",
+        "date-fns",
+        "discord.js",
+        "eventemitter3",
+        "express",
+        "goalie",
+        "node-cron",
+        "pg",
+        "ruv-swarm",
+        "sublinear-time-solver",
+        "uuid",
+        "ws",
+        "zod"
+      ]
+    },
+    {
+      "name": "mtwm-webhook-worker",
+      "path": "webhook-worker",
+      "kind": "package",
+      "description": null,
+      "scripts": {
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy",
+        "create-kv": "wrangler kv:namespace create MTWM_EVENTS"
+      },
+      "bins": [],
+      "deps": []
+    }
+  ],
+  "binaries": [],
+  "commands": [
+    {
+      "cmd": "npm run predev",
+      "raw": "rm -f .next/dev/lock",
+      "category": "run",
+      "source": "mtwm-ui/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev",
+      "raw": "next dev",
+      "category": "run",
+      "source": "mtwm-ui/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "next build",
+      "category": "build",
+      "source": "mtwm-ui/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run start",
+      "raw": "next start",
+      "category": "run",
+      "source": "mtwm-ui/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "eslint",
+      "category": "other",
+      "source": "mtwm-ui/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev",
+      "raw": "tsx watch gateway-v2/src/index.ts",
+      "category": "run",
+      "source": "services/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "tsc && npm run verify:sell-paths",
+      "category": "build",
+      "source": "services/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run start",
+      "raw": "node dist/gateway-v2/src/index.js",
+      "category": "run",
+      "source": "services/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev:all",
+      "raw": "concurrently \"tsx watch gateway-v2/src/index.ts\" \"tsx watch midstream/src/server.ts\"",
+      "category": "run",
+      "source": "services/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run verify:sell-paths",
+      "raw": "node --import tsx/esm gateway-v2/tests/verify-sell-paths.ts",
+      "category": "other",
+      "source": "services/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run trident:note",
+      "raw": "node --import tsx/esm gateway-v2/scripts/record-learning-note.ts",
+      "category": "other",
+      "source": "services/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run reconcile:readonly",
+      "raw": "node --import tsx/esm gateway-v2/scripts/reconcile-readonly.ts",
+      "category": "other",
+      "source": "services/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run sync:open-buys",
+      "raw": "node --import tsx/esm gateway-v2/scripts/sync-open-system-buys.ts",
+      "category": "other",
+      "source": "services/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run stops:ensure",
+      "raw": "node --import tsx/esm gateway-v2/scripts/ensure-protective-stops.ts",
+      "category": "other",
+      "source": "services/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev",
+      "raw": "wrangler dev",
+      "category": "run",
+      "source": "webhook-worker/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run deploy",
+      "raw": "wrangler deploy",
+      "category": "other",
+      "source": "webhook-worker/package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run create-kv",
+      "raw": "wrangler kv:namespace create MTWM_EVENTS",
+      "category": "other",
+      "source": "webhook-worker/package.json",
+      "note": null
+    },
+    {
+      "cmd": "docker compose -f deploy/do/docker-compose.build.yml build awb-services",
+      "category": "build",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "docker compose -f deploy/do/docker-compose.build.yml up -d awb-services",
+      "category": "build",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "category": "build",
+      "source": "README.md",
+      "note": "TypeScript compile + verify sell paths"
+    },
+    {
+      "cmd": "npm test",
+      "category": "test",
+      "source": "README.md",
+      "note": "Run tests"
+    },
+    {
+      "cmd": "npm run lint",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest init --wizard",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest agent spawn -t coder --name my-coder",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest swarm init --v3-mode",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory search --query \"authentication patterns\"",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest doctor --fix",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory store --key \"pattern-auth\" --value \"JWT with refresh\" --namespace patterns",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory list --namespace patterns --limit 10",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory retrieve --key \"pattern-auth\" --namespace patterns",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest daemon start",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev",
+      "category": "run",
+      "source": "mtwm-ui/README.md",
+      "note": null
+    },
+    {
+      "cmd": "yarn dev",
+      "category": "run",
+      "source": "mtwm-ui/README.md",
+      "note": null
+    },
+    {
+      "cmd": "pnpm dev",
+      "category": "run",
+      "source": "mtwm-ui/README.md",
+      "note": null
+    },
+    {
+      "cmd": "bun dev",
+      "category": "run",
+      "source": "mtwm-ui/README.md",
+      "note": null
+    }
+  ],
+  "install": [],
+  "quickstart": [
+    "npm run predev",
+    "npm run dev",
+    "npm run start",
+    "npm run dev:all",
+    "npm run lint",
+    "npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized",
+    "npx @claude-flow/cli@latest init --wizard",
+    "npx @claude-flow/cli@latest agent spawn -t coder --name my-coder",
+    "npx @claude-flow/cli@latest swarm init --v3-mode",
+    "npx @claude-flow/cli@latest memory search --query \"authentication patterns\"",
+    "npx @claude-flow/cli@latest doctor --fix",
+    "npx @claude-flow/cli@latest memory store --key \"pattern-auth\" --value \"JWT with refresh\" --namespace patterns"
+  ]
+}
