@@ -114,6 +114,28 @@ async function main() {
   const { opts, positional } = parsed;
 
   if (opts.version) { process.stdout.write(version() + '\n'); return; }
+
+  // The Alive Kit discovery surface (ADR-0009 §7): `npx explainmyrepo capabilities` renders the
+  // verified-capability registry — the ONLY availability source, so it cannot overstate.
+  // Local-door-only by policy: these companions never run on the hosted pipeline.
+  if (positional[0] === 'capabilities') {
+    const reg = JSON.parse(readFileSync(path.join(HERE, '..', 'capabilities.json'), 'utf8'));
+    const B = '\x1b[1m', D = '\x1b[2m', G = '\x1b[32m', R = '\x1b[0m';
+    process.stdout.write(`\n${B}The Alive Kit${R} — companions this repo can build from a finished explainer (local runs only)\n\n`);
+    for (const c of reg.capabilities) {
+      if (c.status === 'verified') {
+        process.stdout.write(`  ${G}✓ ${c.id}${R} — ${c.title}\n`);
+        process.stdout.write(`      verified ${c.verifiedAt} · ${c.receipts.output} · $${c.receipts.costUsd} render\n`);
+        process.stdout.write(`      run: node ${c.entry} <build-dir>   ${D}(inside a local Claude Code session)${R}\n`);
+        process.stdout.write(`      proof: ${c.receipts.proof}\n\n`);
+      } else {
+        process.stdout.write(`  ${D}○ ${c.id} — ${c.title}\n      ${c.status} — not yet verified, not enabled (${c.verification})${R}\n\n`);
+      }
+    }
+    process.stdout.write(`${D}Governance: docs/adr/0009-alive-kit-local-companions.md · a capability appears as ✓ only after\na supervised end-to-end run with recorded receipts. Companions never run on the hosted door.${R}\n`);
+    return;
+  }
+
   if (opts.help || positional.length === 0) { process.stdout.write(HELP); process.exit(opts.help ? 0 : 2); }
 
   const url = positional[0];

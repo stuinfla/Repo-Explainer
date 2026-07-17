@@ -1,0 +1,40 @@
+{
+  "$doc": "The Alive Kit registry — ADR-0009 §1. The ONLY source any surface reads for companion availability. Invariant: advertised ⇔ status === 'verified', and 'verified' requires receipts recorded in the same commit.",
+  "capabilities": [
+    {
+      "id": "trailer",
+      "title": "Trailer — a shareable 30–45s film of the explainer, from its own assets",
+      "status": "verified",
+      "verifiedAt": "2026-07-16",
+      "receipts": {
+        "output": "38.0s 1920x1080@30 h264, 17.6 MB",
+        "costUsd": 0,
+        "costNotes": "render + media $0 (local FFmpeg, no cloud, no paid media); authoring ~$3-4 API or ~$0 on a Claude subscription session",
+        "proof": "agentic-kit pilot — embedded live at https://agentic-kit-explainer.netlify.app (hero-trailer block), WCAG 38/38, 7-beat contact sheet eyeballed"
+      },
+      "entry": "tools/make-trailer.mjs",
+      "engine": "HyperFrames /product-launch-video (show-as-is), local render only"
+    },
+    {
+      "id": "deck",
+      "title": "Deck — the explainer reborn as a navigable pitch deck",
+      "status": "specified",
+      "engine": "HyperFrames /slideshow from the page's ladder sections",
+      "verification": "one supervised run on an exemplary build; every slide screenshot graded on the page grader's craft axes at >= the ship floor, worst slide judged; receipts recorded here in the promoting commit"
+    },
+    {
+      "id": "pr-video",
+      "title": "PR-to-video — an 'explain this release' film from any pull request",
+      "status": "specified",
+      "engine": "HyperFrames /pr-to-video on a PR of the subject repo",
+      "verification": "one supervised run on a real merged PR; worst-frame legibility check passes and the film's claims are diffed against the actual PR diff; receipts recorded here"
+    },
+    {
+      "id": "social-loop",
+      "title": "Social loop — a ≤10s motion loop of the page's hero animation",
+      "status": "specified",
+      "engine": "HyperFrames /motion-graphics; 16:9 + 9:16",
+      "verification": "one supervised run; worst-frame check passes in BOTH aspect ratios (16:9 + 9:16); receipts recorded here"
+    }
+  ]
+}
