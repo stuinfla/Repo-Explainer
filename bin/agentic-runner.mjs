@@ -262,14 +262,21 @@ async function probeCred(label, candidates, url, headers) {
   if (fs.existsSync(path.join(EMBED_MODEL_DIR, 'onnx', 'model_quantized.onnx'))) {
     embed = { ok: true, why: 'model cached locally — KB build needs no network' };
   } else {
-    try {
-      const r = await fetch('https://huggingface.co/Xenova/bge-small-en-v1.5/resolve/main/config.json',
-        { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(8000) });
-      embed = r.ok
-        ? { ok: true, why: `no local cache; huggingface.co reachable (HTTP ${r.status}) — model will download once` }
-        : { ok: false, why: `no local model cache and huggingface.co answered HTTP ${r.status} (likely an upstream outage)` };
-    } catch (e) {
-      embed = { ok: false, why: `no local model cache and huggingface.co unreachable (${e.message})` };
+    // Source order mirrors kb/warm-model-cache.mjs: our own release asset first (github.com —
+    // the one origin an Actions runner can always reach; HF rate-limits runner IPs with 429,
+    // observed live 2026-07-17 run 29557533994), HF only as the last resort.
+    const probe = async (label, url) => {
+      try {
+        const r = await fetch(url, { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(8000) });
+        return r.ok ? { ok: true, why: `no local cache; ${label} reachable (HTTP ${r.status}) — model will download once` }
+          : { ok: false, why: `${label} HTTP ${r.status}` };
+      } catch (e) { return { ok: false, why: `${label} unreachable (${e.message})` }; }
+    };
+    const rel = await probe('release asset (github.com)', 'https://github.com/stuinfla/Repo-Explainer/releases/download/kb-models-v1/bge-small-en-v1.5.tgz');
+    if (rel.ok) embed = rel;
+    else {
+      const hf = await probe('huggingface.co', 'https://huggingface.co/Xenova/bge-small-en-v1.5/resolve/main/config.json');
+      embed = hf.ok ? hf : { ok: false, why: `no local model cache and no reachable source: ${rel.why}; ${hf.why}` };
     }
   }
   log(`embedding preflight: ${embed.ok ? '✓' : '✗'} ${embed.why}`);
