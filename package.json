@@ -1,7 +1,7 @@
 {
   "name": "explainmyrepo",
-  "version": "0.4.3",
-  "description": "Turn any GitHub repo into a bespoke, art-directed explainer site — for humans and their AI — in one command.",
+  "version": "0.5.0",
+  "description": "Turn any GitHub repo into a bespoke, art-directed explainer site \u2014 for humans and their AI \u2014 in one command.",
   "type": "module",
   "bin": {
     "explainmyrepo": "bin/explainmyrepo.mjs"
@@ -12,7 +12,8 @@
     "tools/",
     "kb/*.mjs",
     "kb/CONTRACT.md",
-    "assets/"
+    "assets/",
+    "capabilities.json"
   ],
   "keywords": [
     "explainer",

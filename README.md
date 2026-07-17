@@ -189,10 +189,28 @@ The bar these are calibrated against — five hand-built explainers, five comple
 | Imagery | `gpt-image-2` / Grok (labeled, mechanism-bearing illustration) + bespoke hand-authored **animated SVG** diagrams (archetype-diverse, width-budgeted) |
 | Quality gate | Playwright dual-viewport render + GPT-5.6 vision grading (configurable) — every diagram at full size, animations at their worst sampled frame, ship floor enforced as a deploy rail |
 | Feedback + learning | Reader 1–100 grades beside machine grades on the admin; outcomes + grades feed an oracle-tier learning store |
-| Trailers (pilot) | [HyperFrames](https://github.com/heygen-com/hyperframes) — each page's own assets rendered into a shareable 30–40s MP4, locally, for ~$0 |
+| Companions (local) | [HyperFrames](https://github.com/heygen-com/hyperframes) — the page's own gated assets re-rendered into a 30–40s trailer and a 10s social loop (16:9 + 9:16), locally, for ~$0 |
 | Hosting | Netlify by default (provider-agnostic adapter) |
 
 The full recipe lives in [`docs/adr/0005-skill-based-explainer-recipe.md`](docs/adr/0005-skill-based-explainer-recipe.md); the domain model in [`docs/ddd/explainmyrepo-recipe-domain.md`](docs/ddd/explainmyrepo-recipe-domain.md).
+
+## The Alive Kit — what a finished page can become (local runs only)
+
+A gated build's assets are reusable creative truth, so this repo can turn a finished
+explainer into **companion artifacts** — but only when you clone it and run them yourself,
+and only for capabilities that have actually been **proven**:
+
+```
+npx explainmyrepo capabilities
+```
+
+That command renders the verified-capability registry (`capabilities.json`) — the *only*
+source of what's enabled, so it can never overstate. Today it shows two ✓ (a shareable
+**trailer** and a 16:9 + 9:16 **social loop**, each verified end-to-end with recorded
+receipts, ~$0 to render) and two ○ that are specified but honestly *not enabled* until
+they pass their own supervised verification runs. Companions never run on the hosted door,
+never touch a build's artifacts, and can never block a page from shipping. Governance:
+[`docs/adr/0009-alive-kit-local-companions.md`](docs/adr/0009-alive-kit-local-companions.md).
 
 ---
 
