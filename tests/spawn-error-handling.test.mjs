@@ -40,8 +40,8 @@ test('every spawn() call site pairs with an .on(\'error\', ...) listener', () =>
     `expected an .on('error', ...) listener for each of the 2 spawn() call sites, found ${errorListenerCount}`);
 });
 
-test('the 5 fire-and-forget notification spawns go through the guarded spawnAndWait() helper', () => {
+test('the 6 fire-and-forget notification spawns go through the guarded spawnAndWait() helper', () => {
   // -1 for the function's own definition line ("function spawnAndWait(...")
   const count = (SRC.match(/\bspawnAndWait\(/g) || []).length - 1;
-  assert.equal(count, 5, 'expected 5 call sites: clone-preflight alert-owner, credential-preflight alert-owner, success notify, failure alert-owner, failure notify-failure');
+  assert.equal(count, 6, 'expected 6 call sites: clone-preflight alert-owner, credential-preflight alert-owner, embedding-preflight alert-owner (2026-07-16 HF outage), success notify, failure alert-owner, failure notify-failure');
 });

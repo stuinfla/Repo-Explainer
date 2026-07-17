@@ -250,6 +250,44 @@ async function probeCred(label, candidates, url, headers) {
     ], { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
     process.exit(1);
   }
+
+  // EMBEDDING SOURCE (2026-07-16 HF outage, build 79f135b3): station 1's KB build hard-requires
+  // a real embedding model (INV-06/07 — grounding is never fabricated). A cached model needs no
+  // network; otherwise huggingface.co must actually be up. Probe BOTH here, in seconds — the
+  // alternative was the agent discovering it 40 minutes in, on the clock and on the meter.
+  // The workflow warms kb/models-cache via actions/cache + kb/warm-model-cache.mjs, so the
+  // cached branch is the normal hosted case; this probe is the honest gate when it isn't.
+  const EMBED_MODEL_DIR = path.join(REPO_ROOT, 'kb', 'models-cache', 'Xenova', 'bge-small-en-v1.5');
+  let embed;
+  if (fs.existsSync(path.join(EMBED_MODEL_DIR, 'onnx', 'model_quantized.onnx'))) {
+    embed = { ok: true, why: 'model cached locally — KB build needs no network' };
+  } else {
+    try {
+      const r = await fetch('https://huggingface.co/Xenova/bge-small-en-v1.5/resolve/main/config.json',
+        { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(8000) });
+      embed = r.ok
+        ? { ok: true, why: `no local cache; huggingface.co reachable (HTTP ${r.status}) — model will download once` }
+        : { ok: false, why: `no local model cache and huggingface.co answered HTTP ${r.status} (likely an upstream outage)` };
+    } catch (e) {
+      embed = { ok: false, why: `no local model cache and huggingface.co unreachable (${e.message})` };
+    }
+  }
+  log(`embedding preflight: ${embed.ok ? '✓' : '✗'} ${embed.why}`);
+  if (!embed.ok) {
+    log(`PREFLIGHT FAILED — no embedding source, stopping before any cost is incurred: ${embed.why}`);
+    await patchStatus('Stopped before building: the knowledge-base embedding model is unavailable.', 'failed', null,
+      'The embedding model this build grounds itself on has no local cache and its download source (huggingface.co) is unreachable — usually a temporary outage on their side. Nothing was built and nothing was charged. Please try again in a little while.');
+    await spawnAndWait('alert-owner', process.execPath, [
+      path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
+      '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),
+      '--submitter', submitter || '(none)',
+      '--build-id', buildId || '(none)',
+      '--run-url', runUrl || '(none)',
+      '--reason', `embedding preflight failed in seconds (not 40 minutes): ${embed.why}. Fix: none needed if HF recovers on its own; the workflow's actions/cache + kb/warm-model-cache.mjs step keeps this from recurring once any run has downloaded the model.`,
+      '--elapsed-min', '0',
+    ], { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
+    process.exit(1);
+  }
 }
 
 // THE CONCEPT TOURNAMENT (owner directive 2026-07-13): concepts compete as TEXT before any

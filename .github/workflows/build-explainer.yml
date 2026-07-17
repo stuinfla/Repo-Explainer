@@ -102,6 +102,20 @@ jobs:
           npm install -g @anthropic-ai/claude-code@2.1.201
           claude --version
 
+      # 2026-07-16 HF outage (build 79f135b3): a CloudFront outage made the mandatory embedding
+      # model undownloadable and the agent burned its whole budget discovering it. Cache the
+      # 33 MB model between runs so KB builds are offline-first; the warm step downloads it only
+      # when the cache is cold and VALIDATES it with one real embedding. Warm failure is a soft
+      # warning: the runner's own embedding preflight is the honest gate and alerts in seconds.
+      - name: Restore embedding model cache (offline-first KB)
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: kb/models-cache
+          key: kb-embed-bge-small-en-v1.5-v1
+
+      - name: Warm + validate embedding model
+        run: node kb/warm-model-cache.mjs || echo "::warning::embedding model warm failed — the runner preflight will stop in seconds with a clear alert if there is truly no embedding source"
+
       - name: Build, deploy, and report status
         env:
           # These reach agentic-runner.mjs's OWN env (used for gist-patching, notify, and the
