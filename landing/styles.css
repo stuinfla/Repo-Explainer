@@ -1,3 +1,4 @@
+html, body { overflow-x: clip; } /* decorative aurora/grain layers must never widen the page (QA 2026-07-17: 81px mobile overflow) */
 /* =========================================================================
    explainmyrepo — landing
    Aesthetic: dark, cinematic, developer-luxury. Prism/refraction motif.
@@ -608,7 +609,16 @@ main, .site-foot { position: relative; z-index: 1; }
 .gs-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: clamp(24px,3.5vw,44px); align-items: start; }
 .gs-doors { display: flex; flex-direction: column; gap: 20px; }
 .cmd-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 28px; }
+.gs-dev.cmd-card {
+  padding: clamp(24px, 3vw, 32px);
+  background: linear-gradient(225deg, rgba(139,125,255,.12), rgba(139,125,255,.04) 60%, transparent);
+  border: 1px solid var(--line-2);
+}
 .cmd-card-top { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; flex-wrap: wrap; }
+.gs-dev .cmd-card-top { display: block; }
+.gs-dev .cmd-card-top h3 {
+  font-size: clamp(20px, 2.4vw, 27px); letter-spacing: -0.012em; line-height: 1.12; margin: 12px 0 8px;
+}
 .door-tag { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: #04130f; background: var(--mint); border-radius: 100px; padding: 4px 11px; font-weight: 700; }
 .door-tag.alt { background: var(--violet); color: #0a0814; }
 .cmd-card-top h3 { font-family: var(--font-display); font-weight: 600; font-size: 20px; letter-spacing: -0.01em; }
@@ -790,7 +800,7 @@ main, .site-foot { position: relative; z-index: 1; }
 }
 .fb-flabel em { text-transform: none; letter-spacing: 0; font-style: normal; opacity: .8; }
 .fb-form textarea, .fb-form input[type="email"],
-.rq-form input[type="url"], .rq-form input[type="email"] {
+.rq-form input[type="url"], .rq-form input[type="text"], .rq-form input[type="email"] {
   width: 100%; box-sizing: border-box; background: var(--bg-3);
   border: 1px solid var(--line-2); border-radius: 12px; color: var(--ink);
   font-family: var(--font-body); font-size: 15px; line-height: 1.5; padding: 13px 15px; resize: vertical;
@@ -798,7 +808,7 @@ main, .site-foot { position: relative; z-index: 1; }
 }
 .fb-form textarea::placeholder, .fb-form input::placeholder,
 .rq-form input::placeholder { color: var(--ink-faint); }
-.fb-form textarea:focus, .fb-form input[type="email"]:focus,
+.fb-form textarea:focus, .fb-form input[type="email"]:focus, .rq-form input[type="text"]:focus,
 .rq-form input:focus {
   outline: none; border-color: rgba(61,242,199,.6); box-shadow: 0 0 0 3px rgba(61,242,199,.14);
 }
@@ -827,10 +837,12 @@ main, .site-foot { position: relative; z-index: 1; }
 
 /* ===================== REQUEST (managed door) ===================== */
 .gs-request {
-  position: relative; margin-top: 22px; padding: clamp(24px, 3vw, 36px);
-  background: linear-gradient(135deg, rgba(139,125,255,.10), rgba(61,242,199,.06) 60%, transparent);
+  position: relative; padding: clamp(24px, 3vw, 32px);
+  background: linear-gradient(135deg, rgba(61,242,199,.10), rgba(61,242,199,.04) 60%, transparent);
   border: 1px solid var(--line-2); border-radius: var(--radius); overflow: hidden;
 }
+/* the hero embeds the same request card — keep its original offset there only */
+.hero-request.gs-request { margin-top: 22px; }
 .rq-head h3 {
   font-family: var(--font-display); font-weight: 600; font-size: clamp(20px, 2.4vw, 27px);
   letter-spacing: -0.012em; line-height: 1.12; margin: 12px 0 8px;
@@ -854,7 +866,7 @@ main, .site-foot { position: relative; z-index: 1; }
 }
 
 /* ===================== GET-STARTED: two options + hosted build states ===================== */
-.gs-two { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 22px; align-items: start; }
+.gs-two { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: stretch; }
 .gs-dev { align-self: stretch; }
 .gs-keys { margin-top: 16px; }
 .gs-keys .gs-h { display: block; font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 9px; }
