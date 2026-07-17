@@ -20,7 +20,8 @@
       "title": "Deck — the explainer reborn as a navigable pitch deck",
       "status": "specified",
       "engine": "HyperFrames /slideshow from the page's ladder sections",
-      "verification": "one supervised run on an exemplary build; every slide screenshot graded on the page grader's craft axes at >= the ship floor, worst slide judged; receipts recorded here in the promoting commit"
+      "verification": "one supervised run on an exemplary build; every slide screenshot graded on the page grader's craft axes at >= the ship floor, worst slide judged; receipts recorded here in the promoting commit",
+      "attempted": "2026-07-17 agentic-kit: machinery verified end-to-end (8-scene deck, fragments, hotspot branch, presenter mode, lint+WCAG 0 errors) but slide craft graded mean ~80 / worst 64-72 across 4 passes vs the >=82-every-slide floor — NOT promoted; page-asset reuse is not presentation-native, needs slide-scale design work per repo"
     },
     {
       "id": "pr-video",
@@ -32,9 +33,16 @@
     {
       "id": "social-loop",
       "title": "Social loop — a ≤10s motion loop of the page's hero animation",
-      "status": "specified",
-      "engine": "HyperFrames /motion-graphics; 16:9 + 9:16",
-      "verification": "one supervised run; worst-frame check passes in BOTH aspect ratios (16:9 + 9:16); receipts recorded here"
+      "status": "verified",
+      "verifiedAt": "2026-07-17",
+      "receipts": {
+        "output": "10.0s pair — 1920x1080 (667 KB) + 1080x1920 (1.2 MB), h264@30",
+        "costUsd": 0,
+        "costNotes": "local FFmpeg render ~15s per ratio, no cloud, no paid media; authored in a subscription Claude Code session",
+        "proof": "agentic-kit pilot — worst-frame check PASSED in both ratios (operator eyeball + gpt-5.6-sol on 1fps contact sheets); 2 real defects found+fixed in the run (SVG fill-box scale collapsing to origin under the renderer; 9:16 camera framing slicing cards) — both are now rails in the brief"
+      },
+      "entry": "tools/make-social-loop.mjs",
+      "engine": "HyperFrames motion loop from the page's re-choreographed hero animation; 16:9 + 9:16, local render only"
     }
   ]
 }
