@@ -615,10 +615,31 @@ async function renderDevice(chromium, url, device, assetsDir) {
         diagCrops.push({ key: `concept${i}`, label: `CONCEPT diagram (big-idea / insight) — must be a real DRAWN diagram (cards + arrows), NEVER typeset ASCII/box-characters`, path: cropPath });
       } catch (e) { log(`  concept${i}: capture failed (${e?.message || e}) — skipped`); }
     }
-    // order the grader sees: hero, then the two diagrams, then the rest of the arc
+    // (3d) THE ANIMATION WORST-FRAME RULE (owner incident 2026-07-15: agentic-kit graded
+    // exemplary while its hero animation was colliding text soup two seconds into the loop —
+    // the gate only ever saw one instant of a moving thing). Animated content is judged at its
+    // WORST sampled moment: capture the hero animation, when present, at three loop phases
+    // ~3s apart (its CSS timeline runs live in this browser) and put ALL THREE in front of the
+    // grader as one labelled sequence. Costs ~6s wall per device; buys the class of bug back.
+    const heroAnimEl = page.locator('.hero-refusal').first();
+    const heroAnimCrops = [];
+    if (await heroAnimEl.count()) {
+      try {
+        await heroAnimEl.scrollIntoViewIfNeeded().catch(() => {});
+        for (let b = 0; b < 3; b++) {
+          if (b) await page.waitForTimeout(3100);
+          const cropPath = path.join(assetsDir, `grade-${device.tag}-heroAnim-beat${b + 1}.png`);
+          await heroAnimEl.screenshot({ path: cropPath });
+          heroAnimCrops.push({ key: `heroAnim-beat${b + 1}`, label: `HERO ANIMATION — loop phase ${b + 1} of 3 (ONE animated sequence sampled at three moments; judge its WORST frame — any text collision, overflow, or illegibility at ANY sampled phase fails B5 and thesis-motion)`, path: cropPath });
+        }
+        log(`  heroAnim: 3 loop-phase crops captured (worst-frame rule)`);
+      } catch (e) { log(`  heroAnim crops failed (${e?.message || e}) — skipped`); }
+    }
+    // order the grader sees: hero, then the animation beats, then the two diagrams, then the rest
     const ordered = [];
     const heroCrop = crops.find((c) => c.key === 'hero');
     if (heroCrop) ordered.push(heroCrop);
+    ordered.push(...heroAnimCrops);
     ordered.push(...diagCrops);
     for (const c of crops) if (c.key !== 'hero') ordered.push(c);
 

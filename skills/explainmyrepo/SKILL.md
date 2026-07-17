@@ -390,6 +390,12 @@ parallel.
      population of many small things, a few highlighted) · `fan` (one radiating to many) ·
      `tree` (hierarchy) · `exchange` (two sides, a broker between). **No two diagrams on one
      page may share an archetype** — the gate fails repetition.
+     **WIDTH-BUDGET EVERY LABEL (2026-07-15, autonomous-wealth-builder + agentic-kit hero
+     collisions — both from unmeasured text)**: before writing any <text>, compute its budget —
+     monospace ≈ 0.62 × font-size per char, bold sans ≈ 0.55 — and verify the string fits its
+     container at the DESKTOP COLUMN scale (~45% of natural size), not just the full-size stage.
+     Two same-lane labels need ≥12px gap at column scale. Style micro-labels lowercase with
+     letter-spacing (caps-styled words like DISK/AGENT trip the INV-20 acronym gate).
   2. **The flow diagram must SHOW the thesis motion, not name stages.** For a repo whose trick
      is spatial ("the key never leaves the vault"), the invariant must be VISIBLE: the request
      dot travels the full journey while the key glyph stays pulsing inside the vault boundary.
