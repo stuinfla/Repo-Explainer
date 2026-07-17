@@ -57,16 +57,17 @@ One command reads a repo and produces three things, each quality-gated:
 
 The brain runs the repo through an ordered sequence. Each step has one job:
 
-![The pipeline: read, understand, conceive, author, visualize, assemble, grade, ship — with a refine loop from grade back to author that reopens only the named weak slot.](assets/diagrams/pipeline.svg)
+![The pipeline: read (identity-pinned clone + self-healing credential probe), compete (three models pitch concepts in text, a judge picks one), understand, conceive, author, visualize (bespoke animated SVGs, every image teaches), assemble, grade (worst animation frame included), ship (the verdict enforced as a deploy rail) — with a refine loop that reopens only the named weak slot, and a learning return: every outcome and reader grade feeds the store so the next build starts smarter.](assets/diagrams/pipeline.svg)
 
-1. **Read** — clone the repo and confirm it's reachable (public, private, or your own, via authenticated access).
-2. **Understand** — build a real RVF vector knowledge base from the actual code: structure-aware chunks, local 384-dim embeddings (`bge-small-en-v1.5`), plus an extracted symbol index, dependency graph, and entrypoints. Then author a plain-language primer. Everything downstream is grounded in this KB — **no invented capabilities**.
-3. **Conceive** — before writing a word, invent *this repo's* art direction: a visual metaphor that fits (PhotonLayer → prism, ruvn → evidence dossier, ruqu → Bloch-sphere orb), a palette, a type personality, a layout rhythm, a hero concept, and a copy voice. This is why every explainer looks different.
-4. **Author** — write the copy along a **comprehension arc** — the questions a newcomer actually asks, in order: *What world am I in? Why does this exist? What does it do? Why is it clever? How is it built? Could I use it? How do I start?* Every claim is traceable to a KB passage.
-5. **Visualize** — generate imagery on two tracks: emotional/illustrative images via `gpt-image-2` (hero, problem, scenario), and crisp **vector diagrams** via `ascii-to-svg` for structure. An **architecture diagram and a data-flow diagram are mandatory on every page**, drawn from the repo's *real* dependency graph and entrypoints — never invented.
-6. **Assemble** — render the page **once** onto a shared design system (no incremental marker-patching), build the downloadable AI knowledge pack, and wire in SEO + social (JSON-LD, a 1200×630 social card, `llms.txt` for AI crawlers).
-7. **Grade** — the quality gate. Render the real page, score it, and **refine in a loop until it clears the bar** (see below).
-8. **Ship** — deploy the already-great page to its own URL (Netlify by default, provider-agnostic), create the explainer GitHub repo and invite you in, set its topics + description, and email you the scorecard, both screenshots, and every link.
+1. **Read** — clone the **exact** repo (identity-pinned, so nothing can substitute a lookalike) and **live-probe every credential** before a cent is spent: the preflight walks each key's candidate sources and self-heals onto the first one that actually works.
+2. **Compete** — before any expensive work, **three frontier models fight in plain text** (Claude Sonnet, Claude Fable, GPT-5.6) to art-direct this repo: each pitches a visual metaphor, palette, hero animation, and story arc; an independent judge scores them swap-test-first and the winner's concept seeds the build. Premium creative judgment at *pennies*, so the expensive execution runs once, on the cheaper tier.
+3. **Understand** — build a real RVF vector knowledge base from the actual code: structure-aware chunks, local 384-dim embeddings (`bge-small-en-v1.5`), plus an extracted symbol index, dependency graph, and entrypoints. Then author a plain-language primer. Everything downstream is grounded in this KB — **no invented capabilities**.
+4. **Conceive** — validate the tournament's winning concept against the full KB and sharpen it with grounded specifics. The truth rails stay with the agent; the creativity already won its seat.
+5. **Author** — write the copy along a **comprehension arc** — the questions a newcomer actually asks, in order: *What world am I in? Why does this exist? What does it do? Why is it clever? How is it built? Could I use it? How do I start?* Every claim is traceable to a KB passage.
+6. **Visualize** — every image must **teach** (the swap test: if an image could ship unchanged on a different repo, it fails). Labeled, mechanism-bearing illustrations via `gpt-image-2`/Grok; **bespoke *animated* SVG diagrams** hand-authored per an archetype menu (journey · containment · field · fan · tree · exchange — **no two diagrams on one page may share a form**), with every label width-budgeted so text can never collide. The flow diagram must *perform* the repo's thesis in motion, not name stages. Architecture and data-flow diagrams are mandatory and drawn from the repo's *real* dependency graph — never invented.
+7. **Assemble** — render the page **once** onto a shared design system (with universal click-to-zoom on every figure), build the downloadable AI knowledge pack, and wire in SEO + social (JSON-LD, a 1200×630 social card, `llms.txt` for AI crawlers).
+8. **Grade** — the quality gate (see below). Real screenshots, both devices, every diagram at full size, and **animations sampled at multiple loop phases and judged at their worst frame**.
+9. **Ship** — the gate's verdict is enforced as a **deterministic rail at the deploy boundary** (its only override is human-only, terminal-gated — an agent cannot reach it). A refused build isn't garbage: it survives as an artifact with the grader's own words, and the runner can spend one trusted "operator's grade" on a documented post-cap fix. On success: deploy, verify HTTP 200, update the public status page with the full scorecard, and email you every link — including a one-click **grade-this-page** ask.
 
 ---
 
@@ -81,7 +82,7 @@ The gate renders the live page in a real browser at **390px (mobile)** and **144
 - **Gate A — "Do they actually get it?"** (substance): visual effectiveness, storytelling, clueless-to-convinced, usefulness-to-*you*, completeness of the arc, and implementation confidence.
 - **Gate B — "Did someone who gives a shit make this?"** (craft / anti-slop): typography, alignment, spacing, polish, and imagery craft — including whether the diagrams are genuinely explanatory.
 
-To pass, on **both devices**, the scorecard must hit an **exemplar-anchored bar: mean ≥ 90 and minimum axis ≥ 85**. The bar is pinned to the project's own praised example sites (~88 headline / ~92 mean on an honest harsh grader) — not an impossible "95 on everything." The minimum-axis floor is the anti-slop catch: one weak axis (a raw ASCII diagram, a pretty-but-empty image) scores ~50 and fails the whole build.
+The bar has **two tiers, both enforced in code**: the **exemplar bar** (mean ≥ 90, minimum axis ≥ 85, both devices) is what the refine loop climbs toward, and the **ship floor** (mean ≥ 82, minimum axis ≥ 70, all operator questions YES) is a hard rail at the deploy boundary — `deploy` recomputes it from the scorecard and refuses anything below it, no matter what any agent believes. The minimum-axis floor is the anti-slop catch: one weak axis (a raw ASCII diagram, a mood image that fails the swap test, an animation whose *worst sampled frame* has colliding text) fails the whole build. Every image is individually interrogated — what does a stranger learn from its pixels alone, and could it ship unchanged on a different repo?
 
 On top of the numbers, the operator must answer **YES to all six questions** — a separate, independent gate:
 
@@ -92,7 +93,21 @@ On top of the numbers, the operator must answer **YES to all six questions** —
 5. Does it make me smile — "oh, that's cool"?
 6. Could someone who knows **nothing** about this domain read the first four sections and explain the problem and the solution back to me?
 
-A single axis below the bar, or a single NO, names the exact weakness, reopens just that slot, re-renders, and re-grades. **Iterating over a few revisions is expected by design** — it's how the build climbs to genuinely high quality. Three sets of eyes see the same pixels: the vision-model critic, the operator, and finally you (the owner) on delivery. If a repo genuinely can't reach the bar, the build **says so honestly** rather than shipping slop and calling it done.
+A single axis below the bar, or a single NO, names the exact weakness, reopens just that slot, re-renders, and re-grades. **Iterating over a few revisions is expected by design** — it's how the build climbs to genuinely high quality. Three sets of eyes see the same pixels: the vision-model critic, the operator, and finally you (the owner) on delivery. If a repo genuinely can't reach the bar, the build **says so honestly** rather than shipping slop and calling it done — and the honest refusal is preserved (site + scorecard + the grader's reasons) so a ten-minute cure beats a rebuild.
+
+---
+
+## The factory learns — every build makes the next one better
+
+Most generators are amnesiac: build #100 is exactly as naive as build #1. This one closes the loop:
+
+![The learning loop: a shipped page emits its gate outcome and the reader's own 1-to-100 grade; both land in a measured-truth oracle store; patterns are distilled and promoted only when backed by outcomes; the recipe itself — the skill, the gate, the tools — carries the lessons into the next build.](assets/diagrams/learning-loop.svg)
+
+- **Two verdicts per page, side by side**: the machine grader's scorecard *and* the reader's own 1–100 + comments (every delivery email asks for it). The admin dashboard plots the synthesized score over time — the factory has to prove it's getting better, not claim it.
+- **Only measured truth is promoted**: build outcomes and human grades land in an oracle-tier learning store; patterns distilled from it are marked trustworthy only when execution-observed.
+- **Lessons live in the recipe, not in anyone's memory**: when a failure teaches something (an animation that hid its worst frame, a label that collided at column scale, a $0 pre-check that burned real grade budget), the *skill, the gate, or a tool* is changed the same day — so the fix fires on every future build even when nobody remembers the incident.
+
+The receipts are in the git log: the first fully-autonomous build after this week's lessons went **first-try exemplary — one grade pass, 37 minutes, zero human minutes**.
 
 ---
 
@@ -169,9 +184,12 @@ The bar these are calibrated against — five hand-built explainers, five comple
 
 | Layer | Tool |
 |---|---|
+| Concept tournament | Claude Sonnet 5 · Claude Fable 5 · GPT-5.6 competing in text; GPT-5.6 judging |
 | Knowledge base | RVF single-file vector DB (`@ruvector/rvf`) + `bge-small-en-v1.5` (local, 384-dim) |
-| Imagery | `gpt-image-2` (illustration) + `ascii-to-svg` (architecture / flow diagrams) |
-| Quality gate | Playwright dual-viewport render + vision grading (Claude by default, or any vision model you configure) |
+| Imagery | `gpt-image-2` / Grok (labeled, mechanism-bearing illustration) + bespoke hand-authored **animated SVG** diagrams (archetype-diverse, width-budgeted) |
+| Quality gate | Playwright dual-viewport render + GPT-5.6 vision grading (configurable) — every diagram at full size, animations at their worst sampled frame, ship floor enforced as a deploy rail |
+| Feedback + learning | Reader 1–100 grades beside machine grades on the admin; outcomes + grades feed an oracle-tier learning store |
+| Trailers (pilot) | [HyperFrames](https://github.com/heygen-com/hyperframes) — each page's own assets rendered into a shareable 30–40s MP4, locally, for ~$0 |
 | Hosting | Netlify by default (provider-agnostic adapter) |
 
 The full recipe lives in [`docs/adr/0005-skill-based-explainer-recipe.md`](docs/adr/0005-skill-based-explainer-recipe.md); the domain model in [`docs/ddd/explainmyrepo-recipe-domain.md`](docs/ddd/explainmyrepo-recipe-domain.md).

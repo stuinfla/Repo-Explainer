@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 260" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 300" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">
   <defs>
     <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#64748b"/>
@@ -6,44 +6,54 @@
     <marker id="arrR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#fb7185"/>
     </marker>
+    <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#34d399"/>
+    </marker>
   </defs>
-  <rect x="0" y="0" width="1080" height="260" rx="16" fill="#0f172a" stroke="#1e293b"/>
-  <text x="540" y="42" text-anchor="middle" fill="#e2e8f0" font-size="17" font-weight="bold">the pipeline &#8212; each step has one job</text>
+  <rect x="0" y="0" width="1080" height="300" rx="16" fill="#0f172a" stroke="#1e293b"/>
+  <text x="540" y="40" text-anchor="middle" fill="#e2e8f0" font-size="17" font-weight="bold">the pipeline &#8212; each step has one job</text>
 
-  <!-- 8 stations -->
-  <g font-size="13" font-weight="bold" text-anchor="middle">
-    <rect x="30"  y="96" width="106" height="52" rx="9" fill="#1e293b" stroke="#334155"/><text x="83"  y="127" fill="#e2e8f0">READ</text>
-    <rect x="162" y="96" width="106" height="52" rx="9" fill="#1e293b" stroke="#334155"/><text x="215" y="120" fill="#e2e8f0">UNDER-</text><text x="215" y="137" fill="#e2e8f0">STAND</text>
-    <rect x="294" y="96" width="106" height="52" rx="9" fill="#1e293b" stroke="#334155"/><text x="347" y="127" fill="#e2e8f0">CONCEIVE</text>
-    <rect x="426" y="96" width="106" height="52" rx="9" fill="#1e293b" stroke="#334155"/><text x="479" y="127" fill="#e2e8f0">AUTHOR</text>
-    <rect x="558" y="96" width="106" height="52" rx="9" fill="#1e293b" stroke="#334155"/><text x="611" y="127" fill="#e2e8f0">VISUALIZE</text>
-    <rect x="690" y="96" width="106" height="52" rx="9" fill="#1e293b" stroke="#334155"/><text x="743" y="127" fill="#e2e8f0">ASSEMBLE</text>
-    <rect x="822" y="96" width="106" height="52" rx="9" fill="#111c33" stroke="#7dd3fc"/><text x="875" y="127" fill="#7dd3fc">GRADE</text>
-    <rect x="954" y="96" width="106" height="52" rx="9" fill="#0d2420" stroke="#34d399"/><text x="1007" y="127" fill="#34d399">SHIP</text>
+  <!-- 9 stations -->
+  <g font-size="12" font-weight="bold" text-anchor="middle">
+    <rect x="24"  y="96" width="96" height="52" rx="9" fill="#1e293b" stroke="#334155"/><text x="72"  y="127" fill="#e2e8f0">READ</text>
+    <rect x="141" y="96" width="96" height="52" rx="9" fill="#231b33" stroke="#c4b5fd"/><text x="189" y="120" fill="#c4b5fd">COMPETE</text><text x="189" y="137" fill="#c4b5fd">3 models</text>
+    <rect x="258" y="96" width="96" height="52" rx="9" fill="#1e293b" stroke="#334155"/><text x="306" y="120" fill="#e2e8f0">UNDER-</text><text x="306" y="137" fill="#e2e8f0">STAND</text>
+    <rect x="375" y="96" width="96" height="52" rx="9" fill="#1e293b" stroke="#334155"/><text x="423" y="127" fill="#e2e8f0">CONCEIVE</text>
+    <rect x="492" y="96" width="96" height="52" rx="9" fill="#1e293b" stroke="#334155"/><text x="540" y="127" fill="#e2e8f0">AUTHOR</text>
+    <rect x="609" y="96" width="96" height="52" rx="9" fill="#1e293b" stroke="#334155"/><text x="657" y="127" fill="#e2e8f0">VISUALIZE</text>
+    <rect x="726" y="96" width="96" height="52" rx="9" fill="#1e293b" stroke="#334155"/><text x="774" y="127" fill="#e2e8f0">ASSEMBLE</text>
+    <rect x="843" y="96" width="96" height="52" rx="9" fill="#111c33" stroke="#7dd3fc"/><text x="891" y="127" fill="#7dd3fc">GRADE</text>
+    <rect x="960" y="96" width="96" height="52" rx="9" fill="#0d2420" stroke="#34d399"/><text x="1008" y="127" fill="#34d399">SHIP</text>
   </g>
   <g stroke="#64748b" stroke-width="2">
-    <line x1="136" y1="122" x2="158" y2="122" marker-end="url(#arr)"/>
-    <line x1="268" y1="122" x2="290" y2="122" marker-end="url(#arr)"/>
-    <line x1="400" y1="122" x2="422" y2="122" marker-end="url(#arr)"/>
-    <line x1="532" y1="122" x2="554" y2="122" marker-end="url(#arr)"/>
-    <line x1="664" y1="122" x2="686" y2="122" marker-end="url(#arr)"/>
-    <line x1="796" y1="122" x2="818" y2="122" marker-end="url(#arr)"/>
-    <line x1="928" y1="122" x2="950" y2="122" marker-end="url(#arr)"/>
+    <line x1="120" y1="122" x2="137" y2="122" marker-end="url(#arr)"/>
+    <line x1="237" y1="122" x2="254" y2="122" marker-end="url(#arr)"/>
+    <line x1="354" y1="122" x2="371" y2="122" marker-end="url(#arr)"/>
+    <line x1="471" y1="122" x2="488" y2="122" marker-end="url(#arr)"/>
+    <line x1="588" y1="122" x2="605" y2="122" marker-end="url(#arr)"/>
+    <line x1="705" y1="122" x2="722" y2="122" marker-end="url(#arr)"/>
+    <line x1="822" y1="122" x2="839" y2="122" marker-end="url(#arr)"/>
+    <line x1="939" y1="122" x2="956" y2="122" marker-end="url(#arr)"/>
   </g>
 
   <!-- captions -->
-  <g font-size="10.5" fill="#94a3b8" text-anchor="middle">
-    <text x="83"  y="168">clone the EXACT</text><text x="83"  y="182">repo, verified</text>
-    <text x="215" y="168">real vector KB</text><text x="215" y="182">from the code</text>
-    <text x="347" y="168">this repo's own</text><text x="347" y="182">art direction</text>
-    <text x="479" y="168">comprehension</text><text x="479" y="182">ladder copy</text>
-    <text x="611" y="168">imagery + real</text><text x="611" y="182">arch/flow SVGs</text>
-    <text x="743" y="168">render the page</text><text x="743" y="182">exactly once</text>
-    <text x="875" y="168">two viewports,</text><text x="875" y="182">six operators</text>
-    <text x="1007" y="168">deploy + verify</text><text x="1007" y="182">HTTP 200</text>
+  <g font-size="10" fill="#94a3b8" text-anchor="middle">
+    <text x="72"  y="168">clone the EXACT</text><text x="72"  y="182">repo; live-probe</text><text x="72" y="196">every credential</text>
+    <text x="189" y="168">concepts fight in</text><text x="189" y="182">TEXT for pennies;</text><text x="189" y="196">a judge picks one</text>
+    <text x="306" y="168">real vector KB</text><text x="306" y="182">from the code</text>
+    <text x="423" y="168">validate the won</text><text x="423" y="182">concept vs the KB</text>
+    <text x="540" y="168">comprehension</text><text x="540" y="182">ladder copy</text>
+    <text x="657" y="168">bespoke ANIMATED</text><text x="657" y="182">SVGs + labeled art;</text><text x="657" y="196">every image teaches</text>
+    <text x="774" y="168">render the page</text><text x="774" y="182">exactly once</text>
+    <text x="891" y="168">2 viewports, 11 axes,</text><text x="891" y="182">6 operators, worst</text><text x="891" y="196">ANIMATION frame</text>
+    <text x="1008" y="168">deploy RAIL: the</text><text x="1008" y="182">verdict is law, then</text><text x="1008" y="196">verify HTTP 200</text>
   </g>
 
   <!-- refine loop -->
-  <path d="M 875 96 C 860 70, 500 70, 483 92" fill="none" stroke="#fb7185" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrR)"/>
-  <text x="679" y="58" text-anchor="middle" fill="#fb7185" font-size="11.5">below the bar? reopen ONLY the named weak slot &#8635;</text>
+  <path d="M 891 96 C 876 68, 560 68, 544 92" fill="none" stroke="#fb7185" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrR)"/>
+  <text x="717" y="60" text-anchor="middle" fill="#fb7185" font-size="11">below the bar? reopen ONLY the named weak slot &#8635;</text>
+
+  <!-- learning return -->
+  <path d="M 1008 148 C 1008 250, 220 262, 192 152" fill="none" stroke="#34d399" stroke-width="2" stroke-dasharray="3 6" marker-end="url(#arrG)"/>
+  <text x="562" y="245" text-anchor="middle" fill="#34d399" font-size="11">every outcome + every reader grade feeds the learning store &#8212; the NEXT build starts smarter &#8635;</text>
 </svg>

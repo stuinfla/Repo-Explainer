@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 280" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">
+  <defs>
+    <marker id="larr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#64748b"/>
+    </marker>
+    <marker id="larrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#34d399"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1080" height="280" rx="16" fill="#0f172a" stroke="#1e293b"/>
+  <text x="540" y="40" text-anchor="middle" fill="#e2e8f0" font-size="17" font-weight="bold">the factory learns &#8212; every build makes the next one better</text>
+
+  <g font-size="12.5" font-weight="bold" text-anchor="middle">
+    <rect x="40"  y="88" width="150" height="56" rx="9" fill="#0d2420" stroke="#34d399"/><text x="115" y="112" fill="#34d399">SHIPPED</text><text x="115" y="130" fill="#34d399">PAGE</text>
+    <rect x="250" y="62" width="180" height="50" rx="9" fill="#1e293b" stroke="#334155"/><text x="340" y="83" fill="#e2e8f0">gate outcome</text><text x="340" y="101" fill="#94a3b8" font-weight="normal" font-size="11">11 axes &#215; 2 devices, cost</text>
+    <rect x="250" y="126" width="180" height="50" rx="9" fill="#1e293b" stroke="#334155"/><text x="340" y="147" fill="#e2e8f0">reader grade</text><text x="340" y="165" fill="#94a3b8" font-weight="normal" font-size="11">their 1&#8211;100 + comments</text>
+    <rect x="492" y="88" width="180" height="56" rx="9" fill="#231b33" stroke="#c4b5fd"/><text x="582" y="112" fill="#c4b5fd">ORACLE STORE</text><text x="582" y="130" fill="#94a3b8" font-weight="normal" font-size="11">measured truth only</text>
+    <rect x="732" y="88" width="150" height="56" rx="9" fill="#1e293b" stroke="#334155"/><text x="807" y="112" fill="#e2e8f0">distilled</text><text x="807" y="130" fill="#e2e8f0">patterns</text>
+    <rect x="936" y="88" width="120" height="56" rx="9" fill="#111c33" stroke="#7dd3fc"/><text x="996" y="112" fill="#7dd3fc">THE</text><text x="996" y="130" fill="#7dd3fc">RECIPE</text>
+  </g>
+
+  <g stroke="#64748b" stroke-width="2">
+    <line x1="190" y1="102" x2="246" y2="90" marker-end="url(#larr)"/>
+    <line x1="190" y1="130" x2="246" y2="148" marker-end="url(#larr)"/>
+    <line x1="430" y1="90"  x2="488" y2="106" marker-end="url(#larr)"/>
+    <line x1="430" y1="148" x2="488" y2="126" marker-end="url(#larr)"/>
+    <line x1="672" y1="116" x2="728" y2="116" marker-end="url(#larr)"/>
+    <line x1="882" y1="116" x2="932" y2="116" marker-end="url(#larr)"/>
+  </g>
+
+  <!-- the loop back to the next build -->
+  <path d="M 996 144 C 996 235, 160 240, 115 150" fill="none" stroke="#34d399" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#larrG)"/>
+  <text x="556" y="222" text-anchor="middle" fill="#34d399" font-size="11.5">the skill, the gate, and the tools carry the lessons &#8212; they fire on the next build even when nobody remembers &#8635;</text>
+
+  <g font-size="10.5" fill="#94a3b8" text-anchor="middle">
+    <text x="115" y="166">plus every honest failure:</text>
+    <text x="115" y="180">refused builds survive as</text>
+    <text x="115" y="194">artifacts, alerts carry the</text>
+    <text x="115" y="208">grader's own words</text>
+    <text x="807" y="166">promoted only when</text>
+    <text x="807" y="180">backed by measured</text>
+    <text x="807" y="194">outcomes</text>
+  </g>
+</svg>
