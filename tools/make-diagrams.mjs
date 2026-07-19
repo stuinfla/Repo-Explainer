@@ -562,9 +562,15 @@ function renderFlow(eyebrow, title, model, caption, pal) {
   return { W: S, H: S, body: body.join('\n'), desc };
 }
 
-// ── CONCEPT (big-idea / insight): a centered VERTICAL glowing flow of idea-cards ───────────────────
-// Wide-but-short horizontal strips waste a forced-square canvas, so we stack the idea as a vertical
-// path that fills a near-square — sequence items get glowing down-arrows; separate statements stack.
+// ── CONCEPT ARCHETYPES (big-idea / insight / demoted architecture / demoted flow) ──────────────────
+// ONE rows-model, FOUR distinct visual forms, so no two concept-rendered diagrams share a SHAPE
+// (INV-23: rails on truth, never on form). renderConcept dispatches on `variant`, assigned per diagram
+// KEY in the DIAGRAMS table: column (bigIdea) · ribbon (flow) · orbit (insight) · strata (architecture).
+// WHY (2026-07-18): before this, every concept slot drew the SAME centered vertical card-column. On a
+// repo where 2-3 slots demote to concept (bissanmu/spring3-legacy-web: flow+big-idea+insight all did),
+// that repetition read as one form three times and tanked the imagery-craft grade (B5 58/60 < floor 70),
+// so deploy.mjs's ship-bar rail refused to publish. The house style (glassmorphic dark) stays shared on
+// purpose; only the LAYOUT diverges — which is the axis the grader was penalising.
 const C = { CARD_H: 78, VGAP: 50, GAP_PLAIN: 30, TOP: 132, BOTTOM: 72, PADX: 30, MINW: 280, MAXW: 580 };
 
 function cwidth(label) { return Math.min(C.MAXW, Math.max(C.MINW, Math.ceil(measure(clip(label, 54), 18.5, { bold: true })) + C.PADX * 2)); }
@@ -584,37 +590,55 @@ function wrapText(text, maxChars) {
   return out.length ? out : [''];
 }
 
-function renderConcept(eyebrow, title, rows, caption, pal) {
+// flatten a rows-model into ordered steps, marking which connect to the next with an arrow
+function conceptSteps(rows, title) {
   rows = rows.filter((r) => r && Array.isArray(r.items) && r.items.length);
   if (!rows.length) rows = [{ items: [{ label: title }] }];
-  // flatten into vertical steps, marking which connect to the next with an arrow
   const steps = [];
   rows.forEach((r) => r.items.forEach((it, i) => steps.push({
     label: it.label, colorIdx: it.colorIdx, arrow: !!(r.connectWithin && i < r.items.length - 1),
   })));
+  return { rows, steps };
+}
+
+// caption: WRAP to the real canvas width (mono) so it can never spill past the edges; returns the
+// caption SVG plus the bottom-band height to add under the diagram content (min = minPad).
+function captionBlock(cx, contentH, availW, caption, pal, minPad) {
+  const FS = 13, CW = FS * 0.6, LH = FS * 1.5;
+  if (!caption) return { svg: '', band: minPad };
+  const cap = Math.max(16, Math.floor((availW - 104) / CW));
+  let lines = wrapText(caption, cap);
+  if (lines.length > 3) { lines = lines.slice(0, 3); lines[2] = clip(lines[2] + ' …', cap); }
+  const parts = [];
+  let y = contentH + 34 + FS;
+  for (const l of lines) { parts.push(txt(cx, y, l, { size: FS, mono: true, fill: pal.muted, anchor: 'middle' })); y += LH; }
+  return { svg: parts.join('\n'), band: Math.max(minPad, 34 + lines.length * LH + 22) };
+}
+
+// wrap a label to fit inside a card of inner width `innerW` at font `fs`, capped at `maxLines` (… on overflow)
+function fitLines(label, innerW, fs, maxLines) {
+  const perLine = Math.max(6, Math.floor(innerW / (fs * 0.55)));
+  let lines = wrapText(clip(label, perLine * maxLines), perLine);
+  if (lines.length > maxLines) { lines = lines.slice(0, maxLines); lines[maxLines - 1] = clip(lines[maxLines - 1] + ' …', perLine); }
+  return lines;
+}
+
+// VARIANT 1 — column: the original centered VERTICAL chain of glass cards joined by glowing down-arrows.
+function conceptColumn(eyebrow, title, steps, caption, pal) {
   const n = steps.length;
   const maxW = Math.max(C.MINW, ...steps.map((s) => cwidth(s.label)));
   const gaps = steps.slice(0, -1).reduce((t, s) => t + (s.arrow ? C.VGAP : C.GAP_PLAIN), 0);
   const cw = maxW + 140;
   const contentH = C.TOP + n * C.CARD_H + gaps;       // canvas through the bottom of the last card
-
-  // PORTRAIT canvas — width = the card column (or the title, whichever is wider), NOT a forced square.
-  // A square left big dead side-margins around the narrow card column, which looked broken when the
-  // diagram was panned on a phone. Portrait keeps the cards flush to the frame on every device.
+  // PORTRAIT canvas — width = the card column (or the title, whichever is wider), NOT a forced square,
+  // so the cards stay flush to the frame on a phone instead of floating in dead side-margins.
   const titleMinW = Math.ceil(measure(title, 30, { bold: true })) + 120;
   const W = Math.max(cw, titleMinW);
-  // caption: WRAP to the real canvas width (mono) so it can never spill past the edges, then size the
-  // bottom band to the wrapped line count.
-  const CAP_FS = 13, CAP_CW = CAP_FS * 0.6, CAP_LH = CAP_FS * 1.5;
-  const capCharCap = Math.max(16, Math.floor((W - 104) / CAP_CW));
-  let capLines = caption ? wrapText(caption, capCharCap) : [];
-  if (capLines.length > 3) { capLines = capLines.slice(0, 3); capLines[2] = clip(capLines[2] + ' …', capCharCap); }
-  const bottomPad = capLines.length ? Math.max(C.BOTTOM, 34 + capLines.length * CAP_LH + 22) : C.BOTTOM;
-  const H = contentH + bottomPad;
-  const ox = (W - cw) / 2, oy = 0;                    // centre the card column horizontally; portrait, so no vertical centring
-  const mid = cw / 2;
-
-  const body = [background(W, H, pal), `  <g transform="translate(${ox.toFixed(1)},${oy.toFixed(1)})">`, header(mid, 30, eyebrow, title, pal)];
+  const mid = cw / 2, ox = (W - cw) / 2;
+  const cb = captionBlock(mid, contentH, W, caption, pal, C.BOTTOM);
+  const H = contentH + cb.band;
+  const body = ['  <!-- concept archetype: column -->', background(W, H, pal),
+    `  <g transform="translate(${ox.toFixed(1)},0)">`, header(mid, 30, eyebrow, title, pal)];
   let y = C.TOP;
   const geo = steps.map((s, i) => { const g = { ...s, y, col: accent(s.colorIdx != null ? s.colorIdx : i) }; y += C.CARD_H + (s.arrow ? C.VGAP : C.GAP_PLAIN); return g; });
   for (let i = 0; i < geo.length - 1; i++) if (geo[i].arrow) body.push(beam(mid, geo[i].y + C.CARD_H + 6, mid, geo[i + 1].y - 6, mix(geo[i].col, geo[i + 1].col, 0.5)));
@@ -623,12 +647,127 @@ function renderConcept(eyebrow, title, rows, caption, pal) {
     body.push(glassPanel(x, g.y, w, C.CARD_H, g.col, { r: 18, fillA: 0.18, depth: 8, aura: 0.5 }));
     body.push(txt(mid, g.y + C.CARD_H / 2, clip(g.label, 54), { size: 18.5, weight: 700, fill: pal.ink, anchor: 'middle', dom: 'central' }));
   }
-  // caption wrapped + stacked + centered below the last card
-  let cy = contentH + 34 + CAP_FS;
-  for (const cl of capLines) { body.push(txt(mid, cy, cl, { size: CAP_FS, mono: true, fill: pal.muted, anchor: 'middle' })); cy += CAP_LH; }
-  body.push('  </g>');
-  const desc = `${title}: ${rows.map((r) => r.items.map((it) => it.label).join(r.connectWithin ? ' → ' : ', ')).join(' / ')}`;
-  return { W, H, body: body.join('\n'), desc };
+  body.push(cb.svg, '  </g>');
+  return { W, H, body: body.join('\n') };
+}
+
+// VARIANT 2 — ribbon: a horizontal LEFT→RIGHT sequence, cards joined by glowing right-arrows. Reads as
+// a pipeline — a landscape shape distinct from the vertical column — so a demoted data-flow never mirrors
+// big-idea. Labels wrap to fit inside each card.
+const RB = { CARD_H: 118, HGAP: 60, TOP: 156, PADX: 64, MINW: 158, MAXW: 300 };
+function ribW(label) { return clamp(Math.ceil(measure(clip(label, 34), 15.5, { bold: true })) + 46, RB.MINW, RB.MAXW); }
+function conceptRibbon(eyebrow, title, steps, caption, pal) {
+  const n = steps.length;
+  const ws = steps.map((s) => ribW(s.label));
+  const rowW = ws.reduce((a, b) => a + b, 0) + RB.HGAP * (n - 1);
+  const titleMinW = Math.ceil(measure(title, 30, { bold: true })) + 120;
+  const W = Math.max(rowW + RB.PADX * 2, titleMinW);
+  const cardY = RB.TOP, contentH = cardY + RB.CARD_H;
+  const cb = captionBlock(W / 2, contentH, W, caption, pal, 84);
+  const H = contentH + cb.band;
+  const body = ['  <!-- concept archetype: ribbon -->', background(W, H, pal), header(W / 2, 30, eyebrow, title, pal)];
+  let x = (W - rowW) / 2;
+  const geo = steps.map((s, i) => { const g = { ...s, x, w: ws[i], col: accent(s.colorIdx != null ? s.colorIdx : i) }; x += ws[i] + RB.HGAP; return g; });
+  for (let i = 0; i < n - 1; i++) if (geo[i].arrow) body.push(beam(geo[i].x + geo[i].w + 6, cardY + RB.CARD_H / 2, geo[i + 1].x - 6, cardY + RB.CARD_H / 2, mix(geo[i].col, geo[i + 1].col, 0.5)));
+  for (const g of geo) {
+    body.push(glassPanel(g.x, cardY, g.w, RB.CARD_H, g.col, { r: 16, fillA: 0.16, depth: 8, aura: 0.4 }));
+    const lines = fitLines(g.label, g.w - 30, 15, 3);
+    const startY = cardY + RB.CARD_H / 2 - (lines.length - 1) * 11;
+    lines.forEach((ln, k) => body.push(txt(g.x + g.w / 2, startY + k * 22, ln, { size: 15, weight: 700, fill: pal.ink, anchor: 'middle', dom: 'central' })));
+  }
+  body.push(cb.svg);
+  return { W, H, body: body.join('\n') };
+}
+
+// VARIANT 3 — orbit: a central KEYSTONE card with the remaining ideas as satellites on a ring, each
+// joined to the hub by a glowing beam. For "the insight" — the one clever move and what radiates from it.
+const OB = { HUBW: 300, HUBH: 98, SATW: 220, SATH: 82, TOP: 128, R: 250, PAD: 56 };
+function conceptOrbit(eyebrow, title, steps, caption, pal) {
+  const hub = steps[0], sats = steps.slice(1), m = sats.length;
+  // Satellites FAN DOWNWARD from the hub (angle 0 = straight down, spreading left/right). This is the
+  // fix for the 2-satellite case: a top+bottom placement read as a vertical line (mimicking the column
+  // archetype). A downward fan always reads as hub-and-spoke, distinct from every other variant.
+  const spread = m <= 1 ? 0 : Math.min(2.5, 0.6 + 0.5 * m);   // total fan angle in radians
+  const angOf = (i) => (m <= 1 ? 0 : (i / (m - 1) - 0.5) * spread);
+  const maxOff = m ? Math.sin(spread / 2) * OB.R : 0;
+  const W = Math.round(Math.max(2 * (maxOff + OB.SATW / 2) + OB.PAD * 2, Math.ceil(measure(title, 30, { bold: true })) + 160));
+  const cx = W / 2, cyHub = OB.TOP + OB.HUBH / 2;
+  const hubCol = accent(hub.colorIdx != null ? hub.colorIdx : 0);
+  const geo = sats.map((s, i) => {
+    const a = angOf(i);
+    return { ...s, sx: cx + Math.sin(a) * OB.R, sy: cyHub + Math.cos(a) * OB.R, col: accent(s.colorIdx != null ? s.colorIdx : i + 1) };
+  });
+  const lowest = geo.length ? Math.max(...geo.map((g) => g.sy)) : cyHub;
+  const contentH = (geo.length ? lowest + OB.SATH / 2 : cyHub + OB.HUBH / 2) + 20;
+  const cb = captionBlock(cx, contentH, W, caption, pal, 84);
+  const H = contentH + cb.band;
+  const body = ['  <!-- concept archetype: orbit -->', background(W, H, pal), header(cx, 30, eyebrow, title, pal)];
+  // beams hub → satellite (behind every card), leaving the hub's bottom edge and stopping short of the card
+  for (const g of geo) {
+    const dx = g.sx - cx, dy = g.sy - cyHub, d = Math.hypot(dx, dy) || 1, k = (d - OB.SATH / 2 - 4) / d;
+    body.push(beam(cx, cyHub + OB.HUBH / 2 - 8, cx + dx * k, cyHub + dy * k, mix(hubCol, g.col, 0.5)));
+  }
+  for (const g of geo) {
+    const x = g.sx - OB.SATW / 2, y = g.sy - OB.SATH / 2;
+    body.push(glassPanel(x, y, OB.SATW, OB.SATH, g.col, { r: 15, fillA: 0.15, depth: 6, aura: 0.4 }));
+    const lines = fitLines(g.label, OB.SATW - 26, 13.5, 3);
+    const sy0 = g.sy - (lines.length - 1) * 10;
+    lines.forEach((ln, k) => body.push(txt(g.sx, sy0 + k * 20, ln, { size: 13.5, weight: 600, fill: pal.ink, anchor: 'middle', dom: 'central' })));
+  }
+  // the hub last, so it sits above every beam
+  const hx = cx - OB.HUBW / 2, hy = cyHub - OB.HUBH / 2;
+  body.push(glassPanel(hx, hy, OB.HUBW, OB.HUBH, hubCol, { r: 20, fillA: 0.22, depth: 9, aura: 0.62 }));
+  const hubLines = fitLines(hub.label, OB.HUBW - 34, 17, 2);
+  const hy0 = cyHub - (hubLines.length - 1) * 12;
+  hubLines.forEach((ln, k) => body.push(txt(cx, hy0 + k * 24, ln, { size: 17, weight: 800, fill: pal.ink, anchor: 'middle', dom: 'central' })));
+  body.push(cb.svg);
+  return { W, H, body: body.join('\n') };
+}
+
+// VARIANT 4 — strata: concentric NESTED frames, outermost idea to innermost, each labelled at its top
+// band, with a pulsing marker so it stays "alive". Reads as "layers, one built inside another" — for a
+// demoted architecture (how it is built) when the dep-graph is too trivial to draw as a real map.
+const ST = { TOP: 150, SIZE: 640, SIDEPAD: 92 };
+function conceptStrata(eyebrow, title, steps, caption, pal) {
+  const items = steps.slice(0, 6);
+  const n = items.length;
+  // inset tuned so the INNERMOST frame stays wide enough to read a 2-line label (the old 1-line clip
+  // truncated inner labels to "Your page -…"). Keep the innermost side ≈ 200px minimum.
+  const inset = n > 1 ? Math.min(52, (ST.SIZE / 2 - 102) / (n - 1)) : 0;
+  const W = ST.SIZE + ST.SIDEPAD * 2, cx = W / 2;
+  const contentH = ST.TOP + ST.SIZE + 20;
+  const cb = captionBlock(cx, contentH, W, caption, pal, 84);
+  const H = contentH + cb.band;
+  const body = ['  <!-- concept archetype: strata -->', background(W, H, pal), header(cx, 30, eyebrow, title, pal)];
+  items.forEach((s, i) => {
+    const side = ST.SIZE - 2 * inset * i;
+    const x = cx - side / 2, y = ST.TOP + inset * i;
+    const col = accent(s.colorIdx != null ? s.colorIdx : i);
+    const r = Math.max(14, 26 - i * 2);
+    if (i === 0) body.push(`  <rect x="${(x - 5).toFixed(1)}" y="${(y - 5).toFixed(1)}" width="${side + 10}" height="${side + 10}" rx="${r + 4}" fill="${col}" opacity="0.16" filter="url(#glow)"/>`);
+    body.push(`  <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${side}" height="${side}" rx="${r}" fill="${tint(col, 0.09)}" stroke="${tint(col, 0.5)}" stroke-width="1.5"/>`);
+    body.push(`  <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${side}" height="${side}" rx="${r}" fill="url(#sheen)" opacity="0.3"/>`);
+    // label rides the top band of each frame, wrapped to at most 2 lines so inner frames stay legible
+    const lines = fitLines(s.label, side - 64, 13, 2);
+    const startY = y + 20, dotx = cx - side / 2 + 22;
+    body.push(`  <circle class="node-pulse" cx="${dotx.toFixed(1)}" cy="${startY.toFixed(1)}" r="4.5" fill="${col}" opacity="0.4" filter="url(#glowS)"/>`);
+    body.push(`  <circle cx="${dotx.toFixed(1)}" cy="${startY.toFixed(1)}" r="3" fill="${mix(col, '#ffffff', 0.4)}"/>`);
+    lines.forEach((ln, k) => body.push(txt(cx, startY + k * 17, ln, { size: 13, weight: 700, fill: pal.ink, anchor: 'middle', dom: 'central' })));
+  });
+  body.push(cb.svg);
+  return { W, H, body: body.join('\n') };
+}
+
+// dispatcher — same rows-model, distinct SHAPE per `variant` (default 'column' keeps old behaviour).
+function renderConcept(eyebrow, title, rows, caption, pal, variant = 'column') {
+  const { rows: rws, steps } = conceptSteps(rows, title);
+  const desc = `${title}: ${rws.map((r) => r.items.map((it) => it.label).join(r.connectWithin ? ' → ' : ', ')).join(' / ')}`;
+  const fn = variant === 'ribbon' ? conceptRibbon
+    : variant === 'orbit' ? conceptOrbit
+      : variant === 'strata' ? conceptStrata
+        : conceptColumn;
+  const r = fn(eyebrow, title, steps, caption, pal);
+  return { W: r.W, H: r.H, body: r.body, desc };
 }
 
 // (REMOVED) renderAsciiMono/wrapMono — these typeset the brain's ASCII VERBATIM as a picture of ASCII,
@@ -823,15 +962,17 @@ function asciiRows(ascii) {
   return { title, rows };
 }
 
+// conceptVariant = the visual archetype used when this slot renders (or demotes) to renderConcept.
+// One distinct shape per key so two concept diagrams can never collapse to the same form (INV-23).
 const DIAGRAMS = [
   { key: 'architectureDiagram', file: 'architecture.svg', title: 'Architecture', grounded: 'architecture',
-    conceptEyebrow: 'ARCHITECTURE', conceptHeading: 'How it is built' },
+    conceptEyebrow: 'ARCHITECTURE', conceptHeading: 'How it is built', conceptVariant: 'strata' },
   { key: 'flowDiagram', file: 'flow.svg', title: 'Process / Data Flow', grounded: 'flow',
-    conceptEyebrow: 'DATA FLOW', conceptHeading: 'What happens to your data' },
+    conceptEyebrow: 'DATA FLOW', conceptHeading: 'What happens to your data', conceptVariant: 'ribbon' },
   { key: 'bigIdeaDiagram', file: 'big-idea.svg', title: 'Big Idea', grounded: null,
-    conceptEyebrow: 'THE BIG IDEA', conceptHeading: 'How it all fits together' },
+    conceptEyebrow: 'THE BIG IDEA', conceptHeading: 'How it all fits together', conceptVariant: 'column' },
   { key: 'insightDiagram', file: 'insight.svg', title: 'The Insight', grounded: null,
-    conceptEyebrow: 'THE INSIGHT', conceptHeading: 'The clever move' },
+    conceptEyebrow: 'THE INSIGHT', conceptHeading: 'The clever move', conceptVariant: 'orbit' },
 ];
 
 function defaultAltText(spec, dg, ep, name, fallbackDesc, archModel, asConcept) {
@@ -973,7 +1114,7 @@ function main() {
         : spec.conceptHeading;
       // the brain's altText is the one-line TAKEAWAY — render it as the caption so the diagram tells a story
       const cap = (typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText.trim() : null;
-      rendered = renderConcept(eyebrow, heading, rows, cap, PAL);
+      rendered = renderConcept(eyebrow, heading, rows, cap, PAL, spec.conceptVariant);
       // round-trip the structured source + heading so re-running this station (e.g. a refine loop) redraws
       // identically WITHOUT a fresh brain call — and never reverts to the generic title.
       conceptBack = { rows: rows.map((r) => ({ items: r.items.map((it) => it.label), connect: r.connectWithin })), title: heading };

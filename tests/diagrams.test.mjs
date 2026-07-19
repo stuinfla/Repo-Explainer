@@ -186,3 +186,56 @@ test('the hero animation renders THIS repo\'s authored content, with no ternligh
   }
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+// ── REGRESSION: the four concept slots must render as DISTINCT archetypes (2026-07-18) ─────────────
+// Before this, EVERY concept-rendered diagram drew ONE vertical card-column. On a repo where multiple
+// slots demote to concept (bissanmu/spring3-legacy-web: flow + big-idea + insight all did), three
+// diagrams shared one visual form and the imagery-craft grade fell below the ship-bar floor (B5 58/60
+// < 70), so deploy.mjs refused to publish a fully-built page. Each key now owns a distinct archetype:
+// column (bigIdea) · ribbon (flow) · orbit (insight) · strata (architecture).
+function makeAllConceptFixture() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'emr-forms-'));
+  const kb = path.join(dir, 'kb');
+  fs.mkdirSync(kb, { recursive: true });
+  // 0 internal edges -> architecture demotes to concept; entrypoints present + authored flow rows ->
+  // flow demotes to concept too. So all four slots render via renderConcept and must NOT share a form.
+  fs.writeFileSync(path.join(kb, 'dep-graph.json'), JSON.stringify({
+    nodes: [{ name: 'a' }, { name: 'b' }], internalEdges: [],
+    componentCount: 2, internalEdgeCount: 0, ecosystems: ['node'],
+    externalDepNames: ['dep'], externalDepCount: 1,
+  }));
+  fs.writeFileSync(path.join(kb, 'entrypoints.json'), JSON.stringify({
+    install: ['npm i'], commands: [{ category: 'build', cmd: 'npm run build' }],
+    binaries: [{ name: 'x' }], quickstart: ['npx x'], workspace: { kind: 'single' },
+  }));
+  const chain = (items) => ({ rows: [{ items, connect: true }] });
+  fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify({
+    understanding: { repoName: 'fourforms' },
+    kb: { depGraphPath: path.join(kb, 'dep-graph.json'), entrypointsPath: path.join(kb, 'entrypoints.json') },
+    visuals: {
+      architectureDiagram: chain(['outer layer', 'middle layer', 'inner core']),
+      flowDiagram: chain(['input', 'transform', 'output']),
+      bigIdeaDiagram: chain(['idea A', 'idea B', 'idea C']),
+      insightDiagram: chain(['the move', 'result one', 'result two']),
+    },
+  }, null, 2));
+  return dir;
+}
+
+test('the four concept slots render as DISTINCT archetypes (no shared vertical-card form)', () => {
+  const dir = makeAllConceptFixture();
+  runMakeDiagrams(dir);
+  const arch = {};
+  for (const [file, key] of [['architecture', 'architectureDiagram'], ['flow', 'flowDiagram'], ['big-idea', 'bigIdeaDiagram'], ['insight', 'insightDiagram']]) {
+    const svg = fs.readFileSync(path.join(dir, 'assets', `${file}.svg`), 'utf8');
+    const m = /concept archetype: (\w+)/.exec(svg);
+    assert.ok(m, `${file}.svg must declare a concept archetype (the renderer used renderConcept)`);
+    arch[key] = m[1];
+  }
+  assert.equal(new Set(Object.values(arch)).size, 4,
+    `all four concept diagrams must use DISTINCT archetypes — this is the whole fix. Got ${JSON.stringify(arch)}`);
+  assert.deepEqual(arch,
+    { architectureDiagram: 'strata', flowDiagram: 'ribbon', bigIdeaDiagram: 'column', insightDiagram: 'orbit' },
+    'each diagram key must map to its assigned archetype');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
