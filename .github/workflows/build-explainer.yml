@@ -43,7 +43,7 @@ on:
       timeout_min:
         description: "budget_min + overhead buffer, pre-summed by build.js (GH Actions expressions don't do arithmetic on inputs)"
         required: false
-        default: "30"
+        default: "45"
 
 concurrency:
   group: build-explainer

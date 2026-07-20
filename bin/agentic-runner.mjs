@@ -27,6 +27,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { classifyEndState, buildCurePrompt, CURE } from './cure.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..');
@@ -326,7 +327,7 @@ THE SOURCE-IDENTITY LAW (INV-21 — overrides every other instruction in this br
 Ship mode: --ship-best-effort semantics — if you cannot reach the exemplar bar (mean>=90/min>=85/all six operators) after a reasonable refine attempt, ship the best HONEST version you have (the SHIP_OPERATORS bar: mean>=82, min>=70, real legible diagrams, comprehension operators YES) rather than nothing. The one thing you must NEVER ship broken is the mandatory architecture + flow diagrams (INV-18) — hold rather than ship if those didn't render as real vectors.
 Do NOT publish a separate GitHub repo for this build (skip that station — no write-scoped GitHub token is provisioned in this hosted context, by design).
 Do NOT run the notify station (station 9) — sending the submitter's email is handled OUTSIDE your process; you have no SMTP credentials and should not need them. Your job ends once quality-grade + deploy are done and build.json's publish.liveUrl is set.
-The refine loop is capped at 3 total quality-grade calls (1 initial + 2 refines) and this is now ENFORCED by the tool itself, not just this instruction — a 4th call returns the prior scorecard unchanged at zero cost rather than re-grading. Do not try to work around this; when you see capReached, ship immediately.
+The refine loop is capped at 3 total quality-grade calls (1 initial + 2 refines) and this is now ENFORCED by the tool itself, not just this instruction — a 4th call returns the prior scorecard unchanged at zero cost rather than re-grading. Do not try to work around it. At the cap, run deploy: if the ship-bar rail accepts, you are done. If the rail REFUSES on a weakness the final scorecard NAMES (a specific axis, operator question, or diagram), apply that one surgical fix, re-run assemble-page, and write a short factual note of exactly what you fixed and why it addresses the named weakness to quality.postCapManualFix in build.json — then END the run (report ok:false, reason "post-cap fix awaiting runner verification"). The RUNNER — trusted code outside your process — spends exactly ONE fresh verification grade on a documented fix and deploys through the same rail if it now passes. Never bypass the rail; document your fix and stop.
 
 You have an approximate budget of ${budgetMin} minutes and $${budgetUsd}. Track your own elapsed time and cost as you work. This repo's actual size/complexity is unknown to me in advance — YOU are the one who discovers it by reading the repo, so budget your own effort accordingly: for a small repo, take your time and polish; for a large/deep monorepo, work faster and be willing to cap exhaustiveness (e.g. don't try to full-text-sweep every file in a 10,000-file repo — sample the important ones: READMEs, top-level docs, the most-referenced components) rather than trying to be exhaustive and running out of budget.
 
@@ -513,45 +514,94 @@ try {
   if (finalId !== submittedRepoId) identityViolation = `build ended on "${finalCtx?.repo?.url}" but was submitted for ${submittedRepoId}`;
 } catch { /* unreadable build.json already fails the liveUrl check */ }
 
-// THE OPERATOR'S GRADE (2026-07-15) — mechanizes what was done by hand for agentic-kit: the
-// refine cap bounds the AGENT's spend, not the truth. When the agent ends UNSHIPPED at the cap
-// but documented a genuine post-cap fix (quality.postCapManualFix), the RUNNER — trusted
-// deterministic code, outside the agent — spends exactly ONE fresh grade and, if the page now
-// honestly passes, deploys through the ship-bar rail (no force; the rail stays the judge).
-// Fires at most once per run; a page that fails its operator grade stays refused. Without a
-// documented fix there is nothing new to verify, so it does NOT fire on plain B5 stalls.
+// THE CURE STAGE (2026-07-19) — the systemic fix for the 07/15–07/17 failure streak: the
+// pipeline was ONE-SHOT, so any unforeseen last-mile condition became a terminal user-visible
+// failure even with a finished, floor-clearing page on disk. This generalizes the 2026-07-15
+// operator-grade block (which fired only on quality.postCapManualFix — a key nothing ever taught
+// the agent to write, so it never fired in production): the runner now CLASSIFIES every unshipped
+// ending deterministically (bin/cure.mjs, unit-tested against the three real incident shapes) and
+// routes a NEAR-MISS — page already at/above the ship-floor mean, no slop axis, every blocker
+// nameable — through ONE bounded cure cycle: a narrow cure agent fixes ONLY the named weaknesses
+// (skipped when the main agent already fixed and documented via postCapManualFix), then ONE fresh
+// grade, then tools/deploy.mjs — the ship-bar rail stays the ONLY judge. Genuine below-bar
+// endings stay refused, honestly. Fires at most once per run; never on budget kills or crashes.
 if (exitCode === 0 && !killedForBudget && !liveUrl && !identityViolation) {
   try {
     const bc = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-    const q = bc.quality;
-    if (q && q.postCapManualFix && q.passed !== true && Number.isInteger(q.iterations) && q.iterations >= 3
-        && fs.existsSync(path.join(buildDir, 'site', 'index.html'))) {
-      log(`operator grade: agent ended at the refine cap WITH a documented post-cap fix — spending one runner-authorized regrade`);
-      const savedNote = q.postCapManualFix;
-      bc.quality.iterations = q.iterations - 1;
-      fs.writeFileSync(buildJsonPath, JSON.stringify(bc, null, 2) + '\n');
-      const g = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'quality-grade.mjs'), buildDir],
-        { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: 420_000 });
-      const after = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-      after.quality.postCapManualFix = savedNote;
-      after.quality.operatorRegrade = { authorizedBy: 'runner (deterministic post-cap verification)', gradeExit: g.status };
-      fs.writeFileSync(buildJsonPath, JSON.stringify(after, null, 2) + '\n');
-      if (g.status === 0 && after.quality?.passed === true) {
-        log(`operator grade: PASSED fresh — deploying through the ship-bar rail`);
-        const d = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'deploy.mjs'), buildDir],
-          { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: 180_000 });
-        const shipped = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-        if (d.status === 0 && shipped.publish?.liveUrl && shipped.publish?.http200) {
-          liveUrl = shipped.publish.liveUrl;
-          log(`operator grade: cured and shipped — ${liveUrl}`);
-        } else {
-          log(`operator grade: regrade passed but deploy refused/failed (exit ${d.status}) — leaving run as failed`);
-        }
+    const endState = classifyEndState({
+      exitCode, killedForBudget, identityViolation, spawnError: spawnErrorMsg, liveUrl,
+      siteExists: fs.existsSync(path.join(buildDir, 'site', 'index.html')),
+      quality: bc.quality,
+    });
+    log(`cure stage: end-state classified as ${endState.cls}${endState.weaknesses ? ` (${endState.weaknesses.length} named weakness(es))` : ''}`);
+
+    if (endState.cure === 'redeploy') {
+      // Graded PASS but undeployed (deploy-side infra hiccup) — one plain retry through the rail.
+      log('cure stage: page already passed the gate but never deployed — retrying deploy once');
+      const d = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'deploy.mjs'), buildDir],
+        { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: CURE.DEPLOY_WALL_MS });
+      const shipped = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
+      if (d.status === 0 && shipped.publish?.liveUrl && shipped.publish?.http200) {
+        liveUrl = shipped.publish.liveUrl;
+        log(`cure stage: redeploy succeeded — ${liveUrl}`);
+      } else log(`cure stage: redeploy failed too (exit ${d.status}) — leaving run as failed`);
+    } else if (endState.cure === 'fix-and-regrade' && totalCostUsd < budgetUsd) {
+      await patchStatus('One fix from passing — running the automatic cure…');
+      const q = bc.quality;
+      const savedNote = q.postCapManualFix || null;
+      let cureAgentOk = !!savedNote; // a documented in-run fix needs no cure agent — verify it directly
+      if (!cureAgentOk) {
+        log(`cure stage: spawning the narrow cure agent (fix ONLY: ${endState.weaknesses.map((w) => `${w.device}/${w.name}`).join(', ')})`);
+        const curePrompt = buildCurePrompt({ repoUrl, buildDir, weaknesses: endState.weaknesses, quality: q });
+        const c = spawnSync(claudeBin, [
+          '-p', curePrompt, '--permission-mode', 'bypassPermissions', '--bare',
+          '--output-format', 'json', '--model', model,
+          '--allowed-tools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep',
+          '--disallowed-tools', 'Read(./.env)', 'Read(./.env.*)', 'Read(**/.env)', 'Read(**/.env.*)',
+        ], { cwd: REPO_ROOT, env: agentEnv, encoding: 'utf8', timeout: CURE.AGENT_WALL_MS, maxBuffer: 32 * 1024 * 1024 });
+        try {
+          const res = JSON.parse(String(c.stdout || '').trim().split('\n').pop());
+          if (typeof res?.total_cost_usd === 'number') totalCostUsd += res.total_cost_usd;
+          log(`cure stage: cure agent exit ${c.status}, cost +$${(res?.total_cost_usd || 0).toFixed(2)}`);
+        } catch { log(`cure stage: cure agent exit ${c.status} (unparseable output — cost uncounted)`); }
+        cureAgentOk = c.status === 0;
+        if (!cureAgentOk) log('cure stage: cure agent failed — an unchanged page is not regraded (that would be dice-rolling, not verification)');
       } else {
-        log(`operator grade: page still below the bar on a fresh grade (passed=${after.quality?.passed}) — refusal stands, honestly`);
+        log('cure stage: agent documented an in-run post-cap fix — skipping the cure agent, verifying the documented fix directly');
       }
+      if (cureAgentOk) {
+        const before = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
+        before.quality.iterations = before.quality.iterations - 1; // authorize exactly ONE verification grade
+        fs.writeFileSync(buildJsonPath, JSON.stringify(before, null, 2) + '\n');
+        const g = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'quality-grade.mjs'), buildDir],
+          { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: CURE.GRADE_WALL_MS });
+        const after = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
+        if (savedNote) after.quality.postCapManualFix = savedNote; // quality-grade rewrites the slot; re-attach the record
+        after.quality.cure = {
+          authorizedBy: 'runner (deterministic near-miss classification, bin/cure.mjs)',
+          endState: endState.cls, weaknesses: endState.weaknesses.length,
+          cureAgentSpawned: !savedNote, gradeExit: g.status,
+        };
+        fs.writeFileSync(buildJsonPath, JSON.stringify(after, null, 2) + '\n');
+        if (g.status === 0) {
+          log(`cure stage: fresh verification grade complete (passed=${after.quality?.passed}) — the ship-bar rail now judges`);
+          const d = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'deploy.mjs'), buildDir],
+            { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: CURE.DEPLOY_WALL_MS });
+          const shipped = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
+          if (d.status === 0 && shipped.publish?.liveUrl && shipped.publish?.http200) {
+            liveUrl = shipped.publish.liveUrl;
+            log(`cure stage: CURED AND SHIPPED — ${liveUrl}`);
+          } else {
+            log(`cure stage: rail still refuses after the cure (deploy exit ${d.status}) — refusal stands, honestly`);
+          }
+        } else {
+          log(`cure stage: verification grade errored (exit ${g.status}) — run outcome unchanged`);
+        }
+      }
+    } else if (endState.cure === 'fix-and-regrade') {
+      log(`cure stage: near-miss but $ budget already spent ($${totalCostUsd.toFixed(2)} of $${budgetUsd}) — holding honestly instead of overspending`);
     }
-  } catch (e) { log(`operator grade: skipped on error (${e?.message || e}) — run outcome unchanged`); }
+  } catch (e) { log(`cure stage: skipped on error (${e?.message || e}) — run outcome unchanged`); }
 }
 
 const budgetExceeded = killedForBudget;

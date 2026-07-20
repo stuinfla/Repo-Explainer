@@ -900,7 +900,7 @@ async function main() {
       passed: !!capped.passed,
       headline: {},
       refineNoteCount: 0,
-      note: 'Refine iteration cap reached — this is the FINAL grade. Ship this page now (--ship-best-effort semantics apply); do not call quality-grade again.',
+      note: 'Refine iteration cap reached — this is the FINAL grade; do not call quality-grade again. If it passes the ship gate, ship now (--ship-best-effort semantics). If it FAILS on a NAMED weakness: apply that one surgical fix, re-run assemble-page, document exactly what you fixed in quality.postCapManualFix in build.json, and END the run — the runner spends one verification grade on a documented fix and the ship-bar rail judges the fresh verdict.',
     }, null);
   }
 

@@ -587,6 +587,15 @@ parallel.
     weakness — never a broad reflow that could regress a passing axis.
   - If the grader returns malformed / missing / non-per-criterion scores, the gate
     **stops loud and does not pass** — a broken grader is never a silent green.
+  - **Post-cap protocol (the cure lane — hosted builds):** the tool enforces a hard cap of 3
+    quality-grade calls. If the FINAL grade still fails the ship gate on a **named** weakness you
+    can fix: apply that one surgical fix, re-run `assemble-page`, and write a short factual note of
+    exactly what you fixed and why it addresses the named weakness to **`quality.postCapManualFix`**
+    in build.json — then **end the run without deploying**. The runner (trusted code outside your
+    process) spends exactly ONE fresh verification grade on a documented fix and deploys through
+    the same ship-bar rail if it now passes. Never bypass the rail; document and stop. (Even
+    without a documented fix, the runner classifies a near-miss ending deterministically and may
+    run a bounded cure itself — but an in-run fix you document is faster and cheaper.)
 - **Honesty escape hatch:** if a repo **genuinely** cannot reach the bar on some axis,
   **flag it honestly** in the result and the email. **Never ship slop and call it
   done.** Two pre-ship eyes gate S7: the **vision model** and **you** (the

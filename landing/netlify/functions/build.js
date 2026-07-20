@@ -137,9 +137,12 @@ exports.handler = async function (event) {
   const budgetUsd = tier === "large" ? 18 : tier === "medium" ? 10 : 7;
   // GitHub Actions expressions don't support arithmetic the way `fromJSON(x) + 10` implies (learned
   // the hard way — it rejects the dispatch outright, a YAML-structure check doesn't catch it since
-  // it's an expression-syntax error, not a YAML one). Compute the +10min overhead buffer here in
-  // plain JS instead and pass the already-summed value.
-  const timeoutMin = budgetMin + 10;
+  // it's an expression-syntax error, not a YAML one). Compute the overhead buffer here in
+  // plain JS instead and pass the already-summed value. +25 (was +10, 2026-07-19): the buffer now
+  // also covers the runner's post-agent CURE stage (bounded cure agent + one verification grade +
+  // deploy, ≤20min worst case — see bin/cure.mjs CURE wall constants, pinned by tests/cure.test.mjs)
+  // so a full-budget build can still be cured instead of SIGKILLed mid-recovery.
+  const timeoutMin = budgetMin + 25;
 
   // 2) METERING (before we spend a cent). Fail open if the meter gists aren't configured.
   const ledgerId = process.env.EMAIL_LEDGER_GIST_ID;
