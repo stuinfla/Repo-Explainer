@@ -148,6 +148,23 @@ test('quality-grade cap note points to the protocol instead of a dead-end "ship 
   assert.match(read('tools/quality-grade.mjs'), /postCapManualFix/);
 });
 
+// 2026-07-19, run 29714490286 (the cure stage's own E2E proof run): the Anthropic key had hit its
+// MONTHLY usage limit. The credential preflight probes GET /v1/models — a metadata endpoint that
+// spends nothing — so authentication passed and the build died one step later with a generic
+// message. The systemic principle applies to the fix itself: every new failure mode becomes a
+// preflight, pinned here so the spend-probe can never silently regress to auth-only.
+test('credential preflight proves the Anthropic key can SPEND (1-token completion), not just authenticate', () => {
+  const src = read('bin/agentic-runner.mjs');
+  assert.match(src, /api\.anthropic\.com\/v1\/messages/);
+  assert.match(src, /max_tokens: 1/);
+  assert.match(src, /usage limits\|regain access/i); // the distinct usage-limit classification
+});
+
+test('a mid-build usage-limit error reads as the honest budget message, not a generic snag', () => {
+  const src = read('bin/agentic-runner.mjs');
+  assert.match(src, /credit balance\|insufficient\.\*balance\|billing\|usage limits\|regain access/);
+});
+
 test('dispatch buffer covers the cure stage (agent + one grade + deploy) after a full-budget build', () => {
   assert.match(read('landing/netlify/functions/build.js'), /budgetMin \+ 25/);
   const wallMin = CURE.AGENT_WALL_MS / 60_000 + CURE.GRADE_WALL_MS / 60_000 + CURE.DEPLOY_WALL_MS / 60_000;

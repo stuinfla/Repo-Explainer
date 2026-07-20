@@ -62,6 +62,9 @@ const buildId = args['build-id'] || '';
 // the low-cost tier. All-Fable implementation measured $7-9/page; tournament + Sonnet executor
 // targets $2.50-4.00 at the same gate bar. Both IDs verified live via GET /v1/models 2026-07-13.
 const model = args.model || 'claude-sonnet-5';
+// Defined up here (not beside classifyFailure) because the credential preflight's usage-limit
+// message also needs it, and that block runs at module load — before the classifier section.
+const NPX_LINE = 'Run it yourself with no wait and no budget limit: npx explainmyrepo <your-github-url> in a VS Code / Claude Code session (or Codex) — it uses your own API key and takes about 15 minutes.';
 
 fs.mkdirSync(buildDir, { recursive: true });
 const buildJsonPath = path.join(buildDir, 'build.json');
@@ -226,6 +229,32 @@ async function probeCred(label, candidates, url, headers) {
     probeCred('OPENAI_API_KEY (vision grading + image fallback)', credCandidates('OPENAI_API_KEY', 'OPEN_AI_KEY'), 'https://api.openai.com/v1/models', bearer),
     probeCred('GROK_AI_KEY (primary image engine)', credCandidates('GROK_AI_KEY', 'GROK_API_KEY'), 'https://api.x.ai/v1/models', bearer),
   ]);
+  // Authentication is NOT capacity (2026-07-19, run 29714490286: a monthly usage-limit 400 sailed
+  // straight through the /v1/models probe — a metadata endpoint that spends nothing — and killed
+  // the build one step later with a generic "snag" message). Prove the Anthropic key can actually
+  // SPEND with a 1-token completion on the same model the agent will use; classify the
+  // usage-limit case distinctly so the submitter hears the honest budget truth + reset date.
+  if (a.ok) {
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'x-api-key': a.val, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        body: JSON.stringify({ model, max_tokens: 1, messages: [{ role: 'user', content: 'ping' }] }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!r.ok) {
+        const body = await r.text().catch(() => '');
+        if (/usage limits|regain access/i.test(body)) {
+          a.ok = false;
+          a.usageLimited = true;
+          a.why = `key authenticates but has hit its API usage limit (spend-probe HTTP ${r.status}): ${body.slice(0, 300)}`;
+        } else {
+          a.ok = false;
+          a.why = `key authenticates but a real 1-token completion on ${model} failed (HTTP ${r.status}): ${body.slice(0, 300)}`;
+        }
+      }
+    } catch (e) { log(`credential preflight: spend-probe inconclusive (${e.message}) — proceeding on the auth probe`); }
+  }
   // The spawned agent and every tool authenticate from process.env — hand each the PROVEN-LIVE
   // value, OVERWRITING whatever was there (a dead value present is exactly the failure mode).
   if (a.ok) process.env.ANTHROPIC_API_KEY = a.val;
@@ -238,8 +267,10 @@ async function probeCred(label, candidates, url, headers) {
   if (fatal.length) {
     const why = fatal.map((r) => `${r.label}: ${r.why}`).join('; ');
     log(`PREFLIGHT FAILED — dead/missing credentials, stopping before any cost is incurred: ${why}`);
-    await patchStatus('Stopped before building: a required service credential is invalid.', 'failed', null,
-      'A service credential this build needs is missing or expired. Nothing was built and nothing was charged. The operator has been alerted with specifics.');
+    const publicWhy = a.usageLimited
+      ? `We ran this build for free, and it's been genuinely popular — the community budget is used up for the moment (it resets monthly), not anything wrong with your repo. Nothing was built and nothing was charged. ${NPX_LINE}`
+      : 'A service credential this build needs is missing or expired. Nothing was built and nothing was charged. The operator has been alerted with specifics.';
+    await patchStatus(a.usageLimited ? 'Stopped before building: the free community budget is used up for the moment.' : 'Stopped before building: a required service credential is invalid.', 'failed', null, publicWhy);
     await spawnAndWait('alert-owner', process.execPath, [
       path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
       '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),
@@ -408,10 +439,9 @@ let sawResultEvent = false;
 // fail silently — tell them why, and if it's a budget thing, tell them exactly that and point
 // to npx"). Distinct from `internalReason`, which carries the raw diagnostic for admin's eyes;
 // this is the honest, friendly line the submitter themselves sees and gets emailed.
-const NPX_LINE = 'Run it yourself with no wait and no budget limit: npx explainmyrepo <your-github-url> in a VS Code / Claude Code session (or Codex) — it uses your own API key and takes about 15 minutes.';
 function classifyFailure(reason) {
   const r = String(reason || '');
-  if (/credit balance|insufficient.*balance|billing/i.test(r)) {
+  if (/credit balance|insufficient.*balance|billing|usage limits|regain access/i.test(r)) {
     return `We ran this build for free, and it's been genuinely popular — the community budget is tapped out for the moment, not anything wrong with your repo. ${NPX_LINE}`;
   }
   if (/exceeded its.*budget|wall-clock/i.test(r)) {
