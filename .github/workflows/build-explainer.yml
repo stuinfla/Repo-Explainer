@@ -122,6 +122,10 @@ jobs:
           # failure alert) — the runner builds a SEPARATE, much narrower allowlist for the spawned
           # agent process itself (see bin/agentic-runner.mjs), which never sees GH/SMTP creds.
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Failover lane only (2026-07-19): engaged by the runner's preflight EXCLUSIVELY when the
+          # primary key is usage-limited — same executor model via OpenRouter's Anthropic Skin.
+          # Empty when the secret is unset: the lane stays inert and behavior is unchanged.
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           SMTP_USER: ${{ secrets.GMAIL_USER }}

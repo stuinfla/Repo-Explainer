@@ -62,6 +62,14 @@ const buildId = args['build-id'] || '';
 // the low-cost tier. All-Fable implementation measured $7-9/page; tournament + Sonnet executor
 // targets $2.50-4.00 at the same gate bar. Both IDs verified live via GET /v1/models 2026-07-13.
 const model = args.model || 'claude-sonnet-5';
+// Which endpoint + billing lane runs the executor (`claude -p`). Default: first-party Anthropic.
+// The credential preflight may FAIL THIS OVER to OpenRouter's Anthropic-compatible endpoint
+// (their "Anthropic Skin" — same executor model, billed to the owner's OpenRouter credits) when
+// the primary key is capacity-dead. MetaHarness ADR-167 router shape: reroute on a VERIFIED
+// failure only; the grader + ship-bar rail are lane-independent, so quality is enforced the same
+// either way. The Skin is only guaranteed for Anthropic first-party models — never point this
+// lane at a non-Anthropic model (that experiment is a separate, deliberate lane via Moonshot).
+let executor = { lane: 'anthropic', model, baseUrl: null, key: null };
 // Defined up here (not beside classifyFailure) because the credential preflight's usage-limit
 // message also needs it, and that block runs at module load — before the classifier section.
 const NPX_LINE = 'Run it yourself with no wait and no budget limit: npx explainmyrepo <your-github-url> in a VS Code / Claude Code session (or Codex) — it uses your own API key and takes about 15 minutes.';
@@ -255,6 +263,35 @@ async function probeCred(label, candidates, url, headers) {
       }
     } catch (e) { log(`credential preflight: spend-probe inconclusive (${e.message}) — proceeding on the auth probe`); }
   }
+  // EXECUTOR FAILOVER LANE (2026-07-19, after run 29714490286 turned a monthly cap into a
+  // pipeline-wide outage): usage-limited — and ONLY usage-limited — primary key + an OpenRouter
+  // key present → run the SAME executor model through OpenRouter's Anthropic Skin on the owner's
+  // OR credits. A dead/invalid key is a config bug the operator must see, never silently re-bill.
+  // The lane is spend-probed exactly like the primary: engage only on a PROVEN-live 1-token
+  // completion (which also validates the model slug + credits in one shot, loudly).
+  if (!a.ok && a.usageLimited) {
+    const orCands = credCandidates('OPENROUTER_API_KEY');
+    const orModel = process.env.OPENROUTER_ANTHROPIC_MODEL || 'anthropic/claude-sonnet-5';
+    for (const cand of orCands) {
+      try {
+        const r = await fetch('https://openrouter.ai/api/v1/messages', {
+          method: 'POST',
+          headers: { 'x-api-key': cand.val, Authorization: `Bearer ${cand.val}`, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+          body: JSON.stringify({ model: orModel, max_tokens: 1, messages: [{ role: 'user', content: 'ping' }] }),
+          signal: AbortSignal.timeout(20_000),
+        });
+        if (r.ok) {
+          executor = { lane: 'openrouter', model: orModel, baseUrl: 'https://openrouter.ai/api', key: cand.val };
+          a.ok = true;
+          a.why = `primary key usage-limited — FAILOVER ENGAGED: same executor model via OpenRouter's Anthropic Skin (${orModel}, ${cand.src}), billed to OpenRouter credits`;
+          break;
+        }
+        const body = await r.text().catch(() => '');
+        log(`failover probe: OpenRouter Skin refused (${cand.src}, HTTP ${r.status}): ${body.slice(0, 200)}`);
+      } catch (e) { log(`failover probe: ${cand.src} unreachable (${e.message})`); }
+    }
+    if (executor.lane !== 'openrouter') log(orCands.length ? 'failover: no live OpenRouter lane — the honest usage-limit refusal stands' : 'failover: no OPENROUTER_API_KEY configured — the honest usage-limit refusal stands');
+  }
   // The spawned agent and every tool authenticate from process.env — hand each the PROVEN-LIVE
   // value, OVERWRITING whatever was there (a dead value present is exactly the failure mode).
   if (a.ok) process.env.ANTHROPIC_API_KEY = a.val;
@@ -399,6 +436,16 @@ if (args['executor-auth'] === 'subscription') {
 // Not a secret — the INV-21 identity pin. clone-repo.mjs and deploy.mjs refuse to run against any
 // repo.url that doesn't match it, so even a misbehaving agent cannot swap the source mid-build.
 agentEnv.EXPLAINER_SUBMITTED_REPO = submittedRepoId;
+// EXECUTOR LANE WIRING: when the preflight engaged a failover lane, point the claude binary at
+// it. Claude Code sends ANTHROPIC_AUTH_TOKEN as a Bearer and ANTHROPIC_API_KEY as x-api-key —
+// set BOTH to the lane's key; the Anthropic-compatible endpoint takes what it needs. The cure
+// agent inherits agentEnv, so a cure runs on the same lane as the build it cures.
+if (executor.baseUrl) {
+  agentEnv.ANTHROPIC_BASE_URL = executor.baseUrl;
+  agentEnv.ANTHROPIC_API_KEY = executor.key;
+  agentEnv.ANTHROPIC_AUTH_TOKEN = executor.key;
+  log(`executor lane: ${executor.lane} (${executor.model}) via ${executor.baseUrl}`);
+}
 
 const claudeBin = process.env.CLAUDE_BIN || 'claude';
 const child = spawn(claudeBin, [
@@ -407,7 +454,7 @@ const child = spawn(claudeBin, [
   '--bare',
   '--output-format', 'stream-json',
   '--verbose',
-  '--model', model,
+  '--model', executor.model,
   '--allowed-tools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep',
   // Defense in depth beyond the env allowlist above: observed live in testing (2026-07-04) that the
   // agent will happily `cat .env` if it perceives a missing credential and try to work around it —
@@ -585,7 +632,7 @@ if (exitCode === 0 && !killedForBudget && !liveUrl && !identityViolation) {
         const curePrompt = buildCurePrompt({ repoUrl, buildDir, weaknesses: endState.weaknesses, quality: q });
         const c = spawnSync(claudeBin, [
           '-p', curePrompt, '--permission-mode', 'bypassPermissions', '--bare',
-          '--output-format', 'json', '--model', model,
+          '--output-format', 'json', '--model', executor.model,
           '--allowed-tools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep',
           '--disallowed-tools', 'Read(./.env)', 'Read(./.env.*)', 'Read(**/.env)', 'Read(**/.env.*)',
         ], { cwd: REPO_ROOT, env: agentEnv, encoding: 'utf8', timeout: CURE.AGENT_WALL_MS, maxBuffer: 32 * 1024 * 1024 });
@@ -659,6 +706,8 @@ try {
     scorecard = {
       passed: !!q.passed,
       exemplary: !!q.exemplary,
+      executor: executor.lane, // which billing/endpoint lane built this — admin attributes grades + cost per lane
+
       iterations: Number.isInteger(q.iterations) ? q.iterations : null,
       gradedAt: q.gradedAt || null,
       devices: q.scorecard.map((c) => ({
