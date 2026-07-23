@@ -82,8 +82,13 @@ function main() {
   // Forward clonePath via KB_REPO_DIR so all four scripts index THIS build dir's clone,
   // not the hardcoded repoDir in kb/kb.config.mjs (CONTRACT §b build-dir guarantee, Blocker-1 fix).
   const kbEnv = { KB_REPO_DIR: clonePath };
-  runKbScript('build-kb.mjs', ['--target', slug], 1_200_000, kbEnv);   // embeds every chunk; allow time
-  runKbScript('extract-symbols.mjs', [slug], 600_000, kbEnv);           // rustdoc-json can be slow
+  // Large monorepos (e.g. ruvector: ~37k chunks) can exceed the 20-min default; env-tunable, default unchanged.
+  const KB_BUILD_TIMEOUT = Number(process.env.KB_BUILD_TIMEOUT_MS) || 1_200_000;
+  runKbScript('build-kb.mjs', ['--target', slug], KB_BUILD_TIMEOUT, kbEnv);   // embeds every chunk; allow time
+  // rustdoc-json compiles each crate — on a 100+ crate monorepo that blows the budget; KB_NO_RUSTDOC=1
+  // forces the fast regex source-scan (public symbol names, which is all the explainer consumes). Default unchanged.
+  const symbolArgs = process.env.KB_NO_RUSTDOC ? [slug, '--no-rustdoc'] : [slug];
+  runKbScript('extract-symbols.mjs', symbolArgs, 600_000, kbEnv);       // rustdoc-json can be slow
   runKbScript('dep-graph.mjs', [slug], 300_000, kbEnv);
   runKbScript('entrypoints.mjs', [slug], 300_000, kbEnv);
 

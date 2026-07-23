@@ -268,8 +268,10 @@ function renderRefusal(pal, spec) {
     body.push(txt(cx, yChip + CH / 2, c.tern, { size: 26, weight: 800, fill: col, anchor: 'middle', dom: 'central', cls: `ter t${i}` }));
     body.push(txt(cx, yChip + CH + 40, c.op, { size: 15.5, mono: true, weight: 700, fill: col, anchor: 'middle', cls: `op o${i}` }));
     css.push(
-      `@keyframes dec${i}{0%,${t0}%{opacity:1;transform:scale(1)}${t1}%,100%{opacity:0;transform:scale(0.82)}}`,
-      `@keyframes ter${i}{0%,${t0}%{opacity:0;transform:scale(0.6)}${t1}%{opacity:1;transform:scale(1.18)}${t1 + 4}%,100%{opacity:1;transform:scale(1)}}`,
+      // before-value fully clears (opacity 0) BEFORE the after-value appears — no frame shows both
+      // overlapping in the shared chip centre (the vision grader's worst-frame rule caught the collision).
+      `@keyframes dec${i}{0%,${t0}%{opacity:1;transform:scale(1)}${t0 + 3}%,100%{opacity:0;transform:scale(0.82)}}`,
+      `@keyframes ter${i}{0%,${t0 + 3}%{opacity:0;transform:scale(0.6)}${t1 + 2}%{opacity:1;transform:scale(1.18)}${t1 + 6}%,100%{opacity:1;transform:scale(1)}}`,
       `@keyframes op${i}{0%,${tOp}%{opacity:0;transform:translateY(6px)}${tOp + 5}%,100%{opacity:1;transform:translateY(0)}}`,
       `.d${i}{animation:dec${i} 9s linear infinite}`,
       `.t${i}{animation:ter${i} 9s cubic-bezier(.2,1.6,.35,1) infinite}`,
@@ -831,7 +833,7 @@ function buildArchModel(dg, sym) {
   const fIn = {}, fOut = {};
   for (const e of edges) { fIn[e.to] = (fIn[e.to] || 0) + 1; fOut[e.from] = (fOut[e.from] || 0) + 1; }
   const fdeg = (n) => (fIn[n.name] || 0) + (fOut[n.name] || 0);
-  const CAP = 12;
+  const CAP = Number(process.env.ARCH_MAX_NODES) || 12;  // dense monorepos: fewer nodes = legible labels on mobile (INV-18). Default unchanged.
   let nodes = all, trimmed = 0;
   if (all.length > CAP) {
     nodes = [...all].sort((a, b) => fdeg(b) - fdeg(a) || (fIn[b.name] || 0) - (fIn[a.name] || 0)).slice(0, CAP);

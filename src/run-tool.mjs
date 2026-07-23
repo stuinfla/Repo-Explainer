@@ -24,7 +24,7 @@ function parseResult(stdout) {
 
 // Run one tool. Returns { ok, code, result, error }. Never throws — the orchestrator decides whether
 // a non-ok station is fatal or a non-blocking warning (notify / readme-enhance degrade to warnings).
-export function runTool(name, buildDir, { repoRoot, env, timeoutMs = 1_800_000 } = {}) {
+export function runTool(name, buildDir, { repoRoot, env, timeoutMs = Number(process.env.RUN_TOOL_TIMEOUT_MS) || 1_800_000 } = {}) {
   const toolPath = path.join(repoRoot, 'tools', `${name}.mjs`);
   if (!fs.existsSync(toolPath)) {
     return { ok: false, code: 127, result: null, error: `tool not found: tools/${name}.mjs` };

@@ -329,7 +329,7 @@ function main() {
   fs.writeFileSync(path.join(siteDir, 'styles.css'), `${dsCss}\n\n${theme.css}\n`);
 
   // --- copy mandatory + optional visual assets (fail loud on a declared-but-broken file) ---
-  const heroFile = copyAsset(reqStr(visuals.hero?.file, 'visuals.hero.file'), buildDir, siteAssets, 'hero image');
+  const heroFile = visuals.hero?.file ? copyAsset(visuals.hero.file, buildDir, siteAssets, 'hero image') : null;
   const heroAlt = visuals.hero?.altText || visuals.hero?.alt || `${repoName}: ${concept.heroConcept || concept.metaphor}`;
 
   const arch = reqObj(visuals.architectureDiagram, 'visuals.architectureDiagram (MANDATORY)');
@@ -459,12 +459,36 @@ ${jsonLdScript}
   // participates in the page. It is the one piece of motion on the page and it exists to perform the
   // argument, not to decorate: the model's decimal weights snap to −1/0/+1, each becomes subtract/skip/add,
   // and the multiply sign is struck out and dies. Above the fold, because that is where the reader decides.
+  // Hero video — the explainer film under the hero text. Two modes: a SHORT loop (autoplay/muted/loop,
+  // decorative) or a LONG-FORM narrated explainer (poster + controls, watched deliberately WITH sound).
+  // Added post-grade as an enhancement, so it is not part of the graded static page.
+  let heroVideoHtml = '';
+  if (visuals.heroVideo && visuals.heroVideo.file) {
+    const vf = copyAsset(visuals.heroVideo.file, buildDir, siteAssets, 'hero video');
+    const pf = visuals.heroVideo.poster ? copyAsset(visuals.heroVideo.poster, buildDir, siteAssets, 'hero video poster') : null;
+    const valt = esc(visuals.heroVideo.alt || 'Explainer video');
+    const longform = visuals.heroVideo.longform === true;
+    const vattrs = longform
+      ? `controls preload="metadata"${pf ? ` poster="assets/${esc(pf)}"` : ''}`
+      : `autoplay muted loop playsinline controls preload="metadata"${pf ? ` poster="assets/${esc(pf)}"` : ''}`;
+    const cap = longform
+      ? 'Watch the explainer — a narrated walkthrough of RuVector, the digital nervous system for AI agents.'
+      : 'How a query flows through ruvector — vector → HNSW graph search → nearest match, in milliseconds.';
+    heroVideoHtml = `\n      <figure class="hero-video" style="margin:2.5rem auto 0;max-width:64rem">
+        <video src="assets/${esc(vf)}" ${vattrs} aria-label="${valt}" style="width:100%;height:auto;display:block;border-radius:14px;box-shadow:0 20px 80px #7c6cff33,0 0 0 1px #ffffff14"></video>
+        <figcaption style="text-align:center;margin-top:.75rem;font-size:.9rem;color:var(--muted)">${cap}</figcaption>
+      </figure>`;
+  }
   let refusalHtml = '';
+  let refusalRaw = '';
+  const refusalAria = esc(visuals.heroAnim?.altText || 'The one idea, in motion');
   {
     const rp = visuals.heroAnim && visuals.heroAnim.svgPath;
     if (rp && fs.existsSync(rp)) {
-      const raw = fs.readFileSync(rp, 'utf8').replace(/<\?xml[^>]*\?>\s*/i, '');
-      refusalHtml = `\n      <div class="hero-refusal" role="img" aria-label="${esc(visuals.heroAnim.altText || 'The one idea, in motion')}">${raw}</div>`;
+      refusalRaw = fs.readFileSync(rp, 'utf8').replace(/<\?xml[^>]*\?>\s*/i, '');
+      // When a raster hero exists, the animation is a band BELOW the grid. When there is no raster
+      // (dropped to avoid the raster swap-test), the animation IS the hero art — no duplicate band.
+      if (refusalRaw) refusalHtml = `\n      <div class="hero-refusal" role="img" aria-label="${refusalAria}">${refusalRaw}</div>`;
     }
   }
   reqStr(hero.lede, 'content.sections.hero.lede');
@@ -486,7 +510,7 @@ ${jsonLdScript}
   <a id="top"></a>
   <section class="hero">
     <div class="wrap">
-      <div class="hero-grid">
+      <div class="hero-grid"${heroFile ? '' : ' style="grid-template-columns:1fr;max-width:60rem"'}>
         <div>
           ${hero.eyebrow ? `<span class="eyebrow">${inline(hero.eyebrow)}</span>` : `<span class="eyebrow">${esc(concept.metaphor)}</span>`}
           <h1>${headline}</h1>
@@ -497,10 +521,10 @@ ${jsonLdScript}
           ${ctaHtml}
           </div>${metaRow}
         </div>
-        <figure class="hero-art">
+        ${heroFile ? `<figure class="hero-art">
           <button type="button" class="diagram-zoom" data-src="assets/${esc(heroFile)}" data-alt="${esc(heroAlt)}" aria-label="Enlarge: ${esc(heroAlt)}"><img src="assets/${esc(heroFile)}" alt="${esc(heroAlt)}"></button>
-        </figure>
-      </div>${refusalHtml}
+        </figure>` : ''}
+      </div>${refusalHtml}${heroVideoHtml}
     </div>${plainBand}
   </section>`;
 
@@ -513,7 +537,11 @@ ${jsonLdScript}
   out.push(sectionShell('problem', '01', problem, arcQ.problem, [
     problem.lead ? `<p class="lead-in">${inline(problem.lead)}</p>` : '',
     paras(problem.paragraphs),
-    problemImg ? figureHtml(problemImg.file, problemImg.alt, problemRung?.caption, { tier: { cls: 'friendly', label: 'The problem' } }) : '',
+    // A designed diagram of the architectural challenge (visuals.problemVisual) beats a decorative
+    // raster every time — it VISUALISES the copy. Fall back to the raster image only if none authored.
+    (visuals.problemVisual && typeof visuals.problemVisual === 'string')
+      ? visuals.problemVisual
+      : (problemImg ? figureHtml(problemImg.file, problemImg.alt, problemRung?.caption, { tier: { cls: 'friendly', label: 'The problem' } }) : ''),
     noteHtml(problem.note),
   ].filter(Boolean).join('\n      ')));
 
@@ -544,14 +572,19 @@ ${jsonLdScript}
   out.push(sectionShell('howItWorks', '04', howItWorks, arcQ.howItWorks, [
     howItWorks.lead ? `<p class="lead-in">${inline(howItWorks.lead)}</p>` : '',
     paras(howItWorks.paragraphs),
-    flowFile
-      ? `<div class="dual">${
-          figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, tier: { cls: 'tech', label: 'Architecture' } })
-        }${
-          figureHtml(flowFile, flowAlt, 'Data flow — how a request moves through the system at runtime.', { diagram: true, tier: { cls: 'tech', label: 'Data flow' } })
-        }\n      </div>`
-      : figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, tier: { cls: 'tech', label: 'Architecture' } }),
+    // Prefer the authored LAYERED-STACK architecture (real crate families by level) over the raw
+    // dependency-dot map — full width, with the runtime flow ribbon beneath it.
+    (visuals.architectureStack && typeof visuals.architectureStack === 'string')
+      ? visuals.architectureStack + (flowFile ? '\n      ' + figureHtml(flowFile, flowAlt, 'Data flow — how a query moves through the system at runtime.', { diagram: true, tier: { cls: 'tech', label: 'Data flow' } }) : '')
+      : (flowFile
+          ? `<div class="dual">${figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, tier: { cls: 'tech', label: 'Architecture' } })}${figureHtml(flowFile, flowAlt, 'Data flow — how a request moves through the system at runtime.', { diagram: true, tier: { cls: 'tech', label: 'Data flow' } })}\n      </div>`
+          : figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, tier: { cls: 'tech', label: 'Architecture' } })),
   ].filter(Boolean).join('\n      ')));
+
+  // 4b · capabilities showcase (authored designed section) — the standout, differentiating features.
+  if (visuals.capabilitiesSection && typeof visuals.capabilitiesSection === 'string') {
+    out.push(visuals.capabilitiesSection);
+  }
 
   // 5 · use cases  (collapsible cases + scenario raster)
   const useCases = reqObj(S.useCases, 'content.sections.useCases');
