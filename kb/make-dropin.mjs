@@ -71,7 +71,7 @@ const forAiPkg = {
   type: 'module',
   description: `${slug} drop-in knowledge pack — single 384-dim RVF knowledge base + structured symbol/dep/entrypoint index + MCP server (search_kb · lookup_symbol · get_entrypoints · get_dep_graph). Run \`npm i\` then \`node ask-kb.mjs ${slug} "your question"\` or \`node ask-kb.mjs ${slug} --symbol <name>\`.`,
   scripts: { ask: `node ask-kb.mjs ${slug}`, mcp: 'node kb-mcp-server.mjs' },
-  dependencies: { '@ruvector/rvf': '^0.2.2', '@xenova/transformers': '^2.17.2' },
+  dependencies: { '@ruvector/rvf': '^0.3.0', '@xenova/transformers': '^2.17.2' },
   engines: { node: '>=18' },
 };
 

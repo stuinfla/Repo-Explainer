@@ -9,8 +9,11 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const DEPLOY = new URL('../tools/deploy.mjs', import.meta.url).pathname;
+// fileURLToPath, not URL.pathname: pathname percent-encodes (a checkout under a directory
+// with a space yields ".../Ruv%20Explainer/..." and spawning the tool fails).
+const DEPLOY = fileURLToPath(new URL('../tools/deploy.mjs', import.meta.url));
 
 function runDeploy(buildJson, envOverrides = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-bar-'));

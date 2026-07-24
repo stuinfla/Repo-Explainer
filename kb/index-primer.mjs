@@ -4,9 +4,12 @@
 // Indexes a synthesized "primer" markdown INTO an existing Cognitum RVF knowledge base so the
 // six top-down comprehension-journey questions (what is it / concepts / how each works /
 // maturity / where are the docs / how to use end-to-end) return a whole synthesized section
-// instead of a raw repo fragment. This is an INCREMENTAL append: it opens the existing .rvf
-// read-write and ingests NEW ids that do not collide with existing ones, then appends matching
-// records to the passages sidecar AND the id/meta index so PARITY holds for guard-check.
+// instead of a raw repo fragment. This is an idempotent REPLACE (ADR-0010 D6): any existing
+// PRIMER# generation is deleted from the store and filtered from the sidecars before the fresh
+// one is ingested, so re-running never duplicates the orientation layer. Mutation is staged on
+// a clone of the .rvf (+ .idmap.json) and published atomically with the sidecars, under the
+// StoreSet lock shared with build-kb.mjs --delta. Ids are allocated from the persisted
+// high-water mark (ids.json maxIdEver) so they never collide or reuse. PARITY holds throughout.
 //
 // Usage:
 //   node kb/index-primer.mjs ruvector   # indexes ../ruvector-primer.md into ruvector-kb
@@ -26,6 +29,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadRvf, loadTransformers, configureModel, chooseModelCache } from './resolve-deps.mjs';
 import { targets } from './kb.config.mjs';
+import { SYNTHETIC_PATH_RE, acquireLock, readPassages, cloneFile, publish } from './store-set.mjs';
 
 const KB_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(KB_DIR, '..');
@@ -35,7 +39,11 @@ const OVERLAP_CHARS = 400;    // same sliding-window overlap the corpus uses (st
 
 // data lives in kb/stores/<store>/ when organized; flat kb/ otherwise. Indexes the primer
 // sections into the SMALL (.small.rvf) build (the Seed default + the source of the bundles).
-const sd = (s) => (fs.existsSync(path.join(KB_DIR, 'stores', s)) ? path.join(KB_DIR, 'stores', s) : KB_DIR);
+// KB_STORE_DIR overrides (same convention as build-kb.mjs — lets tests/staging avoid real stores).
+const sd = (s) => {
+  if (process.env.KB_STORE_DIR) return path.resolve(process.env.KB_STORE_DIR);
+  return fs.existsSync(path.join(KB_DIR, 'stores', s)) ? path.join(KB_DIR, 'stores', s) : KB_DIR;
+};
 
 // The index/meta sidecar + its chunk-field convention. Generic builds write <slug>-kb.ids.json
 // with { chunk, of } ('split' style); legacy ruview used <slug>-kb.meta.json with "1/3" ('slash').
@@ -143,22 +151,16 @@ function chunkText(text) {
   return out;
 }
 
-function maxPassageId(file) {
-  let m = 0;
-  const data = fs.readFileSync(file, 'utf8');
-  for (const line of data.split('\n')) {
-    if (!line.trim()) continue;
-    try { const id = Number(JSON.parse(line).id); if (id > m) m = id; } catch { /* skip */ }
-  }
-  return m;
-}
-
 async function main() {
   const store = process.argv[2];
   const conf = STORES[store];
   if (!conf) { console.error(`Usage: node kb/index-primer.mjs <${Object.keys(STORES).join('|')}>`); process.exit(2); }
   for (const f of [conf.primer, conf.rvf, conf.passages, conf.index]) {
     if (!fs.existsSync(f)) { console.error(`MISSING: ${f}`); process.exit(1); }
+  }
+  if (!fs.existsSync(`${conf.rvf}.idmap.json`)) {
+    console.error(`MISSING: ${conf.rvf}.idmap.json (needed to replace an existing primer generation) — rebuild the KB fully, then re-run`);
+    process.exit(1);
   }
 
   // ---- build the orientation documents ----
@@ -175,14 +177,26 @@ async function main() {
     }));
   }
 
-  const idx = JSON.parse(fs.readFileSync(conf.index, 'utf8'));
-  const beforeEntries = Object.keys(idx.entries).length;
-  const beforePassages = maxPassageId(conf.passages); // == line count (verified contiguous)
+  const releaseLock = acquireLock(path.join(sd(store), `${store}-kb`));
+  try { await replacePrimer(store, conf, sections, entries); }
+  finally { releaseLock(); }
+}
 
-  // NEW ids start at max-existing-id + 1 (no collision with the corpus ids).
-  const startId = Math.max(beforeEntries, beforePassages);
+async function replacePrimer(store, conf, sections, entries) {
+  const idx = JSON.parse(fs.readFileSync(conf.index, 'utf8'));
+  const prevPassages = await readPassages(conf.passages);
+
+  // ---- idempotent REPLACE: drop any existing PRIMER# generation first (ADR-0010 D6) ----
+  const oldPrimer = prevPassages.filter((r) => SYNTHETIC_PATH_RE.test(r.path));
+  const keepLines = prevPassages.filter((r) => !SYNTHETIC_PATH_RE.test(r.path)).map((r) => r.raw);
+  for (const r of oldPrimer) delete idx.entries[r.id];
+
+  // NEW ids from the persisted high-water mark — never reused, never colliding (INV-KB7).
+  let maxIdEver = Number(idx.maxIdEver || 0);
+  for (const r of prevPassages) { const n = Number(r.id); if (n > maxIdEver) maxIdEver = n; }
+  const startId = maxIdEver;
   console.log(`[index-primer:${store}] sections=${sections.length} new-chunks=${entries.length} `
-    + `start-id=${startId + 1} (before: index=${beforeEntries}, passages.maxId=${beforePassages})`);
+    + `replacing=${oldPrimer.length} old primer chunks | start-id=${startId + 1}`);
 
   // ---- embed (same model/pooling/normalize as the corpus build) ----
   // Read the embedder config the build wrote next to the .rvf (<rvf>.embed.json). For a single-768
@@ -204,21 +218,31 @@ async function main() {
     + `${haveLocalModel ? 'local' : 'remote'} (${modelCache}) | pooling ${EMBED_POOLING}`);
   const fe = await T.pipeline('feature-extraction', EMBED_MODEL, { quantized: true });
 
-  // ---- append: ingest into .rvf (read-write), passages.jsonl, and the index ----
-  const db = await RvfDatabase.open(conf.rvf);
-  const passagesFd = fs.openSync(conf.passages, 'a');   // APPEND
-  let ingested = 0, appendedPassages = 0;
+  // ---- staged replace: clone the .rvf (+ idmap), delete old primer ids, ingest fresh ----
+  const S = `${conf.rvf}.staged`;
+  cloneFile(conf.rvf, S);
+  cloneFile(`${conf.rvf}.idmap.json`, `${S}.idmap.json`);
+  const cleanupStaged = () => { for (const f of [S, `${S}.idmap.json`]) fs.rmSync(f, { force: true }); };
+
+  const newLines = [];
+  let ingested = 0;
   const BATCH = 32;
   try {
+    const db = await RvfDatabase.open(S);
+    if (oldPrimer.length) {
+      const d = await db.delete(oldPrimer.map((r) => r.id));
+      if (d.deleted !== oldPrimer.length) {
+        await db.close();
+        throw new Error(`old-primer delete mismatch: planned ${oldPrimer.length}, store deleted ${d.deleted} — rebuild fully`);
+      }
+    }
     for (let i = 0; i < entries.length; i += BATCH) {
       const batch = entries.slice(i, i + BATCH);
       const out = await fe(batch.map((e) => e.text), { pooling: EMBED_POOLING, normalize: true });
       const dim = out.dims[1];
       const ingest = batch.map((e, j) => {
         const id = String(startId + i + j + 1);
-        // passages sidecar line (full text)
-        fs.writeSync(passagesFd, JSON.stringify({ id, text: e.text, path: e.path, title: e.title }) + '\n');
-        appendedPassages++;
+        newLines.push(JSON.stringify({ id, text: e.text, path: e.path, title: e.title }));
         // index entry — match each KB's existing chunk-field convention
         const chunkField = conf.chunkStyle === 'slash'
           ? { chunk: `${e.chunkIdx + 1}/${e.chunkTotal}` }
@@ -227,29 +251,41 @@ async function main() {
           path: e.path, kind: 'primer-orientation', title: e.title, ...chunkField,
           preview: e.text.slice(0, 240).replace(/\s+/g, ' '),
         };
-        return {
-          id,
-          vector: Float32Array.from(out.data.slice(j * dim, (j + 1) * dim)),
-          metadata: { path: e.path, kind: 'primer-orientation', title: e.title, chunk: e.chunkIdx },
-        };
+        // NO metadata field: @ruvector/rvf 0.3.0 rejects it (issue #704); the sidecars carry it.
+        return { id, vector: Float32Array.from(out.data.slice(j * dim, (j + 1) * dim)) };
       });
       const r = await db.ingestBatch(ingest);
       ingested += r.accepted;
-      if (r.rejected) console.error('REJECTED', r.rejected, 'in batch at', i);
+      if (r.rejected) { await db.close(); throw new Error(`REJECTED ${r.rejected} in batch at ${i}`); }
     }
+    if (oldPrimer.length) await db.compact();
     const status = await db.status();
-    console.log(`[index-primer:${store}] ingested=${ingested} | rvf totalVectors=${status.totalVectors}`);
-  } finally {
-    fs.closeSync(passagesFd);
-    await db.close();
+    const expect = keepLines.length + entries.length;
+    if (status.totalVectors !== expect) {
+      await db.close();
+      throw new Error(`staged totalVectors=${status.totalVectors} != expected ${expect}`);
+    }
+    await db.close();   // writes the staged .idmap.json
+
+    idx.maxIdEver = startId + entries.length;
+    const stagedPassages = `${conf.passages}.staged`;
+    fs.writeFileSync(stagedPassages, keepLines.concat(newLines).join('\n') + '\n');
+    const stagedIndex = `${conf.index}.staged`;
+    fs.writeFileSync(stagedIndex, JSON.stringify(idx, null, conf.chunkStyle === 'slash' ? 1 : 0));
+    publish([
+      { staged: S, live: conf.rvf },
+      { staged: `${S}.idmap.json`, live: `${conf.rvf}.idmap.json` },
+      { staged: stagedPassages, live: conf.passages },
+      { staged: stagedIndex, live: conf.index },
+    ]);
+  } catch (e) {
+    cleanupStaged();
+    console.error(`[index-primer:${store}] FAILED (live store untouched):`, e.message);
+    process.exit(1);
   }
 
-  // write the index back (preserve top-level model/dim/metric fields)
-  fs.writeFileSync(conf.index, JSON.stringify(idx, null, conf.chunkStyle === 'slash' ? 1 : 0));
-
-  const afterEntries = Object.keys(idx.entries).length;
-  console.log(`[index-primer:${store}] index entries: ${beforeEntries} -> ${afterEntries} `
-    + `(+${afterEntries - beforeEntries}) | passages appended=${appendedPassages} | orientation sections=${sections.length}`);
+  console.log(`[index-primer:${store}] OK — replaced ${oldPrimer.length} old primer chunks with ${ingested} fresh `
+    + `| orientation sections=${sections.length} | totalVectors=${keepLines.length + entries.length}`);
 }
 
 main().catch((e) => { console.error('ERROR:', e); process.exit(1); });

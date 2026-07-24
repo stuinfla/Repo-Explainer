@@ -6,8 +6,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+// fileURLToPath, not URL.pathname: pathname percent-encodes (a checkout under a directory
+// with a space yields ".../Ruv%20Explainer/..." and every existsSync goes false).
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const reg = JSON.parse(fs.readFileSync(new URL('../capabilities.json', import.meta.url), 'utf8'));
 
 const STATUSES = new Set(['specified', 'built', 'verified']);
