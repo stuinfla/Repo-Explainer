@@ -373,24 +373,44 @@ function portX(box, list, e) {
 }
 
 function renderArchitecture(eyebrow, title, model, caption, pal) {
-  const rows = model.rows, edges = model.edges, total = rows.length;
-  const rowW = rows.map((r) => r.reduce((s, it) => s + archChipW(it), 0) + AR.CHIP_GAP * (r.length - 1));
+  const rows = model.rows, edges = model.edges;
+  // MOBILE-FIRST layout (INV-18, 2026-07-30 stuinfla-helix hold — arithmetic, not taste: a
+  // 12-node tier laid in one line drove the square canvas to ~1300 units; at a 390px render
+  // that is ~3px text). Two changes: (a) wide tiers WRAP onto continuation lines budgeted to
+  // WRAP_W, (b) the canvas is PORTRAIT (content-sized), never forced square — a phone renders
+  // width-fit, so canvas width alone decides legibility.
+  const WRAP_W = 560;
+  const TT = rows.length;                       // logical tiers (depth bands)
+  const vrows = [];                             // visual rows: { items, tier }
+  rows.forEach((r, ti) => {
+    let line = [], w = 0;
+    for (const it of r) {
+      const cwChip = archChipW(it);
+      if (line.length && w + AR.CHIP_GAP + cwChip > WRAP_W) { vrows.push({ items: line, tier: ti }); line = []; w = 0; }
+      w += (line.length ? AR.CHIP_GAP : 0) + cwChip;
+      line.push(it);
+    }
+    if (line.length) vrows.push({ items: line, tier: ti });
+  });
+  const firstOfTier = new Map();                // tier -> visual row index of its first line
+  vrows.forEach((v, i) => { if (!firstOfTier.has(v.tier)) firstOfTier.set(v.tier, i); });
+  const total = vrows.length;
+  const rowW = vrows.map((v) => v.items.reduce((s, it) => s + archChipW(it), 0) + AR.CHIP_GAP * (v.items.length - 1));
   const maxRowW = Math.max(AR.CHIP_MINW * 2 + AR.CHIP_GAP, ...rowW);
   const extH = model.ext ? AR.EXT_GAP + AR.EXT_H : 0;
   const cw = AR.LEFT + maxRowW + AR.RIGHT;
   const ch = AR.TOP + total * AR.CHIP_H + (total - 1) * AR.ROW_GAP + extH + AR.BOTTOM;
-  const S = Math.max(cw, ch), ox = (S - cw) / 2, oy = (S - ch) / 2;
   const centerX = AR.LEFT + maxRowW / 2;
-  const body = [background(S, S, pal), `  <g transform="translate(${ox.toFixed(1)},${oy.toFixed(1)})">`, header(centerX, 30, eyebrow, title, pal)];
+  const body = [background(cw, ch, pal), '  <g>', header(centerX, 30, eyebrow, title, pal)];
 
-  // place every node and remember its anchor box
+  // place every node and remember its anchor box (colour = its TIER's accent, not its visual line)
   const pos = {};
-  rows.forEach((r, i) => {
+  vrows.forEach((v, i) => {
     const y = AR.TOP + i * (AR.CHIP_H + AR.ROW_GAP);
     let x = centerX - rowW[i] / 2;
-    for (const it of r) {
+    for (const it of v.items) {
       const w = archChipW(it);
-      pos[it.name] = { x, y, w, cx: x + w / 2, top: y, bot: y + AR.CHIP_H, col: accent(i), it };
+      pos[it.name] = { x, y, w, cx: x + w / 2, top: y, bot: y + AR.CHIP_H, col: accent(v.tier), it };
       x += w + AR.CHIP_GAP;
     }
   });
@@ -420,12 +440,12 @@ function renderArchitecture(eyebrow, title, model, caption, pal) {
   body.push(`  <line x1="${axX}" y1="${firstY}" x2="${axX}" y2="${lastRowY + 16}" stroke="rgba(255,255,255,0.13)" stroke-width="1.5" stroke-dasharray="2 6"/>`);
   body.push(`  <path d="M ${axX - 5} ${lastRowY + 10} L ${axX} ${lastRowY + 18} L ${axX + 5} ${lastRowY + 10} Z" fill="rgba(255,255,255,0.28)"/>`);
   body.push(txt(26, midY, 'DEPENDENCY DEPTH', { size: 10.5, mono: true, weight: 700, fill: pal.muted, ls: 2, anchor: 'middle', dom: 'central', extra: `transform="rotate(-90 26 ${midY.toFixed(1)})"` }));
-  rows.forEach((r, i) => {
-    const y = AR.TOP + i * (AR.CHIP_H + AR.ROW_GAP) + AR.CHIP_H / 2, col = accent(i);
+  for (const [ti, vi] of firstOfTier) {   // one band dot + label per TIER, at its first visual line
+    const y = AR.TOP + vi * (AR.CHIP_H + AR.ROW_GAP) + AR.CHIP_H / 2, col = accent(ti);
     body.push(`  <circle cx="${axX}" cy="${y}" r="4.5" fill="${col}" filter="url(#glowS)"/>`);
     body.push(`  <circle cx="${axX}" cy="${y}" r="3" fill="${mix(col, '#ffffff', 0.4)}"/>`);
-    body.push(txt(axX - 13, y, bandName(i, total), { size: 11.5, mono: true, weight: 700, fill: col, ls: 1.2, anchor: 'end', dom: 'central' }));
-  });
+    body.push(txt(axX - 13, y, bandName(ti, TT), { size: 11.5, mono: true, weight: 700, fill: col, ls: 1.2, anchor: 'end', dom: 'central' }));
+  }
 
   // nodes — the hub gets a crisp ring + faint accent wash (a clear focal point, NOT a blurred fog cloud)
   for (const r of rows) for (const it of r) {
@@ -444,7 +464,7 @@ function renderArchitecture(eyebrow, title, model, caption, pal) {
   // external-dependency band — a slim row in the SAME glass language (just dimmer), not a foreign grey slab
   if (model.ext) {
     const ey = AR.TOP + total * AR.CHIP_H + (total - 1) * AR.ROW_GAP + AR.EXT_GAP;
-    const eh = 64, ew = clamp(maxRowW, 340, 540), ex = centerX - ew / 2, lc = accent(total - 1);
+    const eh = 64, ew = clamp(maxRowW, 340, 540), ex = centerX - ew / 2, lc = accent(TT - 1);
     body.push(`  <rect x="${ex}" y="${ey}" width="${ew}" height="${eh}" rx="14" fill="rgba(11,15,23,0.55)" stroke="${tint(lc, 0.28)}" stroke-width="1.25"/>`);
     body.push(`  <rect x="${ex}" y="${ey}" width="4" height="${eh}" rx="2" fill="${tint(lc, 0.6)}"/>`);
     body.push(txt(ex + 22, ey + 25, 'EXTERNAL PACKAGES', { size: 10.5, mono: true, weight: 700, fill: pal.muted, ls: 1.5 }));
@@ -457,15 +477,15 @@ function renderArchitecture(eyebrow, title, model, caption, pal) {
   // can never spill past the edges on a small repo whose square canvas is narrower than the legend
   // (the chalk overflow bug: content-centred at x≈323 left only 245px on the right → "depende‑[d-on]" cut).
   const legY = ch - AR.BOTTOM + 34;
-  const legCx = S / 2 - ox;                 // canvas centre, expressed inside this translate(ox,oy) group
-  const legAvail = S - 32;                  // usable width: a 16px margin each side
+  const legCx = cw / 2;                     // canvas centre (portrait canvas: canvas == content width)
+  const legAvail = cw - 32;                 // usable width: a 16px margin each side
   const fitMono = (s, base) => { const w = measure(s, base, { mono: true }); return w <= legAvail ? base : Math.max(9, +(base * legAvail / w).toFixed(2)); };
   const legend = 'arrow points from a module to what it depends on    ◆ CORE = most depended-on';
   body.push(txt(legCx, legY, legend, { size: fitMono(legend, 12.5), mono: true, fill: pal.sub, anchor: 'middle' }));
   if (caption) { const c = clip(caption, 96); body.push(txt(legCx, legY + 26, c, { size: fitMono(c, 12.5), mono: true, fill: pal.muted, anchor: 'middle' })); }
   body.push('  </g>');
-  const desc = `${title}: ${rows.map((r, i) => `${bandName(i, total)} [${r.map((it) => it.name).join(', ')}]`).join(' → ')}; ${edges.length} real dependency edges, core = ${model.hub || 'n/a'}.`;
-  return { W: S, H: S, body: body.join('\n'), desc };
+  const desc = `${title}: ${rows.map((r, i) => `${bandName(i, TT)} [${r.map((it) => it.name).join(', ')}]`).join(' → ')}; ${edges.length} real dependency edges, core = ${model.hub || 'n/a'}.`;
+  return { W: cw, H: ch, body: body.join('\n'), desc };
 }
 
 // ── FLOW: a real data-flow pipeline. Each stage card shows the transformation it performs (verb +
@@ -533,9 +553,10 @@ function renderFlow(eyebrow, title, model, caption, pal) {
   const steps = model.steps, n = steps.length;
   const cw = FL.CARD_W + 108;
   const ch = FL.TOP + FL.TOK_H + (n + 1) * FL.VGAP + n * FL.CARD_H + FL.TOK_H + FL.BOTTOM;
-  const S = Math.max(cw, ch), ox = (S - cw) / 2, oy = (S - ch) / 2;
+  // PORTRAIT canvas (INV-18, 2026-07-30): the flow is a single vertical spine — padding it out to a
+  // square multiplied the width ~1.6x and shrank every label below mobile legibility for no reason.
   const cardX = (cw - FL.CARD_W) / 2, spine = cardX + FL.CARD_W / 2;
-  const body = [background(S, S, pal), `  <g transform="translate(${ox.toFixed(1)},${oy.toFixed(1)})">`, header(spine, 30, eyebrow, title, pal)];
+  const body = [background(cw, ch, pal), '  <g>', header(spine, 30, eyebrow, title, pal)];
 
   // Staggered activation delay: stage N's beam-in + badge fire STEP later than stage N-1's, so the
   // loop reads as one token/request traveling the pipeline in real execution order, not everything
@@ -561,7 +582,7 @@ function renderFlow(eyebrow, title, model, caption, pal) {
   if (caption) body.push(txt(spine, ch - FL.BOTTOM + 46, clip(caption, 88), { size: 12, mono: true, fill: pal.muted, anchor: 'middle' }));
   body.push('  </g>');
   const desc = `${title}: ${model.source} ⟶ ${steps.map((s) => `${s.name} (${s.in} → ${s.out})`).join(' ⟶ ')} ⟶ ${model.result}.`;
-  return { W: S, H: S, body: body.join('\n'), desc };
+  return { W: cw, H: ch, body: body.join('\n'), desc };
 }
 
 // ── CONCEPT ARCHETYPES (big-idea / insight / demoted architecture / demoted flow) ──────────────────
@@ -969,10 +990,14 @@ function asciiRows(ascii) {
 const DIAGRAMS = [
   { key: 'architectureDiagram', file: 'architecture.svg', title: 'Architecture', grounded: 'architecture',
     conceptEyebrow: 'ARCHITECTURE', conceptHeading: 'How it is built', conceptVariant: 'strata' },
+  // bigIdea↔flow variants SWAPPED (2026-07-30, stuinfla-helix B5 cap): the grounded arch+flow
+  // renderers are now portrait card-stacks (INV-18 mobile fix), so a 'column' bigIdea made THREE
+  // vertical stacks on one page and re-tripped the form-repetition cap. bigIdea takes the
+  // horizontal 'ribbon'; demoted-flow takes 'column' — pairwise distinctness holds either way.
   { key: 'flowDiagram', file: 'flow.svg', title: 'Process / Data Flow', grounded: 'flow',
-    conceptEyebrow: 'DATA FLOW', conceptHeading: 'What happens to your data', conceptVariant: 'ribbon' },
+    conceptEyebrow: 'DATA FLOW', conceptHeading: 'What happens to your data', conceptVariant: 'column' },
   { key: 'bigIdeaDiagram', file: 'big-idea.svg', title: 'Big Idea', grounded: null,
-    conceptEyebrow: 'THE BIG IDEA', conceptHeading: 'How it all fits together', conceptVariant: 'column' },
+    conceptEyebrow: 'THE BIG IDEA', conceptHeading: 'How it all fits together', conceptVariant: 'ribbon' },
   { key: 'insightDiagram', file: 'insight.svg', title: 'The Insight', grounded: null,
     conceptEyebrow: 'THE INSIGHT', conceptHeading: 'The clever move', conceptVariant: 'orbit' },
 ];

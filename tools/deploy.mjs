@@ -80,7 +80,9 @@ async function deployNetlify({ pageDir, slug }) {
   const token = process.env.NETLIFY_AUTH_TOKEN;
   if (!token) throw new Error('NETLIFY_AUTH_TOKEN not set in environment (deploy-provider token required)');
   const auth = { Authorization: `Bearer ${token}` };
-  const name = `${sanitize(slug)}-explainer`;
+  // NETLIFY_SITE_NAME override (owner ask 2026-07-30): deploy stuinfla/helix's page onto the
+  // existing 'helix-explainer' site rather than minting a new {slug}-explainer subdomain.
+  const name = process.env.NETLIFY_SITE_NAME || `${sanitize(slug)}-explainer`;
 
   const sites = await api(`https://api.netlify.com/api/v1/sites?name=${encodeURIComponent(name)}&filter=all`,
     { headers: auth }, 'netlify list sites');
