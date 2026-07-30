@@ -336,7 +336,20 @@ function reportQualityGap(quality) {
 export async function run(repoUrl, opts = {}) {
   const parsed = parseRepoUrl(repoUrl);
   if (!parsed) throw new Error(`not a parseable GitHub repo URL: "${repoUrl}"`);
-  const slug = slugify(parsed.name);
+  // Slug is name-based, but a slug is an IDENTITY (build dir, kb store, kb.config target,
+  // {slug}-explainer.netlify.app). If a prior build already owns this slug for a DIFFERENT
+  // owner's repo, silently reusing it would cross-contaminate stores and deploy over the other
+  // repo's site (ADR-0007's incident, one level up). Disambiguate to owner-name in that case.
+  let slug = slugify(parsed.name);
+  const priorBuildJson = path.join(process.cwd(), 'explainer-builds', slug, 'build.json');
+  try {
+    const prior = JSON.parse(fs.readFileSync(priorBuildJson, 'utf8'));
+    const priorId = `${prior?.repo?.owner}/${prior?.repo?.name}`.toLowerCase();
+    if (prior?.repo?.owner && priorId !== `${parsed.owner}/${parsed.name}`.toLowerCase()) {
+      slug = slugify(`${parsed.owner}-${parsed.name}`);
+      log(`${C.yellow}slug "${slugify(parsed.name)}" already belongs to ${priorId} — using "${slug}" to keep identities separate.${C.reset}`);
+    }
+  } catch { /* no prior build under this slug — plain name slug is free */ }
 
   const env = loadEnv(REPO_ROOT);
   let apiKey = getSecret(env, ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY']);
