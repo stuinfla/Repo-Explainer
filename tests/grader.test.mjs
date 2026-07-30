@@ -33,3 +33,18 @@ test('INV-05 — quality-grade exports a pure evaluatePass() implementing the v1
   // The old >=95 floor is gone: a page that would have FAILED the old rule but clears the new bar passes.
   assert.equal(mod.evaluatePass({ mean: 92, min: 88, operatorQuestions: ALL_YES }), true, 'min 88 (below old 95) now passes under the exemplar bar');
 });
+
+// INV-20 compound-token gloss (2026-07-30, stuinfla-helix hold): "ADR-001 (short for
+// 'architecture decision record')" glosses the reader perfectly, but every matcher form
+// required the gloss adjacent to the BARE token — the build failed with mean 0 before the
+// vision pass. The fix recognizes a parenthetical gloss attached to a hyphenated compound
+// of the token. Both directions pinned: glossed compound clears, bare compound still fails.
+test('INV-20: a gloss attached to a compound token (ADR-001 (…)) clears the bare acronym', async () => {
+  const mod = await import('../tools/quality-grade.mjs');
+  assert.deepEqual(
+    mod.findUnexplainedAcronyms("a design record labeled ADR-001 (short for 'architecture decision record')"),
+    [], 'compound-attached gloss must satisfy INV-20');
+  assert.deepEqual(
+    mod.findUnexplainedAcronyms('The ADR-001 file governs this build.'),
+    ['ADR'], 'a bare compound with NO gloss must still be caught');
+});

@@ -300,7 +300,11 @@ export function findUnexplainedAcronyms(text, whitelist = INV20_WHITELIST) {
     if (/^\d+$/.test(tok.slice(1))) continue; // version-ish tokens like V2
     // A gloss counts in any natural form, not just parentheses — the brain writes appositives
     // ("…the gate-and-dynamics state, or GDN state") and the linter must not reject good copy.
-    const acronymFirst = new RegExp(`\\b${tok}\\b\\s*\\([a-z]`);           // "SSG (pre-building …)"
+    // The compound suffix (?:-\w+)* lets a gloss attached to "ADR-001 (short for …)" clear the
+    // bare token — a reader who meets the expansion at first use is served, whichever form the id
+    // takes. Detector-truth fix in the file's own tradition (MODEL/MOVE, visually-hidden): it adds
+    // a way to SATISFY by genuinely glossing, never a way to skip the gloss.
+    const acronymFirst = new RegExp(`\\b${tok}(?:-[A-Za-z0-9]+)*\\b\\s*\\(['"‘“]?[a-z]`); // "SSG (pre-building …)" / "ADR-001 ('short for …)"
     const glossFirst = new RegExp(`[a-z][^()]{2,80}\\(\\s*${tok}\\s*\\)`); // "static site generation (SSG)"
     const appositive = new RegExp(`[a-z][^.!?]{0,80},\\s+or\\s+(?:the\\s+)?${tok}\\b`); // "…state, or GDN state"
     const dashGloss = new RegExp(`\\b${tok}\\b[^.!?—]{0,12}—\\s*[a-z]`);   // "GDN — the running signal …"
