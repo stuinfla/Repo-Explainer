@@ -4,6 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+  <!-- Google Analytics 4 — ISO Vision AI property (account 382236868 / property 521930703).
+       Same measurement ID as isovision.ai: GA4 treats subdomains of one registrable
+       domain as a single property, so this rolls up with the main site. Split them in
+       reports with the built-in `hostname` dimension. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VVRJM61MX7"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-VVRJM61MX7');
+  </script>
+
   <title>explainmyrepo — give any GitHub repo a front door this good</title>
   <meta name="description" content="explainmyrepo points at any GitHub repo and builds a cinematic, art-directed explainer — the page you proudly forward, a repo you own, and a downloadable AI knowledge pack — that carries a stranger from 'never seen this' to 'I get it, and I want it.' One command: npx explainmyrepo <github-url>." />
   <meta name="author" content="Stuart Kerr — ISOvision" />
