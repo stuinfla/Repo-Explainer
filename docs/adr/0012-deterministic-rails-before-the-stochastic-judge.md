@@ -71,6 +71,7 @@ The coarse layout shape a vision grader actually compares, not the semantic name
 | `radial` | **`renderArchitectureRadial`** (grounded) · `conceptOrbit` |
 | `horizontal-run` | `conceptRibbon` |
 | `containment` | `conceptStrata` |
+| `grid` | `conceptGrid` — a wrapped **field** (added 2026-08-06) |
 
 ### D2 — Assignment is RESOLVED at runtime, never assumed
 
@@ -216,7 +217,8 @@ Result: **four grounded-or-authored diagrams, four distinct families, zero demot
 |---|---|---|---|
 | architecture | `radial` | `renderArchitectureRadial` | real dep-graph, hub, dependent counts, externals |
 | flow | `vertical-stack` | `renderFlow` | real entrypoints, with IN/OUT per stage |
-| big idea | `containment` | `conceptStrata` | brain-authored rows |
+| big idea | `containment` | `conceptStrata` |
+| `grid` | `conceptGrid` — a wrapped **field** (added 2026-08-06) | brain-authored rows |
 | insight | `horizontal-run` | `conceptRibbon` | brain-authored rows |
 
 ### What the geometry cost, and what fixed it
@@ -246,4 +248,48 @@ closed**: with nothing demoting on the common path, `vertical-stack` and `horizo
 likely to co-occur — but they still can when two slots demote. ADR-0011 D4 records every emitted form,
 so if a grader calls two diagrams same-form while the receipts say otherwise, that disagreement is now
 visible in the data rather than invisible.
+
+---
+
+## The fifth family, and what finally closed finding 1 (2026-08-06)
+
+Everything above was verified by unit tests. Then the whole pipeline was re-run against the **real
+failed build artifact** for `PolymathWizard/BHIL-Colophon-Spec` — its actual dependency graph, palette
+and authored content — assembled into a real page and screenshotted at 390px. Looking at that render
+found two defects no test had:
+
+**1. The taxonomy was exhausted, and the fallback shipped an illegible diagram.** With `radial`,
+`vertical-stack` and `containment` taken, a 4-item insight chain had only `horizontal-run` left. The
+resolver's "better an illegible diagram than none" fallback fired exactly as written and put it on a
+949px ribbon — ~5px text on a phone. The fix is the family review finding 1 said was missing: the
+rubric's own vocabulary is *"containment, journey, field, fan…"* and there was no **field**.
+`conceptGrid` is that field — the ribbon's left-to-right reading wrapped into rows of at most three,
+portrait by construction because the ROW WIDTH is bounded rather than the item count.
+
+> A grid is only offered when it genuinely **wraps** (items > 3). Below that it draws a single row —
+> a ribbon in disguise — and would sit beside a real ribbon looking identical while the resolver
+> recorded two distinct families. That is exactly the false-confidence failure finding 1 warned
+> about, so it is guarded at the source instead of discovered in a grader verdict.
+
+**2. The alt text described a shape that was never drawn.** The brain writes form claims into its alt
+text ("drawn as a hub with three satellites"). That was safe when form was a static per-key constant;
+it is not safe now that the resolver decides at runtime. The insight slot resolved to `grid` while its
+caption still claimed a hub — and that string is BOTH the visible caption and the accessible `<desc>`,
+so the page asserted one structure in pixels and another to a screen reader. **This is review finding
+5, reappearing in a new place.** A contradicting claim is now rewritten to the truth, in the caption
+*and* the accessible text.
+
+> Only a **contradicting** claim is rewritten. The first version replaced every "drawn as …" clause
+> and turned two accurate, richer descriptions into boilerplate — a fix that damaged the thing it was
+> meant to protect. An ambiguous or unrecognised claim stays in the author's own words.
+
+### Verified end-to-end on the real repo
+
+`architecture: radial · flow: vertical-stack · bigIdea: containment · insight: grid` — four grounded
+or authored diagrams, four distinct families, zero demotions, all legible at 390px.
+
+**Finding 1 is now closed in the common path.** Five families cover four slots, so the exhaustion that
+forced the bad fallback cannot recur at this arity; `vertical-stack` and `horizontal-run` (the two
+"journey" shapes the review flagged) can still co-occur in principle, and ADR-0011 D4 records every
+emitted form so that disagreement would show up in the receipts rather than stay invisible.
 

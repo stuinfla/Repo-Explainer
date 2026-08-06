@@ -890,13 +890,62 @@ function conceptStrata(eyebrow, title, steps, caption, pal) {
   return { W, H, body: body.join('\n') };
 }
 
+// VARIANT 5 — grid: the ribbon's left→right reading, WRAPPED into rows of at most three.
+// WHY IT EXISTS (2026-08-06, found by rendering the real page at 390px and LOOKING at it): with four
+// families and four slots, a page where radial, containment and vertical-stack are all taken leaves a
+// long chain only the ribbon — and the ribbon's width grows with item count (4 items = 949px), so it
+// lands on a phone at ~5px text. The resolver's "better an illegible diagram than none" fallback
+// fired exactly as written and produced exactly that, on the insight slot, in a real page.
+// The honest fix is not a smarter fallback but the fifth family the taxonomy was missing: the rubric's
+// own vocabulary already names it a FIELD ("containment, journey, field, fan…"). A wrapped grid IS a
+// field — structurally distinct from a single run, and portrait by construction because the ROW WIDTH
+// is bounded rather than the item count.
+const GR = { PER_ROW: 3, HGAP: 22, VGAP: 30, TOP: 150, PADX: 52, MINW: 168, MAXW: 260, CARD_H: 104 };
+function gridW(label) { return clamp(Math.ceil(measure(clip(label, 30), 15, { bold: true })) + 44, GR.MINW, GR.MAXW); }
+
+function conceptGrid(eyebrow, title, steps, caption, pal) {
+  const perRow = Math.min(GR.PER_ROW, Math.max(1, steps.length));
+  const rows = [];
+  for (let i = 0; i < steps.length; i += perRow) rows.push(steps.slice(i, i + perRow));
+  const cellW = Math.max(...steps.map((s) => gridW(s.label)));
+  const rowW = perRow * cellW + (perRow - 1) * GR.HGAP;
+  const W = Math.round(Math.max(rowW + GR.PADX * 2, Math.ceil(measure(title, 30, { bold: true })) + 120));
+  const cx = W / 2;
+  const contentH = GR.TOP + rows.length * GR.CARD_H + (rows.length - 1) * GR.VGAP + 16;
+  const cb = captionBlock(cx, contentH, W, caption, pal, 84);
+  const H = contentH + cb.band;
+  const body = ['  <!-- concept archetype: grid -->', background(W, H, pal), header(cx, 30, eyebrow, title, pal)];
+  let y = GR.TOP, idx = 0;
+  for (const row of rows) {
+    const thisW = row.length * cellW + (row.length - 1) * GR.HGAP;
+    let x = cx - thisW / 2;
+    row.forEach((st, k) => {
+      const col = accent(st.colorIdx != null ? st.colorIdx : idx);
+      // an arrow to the next card IN THIS ROW keeps the left→right reading a chain deserves
+      if (k < row.length - 1 && st.arrow !== false) {
+        body.push(beam(x + cellW + 3, y + GR.CARD_H / 2, x + cellW + GR.HGAP - 3, y + GR.CARD_H / 2, col));
+      }
+      body.push(glassPanel(x, y, cellW, GR.CARD_H, col, { r: 15, fillA: 0.16, depth: 7, aura: 0.4 }));
+      const lines = fitLines(st.label, cellW - 26, 15, 4);
+      const y0 = y + GR.CARD_H / 2 - (lines.length - 1) * 10;
+      lines.forEach((ln, j) => body.push(txt(x + cellW / 2, y0 + j * 20, ln, { size: 15, weight: 700, fill: pal.ink, anchor: 'middle', dom: 'central' })));
+      x += cellW + GR.HGAP;
+      idx++;
+    });
+    y += GR.CARD_H + GR.VGAP;
+  }
+  body.push(cb.svg);
+  return { W, H, body: body.join('\n') };
+}
+
 // dispatcher — same rows-model, distinct SHAPE per `variant` (default 'column' keeps old behaviour).
 function renderConcept(eyebrow, title, rows, caption, pal, variant = 'column') {
   const { rows: rws, steps } = conceptSteps(rows, title);
   const desc = `${title}: ${rws.map((r) => r.items.map((it) => it.label).join(r.connectWithin ? ' → ' : ', ')).join(' / ')}`;
   const fn = variant === 'ribbon' ? conceptRibbon
-    : variant === 'orbit' ? conceptOrbit
-      : variant === 'strata' ? conceptStrata
+    : variant === 'grid' ? conceptGrid
+      : variant === 'orbit' ? conceptOrbit
+        : variant === 'strata' ? conceptStrata
         : conceptColumn;
   const r = fn(eyebrow, title, steps, caption, pal);
   return { W: r.W, H: r.H, body: r.body, desc };
@@ -1118,8 +1167,9 @@ const FORM = {
   HRUN: 'horizontal-run',     // conceptRibbon   — a pipeline reads L→R
   RADIAL: 'radial',           // conceptOrbit    — hub + satellites
   CONTAINMENT: 'containment', // conceptStrata   — nested frames
+  GRID: 'grid',               // conceptGrid     — a wrapped FIELD of cards
 };
-const VARIANT_FAMILY = { column: FORM.VSTACK, ribbon: FORM.HRUN, orbit: FORM.RADIAL, strata: FORM.CONTAINMENT };
+const VARIANT_FAMILY = { column: FORM.VSTACK, ribbon: FORM.HRUN, orbit: FORM.RADIAL, strata: FORM.CONTAINMENT, grid: FORM.GRID };
 
 // conceptPrefs = ordered preference list of archetypes for this slot when it renders (or demotes) to
 // renderConcept. The resolver walks it and takes the first family not already claimed, so a slot always
@@ -1136,18 +1186,18 @@ const DIAGRAMS = [
   // into a concept archetype it had no business wearing.
   { key: 'architectureDiagram', file: 'architecture.svg', title: 'Architecture', grounded: 'architecture',
     groundedFamily: FORM.RADIAL,
-    conceptEyebrow: 'ARCHITECTURE', conceptHeading: 'How it is built', conceptPrefs: ['strata', 'orbit', 'ribbon', 'column'] },
+    conceptEyebrow: 'ARCHITECTURE', conceptHeading: 'How it is built', conceptPrefs: ['strata', 'orbit', 'grid', 'ribbon', 'column'] },
   // A pipeline IS a left→right run, so 'ribbon' is the semantically right demotion for flow — not the
   // 'column' it used to take, which is the exact family grounded-architecture already occupies.
   { key: 'flowDiagram', file: 'flow.svg', title: 'Process / Data Flow', grounded: 'flow',
     groundedFamily: FORM.VSTACK,
-    conceptEyebrow: 'DATA FLOW', conceptHeading: 'What happens to your data', conceptPrefs: ['ribbon', 'column', 'strata', 'orbit'] },
+    conceptEyebrow: 'DATA FLOW', conceptHeading: 'What happens to your data', conceptPrefs: ['ribbon', 'column', 'grid', 'strata', 'orbit'] },
   // "How it all fits together" is a CONTAINMENT idea (zones inside one thing) — strata first. This also
   // matches what the 2026-08-04 build actually drew and what graded well: a nested-frames big idea.
   { key: 'bigIdeaDiagram', file: 'big-idea.svg', title: 'Big Idea', grounded: null,
-    conceptEyebrow: 'THE BIG IDEA', conceptHeading: 'How it all fits together', conceptPrefs: ['strata', 'ribbon', 'column', 'orbit'] },
+    conceptEyebrow: 'THE BIG IDEA', conceptHeading: 'How it all fits together', conceptPrefs: ['strata', 'ribbon', 'grid', 'column', 'orbit'] },
   { key: 'insightDiagram', file: 'insight.svg', title: 'The Insight', grounded: null,
-    conceptEyebrow: 'THE INSIGHT', conceptHeading: 'The clever move', conceptPrefs: ['orbit', 'ribbon', 'strata', 'column'] },
+    conceptEyebrow: 'THE INSIGHT', conceptHeading: 'The clever move', conceptPrefs: ['orbit', 'ribbon', 'grid', 'strata', 'column'] },
 ];
 
 // A grounded flow that must yield VSTACK keeps its REAL model — the same source, stage names and result
@@ -1176,6 +1226,14 @@ const RIBBON_MAX_ITEMS = 3;
 function ribbonIsSafe(slot) {
   return !Number.isInteger(slot.chainLength) || slot.chainLength <= RIBBON_MAX_ITEMS;
 }
+// A grid only EARNS its own family when it actually wraps. With items <= PER_ROW it draws a single
+// row of cards — which is a ribbon in disguise, and would sit alongside a real ribbon looking
+// identical while the resolver cheerfully recorded two distinct families. That is precisely the
+// false-confidence failure mode review finding 1 warned about, so guard it at the source rather than
+// discovering it in a grader verdict later.
+function gridIsDistinct(slot) {
+  return Number.isInteger(slot.chainLength) && slot.chainLength > GR.PER_ROW;
+}
 
 function resolveForms(slots) {
   const taken = new Map();   // family -> key that claimed it
@@ -1194,7 +1252,9 @@ function resolveForms(slots) {
   // free family from its own preference list.
   for (const s of slots) {
     if (out[s.key]) continue;
-    const prefs = (s.conceptPrefs || []).filter((v) => v !== 'ribbon' || ribbonIsSafe(s));
+    const prefs = (s.conceptPrefs || [])
+      .filter((v) => v !== 'ribbon' || ribbonIsSafe(s))
+      .filter((v) => v !== 'grid' || gridIsDistinct(s));
     // If filtering left nothing, fall back to the unfiltered list: an illegible diagram is bad, but
     // refusing to draw one at all is worse, and INV-18 requires the mandatory diagrams to exist.
     const pick = prefs.find((v) => !taken.has(VARIANT_FAMILY[v]))
@@ -1329,7 +1389,7 @@ function main() {
     if (spec.grounded === 'flow' && skipFlow) continue;  // library repo: no runtime flow to draw
     const existing = (visualsIn[spec.key] && typeof visualsIn[spec.key] === 'object') ? visualsIn[spec.key] : {};
     const decision = forms[spec.key];
-    let rendered, asciiSrc = null, conceptBack = null;
+    let rendered, asciiSrc = null, conceptBack = null, formCorrectedAlt = null;
     // A grounded diagram falls through to the CONCEPT renderer when its grounded model has nothing to
     // say (architecture with 0 edges), when the brain authored something truer (a real runtime flow),
     // or when the INV-23 resolver could not give it a distinct SHAPE (another slot already holds the
@@ -1389,7 +1449,44 @@ function main() {
       const heading = (typeof existing.title === 'string' && existing.title.trim()) ? existing.title.trim()
         : spec.conceptHeading;
       // the brain's altText is the one-line TAKEAWAY — render it as the caption so the diagram tells a story
-      const cap = (typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText.trim() : null;
+      // The brain often writes a FORM CLAIM into its alt text ("drawn as a hub with three satellites",
+      // "drawn as a vertical chain of five stages"). That was safe when the form was a static per-key
+      // constant. It is not safe now: the resolver decides the form at RUNTIME, so an authored claim
+      // can describe a shape that was never drawn — and this string is BOTH the visible caption and
+      // the accessible text, so the page would assert one structure in pixels and a different one to
+      // a screen reader. Seen live on 2026-08-06: an insight slot resolved to `grid` while its caption
+      // still read "drawn as a hub with three satellites". Strip the stale claim and state the truth.
+      const FORM_PHRASE = {
+        [FORM.RADIAL]: 'drawn as a hub with its related parts radiating from it',
+        [FORM.VSTACK]: 'drawn as a vertical chain, top to bottom',
+        [FORM.HRUN]: 'drawn as a left-to-right run',
+        [FORM.CONTAINMENT]: 'drawn as nested frames, outermost to innermost',
+        [FORM.GRID]: 'drawn as a field of cards, read left to right and wrapping',
+      };
+      // Rewrite ONLY a claim that genuinely CONTRADICTS the chosen form. The first version replaced
+      // every "drawn as …" clause and made two accurate, richer descriptions ("a vertical chain of
+      // five short stages", "one outlined file containing two zones stacked inside it") generic — a
+      // fix that damaged the thing it was protecting. An unrecognisable or ambiguous claim is left in
+      // the author's own words: silence is better than boilerplate.
+      const FORM_CUES = [
+        [FORM.RADIAL, /\bhub\b|satellite|radiat|spoke/i],
+        [FORM.CONTAINMENT, /nested|concentric|containing|contains|inside|within/i],
+        [FORM.GRID, /\bgrid\b|\bfield\b|wrapp?ed|tiles?\b/i],
+        [FORM.HRUN, /left[- ]to[- ]right|horizontal|across the|single row/i],
+        [FORM.VSTACK, /vertical|top to bottom|stacked|down the|column/i],
+      ];
+      const rawCap = (typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText.trim() : null;
+      const cap = rawCap
+        ? rawCap.replace(/,?\s*drawn as [^:;.]+/i, (mm) => {
+          const hits = FORM_CUES.filter(([, re]) => re.test(mm)).map(([fam]) => fam);
+          const claimed = hits.length === 1 ? hits[0] : null;   // ambiguous => trust the author
+          const truth = FORM_PHRASE[decision.family];
+          if (!claimed || claimed === decision.family || !truth) return mm;
+          warn(`${spec.key}: authored alt text claimed a ${claimed} form but the resolver drew ${decision.family} — rewrote "${mm.trim()}"`);
+          return `, ${truth}`;
+        })
+        : null;
+      formCorrectedAlt = (cap && rawCap && cap !== rawCap) ? cap : null;  // the caption AND <desc> must agree
       rendered = renderConcept(eyebrow, heading, rows, cap, PAL, decision.variant);
       // round-trip the structured source + heading so re-running this station (e.g. a refine loop) redraws
       // identically WITHOUT a fresh brain call — and never reverts to the generic title.
@@ -1397,7 +1494,11 @@ function main() {
       // textual fallback (accessibility / AI) — synthesize from the structured rows when there is no ASCII
       if (!asciiSrc) asciiSrc = rows.map((r) => r.items.map((it) => it.label).join(r.connectWithin ? ' -> ' : '   ·   ')).join('\n');
     }
-    const altText = (typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText : defaultAltText(spec, dg, ep, name, rendered.desc, archModel, asConcept);
+    // formCorrectedAlt first: if the authored claim contradicted the drawn form we rewrote it, and
+    // the ACCESSIBLE text must carry the correction too. Fixing only the visible caption would leave
+    // a screen reader hearing a structure the page never drew — the same lie, told more quietly.
+    const altText = formCorrectedAlt
+      || ((typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText : defaultAltText(spec, dg, ep, name, rendered.desc, archModel, asConcept));
     const svg = wrapSvg(rendered.W, rendered.H, rendered.body, `${name} — ${spec.title}`, altText, asciiSrc || rendered.desc);
     const svgPath = path.join(assetsDir, spec.file);
     fs.writeFileSync(svgPath, svg, 'utf8');

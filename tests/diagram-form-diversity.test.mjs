@@ -271,3 +271,80 @@ test('ADR-0012 — the radial diagram stays GROUNDED: real hub, real dependent c
   assert.match(svg, /EXTERNAL PACKAGES/, 'real external dependencies must still be shown');
   assert.match(v.architectureDiagram.altText || '', /depend/i, 'the alt text must describe a dependency relationship');
 });
+
+// ── THE FIFTH FAMILY (found by rendering the real page and looking at it) ────────────────────────
+// With four families and four slots, a page where radial, containment and vertical-stack were all
+// taken left a long chain only the ribbon — whose width grows with item count. The resolver's
+// "better an illegible diagram than none" fallback fired exactly as written and put a 4-item insight
+// chain on a 949px ribbon, ~5px text on a phone. The taxonomy was genuinely exhausted, and the review
+// had already named the gap: the rubric's own vocabulary is "containment, journey, field, fan…" and
+// there was no FIELD. conceptGrid is that field, and it is portrait by construction because the ROW
+// WIDTH is bounded rather than the item count.
+test('ADR-0012 — a 4-slot page where every other family is taken resolves the last slot to GRID, not a wide ribbon', () => {
+  // FOUR items — the shape of the real page that exposed this. A 3-item chain is only 731px and may
+  // legitimately stay on the ribbon; the rule is about width, not about avoiding ribbons.
+  const dir = makeFixture();
+  const bj = path.join(dir, 'build.json');
+  const b = JSON.parse(fs.readFileSync(bj, 'utf8'));
+  b.visuals.insightDiagram.rows = [{ items: ['router reads the block', 'route in grant', 'requires approval', 'no grant, quarantined'], connect: true }];
+  fs.writeFileSync(bj, JSON.stringify(b, null, 2));
+  run(dir);
+  const v = visualsOf(dir);
+  assert.equal(v.insightDiagram.form, 'grid',
+    'with radial + vertical-stack + containment taken, a long chain must land on the field, not the run');
+  const forms = formsOf(v);
+  assert.equal(new Set(forms).size, 4, `forms must stay pairwise distinct: ${JSON.stringify(forms)}`);
+});
+
+test('ADR-0012 — the grid stays portrait as items grow (the property the ribbon lacks)', () => {
+  const widthOf = (svgPath) => Number(/viewBox="0 0 ([0-9.]+)/.exec(fs.readFileSync(svgPath, 'utf8'))[1]);
+  let prev = 0;
+  for (const n of [3, 5, 7, 9]) {
+    const items = Array.from({ length: n }, (_, i) => `stage number ${i + 1}`);
+    const dir = makeFixture({ flowRows: [{ items, connect: true }] });
+    run(dir);
+    const v = visualsOf(dir);
+    const target = Object.values(v).find((d) => d && d.formVariant === 'grid');
+    if (!target) continue;
+    const w = widthOf(target.svgPath);
+    assert.ok(w < 1000, `${n} items produced a ${w}px grid — the row width must stay bounded`);
+    assert.ok(w >= prev - 1, 'width must not oscillate wildly');
+    prev = w;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ── ALT TEXT MUST NOT DESCRIBE A SHAPE THAT WAS NEVER DRAWN ─────────────────────────────────────
+// The brain writes form claims into its alt text ("drawn as a hub with three satellites"). That was
+// safe when form was a static per-key constant; it is not safe now that the resolver decides at
+// runtime. This string is BOTH the visible caption and the accessible text, so a stale claim makes
+// the page assert one structure in pixels and a different one to a screen reader — review finding 5.
+test('ADR-0012 — an alt-text form claim that CONTRADICTS the drawn form is rewritten', () => {
+  const dir = makeFixture();
+  // Authored as a hub; with radial already taken by architecture this slot cannot be radial.
+  const bj = path.join(dir, 'build.json');
+  const b = JSON.parse(fs.readFileSync(bj, 'utf8'));
+  b.visuals.insightDiagram.altText = 'The insight, drawn as a hub with three satellites: the router reads the block.';
+  fs.writeFileSync(bj, JSON.stringify(b, null, 2));
+  run(dir);
+  const v = visualsOf(dir);
+  const svg = fs.readFileSync(v.insightDiagram.svgPath, 'utf8');
+  assert.doesNotMatch(svg, /hub with three satellites/,
+    'a contradicting form claim must not survive into the caption OR the accessible <desc> — fixing only '
+    + 'the visible caption leaves a screen reader hearing a structure the page never drew');
+  assert.doesNotMatch(v.insightDiagram.altText, /hub with three satellites/,
+    'the recorded alt text must carry the correction too');
+});
+
+test('ADR-0012 — an ACCURATE alt-text form claim is left in the author\'s own words', () => {
+  const dir = makeFixture();
+  const bj = path.join(dir, 'build.json');
+  const b = JSON.parse(fs.readFileSync(bj, 'utf8'));
+  // bigIdea resolves to containment; this claim agrees with it and is richer than any boilerplate.
+  b.visuals.bigIdeaDiagram.altText = 'The big idea, drawn as one outlined file containing two zones stacked inside it: front matter and body.';
+  fs.writeFileSync(bj, JSON.stringify(b, null, 2));
+  run(dir);
+  const v = visualsOf(dir);
+  assert.match(v.bigIdeaDiagram.altText, /containing two zones/,
+    'an accurate claim must survive — the first version of this rewrite replaced good descriptions with boilerplate');
+});
