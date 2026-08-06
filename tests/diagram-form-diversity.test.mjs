@@ -92,7 +92,22 @@ test('INV-23 — the architecture and flow diagrams specifically never share a f
     'architecture and flow collapsed to the same visual form — this is the exact 2026-08-04 failure');
   // Architecture keeps the grounded vertical stack (INV-18 + the mobile-portrait geometry); flow yields.
   assert.equal(v.architectureDiagram.form, 'vertical-stack');
-  assert.equal(v.flowDiagram.form, 'horizontal-run');
+  // Flow takes a PORTRAIT archetype, never the ribbon, because this chain is long. Measured
+  // 2026-08-06: conceptRibbon is the only archetype whose width grows with item count (3 items 731px,
+  // 6 items 1385px), and diagrams fit to width on a 390px phone — a 1385px ribbon renders 13px labels
+  // at ~3.7px, versus the 568px grounded architecture diagram that graded as legible.
+  assert.notEqual(v.flowDiagram.form, 'horizontal-run',
+    'a long flow chain must never take the ribbon — that is the widest archetype and it is illegible on mobile');
+  assert.ok(['containment', 'radial'].includes(v.flowDiagram.form),
+    `expected a portrait archetype for a long flow chain, got ${v.flowDiagram.form}`);
+});
+
+test('INV-23 — a SHORT flow chain may still take the ribbon (the width rule is about length, not the form)', () => {
+  const dir = makeFixture({ flowRows: [{ items: ['input', 'seal', 'out'], connect: true }] });
+  run(dir);
+  const v = visualsOf(dir);
+  assert.equal(v.flowDiagram.form, 'horizontal-run',
+    'a 3-item chain fits horizontally — the rule bans wide ribbons, not ribbons');
 });
 
 test('INV-23 — a flow demoted for FORM keeps its real entrypoint-derived model (grounding is never traded for shape)', () => {

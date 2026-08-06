@@ -155,7 +155,7 @@ vision model every build. The vision grader's budget belongs to judgements only 
 | # | Finding | Outcome |
 |---|---|---|
 | 1 | **The taxonomy has two linear-chain families.** `vertical-stack` and `horizontal-run` are the same *information shape* — a chain of cards joined by arrows, rotated 90°. The rubric's own vocabulary (`quality-grade.mjs`, check (c)) names the shapes "containment, journey, field, fan"; both of ours are **journey**. So the resolver can guarantee distinctness in *its* taxonomy while the judge scores in a *different* one — and they may disagree on exactly the pair the resolver most often emits (grounded architecture + demoted flow). There is also no `field`/`grid` family at all. | **Open, and now measurable.** See the risk note below. |
-| 2 | **The flow demotion loses the page's densest information.** `renderFlow`'s IN/OUT artifact annotations do not survive the concept ribbon, and a 6-item single-row ribbon is ~1,380px wide — which fit-to-width on a 390px phone scales 15px text to ~4px, below the 7.5px floor the 2026-07-30 portrait fix existed to establish. | **Open — needs a rendered check at 390px before the trade is accepted.** |
+| 2 | **The flow demotion loses the page's densest information**, and a 6-item single-row ribbon is ~1,380px wide — illegible when fit to a 390px phone. | **MEASURED AND CONFIRMED, then mitigated.** Rendered for real: ribbon 3 items=731px, 4=949px, 5=1167px, 6=1385px; every other archetype stays portrait at any length (orbit 806px, strata 824px for the same chain). At 390px fit-to-width a 1385px ribbon renders 13px labels at **3.66px**, against the 568px grounded architecture diagram that graded as legible — 2.4x the width, ~40% the text size. `RIBBON_MAX_ITEMS = 3` now keeps a long chain off the ribbon entirely. The IN/OUT loss is unmitigated and stands as debt. |
 | 3 | **The demotion satisfies check (c) by feeding check (d).** "Stages-in-boxes with arrows is a list, not a flow" is precisely what `flowRowsFromModel` + `conceptRibbon` produce. | **Open.** |
 | 4 | **The dominant alternative was never considered.** `archModel` already computes a `hub`; a grounded *radial* architecture plus a grounded vertical `renderFlow` keeps BOTH diagrams fully grounded with zero demotion. That strictly dominates demoting flow, and appears nowhere in the alternatives table. | **Open — this is probably the right answer.** |
 | 5 | **`conceptStrata` silently drops `connect` semantics.** A demoted architecture authored as a chain (`cli → router → parser`, `connect:true`) renders as concentric nested frames — asserting *containment*, which is false — while the `asciiFallback` for the same diagram still says `cli → router → parser`. The pixels and the accessible text describe different structures. | **Open — a correctness bug, not a taste issue.** |
@@ -174,4 +174,20 @@ falsifiable rather than merely asserted — ADR-0011 D4 records the emitted `for
 every diagram in the build receipt, so a grader verdict of "two same-form diagrams" can be checked
 against what was actually drawn. If that disagreement shows up in the receipts, the cut is wrong and
 finding 4 (grounded radial architecture) is the fix, not a fifth family.
+
+### The semantic debt this leaves (stated, not hidden)
+
+Making the resolver width-aware fixed a legibility defect and exposed a deeper one. With grounded
+architecture holding `vertical-stack`, a long flow chain has only `containment` (nested frames) or
+`radial` (hub and satellites) left — and **both are semantically wrong for a sequence**. A pipeline is
+neither a containment hierarchy nor a hub. Worse, finding 5 is live in that path: `conceptStrata`
+drops `connect` semantics, so a chain authored as `a → b → c` draws as "a contains b contains c" while
+its own `asciiFallback` still says `a → b → c`. The pixels and the accessible text disagree.
+
+This is the strongest argument for review finding 4, and it should be read as the next piece of work
+rather than a nice-to-have: **give grounded architecture a RADIAL form** built from the `hub` that
+`archModel` already computes. A dependency map genuinely IS a hub-and-spokes structure, so that is
+more faithful than the vertical stack, not less. It frees `vertical-stack` for `renderFlow`, which
+keeps its full IN/OUT annotations, stays portrait, and is semantically exact. Every open finding here
+— 2, 3, 4 and 5 — collapses into that one change.
 

@@ -1051,6 +1051,18 @@ function flowRowsFromModel(model) {
 // Output: a per-key decision { family, variant, demotedForForm } with a PAIRWISE-DISTINCT family set.
 // Deterministic and total: same inputs always produce the same assignment, and it never returns a
 // colliding set — it throws instead, so a form collision can never again reach the vision grader.
+// MEASURED, 2026-08-06 (adversarial review finding, then verified by rendering): conceptRibbon lays
+// its cards out in ONE horizontal row, so its canvas width grows with item count — 3 items = 731px,
+// 4 = 949px, 5 = 1167px, 6 = 1385px. Every other archetype stays portrait regardless of length
+// (orbit 806px, strata 824px for the same 6-item chain). Diagrams fit to width on a 390px phone, so a
+// 1385px ribbon renders its 13px labels at ~3.7px — against the 568px grounded architecture diagram
+// that graded as legible, that is 2.4x the width and ~40% the text size. The 2026-07-30 portrait work
+// exists precisely to stop that. So: a ribbon is only offered for a SHORT chain.
+const RIBBON_MAX_ITEMS = 3;
+function ribbonIsSafe(slot) {
+  return !Number.isInteger(slot.chainLength) || slot.chainLength <= RIBBON_MAX_ITEMS;
+}
+
 function resolveForms(slots) {
   const taken = new Map();   // family -> key that claimed it
   const out = {};
@@ -1063,7 +1075,11 @@ function resolveForms(slots) {
   // free family from its own preference list.
   for (const s of slots) {
     if (out[s.key]) continue;
-    const pick = (s.conceptPrefs || []).find((v) => !taken.has(VARIANT_FAMILY[v]));
+    const prefs = (s.conceptPrefs || []).filter((v) => v !== 'ribbon' || ribbonIsSafe(s));
+    // If filtering left nothing, fall back to the unfiltered list: an illegible diagram is bad, but
+    // refusing to draw one at all is worse, and INV-18 requires the mandatory diagrams to exist.
+    const pick = prefs.find((v) => !taken.has(VARIANT_FAMILY[v]))
+      || (s.conceptPrefs || []).find((v) => !taken.has(VARIANT_FAMILY[v]));
     if (!pick) die(`${s.key}: no distinct diagram form remains (claimed: ${[...taken.keys()].join(', ')}). `
       + `Every archetype is already used by another diagram — refusing to draw two diagrams of the same shape (INV-23).`);
     taken.set(VARIANT_FAMILY[pick], s.key);
@@ -1173,6 +1189,14 @@ function main() {
     .map((spec) => ({
       key: spec.key,
       conceptPrefs: spec.conceptPrefs,
+      // How many cards this slot would draw if it demotes — the ribbon's width, and therefore its
+      // mobile legibility, is a direct function of this.
+      chainLength: (() => {
+        const authored = (visualsIn[spec.key] || {}).rows;
+        if (Array.isArray(authored) && authored.length) return Math.max(...authored.map((r) => (Array.isArray(r.items) ? r.items.length : 0)));
+        if (spec.grounded === 'flow' && flowModel) return (flowRowsFromModel(flowModel) || [{ items: [] }])[0].items.length;
+        return null;
+      })(),
       // "grounded" here = this slot WOULD draw its real model (a vertical card-stack) if form allowed.
       grounded: (spec.grounded === 'architecture' && !archDegenerate)
         || (spec.grounded === 'flow' && !flowAuthored && Boolean(flowModel)),
