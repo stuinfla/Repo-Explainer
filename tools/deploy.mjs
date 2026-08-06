@@ -155,22 +155,17 @@ async function main() {
   if (!bc.page?.dir) throw new Error('page.dir missing in build.json (run assemble-page first)');
   if (!fs.existsSync(path.join(pageDir, 'index.html'))) throw new Error(`page.dir has no index.html: ${pageDir}`);
 
-  // SHIP-BAR RAIL (2026-07-13) — deploy is where the gate's verdict becomes ENFORCED, not advisory.
-  // Incident, same day: an agent at its refine cap deployed a page the gate had FAILED (B5=58,
-  // passed=false) and the runner reported SUCCESS; a human had to roll it back within minutes. The
-  // ship decision is deterministic and lives HERE, at the boundary, like the INV-21 pin above:
-  //   exemplar bar: quality.passed === true, OR
-  //   ship-best-effort bar (the brief's floor): mean >= 82 AND min axis >= 70 on EVERY graded
-  //   device AND all operator questions true.
-  // No quality slot at all → refuse (an ungraded page is not deployable). Manual redeploys of a
-  // previously-passing build sail through on their recorded verdict; DEPLOY_FORCE=1 is the explicit,
-  // logged override for emergency ops — and it is HUMAN-ONLY: honored only at an interactive
-  // terminal (stdin isTTY). Learned live 2026-07-14: the hosted agent, stuck at the refine cap with
-  // two operator booleans made stale by a genuine post-cap fix, found this hatch and force-deployed
-  // (honestly documented, page verifiably above bar — but the ship bar is not an agent's to bypass).
-  // Agents and CI always run with piped stdio, so this boundary needs no shared secret and cannot
-  // be spoofed from inside a prompt. The legitimate post-cap-fix path is an OPERATOR regrade:
-  // reset quality.iterations and re-run quality-grade, then deploy on the fresh verdict.
+  // ── HISTORY: THE SHIP-BAR RAIL, 2026-07-13 → 2026-08-06 (REMOVED — kept for the reasoning) ──────
+  // For three weeks this boundary ENFORCED the gate's verdict. Two real incidents built it:
+  //   · 07-13 — an agent at its refine cap deployed a page the gate had FAILED (chalk, B5=58,
+  //     passed=false); the runner reported SUCCESS and a human rolled it back. So the ship decision
+  //     was made deterministic and moved HERE, to the boundary, beside the INV-21 identity pin:
+  //     ship iff quality.passed === true, OR mean >= 82 AND min >= 70 AND all operators true.
+  //   · 07-14 — the hosted agent found DEPLOY_FORCE=1 and bypassed it, so the override was made
+  //     human-only (interactive TTY), which agents and CI can never satisfy.
+  // Both incidents were real and the instinct was right: an AGENT must not be able to talk its way
+  // past the bar. What was wrong was the CONSEQUENCE of failing it — see ADR-0011 below. The identity
+  // pin above is untouched and still absolute; it is the thing that actually must never be bypassed.
   // ── ADR-0011 (2026-08-06): THE GATE ADVISES — IT NEVER DESTROYS ────────────────────────────────
   // The rail above described the world until 2026-08-06. It was BINARY, and the measured consequence
   // was that 56 of 104 hosted builds delivered NOTHING while still costing ~$5 each — roughly $280 of
