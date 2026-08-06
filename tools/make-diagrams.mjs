@@ -1287,6 +1287,52 @@ function defaultAltText(spec, dg, ep, name, fallbackDesc, archModel, asConcept) 
   return fallbackDesc || `${spec.title} diagram for ${name}`;
 }
 
+// ── DETERMINISTIC LEGIBILITY MEASUREMENT (ADR-0012 D5) ───────────────────────────────────────────
+// Diagrams fit to width on a phone, so a diagram's on-screen text size is a pure function of its
+// canvas width — knowable here, for free, before a single vision token is spent. Measured on the real
+// BHIL page (figure.diagram boundingBox = 312px at a 390px viewport):
+//     architecture 732px -> 5.5px · flow 611px -> 6.6px · big-idea 824px -> 4.9px · insight 928px -> 4.4px
+// and the ribbon that this session's first fix produced: 1385px -> 2.9px.
+//
+// NOTE WHAT IS *NOT* CLAIMED. There is no code-enforced absolute floor in this repo, and the four
+// shipped diagrams above sit at 4.4-6.6px — small, because the page gives every diagram a tap-to-zoom
+// lightbox. So an absolute threshold here would be an invented number dressed as a standard, and the
+// first version of this comment nearly asserted one from memory.
+//
+// What IS defensible is RELATIVE: a diagram far worse than its siblings on the same page is an
+// outlier the page's own design does not account for, and that is exactly what the 1385px ribbon was
+// (2.9px against siblings at 4.4-6.6). So: measure every diagram, RECORD the number in build.json so
+// the distribution becomes data rather than opinion (the ADR-0011 D4 pattern), and warn only on a
+// clear outlier. When enough builds carry these numbers, a real floor can be set from evidence.
+const MOBILE_CONTENT_PX = 312;      // measured, not assumed — see above
+const OUTLIER_RATIO = 0.62;         // flag a diagram below 62% of its siblings' median
+
+function legibilityOf(svg) {
+  const m = /viewBox="0 0 ([0-9.]+)/.exec(svg);
+  if (!m) return null;
+  const W = Number(m[1]);
+  const sizes = [...svg.matchAll(/font-size="([0-9.]+)"/g)].map((x) => Number(x[1]));
+  // eyebrows and captions are deliberately small mono; the CARD LABELS are what must read.
+  const labels = sizes.filter((x) => x > 12);
+  if (!labels.length || !W) return null;
+  return Math.round((Math.min(...labels) * (MOBILE_CONTENT_PX / W)) * 100) / 100;
+}
+
+function reportLegibility(merged) {
+  const entries = Object.entries(merged).filter(([, v]) => v && typeof v.mobileLabelPx === 'number');
+  if (entries.length < 2) return;
+  const vals = entries.map(([, v]) => v.mobileLabelPx).sort((a, b) => a - b);
+  const median = vals[Math.floor(vals.length / 2)];
+  process.stderr.write(`${TOOL}: mobile label size @${MOBILE_CONTENT_PX}px — `
+    + `${entries.map(([k, v]) => `${k.replace('Diagram', '')} ${v.mobileLabelPx}px`).join(' · ')}\n`);
+  for (const [k, v] of entries) {
+    if (v.mobileLabelPx < median * OUTLIER_RATIO) {
+      warn(`${k}: ${v.mobileLabelPx}px labels on mobile is a clear OUTLIER against its siblings (median ${median}px). `
+        + `Its canvas is disproportionately wide, so it will read worse than every other diagram on the page.`);
+    }
+  }
+}
+
 function main() {
   const argv = process.argv.slice(2);
   if (argv.length !== 1 || !argv[0]) die('usage: node tools/make-diagrams.mjs <build-dir>');
@@ -1506,8 +1552,11 @@ function main() {
     // `form` travels with the diagram so the INV-23 guarantee is AUDITABLE after the fact: a test can
     // assert the emitted set is pairwise distinct, and a grader verdict of "two same-form diagrams" can
     // be checked against what was actually drawn instead of being taken on faith.
-    merged[spec.key] = { svgPath, altText, asciiFallback: asciiSrc || rendered.desc, format: 'svg-vector-dark', xmllintOK: true, form: decision.family, formVariant: decision.variant, ...(conceptBack || {}) };
+    merged[spec.key] = { svgPath, altText, asciiFallback: asciiSrc || rendered.desc, format: 'svg-vector-dark', xmllintOK: true,
+      form: decision.family, formVariant: decision.variant, mobileLabelPx: legibilityOf(svg), ...(conceptBack || {}) };
   }
+
+  reportLegibility(merged);
 
   // THE REFUSAL — the hero animation. Emitted ONLY when the brain authored `visuals.heroAnim` for THIS
   // repo. No heroAnim => no band. It must never fall back to another repo's animation, and there is no
