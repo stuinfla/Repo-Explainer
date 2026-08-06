@@ -848,7 +848,7 @@ function buildArchModel(dg, sym) {
   const seenE = new Set();
   let edges = (Array.isArray(dg.internalEdges) ? dg.internalEdges : [])
     .filter((e) => e && e.from && e.to && e.from !== e.to && nameSet.has(e.from) && nameSet.has(e.to))
-    .filter((e) => { const k = e.from + ' ' + e.to; if (seenE.has(k)) return false; seenE.add(k); return true; });
+    .filter((e) => { const k = e.from + '\x00' + e.to; if (seenE.has(k)) return false; seenE.add(k); return true; });
 
   // full-graph degree → keep the most-connected modules when there are too many to draw legibly
   const fIn = {}, fOut = {};
@@ -985,22 +985,97 @@ function asciiRows(ascii) {
   return { title, rows };
 }
 
-// conceptVariant = the visual archetype used when this slot renders (or demotes) to renderConcept.
-// One distinct shape per key so two concept diagrams can never collapse to the same form (INV-23).
+// ── FORM FAMILIES (INV-23, ADR-0012) ─────────────────────────────────────────────────────────────
+// The COARSE layout shape a vision grader actually compares. It does not see "dependency graph" vs
+// "runtime sequence"; it sees "a vertical column of rounded boxes joined by downward arrows" — twice —
+// and caps B5 at 60 (quality-grade.mjs:158), which is BELOW the 70 ship floor, so the page becomes
+// unshippable no matter how good the other nine axes are.
+//
+// WHY THIS EXISTS (2026-08-06, PolymathWizard/BHIL-Colophon-Spec, runs 30857458852 + 30865218481):
+// the previous design assigned one distinct `conceptVariant` per KEY and reasoned that "pairwise
+// distinctness holds either way". It does not. That reasoning covered only the four CONCEPT variants
+// among themselves and never considered `renderArchitecture` and `renderFlow` — separate functions,
+// outside the variant table, BOTH of which emit a vertical card-stack since the 2026-07-30 portrait
+// (INV-18 mobile) fix. Any repo with a real dep-graph and a real flow got two vertical stacks and a
+// guaranteed refusal. Verified by rendering both SVGs from the failed build and looking at them.
+//
+// The cure is not a better static table — a static table cannot know which slots demote at runtime.
+// It is a RESOLVER: every slot declares the family it WOULD emit, collisions are resolved by priority
+// against an ordered preference list, and the emitted set is ASSERTED pairwise-distinct before a
+// single byte of SVG is written. This is a property code can decide for free; paying a stochastic
+// vision call to discover it — and paying a whole rebuild to react — was the actual defect.
+const FORM = {
+  VSTACK: 'vertical-stack',   // renderArchitecture · renderFlow · conceptColumn
+  HRUN: 'horizontal-run',     // conceptRibbon   — a pipeline reads L→R
+  RADIAL: 'radial',           // conceptOrbit    — hub + satellites
+  CONTAINMENT: 'containment', // conceptStrata   — nested frames
+};
+const VARIANT_FAMILY = { column: FORM.VSTACK, ribbon: FORM.HRUN, orbit: FORM.RADIAL, strata: FORM.CONTAINMENT };
+
+// conceptPrefs = ordered preference list of archetypes for this slot when it renders (or demotes) to
+// renderConcept. The resolver walks it and takes the first family not already claimed, so a slot always
+// lands on a SEMANTICALLY sensible shape rather than whatever is left over.
 const DIAGRAMS = [
+  // Architecture is grounded-pinned: INV-18 mandates a real dependency map, and the portrait stack is
+  // the mobile-correct geometry. It claims VSTACK first and never yields it.
+  // NOTE the trailing 'column' on every list. VSTACK is only occupied when a GROUNDED renderer claims
+  // it, so when nothing is grounded (a 0-edge graph with authored rows everywhere) it is free — and a
+  // list that never offers it starves the fourth slot. Caught by the all-demoted case in
+  // tests/diagram-form-diversity.test.mjs before this ever reached a build.
   { key: 'architectureDiagram', file: 'architecture.svg', title: 'Architecture', grounded: 'architecture',
-    conceptEyebrow: 'ARCHITECTURE', conceptHeading: 'How it is built', conceptVariant: 'strata' },
-  // bigIdea↔flow variants SWAPPED (2026-07-30, stuinfla-helix B5 cap): the grounded arch+flow
-  // renderers are now portrait card-stacks (INV-18 mobile fix), so a 'column' bigIdea made THREE
-  // vertical stacks on one page and re-tripped the form-repetition cap. bigIdea takes the
-  // horizontal 'ribbon'; demoted-flow takes 'column' — pairwise distinctness holds either way.
+    conceptEyebrow: 'ARCHITECTURE', conceptHeading: 'How it is built', conceptPrefs: ['strata', 'orbit', 'ribbon', 'column'] },
+  // A pipeline IS a left→right run, so 'ribbon' is the semantically right demotion for flow — not the
+  // 'column' it used to take, which is the exact family grounded-architecture already occupies.
   { key: 'flowDiagram', file: 'flow.svg', title: 'Process / Data Flow', grounded: 'flow',
-    conceptEyebrow: 'DATA FLOW', conceptHeading: 'What happens to your data', conceptVariant: 'column' },
+    conceptEyebrow: 'DATA FLOW', conceptHeading: 'What happens to your data', conceptPrefs: ['ribbon', 'column', 'strata', 'orbit'] },
+  // "How it all fits together" is a CONTAINMENT idea (zones inside one thing) — strata first. This also
+  // matches what the 2026-08-04 build actually drew and what graded well: a nested-frames big idea.
   { key: 'bigIdeaDiagram', file: 'big-idea.svg', title: 'Big Idea', grounded: null,
-    conceptEyebrow: 'THE BIG IDEA', conceptHeading: 'How it all fits together', conceptVariant: 'ribbon' },
+    conceptEyebrow: 'THE BIG IDEA', conceptHeading: 'How it all fits together', conceptPrefs: ['strata', 'ribbon', 'column', 'orbit'] },
   { key: 'insightDiagram', file: 'insight.svg', title: 'The Insight', grounded: null,
-    conceptEyebrow: 'THE INSIGHT', conceptHeading: 'The clever move', conceptVariant: 'orbit' },
+    conceptEyebrow: 'THE INSIGHT', conceptHeading: 'The clever move', conceptPrefs: ['orbit', 'ribbon', 'strata', 'column'] },
 ];
+
+// A grounded flow that must yield VSTACK keeps its REAL model — the same source, stage names and result
+// derived from the repo's actual entrypoints — re-expressed as a concept chain. Grounding is preserved;
+// only the SHAPE changes. One connected chain is ONE row of N items (see the note in main()).
+function flowRowsFromModel(model) {
+  if (!model || !Array.isArray(model.steps) || !model.steps.length) return null;
+  const labels = [model.source, ...model.steps.map((s) => s && s.name), model.result]
+    .map((l) => (l == null ? '' : String(l).trim())).filter(Boolean);
+  if (labels.length < 2) return null;
+  return [{ items: labels.map((label, i) => ({ label, colorIdx: i })), connectWithin: true }];
+}
+
+// THE RESOLVER. Input: the slots that will actually render, each declaring whether it renders grounded.
+// Output: a per-key decision { family, variant, demotedForForm } with a PAIRWISE-DISTINCT family set.
+// Deterministic and total: same inputs always produce the same assignment, and it never returns a
+// colliding set — it throws instead, so a form collision can never again reach the vision grader.
+function resolveForms(slots) {
+  const taken = new Map();   // family -> key that claimed it
+  const out = {};
+  // Pass 1 — grounded slots claim VSTACK in DIAGRAMS order (architecture first, so it wins the pin).
+  for (const s of slots) {
+    if (!s.grounded) continue;
+    if (!taken.has(FORM.VSTACK)) { taken.set(FORM.VSTACK, s.key); out[s.key] = { family: FORM.VSTACK, variant: null, demotedForForm: false }; }
+  }
+  // Pass 2 — everything else (including a grounded slot that lost the VSTACK race) takes the first
+  // free family from its own preference list.
+  for (const s of slots) {
+    if (out[s.key]) continue;
+    const pick = (s.conceptPrefs || []).find((v) => !taken.has(VARIANT_FAMILY[v]));
+    if (!pick) die(`${s.key}: no distinct diagram form remains (claimed: ${[...taken.keys()].join(', ')}). `
+      + `Every archetype is already used by another diagram — refusing to draw two diagrams of the same shape (INV-23).`);
+    taken.set(VARIANT_FAMILY[pick], s.key);
+    out[s.key] = { family: VARIANT_FAMILY[pick], variant: pick, demotedForForm: Boolean(s.grounded) };
+  }
+  // THE ASSERTION — the whole point. Pairwise distinctness is proven here, not hoped for downstream.
+  const fams = Object.values(out).map((d) => d.family);
+  if (new Set(fams).size !== fams.length) {
+    die(`INV-23 form resolver produced a colliding set (${fams.join(', ')}) — this is a bug in resolveForms, not in the repo being explained.`);
+  }
+  return out;
+}
 
 function defaultAltText(spec, dg, ep, name, fallbackDesc, archModel, asConcept) {
   // a demoted grounded diagram is a concept drawing now — never describe it as a dependency map / pipeline
@@ -1088,14 +1163,36 @@ function main() {
   const flowAuthored = Array.isArray((visualsIn.flowDiagram || {}).rows) && visualsIn.flowDiagram.rows.length > 0;
   const flowCaption = flowModel ? `${flowModel.steps.length} stages · derived from the project's ${ecos} entrypoints` : null;
 
+  // ── INV-23 FORM RESOLUTION (ADR-0012) ──────────────────────────────────────────────────────────
+  // Decided ONCE, for the whole page, BEFORE anything renders. Each slot declares the family it would
+  // emit; the resolver guarantees the emitted set is pairwise distinct or dies loudly. This is free and
+  // deterministic, and it replaces the old arrangement where a ~$0.30 vision call discovered the
+  // collision and a whole rebuild cycle reacted to it — usually too late, at the refine cap.
+  const renderSlots = DIAGRAMS
+    .filter((spec) => !(spec.grounded === 'flow' && skipFlow))
+    .map((spec) => ({
+      key: spec.key,
+      conceptPrefs: spec.conceptPrefs,
+      // "grounded" here = this slot WOULD draw its real model (a vertical card-stack) if form allowed.
+      grounded: (spec.grounded === 'architecture' && !archDegenerate)
+        || (spec.grounded === 'flow' && !flowAuthored && Boolean(flowModel)),
+    }));
+  const forms = resolveForms(renderSlots);
+  process.stderr.write(`${TOOL}: INV-23 forms — ${Object.entries(forms)
+    .map(([k, d]) => `${k.replace('Diagram', '')}:${d.family}${d.demotedForForm ? ' (demoted for form)' : ''}`).join(' · ')}\n`);
+
   for (const spec of DIAGRAMS) {
     if (spec.grounded === 'flow' && skipFlow) continue;  // library repo: no runtime flow to draw
     const existing = (visualsIn[spec.key] && typeof visualsIn[spec.key] === 'object') ? visualsIn[spec.key] : {};
+    const decision = forms[spec.key];
     let rendered, asciiSrc = null, conceptBack = null;
     // A grounded diagram falls through to the CONCEPT renderer when its grounded model has nothing to
-    // say (architecture with 0 edges) or when the brain authored something truer (a real runtime flow).
+    // say (architecture with 0 edges), when the brain authored something truer (a real runtime flow),
+    // or when the INV-23 resolver could not give it a distinct SHAPE (another slot already holds the
+    // vertical stack). The third case keeps the REAL model and changes only its layout.
     const asConcept = (spec.grounded === 'architecture' && archDegenerate)
-      || (spec.grounded === 'flow' && flowAuthored);
+      || (spec.grounded === 'flow' && flowAuthored)
+      || decision.demotedForForm;
     if (spec.grounded === 'architecture' && !asConcept) {
       rendered = renderArchitecture(`${name.toUpperCase()} · DEPENDENCY MAP`, 'Module dependency map', archModel, archCaption, PAL);
     } else if (spec.grounded === 'flow' && !asConcept) {
@@ -1113,6 +1210,14 @@ function main() {
             .filter((it) => it.label && String(it.label).trim()),
           connectWithin: r && r.connect !== false,
         })).filter((r) => r.items.length);
+      }
+      // A grounded flow demoted purely for FORM keeps its real, entrypoint-derived model — same source,
+      // same stage names, same result — re-expressed as a connected concept chain. It is not falling
+      // back to something invented; it is the same truth in a shape that does not duplicate another
+      // diagram. Only reached when the resolver could not hand it the vertical stack.
+      if ((!rows || !rows.length) && spec.grounded === 'flow' && decision.demotedForForm) {
+        rows = flowRowsFromModel(flowModel);
+        if (rows) warn(`flowDiagram demoted to '${decision.variant}' for INV-23 form diversity — real flow model preserved as a ${rows[0].items.length}-item chain`);
       }
       if ((!rows || !rows.length) && spec.grounded) {
         // A DEMOTED grounded diagram must have authored ROWS. Never fall back to .ascii here: for these
@@ -1141,7 +1246,7 @@ function main() {
         : spec.conceptHeading;
       // the brain's altText is the one-line TAKEAWAY — render it as the caption so the diagram tells a story
       const cap = (typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText.trim() : null;
-      rendered = renderConcept(eyebrow, heading, rows, cap, PAL, spec.conceptVariant);
+      rendered = renderConcept(eyebrow, heading, rows, cap, PAL, decision.variant);
       // round-trip the structured source + heading so re-running this station (e.g. a refine loop) redraws
       // identically WITHOUT a fresh brain call — and never reverts to the generic title.
       conceptBack = { rows: rows.map((r) => ({ items: r.items.map((it) => it.label), connect: r.connectWithin })), title: heading };
@@ -1153,7 +1258,10 @@ function main() {
     const svgPath = path.join(assetsDir, spec.file);
     fs.writeFileSync(svgPath, svg, 'utf8');
     assertXmllintClean(svgPath, spec.key);
-    merged[spec.key] = { svgPath, altText, asciiFallback: asciiSrc || rendered.desc, format: 'svg-vector-dark', xmllintOK: true, ...(conceptBack || {}) };
+    // `form` travels with the diagram so the INV-23 guarantee is AUDITABLE after the fact: a test can
+    // assert the emitted set is pairwise distinct, and a grader verdict of "two same-form diagrams" can
+    // be checked against what was actually drawn instead of being taken on faith.
+    merged[spec.key] = { svgPath, altText, asciiFallback: asciiSrc || rendered.desc, format: 'svg-vector-dark', xmllintOK: true, form: decision.family, formVariant: decision.variant, ...(conceptBack || {}) };
   }
 
   // THE REFUSAL — the hero animation. Emitted ONLY when the brain authored `visuals.heroAnim` for THIS

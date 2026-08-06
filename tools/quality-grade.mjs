@@ -150,6 +150,17 @@ GATE B — "Did someone who gives a shit make this?" (craft / anti-slop):
   regardless of how professionally lit, composed, or on-palette it is. Beauty without payload is
   the precise failure mode this criterion exists to kill. A REAL screenshot of the project's own
   UI/CLI/output, legible and annotated, automatically passes (a) — no other repo can have it.
+  THE CAP REQUIRES BOTH FAILURES — STATE THEM SEPARATELY BEFORE APPLYING IT. Write your verdict for
+  (a) and your verdict for (b) as two explicit sentences, each ending in PASS or FAIL, before you
+  invoke this cap. If either reads PASS, the cap DOES NOT APPLY and you must score B5 on its merits.
+  Why this instruction exists (2026-08-04, a real and costly miss): a hero raster showed labelled
+  binders, a legible handwritten note reading "Signal Decay Curve — worth keeping?", and THE SAME
+  NOTE faded and fallen on the floor — the project's entire thesis (a finding recorded, then lost)
+  told in pixels. The grader summarised it as "a generic desk-and-invoice scene", applied the cap,
+  and destroyed the build. It plainly passed (a). Read what is ACTUALLY IN the frame — the specific
+  props, text, and staged relationships — before you judge the genre of the picture. A scene that
+  merely LOOKS like a common stock genre (a desk, an office, paper) is NOT automatically swappable;
+  ask whether THESE props, with THESE labels, in THIS arrangement, could ship unchanged elsewhere.
   THE DIAGRAM-FORM INTERROGATION (INV-23, 2026-07-13): look at ALL the diagrams on the page
   TOGETHER and answer in your B5 rationale:
   (c) FORM DIVERSITY — do two or more diagrams share the same basic layout form (e.g. a vertical

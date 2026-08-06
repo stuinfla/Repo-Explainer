@@ -174,6 +174,21 @@ if (seo && (seo.topics?.length || seo.description)) {
     + `${seo.description ? `<p style="margin:4px 0"><b>Description:</b> ${esc(seo.description)}</p>` : ''}`;
 }
 
+// ── ADR-0011 D2 — THE HONEST NOTE ────────────────────────────────────────────────────────────────
+// A below-bar page now SHIPS (the gate advises, it never destroys), so this email has to say plainly
+// where it landed. Rules of tone, in order: lead with the fact that it is live and theirs; name the
+// weakest thing in WORDS a requester understands (never "B5"); state that the rest graded well when
+// it did; offer the re-run. No apology, no disclaimer, no hedging — a craftsperson's note. The
+// requester is better placed than a vision model to judge whether it is good enough for their purpose.
+const w = publish.weakest || null;
+const belowBarNote = publish.belowBar ? `
+<div style="border-left:3px solid #d9822b;background:#fdf6ee;padding:12px 16px;margin:0 0 20px;border-radius:0 4px 4px 0">
+  <p style="margin:0 0 8px;font-weight:600;color:#8a5620">Honest note — this one came through below the level we love.</p>
+  <p style="margin:0;color:#5c4630">It's live and it's yours, and everything in it is real. The part that let it down was
+  <b>${esc(w?.label || 'one area of the page')}</b>${typeof w?.score === 'number' ? ` — graded ${esc(w.score)} out of 100${w.device ? ` on ${esc(w.device)}` : ''}` : ''}; the rest scored well.
+  Have a look, and if that weak spot matters for how you plan to use it, just reply to this email and I'll rebuild it with a different approach. No charge.</p>
+</div>` : '';
+
 const html = `<!doctype html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1a1a1a;line-height:1.5;max-width:640px">
 <div style="border-bottom:2px solid #0e111b;padding:0 0 12px;margin:0 0 20px">
   <span style="font-size:18px;font-weight:700;letter-spacing:-0.01em">explainmyrepo</span>
@@ -181,6 +196,7 @@ const html = `<!doctype html><html><body style="font-family:-apple-system,Segoe 
 </div>
 <h2 style="margin:0 0 8px">Your repo explainer is ready ${overallPassed ? '✅' : '⚠️'}</h2>
 <p style="margin:0 0 16px;color:#555">${overallPassed ? 'It passed our dual quality gate on both mobile and desktop — an independent vision critic graded the real rendered page before we let it ship.' : 'See the scorecard below for any line flagged honestly under the bar — we show you the real grades, never a rubber stamp.'}</p>
+${belowBarNote}
 ${scoreRows ? `<h3 style="margin:16px 0 6px">Scorecard</h3>
 <table style="border-collapse:collapse;font-size:14px"><thead><tr>
 <th style="text-align:left;padding:4px 12px 4px 0">Device</th>

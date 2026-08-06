@@ -171,32 +171,49 @@ async function main() {
   // Agents and CI always run with piped stdio, so this boundary needs no shared secret and cannot
   // be spoofed from inside a prompt. The legitimate post-cap-fix path is an OPERATOR regrade:
   // reset quality.iterations and re-run quality-grade, then deploy on the fresh verdict.
-  if (process.env.DEPLOY_FORCE === '1' && process.stdin.isTTY) {
-    console.error('[deploy] DEPLOY_FORCE=1 — ship-bar rail bypassed EXPLICITLY (emergency override, interactive terminal)');
-  } else {
-    if (process.env.DEPLOY_FORCE === '1') {
-      console.error('[deploy] DEPLOY_FORCE=1 IGNORED — non-interactive context (agent/CI). The rail is human-only to bypass; fix the page and re-grade instead.');
+  // ── ADR-0011 (2026-08-06): THE GATE ADVISES — IT NEVER DESTROYS ────────────────────────────────
+  // The rail above described the world until 2026-08-06. It was BINARY, and the measured consequence
+  // was that 56 of 104 hosted builds delivered NOTHING while still costing ~$5 each — roughly $280 of
+  // rendered, graded, finished pages thrown away. PolymathWizard/BHIL-Colophon-Spec failed twice this
+  // way ($12.47, two complete pages, no delivery) on a SINGLE axis (B5), where the INV-22 raster cap
+  // had in fact been MISAPPLIED — the raster plainly passed the takeaway test, and the rubric caps
+  // only when a raster fails BOTH tests. A lone stochastic vision call, with no second opinion and no
+  // appeal, was authorised to destroy a paid-for artifact.
+  //
+  // Quality is now DISCLOSURE, not a delivery condition. Delivery is gated on INTEGRITY only:
+  //   · the page assembled (index.html exists — asserted above),
+  //   · the ADR-0007 source-identity invariant holds (asserted above; still an ABSOLUTE refusal),
+  //   · a scorecard exists, so we can tell the requester HONESTLY where it landed.
+  // Nothing about grading is relaxed: thresholds, rubric and `quality.passed` keep their exact
+  // meanings, and the receipt still records the true scorecard. We changed what a `false` CAUSES, not
+  // what it MEANS — which frees the grader to stay strict, because strictness no longer burns value.
+  const q = bc.quality;
+  if (!q || !Array.isArray(q.scorecard) || q.scorecard.length === 0) {
+    throw new Error('INTEGRITY: refusing to deploy — build.json has no quality scorecard. '
+      + 'We ship below-bar pages, but never a page we cannot honestly describe to the person receiving it (ADR-0011 D1).');
+  }
+
+  // Compute the disclosure the delivery email needs: which device/axis is weakest, in human terms.
+  const AXIS_LABEL = {
+    A1: 'how compelling the page looks', A2: 'storytelling', A3: 'taking a stranger from clueless to convinced',
+    A4: 'explaining why it matters to the reader', A5: 'completeness of the explanation',
+    A6: 'confidence about what to do next', B1: 'typography and hierarchy', B2: 'alignment and grid',
+    B3: 'spacing and rhythm', B4: 'overall polish', B5: 'the diagrams and imagery',
+  };
+  let weakest = null;
+  for (const dev of q.scorecard) {
+    for (const [axis, score] of Object.entries({ ...(dev.gateA || {}), ...(dev.gateB || {}) })) {
+      if (typeof score !== 'number') continue;
+      if (!weakest || score < weakest.score) weakest = { axis, score, device: dev.device, label: AXIS_LABEL[axis] || axis };
     }
-    const q = bc.quality;
-    if (!q || !Array.isArray(q.scorecard) || q.scorecard.length === 0) {
-      throw new Error('SHIP BAR: refusing to deploy — build.json has no quality scorecard (run quality-grade first; an ungraded page never ships).');
-    }
-    if (q.passed !== true) {
-      const failures = [];
-      for (const dev of q.scorecard) {
-        const axes = [...Object.values(dev.gateA || {}), ...Object.values(dev.gateB || {})].filter((n) => typeof n === 'number');
-        const mean = axes.reduce((a, b) => a + b, 0) / (axes.length || 1);
-        const min = Math.min(...axes);
-        const opsOk = Object.values(dev.operatorQuestions || {}).every(Boolean);
-        if (mean < 82) failures.push(`${dev.device}: mean ${mean.toFixed(1)} < 82`);
-        if (min < 70) failures.push(`${dev.device}: min axis ${min} < 70`);
-        if (!opsOk) failures.push(`${dev.device}: operator questions not all true`);
-      }
-      if (failures.length) {
-        throw new Error(`SHIP BAR: refusing to deploy — gate verdict is below the ship-best-effort floor (${failures.join('; ')}). Fix the page and re-grade; the bar is not negotiable at this boundary.`);
-      }
-      console.error('[deploy] ship-best-effort bar met (gate not exemplar-passed but mean>=82, min>=70, operators true) — shipping the best honest version');
-    }
+  }
+  const belowBar = q.passed !== true;
+  if (belowBar) {
+    console.error(`[deploy] ADR-0011 — shipping BELOW THE BAR (weakest: ${weakest?.device} ${weakest?.axis}=${weakest?.score}, "${weakest?.label}"). `
+      + 'The page is delivered with an honest note; the scorecard is unchanged and fully recorded.');
+  }
+  if (process.env.DEPLOY_FORCE === '1') {
+    console.error('[deploy] DEPLOY_FORCE is now a no-op — quality no longer blocks delivery (ADR-0011). Identity and integrity still do, and neither is overridable.');
   }
 
   const provider = await resolveProvider();
@@ -208,8 +225,16 @@ async function main() {
   const http200 = await verify200(liveUrl);
   if (!http200) throw new Error(`deployed to ${liveUrl} but it did not return 200 unauthenticated within timeout`);
 
-  mergeSlot(buildDir, 'publish', { liveUrl, http200: true });
-  return { liveUrl, http200: true, provider, slot: 'publish' };
+  // The disclosure travels with the publish record so tools/notify.mjs can tell the requester where
+  // this landed without re-deriving it, and so the build registry can measure WHICH axes actually
+  // hold pages back (ADR-0011 D4) instead of us guessing from anecdotes.
+  mergeSlot(buildDir, 'publish', {
+    liveUrl,
+    http200: true,
+    belowBar,
+    weakest: weakest ? { axis: weakest.axis, score: weakest.score, device: weakest.device, label: weakest.label } : null,
+  });
+  return { liveUrl, http200: true, provider, slot: 'publish', belowBar, weakest };
 }
 
 main()
