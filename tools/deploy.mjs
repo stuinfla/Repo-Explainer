@@ -1,9 +1,14 @@
 #!/usr/bin/env node
-// deploy.mjs — Station 8 tool #10: deploy the already-passed page to its own per-build URL.
+// deploy.mjs — Station 8 tool #10: deliver the assembled page to its own per-build URL.
+//
+// NOT "the already-passed page" (the wording until 2026-08-06). Since ADR-0011 the quality gate
+// ADVISES and never destroys: this boundary refuses on INTEGRITY only — an unassembled page, a
+// source-identity violation, or a missing scorecard — never on a low grade. A below-bar page is
+// delivered with its weakest axis disclosed to the requester.
 //
 // CONTRACT (tools/CONTRACT.md): node tools/deploy.mjs <build-dir>
-//   Reads (declared inputs):  page.dir, repo.slug   (+ deploy-provider token from env)
-//   Writes (own slot only):   publish.liveUrl, publish.http200
+//   Reads (declared inputs):  page.dir, repo.slug, quality.scorecard   (+ deploy-provider token from env)
+//   Writes (own slot only):   publish.liveUrl, publish.http200, publish.belowBar, publish.weakest
 //   stdout = ONE JSON result object; diagnostics → stderr; exit 0 iff ok:true, else non-zero.
 //
 // Provider-agnostic adapter, DEFAULT NETLIFY (clean {slug}-explainer.netlify.app subdomain, zero
@@ -195,13 +200,38 @@ async function main() {
     A6: 'confidence about what to do next', B1: 'typography and hierarchy', B2: 'alignment and grid',
     B3: 'spacing and rhythm', B4: 'overall polish', B5: 'the diagrams and imagery',
   };
-  let weakest = null;
+  // A numeric-axis scan alone MISATTRIBUTES. `quality.passed` can be false purely from an operator
+  // question or an INV-18 diagram failure (quality-grade.mjs) while every axis sits at 82+. Reporting
+  // "the part that let it down was spacing and rhythm — graded 83" when the truth was "the
+  // architecture diagram is invisible on mobile" is a confident, specific, wrong answer — the worst
+  // kind. Non-numeric failures are the REAL blocker when present, so they rank first.
+  const OPERATOR_LABEL = {
+    believeIUnderstand: 'whether a reader finishes believing they understand it',
+    approachable: 'how approachable the page feels',
+    explainsToNovice: 'explaining it to someone new to the subject',
+    architectureConfidence: 'confidence about how the thing is built',
+    makesMeSmile: 'the craft and delight of it',
+    zeroKnowledgeReader: 'being readable with zero prior knowledge',
+  };
+  // Order matters. A genuinely weak NUMBER is the most actionable thing to tell someone, so it wins
+  // whenever one sits below the 70 floor. Only when every axis is fine do the non-numeric blockers
+  // become the honest answer — and that is precisely the misattribution case this guards: `passed`
+  // false purely from an operator question or an INV-18 diagram failure, where naming "spacing and
+  // rhythm - 83" is a confident, specific, WRONG answer while the truth was an invisible diagram.
+  let lowestAxis = null, nonNumeric = null;
   for (const dev of q.scorecard) {
     for (const [axis, score] of Object.entries({ ...(dev.gateA || {}), ...(dev.gateB || {}) })) {
       if (typeof score !== 'number') continue;
-      if (!weakest || score < weakest.score) weakest = { axis, score, device: dev.device, label: AXIS_LABEL[axis] || axis };
+      if (!lowestAxis || score < lowestAxis.score) lowestAxis = { axis, score, device: dev.device, label: AXIS_LABEL[axis] || axis };
+    }
+    if (!nonNumeric && dev.inv18 && dev.inv18.passed === false) {
+      nonNumeric = { axis: 'INV-18', score: null, device: dev.device, label: 'the architecture and flow diagrams' };
+    }
+    for (const [op, ok] of Object.entries(dev.operatorQuestions || {})) {
+      if (ok === false && !nonNumeric) nonNumeric = { axis: `operator:${op}`, score: null, device: dev.device, label: OPERATOR_LABEL[op] || op };
     }
   }
+  const weakest = (lowestAxis && lowestAxis.score < 70) ? lowestAxis : (nonNumeric || lowestAxis);
   const belowBar = q.passed !== true;
   if (belowBar) {
     console.error(`[deploy] ADR-0011 — shipping BELOW THE BAR (weakest: ${weakest?.device} ${weakest?.axis}=${weakest?.score}, "${weakest?.label}"). `

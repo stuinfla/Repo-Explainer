@@ -181,12 +181,26 @@ if (seo && (seo.topics?.length || seo.description)) {
 // it did; offer the re-run. No apology, no disclaimer, no hedging — a craftsperson's note. The
 // requester is better placed than a vision model to judge whether it is good enough for their purpose.
 const w = publish.weakest || null;
+// "the rest scored well" MUST be conditional. Written unconditionally on 2026-08-06 and caught the
+// same day in adversarial review: a half-broken render (mean 45, several axes in the 40s) would ship
+// with an email naming ONE axis and asserting everything else was fine. This is the sole disclosure
+// channel — a template that lies precisely when the page is worst is worse than no note at all.
+// So: derive the real shape of the scorecard and describe THAT.
+const allAxes = scorecard.flatMap((d) => [...Object.values(d.gateA || {}), ...Object.values(d.gateB || {})])
+  .filter((n) => typeof n === 'number');
+const weakAxisCount = allAxes.filter((n) => n < 70).length;
+const overallMean = allAxes.length ? allAxes.reduce((a, b) => a + b, 0) / allAxes.length : null;
+const restLine = weakAxisCount > 1
+  ? `${weakAxisCount} areas came in under our bar${typeof overallMean === 'number' ? `, and the page averaged ${Math.round(overallMean)} out of 100` : ''} — this one needs another pass more than most`
+  : (typeof overallMean === 'number' && overallMean >= 82)
+    ? 'the rest of the page scored well'
+    : 'the rest of the page is solid but not our best work';
 const belowBarNote = publish.belowBar ? `
 <div style="border-left:3px solid #d9822b;background:#fdf6ee;padding:12px 16px;margin:0 0 20px;border-radius:0 4px 4px 0">
   <p style="margin:0 0 8px;font-weight:600;color:#8a5620">Honest note — this one came through below the level we love.</p>
   <p style="margin:0;color:#5c4630">It's live and it's yours, and everything in it is real. The part that let it down was
-  <b>${esc(w?.label || 'one area of the page')}</b>${typeof w?.score === 'number' ? ` — graded ${esc(w.score)} out of 100${w.device ? ` on ${esc(w.device)}` : ''}` : ''}; the rest scored well.
-  Have a look, and if that weak spot matters for how you plan to use it, just reply to this email and I'll rebuild it with a different approach. No charge.</p>
+  <b>${esc(w?.label || 'one area of the page')}</b>${typeof w?.score === 'number' ? ` — graded ${esc(w.score)} out of 100${w.device ? ` on ${esc(w.device)}` : ''}` : ''}; ${esc(restLine)}.
+  Have a look, and if that matters for how you plan to use it, just reply to this email and I'll rebuild it with a different approach. No charge.</p>
 </div>` : '';
 
 const html = `<!doctype html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1a1a1a;line-height:1.5;max-width:640px">

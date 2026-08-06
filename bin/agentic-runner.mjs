@@ -604,7 +604,12 @@ try {
 // (skipped when the main agent already fixed and documented via postCapManualFix), then ONE fresh
 // grade, then tools/deploy.mjs — the ship-bar rail stays the ONLY judge. Genuine below-bar
 // endings stay refused, honestly. Fires at most once per run; never on budget kills or crashes.
-if (exitCode === 0 && !killedForBudget && !liveUrl && !identityViolation) {
+// ADR-0011: `liveUrl` is no longer a reason to skip this block. Delivery is now unconditional on
+// quality, so a below-bar page arrives here ALREADY LIVE — and that is exactly the page the cure
+// lane exists to improve. classifyEndState distinguishes the two cases ('near-miss' = not yet
+// delivered, 'shipped-below-bar' = delivered and improvable); the redeploy is ratcheted so a live
+// page can only ever be replaced by a measurably better one.
+if (exitCode === 0 && !killedForBudget && !identityViolation) {
   try {
     const bc = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
     const endState = classifyEndState({
@@ -624,7 +629,7 @@ if (exitCode === 0 && !killedForBudget && !liveUrl && !identityViolation) {
         liveUrl = shipped.publish.liveUrl;
         log(`cure stage: redeploy succeeded — ${liveUrl}`);
       } else log(`cure stage: redeploy failed too (exit ${d.status}) — leaving run as failed`);
-    } else if (endState.cure === 'fix-and-regrade' && totalCostUsd < budgetUsd) {
+    } else if ((endState.cure === 'fix-and-regrade' || endState.cure === 'improve-and-redeploy') && totalCostUsd < budgetUsd) {
       await patchStatus('One fix from passing — running the automatic cure…');
       const q = bc.quality;
       const savedNote = q.postCapManualFix || null;
@@ -670,21 +675,47 @@ if (exitCode === 0 && !killedForBudget && !liveUrl && !identityViolation) {
         };
         fs.writeFileSync(buildJsonPath, JSON.stringify(after, null, 2) + '\n');
         if (g.status === 0) {
-          log(`cure stage: fresh verification grade complete (passed=${after.quality?.passed}) — the ship-bar rail now judges`);
-          const d = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'deploy.mjs'), buildDir],
-            { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: CURE.DEPLOY_WALL_MS });
-          const shipped = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-          if (d.status === 0 && shipped.publish?.liveUrl && shipped.publish?.http200) {
-            liveUrl = shipped.publish.liveUrl;
-            log(`cure stage: CURED AND SHIPPED — ${liveUrl}`);
+          // THE RATCHET (ADR-0011 + 2026-08-06 adversarial review). When the page is ALREADY LIVE,
+          // a redeploy REPLACES something the customer already has at a URL they may already have
+          // shared. This project's own history records that the refine loop can regress, so an
+          // unconditional redeploy would let an automatic "cure" downgrade a delivered page.
+          // Therefore: measure, and only replace on a strictly better verdict. Delivery is a floor
+          // that is never given back — the cure may raise the page, never lower it.
+          const scoreOf = (qq) => {
+            const devs = Array.isArray(qq?.scorecard) ? qq.scorecard : [];
+            const axes = devs.flatMap((d2) => [...Object.values(d2.gateA || {}), ...Object.values(d2.gateB || {})])
+              .filter((n) => typeof n === 'number');
+            if (!axes.length) return null;
+            return { min: Math.min(...axes), mean: axes.reduce((a, b) => a + b, 0) / axes.length };
+          };
+          const wasLive = Boolean(liveUrl);
+          const pre = scoreOf(before.quality);
+          const post = scoreOf(after.quality);
+          const improved = !pre || !post
+            ? false
+            : (post.min > pre.min) || (post.min === pre.min && post.mean > pre.mean + 0.5);
+          if (wasLive && !improved) {
+            log(`cure stage: the cure did NOT improve the page (min ${pre?.min}→${post?.min}, mean ${pre?.mean?.toFixed(1)}→${post?.mean?.toFixed(1)}) `
+              + `— KEEPING the already-delivered version. A live page is never replaced by a worse one.`);
           } else {
-            log(`cure stage: rail still refuses after the cure (deploy exit ${d.status}) — refusal stands, honestly`);
+            log(`cure stage: fresh verification grade complete (passed=${after.quality?.passed}${pre && post ? `, min ${pre.min}→${post.min}, mean ${pre.mean.toFixed(1)}→${post.mean.toFixed(1)}` : ''}) — delivering`);
+            const d = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'deploy.mjs'), buildDir],
+              { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: CURE.DEPLOY_WALL_MS });
+            const shipped = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
+            if (d.status === 0 && shipped.publish?.liveUrl && shipped.publish?.http200) {
+              liveUrl = shipped.publish.liveUrl;
+              log(`cure stage: ${wasLive ? 'IMPROVED AND REDEPLOYED' : 'CURED AND SHIPPED'} — ${liveUrl}`);
+            } else if (wasLive) {
+              log(`cure stage: redeploy of the improved page failed (exit ${d.status}) — the originally delivered page is still live and untouched`);
+            } else {
+              log(`cure stage: deploy failed after the cure (exit ${d.status}) — integrity refusal stands, honestly`);
+            }
           }
         } else {
           log(`cure stage: verification grade errored (exit ${g.status}) — run outcome unchanged`);
         }
       }
-    } else if (endState.cure === 'fix-and-regrade') {
+    } else if (endState.cure === 'fix-and-regrade' || endState.cure === 'improve-and-redeploy') {
       log(`cure stage: near-miss but $ budget already spent ($${totalCostUsd.toFixed(2)} of $${budgetUsd}) — holding honestly instead of overspending`);
     }
   } catch (e) { log(`cure stage: skipped on error (${e?.message || e}) — run outcome unchanged`); }

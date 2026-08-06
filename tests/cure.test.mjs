@@ -97,7 +97,9 @@ test('an agent-documented postCapManualFix is honored as near-miss even outside 
 });
 
 test('terminal states never cure: shipped, identity violation, budget kill, crash, graded-pass-undeployed routes to redeploy', () => {
-  assert.equal(classifyEndState({ ...baseState, liveUrl: 'https://x.netlify.app', quality: q66hex }).cls, 'shipped');
+  // A live URL is terminal only when the page PASSED. Below-bar-but-delivered is handled by the
+  // improve-and-redeploy lane below (ADR-0011) — see the next test.
+  assert.equal(classifyEndState({ ...baseState, liveUrl: 'https://x.netlify.app', quality: { ...q66hex, passed: true } }).cls, 'shipped');
   assert.equal(classifyEndState({ ...baseState, identityViolation: 'swap', quality: q66hex }).cls, 'identity-violation');
   assert.equal(classifyEndState({ ...baseState, killedForBudget: true, quality: q66hex }).cls, 'budget-exhausted');
   assert.equal(classifyEndState({ ...baseState, exitCode: 1, quality: q66hex }).cls, 'crash');
@@ -105,6 +107,36 @@ test('terminal states never cure: shipped, identity violation, budget kill, cras
   const r = classifyEndState({ ...baseState, quality: passing });
   assert.equal(r.cls, 'graded-pass-undeployed');
   assert.equal(r.cure, 'redeploy');
+});
+
+// ── ADR-0011 REGRESSION GUARD ────────────────────────────────────────────────────────────────────
+// Caught in adversarial review on 2026-08-06, hours after ADR-0011 shipped and before any customer
+// build ran. Telling the agent to deploy at the refine cap means EVERY below-bar ending now arrives
+// with liveUrl set — and classifyEndState short-circuited on liveUrl, so the entire fix-and-regrade
+// lane (built 2026-07-19 as the systemic fix for the 07/15-07/17 failure streak, unit-tested against
+// three real incidents) went unreachable overnight. A near-miss that used to be repaired to ~90 for
+// ~$1 would instead ship at 84 with an email offering the customer a full-cost manual rebuild:
+// replacing an automatic repair that already exists, is tested, and is already paid for.
+test('ADR-0011 — a DELIVERED but below-bar page still reaches the cure lane (deliver, THEN improve)', () => {
+  const r = classifyEndState({ ...baseState, liveUrl: 'https://x.netlify.app', quality: q66hex });
+  assert.equal(r.cls, 'shipped-below-bar',
+    'a live URL must no longer short-circuit the cure — that silently killed the whole repair lane');
+  assert.equal(r.cure, 'improve-and-redeploy');
+  assert.ok(r.weaknesses.length >= 1, 'the cure agent needs named weaknesses to work on');
+});
+
+test('ADR-0011 — a delivered page with nothing nameable to fix is left alone (no pointless cure spend)', () => {
+  const noNamedWeakness = { passed: false, iterations: 3, scorecard: [], refineNotes: [] };
+  const r = classifyEndState({ ...baseState, liveUrl: 'https://x.netlify.app', quality: noNamedWeakness });
+  assert.equal(r.cure, false, 'without a named weakness there is nothing for a cure agent to act on');
+});
+
+test('ADR-0011 — the runner RATCHETS the redeploy: a live page is never replaced by a worse one', () => {
+  const src = read('bin/agentic-runner.mjs');
+  assert.match(src, /A live page is never replaced by a worse one/,
+    'the ratchet must be present — the refine loop can regress, and every below-bar email invites a re-run');
+  assert.match(src, /KEEPING the already-delivered version/,
+    'the no-improvement branch must keep what the customer already has');
 });
 
 test('INV-18 failure is a named weakness', () => {

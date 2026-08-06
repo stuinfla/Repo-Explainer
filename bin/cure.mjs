@@ -57,7 +57,24 @@ export function namedWeaknesses(quality) {
 // Returns { cls, cure, weaknesses? } — cure is false, 'redeploy', or 'fix-and-regrade'.
 export function classifyEndState(s) {
   if (s.identityViolation) return { cls: 'identity-violation', cure: false };
-  if (s.liveUrl) return { cls: 'shipped', cure: false };
+  // ADR-0011 (2026-08-06) — a live URL no longer means "done". Delivery is now unconditional on
+  // quality, so EVERY below-bar ending arrives here with liveUrl set. Short-circuiting on liveUrl
+  // therefore made the whole fix-and-regrade lane — the deterministic near-miss cure built
+  // 2026-07-19 as the systemic fix for the 07/15-07/17 streak, unit-tested against three real
+  // incidents — unreachable overnight. A near-miss that used to be repaired to ~90 for ~$1 would
+  // have shipped at 84 with an email offering the customer a full-cost manual rebuild: replacing an
+  // automatic repair that already exists, is already tested, and is already paid for.
+  // Caught in adversarial review the same day, before any customer build ran.
+  //
+  // The order is DELIVER, THEN IMPROVE. The page is already live and the customer already has it —
+  // that floor is never given back. The cure can only raise the page from there, and the runner
+  // redeploys ONLY on a strictly better verdict, so this can never downgrade what was delivered.
+  if (s.liveUrl) {
+    if (s.quality?.passed === true) return { cls: 'shipped', cure: false };
+    const weaknesses = namedWeaknesses(s.quality);
+    if (!weaknesses.length) return { cls: 'shipped', cure: false };
+    return { cls: 'shipped-below-bar', cure: 'improve-and-redeploy', weaknesses };
+  }
   if (s.killedForBudget) return { cls: 'budget-exhausted', cure: false };
   if (s.spawnError || s.exitCode !== 0) return { cls: 'crash', cure: false };
   const q = s.quality;
