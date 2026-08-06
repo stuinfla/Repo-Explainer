@@ -395,7 +395,9 @@ THE SOURCE-IDENTITY LAW (INV-21 — overrides every other instruction in this br
 Ship mode: --ship-best-effort semantics — if you cannot reach the exemplar bar (mean>=90/min>=85/all six operators) after a reasonable refine attempt, ship the best HONEST version you have (the SHIP_OPERATORS bar: mean>=82, min>=70, real legible diagrams, comprehension operators YES) rather than nothing. The one thing you must NEVER ship broken is the mandatory architecture + flow diagrams (INV-18) — hold rather than ship if those didn't render as real vectors.
 Do NOT publish a separate GitHub repo for this build (skip that station — no write-scoped GitHub token is provisioned in this hosted context, by design).
 Do NOT run the notify station (station 9) — sending the submitter's email is handled OUTSIDE your process; you have no SMTP credentials and should not need them. Your job ends once quality-grade + deploy are done and build.json's publish.liveUrl is set.
-The refine loop is capped at 3 total quality-grade calls (1 initial + 2 refines) and this is now ENFORCED by the tool itself, not just this instruction — a 4th call returns the prior scorecard unchanged at zero cost rather than re-grading. Do not try to work around it. At the cap, run deploy: if the ship-bar rail accepts, you are done. If the rail REFUSES on a weakness the final scorecard NAMES (a specific axis, operator question, or diagram), apply that one surgical fix, re-run assemble-page, and write a short factual note of exactly what you fixed and why it addresses the named weakness to quality.postCapManualFix in build.json — then END the run (report ok:false, reason "post-cap fix awaiting runner verification"). The RUNNER — trusted code outside your process — spends exactly ONE fresh verification grade on a documented fix and deploys through the same rail if it now passes. Never bypass the rail; document your fix and stop.
+The refine loop is capped at 3 total quality-grade calls (1 initial + 2 refines) and this is now ENFORCED by the tool itself, not just this instruction — a 4th call returns the prior scorecard unchanged at zero cost rather than re-grading. Do not try to work around it. At the cap, RUN DEPLOY AND YOU ARE DONE.
+DELIVERY IS NO LONGER CONDITIONAL ON THE SCORE (ADR-0011, 2026-08-06). deploy.mjs refuses only on INTEGRITY — a page that did not assemble, a source-identity violation, or a missing scorecard. It does NOT refuse on a low grade. A below-bar page ships to its live URL and the requester gets an honest note naming the weakest axis and an offer to re-run. Before this change, 56 of 104 hosted builds delivered NOTHING at ~$5 each, because one weak axis could veto an otherwise-finished page — so the most valuable thing you can do at the cap is DELIVER, not agonise.
+Two consequences for how you work. FIRST: there is no post-cap rescue dance any more. Do not write quality.postCapManualFix, do not end with ok:false hoping a runner re-grade saves you, and do not try to force a deploy — there is nothing left to force past. Run deploy, confirm publish.liveUrl is set, report ok:true. SECOND, and more important: because the score no longer gates delivery, you have NOTHING to gain by making the page look better to the grader than it is. The scorecard is now DISCLOSURE — it goes to the requester verbatim. Grade-chasing, flattering self-assessments, and cosmetic changes aimed at the rubric rather than the reader are now pure waste and actively dishonest. Spend your remaining effort on what genuinely helps a stranger understand this repo, and let the number land where it honestly lands.
 
 You have an approximate budget of ${budgetMin} minutes and $${budgetUsd}. Track your own elapsed time and cost as you work. This repo's actual size/complexity is unknown to me in advance — YOU are the one who discovers it by reading the repo, so budget your own effort accordingly: for a small repo, take your time and polish; for a large/deep monorepo, work faster and be willing to cap exhaustiveness (e.g. don't try to full-text-sweep every file in a 10,000-file repo — sample the important ones: READMEs, top-level docs, the most-referenced components) rather than trying to be exhaustive and running out of budget.
 
@@ -626,8 +628,17 @@ if (exitCode === 0 && !killedForBudget && !liveUrl && !identityViolation) {
       await patchStatus('One fix from passing — running the automatic cure…');
       const q = bc.quality;
       const savedNote = q.postCapManualFix || null;
-      let cureAgentOk = !!savedNote; // a documented in-run fix needs no cure agent — verify it directly
-      if (!cureAgentOk) {
+      // 2026-08-06: this used to read `let cureAgentOk = !!savedNote` — i.e. if the MAIN agent wrote a
+      // note claiming it had fixed the problem, the independent cure agent was SKIPPED and the runner
+      // spent its single verification grade on the agent's own self-diagnosis. On 2026-08-03 that
+      // self-diagnosis was wrong (it moved the flow diagram INTO the form family the big-idea diagram
+      // already occupied, re-tripping the very cap it was trying to clear) and no second actor existed
+      // to catch it. That is the one-shot failure mode the cure stage was built to eliminate,
+      // reappearing one level up: an agent could disarm its own reviewer by writing a claim to disk.
+      // The cure agent now ALWAYS runs; a documented note is CONTEXT for it, never a substitute for it.
+      let cureAgentOk = false;
+      if (savedNote) log('cure stage: main agent documented a post-cap fix — passing it to the cure agent as context, NOT accepting it in place of one');
+      {
         log(`cure stage: spawning the narrow cure agent (fix ONLY: ${endState.weaknesses.map((w) => `${w.device}/${w.name}`).join(', ')})`);
         const curePrompt = buildCurePrompt({ repoUrl, buildDir, weaknesses: endState.weaknesses, quality: q });
         const c = spawnSync(claudeBin, [
@@ -643,8 +654,6 @@ if (exitCode === 0 && !killedForBudget && !liveUrl && !identityViolation) {
         } catch { log(`cure stage: cure agent exit ${c.status} (unparseable output — cost uncounted)`); }
         cureAgentOk = c.status === 0;
         if (!cureAgentOk) log('cure stage: cure agent failed — an unchanged page is not regraded (that would be dice-rolling, not verification)');
-      } else {
-        log('cure stage: agent documented an in-run post-cap fix — skipping the cure agent, verifying the documented fix directly');
       }
       if (cureAgentOk) {
         const before = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
@@ -657,7 +666,7 @@ if (exitCode === 0 && !killedForBudget && !liveUrl && !identityViolation) {
         after.quality.cure = {
           authorizedBy: 'runner (deterministic near-miss classification, bin/cure.mjs)',
           endState: endState.cls, weaknesses: endState.weaknesses.length,
-          cureAgentSpawned: !savedNote, gradeExit: g.status,
+          cureAgentSpawned: true, mainAgentNote: Boolean(savedNote), gradeExit: g.status,
         };
         fs.writeFileSync(buildJsonPath, JSON.stringify(after, null, 2) + '\n');
         if (g.status === 0) {

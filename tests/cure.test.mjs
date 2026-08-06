@@ -134,18 +134,47 @@ test('agentic-runner imports and uses the classifier — the cure stage exists',
   assert.match(src, /classifyEndState\(/);
 });
 
-test('the runner prompt no longer says "ship immediately" and teaches quality.postCapManualFix', () => {
+// ── ADR-0011 RETIRED THE POST-CAP PROTOCOL ───────────────────────────────────────────────────────
+// These three tests used to be bare `assert.match(src, /postCapManualFix/)` greps asserting that the
+// runner prompt, SKILL.md and the cap note all TAUGHT the protocol. When ADR-0011 removed it and the
+// prose was rewritten to say "do NOT write quality.postCapManualFix", all three still PASSED — the
+// substring was present while the meaning had inverted. A test that passes on the presence of a
+// token, regardless of what the surrounding sentence claims, cannot fail on broken code.
+// They now assert the INSTRUCTION, not the token.
+const teachesDeployAtCap = (src, label) => {
+  assert.doesNotMatch(src, /capReached, ship immediately/, `${label}: the pre-2026-07 dead-end must stay gone`);
+  assert.match(src, /ADR-0011/, `${label}: must cite the decision that governs what happens at the cap`);
+  assert.match(src, /do not write .*postCapManualFix|do NOT write .*postCapManualFix|not write quality\.postCapManualFix|do not write that key/i,
+    `${label}: must explicitly retire the post-cap key, not merely stop mentioning it`);
+};
+
+test('ADR-0011 — the runner prompt tells the agent to DEPLOY at the cap, and retires postCapManualFix', () => {
   const src = read('bin/agentic-runner.mjs');
-  assert.doesNotMatch(src, /capReached, ship immediately/);
-  assert.match(src, /postCapManualFix/);
+  teachesDeployAtCap(src, 'agentic-runner.mjs');
+  assert.match(src, /RUN DEPLOY AND YOU ARE DONE/, 'the cap instruction must be unambiguous');
 });
 
-test('SKILL.md documents the post-cap protocol (the agent-facing half)', () => {
-  assert.match(read('skills/explainmyrepo/SKILL.md'), /postCapManualFix/);
+test('ADR-0011 — SKILL.md (the agent-facing half) teaches deliver-at-cap, not the retired rescue dance', () => {
+  const src = read('skills/explainmyrepo/SKILL.md');
+  teachesDeployAtCap(src, 'SKILL.md');
+  assert.match(src, /DISCLOSURE/, 'SKILL.md must state that the scorecard is disclosure, not a gate');
 });
 
-test('quality-grade cap note points to the protocol instead of a dead-end "ship now"', () => {
-  assert.match(read('tools/quality-grade.mjs'), /postCapManualFix/);
+test('ADR-0011 — the quality-grade cap note tells the agent to deploy, not to await a rescue', () => {
+  const src = read('tools/quality-grade.mjs');
+  teachesDeployAtCap(src, 'quality-grade.mjs');
+});
+
+test('ADR-0011 — the cure agent can NO LONGER be disarmed by the main agent writing a note', () => {
+  const src = read('bin/agentic-runner.mjs');
+  // Match EXECUTABLE code only — the history comment above the fix legitimately quotes the old line,
+  // and a naive substring check would fail on the very comment that explains the fix.
+  const codeLines = src.split('\n').filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*'));
+  const disarmed = codeLines.filter((l) => /cureAgentOk\s*=\s*!!\s*savedNote/.test(l));
+  assert.deepEqual(disarmed, [],
+    `a self-authored note must never substitute for the independent cure agent (2026-08-03 incident):\n${disarmed.join('\n')}`);
+  assert.match(src, /NOT accepting it in place of one/,
+    'the runner must say plainly that a documented note is context, not a substitute');
 });
 
 // 2026-07-19, run 29714490286 (the cure stage's own E2E proof run): the Anthropic key had hit its

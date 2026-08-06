@@ -915,7 +915,7 @@ async function main() {
       passed: !!capped.passed,
       headline: {},
       refineNoteCount: 0,
-      note: 'Refine iteration cap reached — this is the FINAL grade; do not call quality-grade again. If it passes the ship gate, ship now (--ship-best-effort semantics). If it FAILS on a NAMED weakness: apply that one surgical fix, re-run assemble-page, document exactly what you fixed in quality.postCapManualFix in build.json, and END the run — the runner spends one verification grade on a documented fix and the ship-bar rail judges the fresh verdict.',
+      note: 'Refine iteration cap reached — this is the FINAL grade; do not call quality-grade again. Now RUN DEPLOY AND FINISH. Since ADR-0011 (2026-08-06) the score no longer gates delivery: deploy refuses only on integrity (unassembled page, identity violation, missing scorecard), never on a low grade, and a below-bar page ships with an honest note to the requester naming its weakest axis. There is no post-cap rescue protocol any more — do not write quality.postCapManualFix, do not end with ok:false hoping for a runner re-grade. This grade is DISCLOSURE, sent to the requester verbatim, so there is nothing to gain by flattering it.',
     }, null);
   }
 
