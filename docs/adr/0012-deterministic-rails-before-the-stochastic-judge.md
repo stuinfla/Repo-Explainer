@@ -1,6 +1,6 @@
 # ADR-0012: Decidable properties are decided in code, before the stochastic judge
 
-**Status**: Accepted with a known open risk (adversarial review round 1 — Fable 5, 2026-08-06; see Review. GPT-5.6-Sol could not run: codex usage limit.)
+**Status**: Accepted (adversarial review round 1 — Fable 5, 2026-08-06. Findings 2–5 resolved by moving the form pin; see "The pin was on the wrong diagram". GPT-5.6-Sol could not run: codex usage limit, so a second reviewer is still owed.)
 **Date**: 2026-08-06
 **Updated**: 2026-08-06
 **Authors**: Claude Code (Opus 5), directed by Stuart Kerr
@@ -67,9 +67,9 @@ The coarse layout shape a vision grader actually compares, not the semantic name
 
 | Family | Emitted by |
 |---|---|
-| `vertical-stack` | `renderArchitecture` · `renderFlow` · `conceptColumn` |
+| `vertical-stack` | `renderFlow` · `conceptColumn` |
+| `radial` | **`renderArchitectureRadial`** (grounded) · `conceptOrbit` |
 | `horizontal-run` | `conceptRibbon` |
-| `radial` | `conceptOrbit` |
 | `containment` | `conceptStrata` |
 
 ### D2 — Assignment is RESOLVED at runtime, never assumed
@@ -190,4 +190,60 @@ rather than a nice-to-have: **give grounded architecture a RADIAL form** built f
 more faithful than the vertical stack, not less. It frees `vertical-stack` for `renderFlow`, which
 keeps its full IN/OUT annotations, stays portrait, and is semantically exact. Every open finding here
 — 2, 3, 4 and 5 — collapses into that one change.
+
+---
+
+## The pin was on the wrong diagram (2026-08-06, resolving findings 2–5)
+
+The first implementation pinned architecture to `vertical-stack` and made **flow** yield. Every open
+finding traced back to that single choice, and each attempted patch made the next one worse:
+
+1. Flow demoted to a `ribbon` → **1385px wide, 3.66px labels at 390px** (measured).
+2. Banning wide ribbons pushed it to `strata` → a *sequence* drawn as concentric containment, a claim
+   its own `asciiFallback` contradicted.
+3. Either way, `renderFlow`'s IN/OUT artifact annotations — the densest real information on the page —
+   were destroyed to satisfy a form rule.
+
+**Moving the pin dissolves all three.** `renderArchitectureRadial` draws the grounded dependency map
+as hub-and-spokes, which is what a dependency graph *is*: `buildArchModel` already computes `hub` as
+the module the most others depend on. That is a more faithful drawing than the tier-stack, not a
+compromise — and it leaves `vertical-stack` free for `renderFlow`, which is semantically exact for a
+sequence and keeps every annotation.
+
+Result: **four grounded-or-authored diagrams, four distinct families, zero demotions.**
+
+| Slot | Form | Renderer | Grounded |
+|---|---|---|---|
+| architecture | `radial` | `renderArchitectureRadial` | real dep-graph, hub, dependent counts, externals |
+| flow | `vertical-stack` | `renderFlow` | real entrypoints, with IN/OUT per stage |
+| big idea | `containment` | `conceptStrata` | brain-authored rows |
+| insight | `horizontal-run` | `conceptRibbon` | brain-authored rows |
+
+### What the geometry cost, and what fixed it
+
+The radial layout took two corrections, both found by **rendering it and looking**, not by reasoning:
+
+- **v1 — hub overlapped its outermost satellites.** At a wide fan the extreme satellite sits nearly
+  level with the hub (`cos(1.27) ≈ 0.30`), so its vertical offset fell short of the two half-heights.
+- **v2 — satellites overlapped each other.** A pure arc *cannot* guarantee spacing: at radius 214 with
+  a 1.8 rad fan, adjacent cards are `1.8/(m-1)×214` apart — 128px at m=4 — while a card is 196px wide.
+  Tuning the radius or the spread only changes *which* module count collides.
+
+**v3 makes collision-freedom a property of the layout rather than a lucky constant**: satellites sit in
+centred rows of at most three, each joined to the hub by its own spoke. It still reads as
+hub-and-spokes, stays portrait for mobile, and two cards cannot overlap by construction. Pinned by a
+test that renders 2, 3, 4, 5, 7 and 9 modules and asserts zero overlapping card pairs.
+
+> The first overlap detector reported 13 collisions on a layout that was actually clean — it counted
+> `glassPanel`'s aura, depth, fill and sheen rects as four separate cards. A detector that cannot tell
+> a card from its own shadow is worse than no detector; it now matches only the fill rect
+> (`filter="url(#cardSh)"`).
+
+### Still open
+
+Finding 1 (the taxonomy has two linear-chain families and no `field`/`grid`) is **narrower now but not
+closed**: with nothing demoting on the common path, `vertical-stack` and `horizontal-run` are far less
+likely to co-occur — but they still can when two slots demote. ADR-0011 D4 records every emitted form,
+so if a grader calls two diagrams same-form while the receipts say otherwise, that disagreement is now
+visible in the data rather than invisible.
 

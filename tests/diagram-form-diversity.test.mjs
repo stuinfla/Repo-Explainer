@@ -90,35 +90,50 @@ test('INV-23 — the architecture and flow diagrams specifically never share a f
   const v = visualsOf(dir);
   assert.notEqual(v.architectureDiagram.form, v.flowDiagram.form,
     'architecture and flow collapsed to the same visual form — this is the exact 2026-08-04 failure');
-  // Architecture keeps the grounded vertical stack (INV-18 + the mobile-portrait geometry); flow yields.
-  assert.equal(v.architectureDiagram.form, 'vertical-stack');
-  // Flow takes a PORTRAIT archetype, never the ribbon, because this chain is long. Measured
-  // 2026-08-06: conceptRibbon is the only archetype whose width grows with item count (3 items 731px,
-  // 6 items 1385px), and diagrams fit to width on a 390px phone — a 1385px ribbon renders 13px labels
-  // at ~3.7px, versus the 568px grounded architecture diagram that graded as legible.
-  assert.notEqual(v.flowDiagram.form, 'horizontal-run',
-    'a long flow chain must never take the ribbon — that is the widest archetype and it is illegible on mobile');
-  assert.ok(['containment', 'radial'].includes(v.flowDiagram.form),
-    `expected a portrait archetype for a long flow chain, got ${v.flowDiagram.form}`);
+  // The pin now sits where it belongs. Architecture is RADIAL (a dependency map IS hub-and-spokes,
+  // and buildArchModel already computes the hub), which leaves vertical-stack free for the grounded
+  // renderFlow. NEITHER diagram demotes, so neither is drawn in a form that misdescribes it.
+  assert.equal(v.architectureDiagram.form, 'radial');
+  assert.equal(v.flowDiagram.form, 'vertical-stack');
 });
 
-test('INV-23 — a SHORT flow chain may still take the ribbon (the width rule is about length, not the form)', () => {
-  const dir = makeFixture({ flowRows: [{ items: ['input', 'seal', 'out'], connect: true }] });
-  run(dir);
-  const v = visualsOf(dir);
-  assert.equal(v.flowDiagram.form, 'horizontal-run',
-    'a 3-item chain fits horizontally — the rule bans wide ribbons, not ribbons');
+test('INV-23 — the ribbon width rule still guards any slot that demotes (bans WIDE ribbons, not ribbons)', () => {
+  // Measured 2026-08-06: conceptRibbon is the only archetype whose width grows with item count
+  // (3 items 731px, 4 = 949px, 5 = 1167px, 6 = 1385px); every other archetype stays portrait. At 390px
+  // fit-to-width a 1385px ribbon renders 13px labels at 3.66px, against the 568px grounded
+  // architecture diagram that graded as legible. RIBBON_MAX_ITEMS keeps long chains off it.
+  const src = fs.readFileSync(TOOL, 'utf8');
+  assert.match(src, /RIBBON_MAX_ITEMS/, 'the width rule must exist');
+  assert.match(src, /ribbonIsSafe/, 'and must be consulted when picking an archetype');
+  const long = makeFixture({ flowRows: [{ items: ['a', 'b', 'c', 'd', 'e', 'f'], connect: true }] });
+  run(long);
+  assert.notEqual(visualsOf(long).flowDiagram.form, 'horizontal-run',
+    'a 6-item authored chain must not land on the ribbon');
 });
 
-test('INV-23 — a flow demoted for FORM keeps its real entrypoint-derived model (grounding is never traded for shape)', () => {
+test('INV-23 — flow no longer demotes at all, so it KEEPS the IN/OUT detail the demotion was destroying', () => {
   const dir = makeFixture();
   run(dir);
   const v = visualsOf(dir);
-  // The demoted flow round-trips a rows model built from the REAL flow model, not invented content.
-  assert.ok(Array.isArray(v.flowDiagram.rows) && v.flowDiagram.rows.length, 'demoted flow must round-trip its rows');
-  const labels = v.flowDiagram.rows.flatMap((r) => r.items).join(' ').toLowerCase();
-  assert.ok(/install|build|run|verify|source|colophon/.test(labels),
-    `demoted flow lost its real model — got ${JSON.stringify(v.flowDiagram.rows)}`);
+  assert.equal(v.flowDiagram.formVariant, null,
+    'a null variant means the grounded renderFlow drew it — no concept archetype was substituted');
+  // renderFlow is the only renderer that labels each stage's input and output artifact. Losing that
+  // was the real cost of the first fix; this asserts it survived.
+  const svg = fs.readFileSync(v.flowDiagram.svgPath, 'utf8');
+  assert.match(svg, />IN</, 'the grounded flow must still label each stage INPUT artifact');
+  assert.match(svg, />OUT</, 'the grounded flow must still label each stage OUTPUT artifact');
+});
+
+test('INV-23 — the demotion path still works where it genuinely applies (authored flow rows)', () => {
+  // When the brain authors a real runtime flow, flow legitimately renders through the concept path.
+  // That is a content decision, not a form workaround — and the forms must still be distinct.
+  const dir = makeFixture({ flowRows: [{ items: ['request', 'validate', 'dispatch'], connect: true }] });
+  run(dir);
+  const v = visualsOf(dir);
+  const forms = formsOf(v);
+  assert.equal(new Set(forms).size, forms.length, `INV-23 VIOLATED with an authored flow: ${JSON.stringify(forms)}`);
+  const labels = (v.flowDiagram.rows || []).flatMap((r) => r.items).join(' ').toLowerCase();
+  assert.match(labels, /request|validate|dispatch/, 'the authored content must survive the render');
 });
 
 test('INV-23 — holds when architecture DEMOTES too (degenerate 0-edge graph + brain-authored flow rows)', () => {
@@ -171,4 +186,88 @@ test('INV-23 — the guard FAILS LOUD when no distinct form remains (mutation pr
   assert.ok(threw, 'MUTATION SURVIVED — the tool emitted diagrams with no distinct form available. The INV-23 guard is not real.');
   assert.match(stderr, /INV-23|distinct diagram form/i,
     `the tool failed, but not for the INV-23 reason — got: ${stderr.slice(0, 400)}`);
+});
+
+// ── THE GROUNDED RADIAL ARCHITECTURE (ADR-0012, review finding 4) ────────────────────────────────
+// Moving the vertical-stack pin OFF architecture and onto flow dissolves four review findings at
+// once: flow keeps its grounded renderer (and its IN/OUT artifact annotations), nothing gets demoted
+// to a form that misdescribes it, no 1385px ribbon, and no sequence drawn as containment.
+// A dependency map genuinely IS hub-and-spokes — buildArchModel already computes the hub — so this
+// is the more faithful drawing, not a compromise.
+
+// Count REAL cards: glassPanel emits several stacked rects per card (aura / depth / fill / sheen),
+// and only the fill rect carries filter="url(#cardSh)". The first version of this helper counted all
+// of them and reported 13 overlaps on a layout that was actually clean — a detector that cannot tell
+// a card from its own shadow is worse than no detector.
+function cardRects(svg) {
+  return [...svg.matchAll(/<rect x="([-0-9.]+)" y="([-0-9.]+)" width="([0-9.]+)" height="([0-9.]+)"[^>]*filter="url\(#cardSh\)"/g)]
+    .map((m) => ({ x: +m[1], y: +m[2], w: +m[3], h: +m[4] }));
+}
+function overlapCount(rects) {
+  let hits = 0;
+  for (let i = 0; i < rects.length; i++) {
+    for (let j = i + 1; j < rects.length; j++) {
+      const a = rects[i], b = rects[j];
+      if (a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y) hits++;
+    }
+  }
+  return hits;
+}
+
+test('ADR-0012 — grounded architecture is RADIAL and grounded flow keeps the vertical stack (nothing demotes)', () => {
+  const dir = makeFixture();
+  run(dir);
+  const v = visualsOf(dir);
+  assert.equal(v.architectureDiagram.form, 'radial', 'a dependency map is hub-and-spokes');
+  assert.equal(v.flowDiagram.form, 'vertical-stack', 'the flow keeps its grounded renderer');
+  assert.equal(v.flowDiagram.formVariant, null, 'null variant means it did NOT demote to a concept archetype');
+  // The whole point: the richest diagram on the page stops being sacrificed to the form rule.
+  assert.match(v.flowDiagram.asciiFallback || '', /→|->/, 'the grounded flow still describes a sequence');
+});
+
+test('ADR-0012 — the radial layout never overlaps two cards, at any module count', () => {
+  for (const n of [2, 3, 4, 5, 7, 9]) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), `emr-radial-${n}-`));
+    const kb = path.join(dir, 'kb');
+    fs.mkdirSync(kb, { recursive: true });
+    const names = Array.from({ length: n }, (_, i) => `mod${i}`);
+    fs.writeFileSync(path.join(kb, 'dep-graph.json'), JSON.stringify({
+      nodes: names.map((x) => ({ name: x })),
+      internalEdges: names.slice(1).map((x) => ({ from: x, to: names[0] })),
+      componentCount: n, internalEdgeCount: n - 1, ecosystems: ['node'],
+      externalDepNames: ['left-pad'], externalDepCount: 1,
+    }));
+    fs.writeFileSync(path.join(kb, 'entrypoints.json'), JSON.stringify({
+      install: ['npm i'], commands: [{ category: 'build', cmd: 'npm run build' }], binaries: [{ name: 'b' }], quickstart: ['npx b'],
+    }));
+    fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify({
+      understanding: { repoName: 'demo' },
+      kb: { depGraphPath: path.join(kb, 'dep-graph.json'), entrypointsPath: path.join(kb, 'entrypoints.json') },
+      visuals: {
+        bigIdeaDiagram: { rows: [{ items: ['a', 'b', 'c'], connect: true }] },
+        insightDiagram: { rows: [{ items: ['x', 'y', 'z'], connect: true }] },
+      },
+    }, null, 2));
+    run(dir);
+    const v = visualsOf(dir);
+    const svg = fs.readFileSync(v.architectureDiagram.svgPath, 'utf8');
+    const rects = cardRects(svg);
+    assert.ok(rects.length >= 2, `${n} modules should draw at least 2 cards, got ${rects.length}`);
+    assert.equal(overlapCount(rects), 0,
+      `${n} modules: ${overlapCount(rects)} overlapping card pair(s). The arc layout this replaced collided at m=4 `
+      + `(1.8 rad / 214px radius puts adjacent cards 128px apart while a card is 196px wide) — collision-freedom `
+      + `must be a property of the layout, not a lucky constant.`);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('ADR-0012 — the radial diagram stays GROUNDED: real hub, real dependent counts, real externals', () => {
+  const dir = makeFixture();
+  run(dir);
+  const v = visualsOf(dir);
+  const svg = fs.readFileSync(v.architectureDiagram.svgPath, 'utf8');
+  assert.match(svg, /CORE/, 'the hub must be marked — it is the module the most others depend on');
+  assert.match(svg, /parser/, 'the real hub from the dep-graph must appear (parser has the most dependents here)');
+  assert.match(svg, /EXTERNAL PACKAGES/, 'real external dependencies must still be shown');
+  assert.match(v.architectureDiagram.altText || '', /depend/i, 'the alt text must describe a dependency relationship');
 });

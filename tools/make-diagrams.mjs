@@ -495,6 +495,115 @@ const FL = { CARD_W: 664, CARD_H: 108, VGAP: 62, TOP: 150, BOTTOM: 92, TOK_H: 40
 
 // a label that rides ON a connector wire — names the actual artifact handed from one stage to the next,
 // so the pipeline visibly CARRIES data (the OUT of a stage becomes the input the next consumes)
+// ── GROUNDED RADIAL ARCHITECTURE (ADR-0012, review finding 4 — 2026-08-06) ───────────────────────
+// A dependency map genuinely IS a hub-and-spokes structure: buildArchModel already computes `hub` as
+// the module the most others depend on. Drawing it radially is therefore MORE faithful than the
+// vertical tier-stack, not a compromise — and it frees the vertical-stack family for renderFlow,
+// which keeps its full IN/OUT artifact annotations and is semantically exact for a sequence.
+//
+// WHY THIS EXISTS: the first INV-23 fix pinned architecture to vertical-stack and demoted FLOW. That
+// forced a long flow chain onto a 1385px ribbon (3.66px labels at 390px) and, once the ribbon was
+// banned for width, onto `strata` — which draws a SEQUENCE as concentric containment, a claim its own
+// asciiFallback contradicts. Every one of those problems traces to pinning the wrong diagram. Moving
+// the pin dissolves all of them at once.
+//
+// Grounding is untouched: real modules, real dependent counts, real edges, real external packages.
+const RD = { HUBW: 268, HUBH: 92, SATW: 196, SATH: 76, TOP: 132, R: 214, PAD: 46, EXT_H: 62 };
+
+function renderArchitectureRadial(eyebrow, title, model, caption, pal) {
+  const all = model.rows.flat();
+  const hubItem = all.find((it) => it.isHub) || all[0];
+  // Satellites ordered by dependents desc, so the most structurally important sit centre-fan.
+  const sats = all.filter((it) => it !== hubItem).slice(0, 9);
+  const m = sats.length;
+  // GEOMETRY, rewritten 2026-08-06 after LOOKING at two renders. A pure arc CANNOT guarantee spacing:
+  // at radius 214 with a 1.8 rad fan, adjacent satellites are 1.8/(m-1)*214 apart — 128px for m=4 —
+  // while a card is 196px wide, so they overlapped every time. Tuning the radius or the spread only
+  // moves which m collides. Collision-freedom has to be a PROPERTY of the layout, not a lucky
+  // constant: satellites are placed in centred ROWS of at most PER_ROW, each joined to the hub by its
+  // own spoke. Reads as hub-and-spokes (one core, lines radiating to everything that depends on it),
+  // stays portrait for mobile, and two cards can never overlap by construction.
+  const PER_ROW = 3, HGAP = 26, VGAP = 40;
+  const perRow = Math.min(PER_ROW, Math.max(1, m));
+  const rowsOfSats = [];
+  for (let i = 0; i < m; i += perRow) rowsOfSats.push(sats.slice(i, i + perRow));
+  const W = Math.round(Math.max(
+    perRow * RD.SATW + (perRow - 1) * HGAP + RD.PAD * 2,
+    RD.HUBW + RD.PAD * 2,
+    Math.ceil(measure(title, 30, { bold: true })) + 150));
+  const cx = W / 2, cyHub = RD.TOP + RD.HUBH / 2;
+
+  const pos = new Map();
+  pos.set(hubItem.name, { x: cx, y: cyHub, w: RD.HUBW, h: RD.HUBH, col: accent(0), hub: true });
+  const geo = [];
+  let satY = cyHub + RD.HUBH / 2 + VGAP + RD.SATH / 2;
+  rowsOfSats.forEach((row) => {
+    const rowW = row.length * RD.SATW + (row.length - 1) * HGAP;
+    let x = cx - rowW / 2 + RD.SATW / 2;
+    row.forEach((it) => {
+      const idx = sats.indexOf(it);
+      const g = { it, x, y: satY, col: accent(idx + 1) };
+      pos.set(it.name, { x, y: satY, w: RD.SATW, h: RD.SATH, col: g.col, hub: false });
+      geo.push(g);
+      x += RD.SATW + HGAP;
+    });
+    satY += RD.SATH + VGAP;
+  });
+
+  const lowest = geo.length ? Math.max(...geo.map((g) => g.y)) : cyHub;
+  const extBand = model.ext ? RD.EXT_H + 26 : 0;
+  const contentH = (geo.length ? lowest + RD.SATH / 2 : cyHub + RD.HUBH / 2) + 24 + extBand;
+  const cb = captionBlock(cx, contentH, W, caption, pal, 92);
+  const H = contentH + cb.band;
+
+  const body = [background(W, H, pal), header(cx, 30, eyebrow, title, pal)];
+
+  // REAL dependency edges — every edge whose BOTH ends are drawn. An arrow points from a module to
+  // what it depends on, exactly as the tier-stack renderer states in its legend.
+  const drawn = new Set();
+  for (const e of model.edges) {
+    const a = pos.get(e.from), b = pos.get(e.to);
+    if (!a || !b) continue;
+    const key = `${e.from}\u0000${e.to}`;
+    if (drawn.has(key)) continue;
+    drawn.add(key);
+    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+    const k0 = (a.h / 2 + 6) / d, k1 = (d - b.h / 2 - 6) / d;
+    body.push(curve(a.x + dx * k0, a.y + dy * k0, a.x + dx * k1, a.y + dy * k1, mix(a.col, b.col, 0.5), { w: 1.7, op: 0.7 }));
+  }
+
+  for (const g of geo) {
+    const x = g.x - RD.SATW / 2, y = g.y - RD.SATH / 2;
+    body.push(glassPanel(x, y, RD.SATW, RD.SATH, g.col, { r: 14, fillA: 0.15, depth: 6, aura: 0.38 }));
+    const lines = fitLines(g.it.label, RD.SATW - 24, 14.5, 2);
+    const y0 = g.y - (lines.length - 1) * 9 - (g.it.sub ? 8 : 0);
+    lines.forEach((ln, k) => body.push(txt(g.x, y0 + k * 18, ln, { size: 14.5, weight: 700, fill: pal.ink, anchor: 'middle', dom: 'central' })));
+    if (g.it.sub) body.push(txt(g.x, g.y + RD.SATH / 2 - 15, clip(g.it.sub, 26), { size: 11, fill: pal.sub, anchor: 'middle', dom: 'central' }));
+  }
+
+  // hub last so it sits above every edge
+  const hx = cx - RD.HUBW / 2, hy = cyHub - RD.HUBH / 2;
+  body.push(glassPanel(hx, hy, RD.HUBW, RD.HUBH, accent(0), { r: 18, fillA: 0.22, depth: 9, aura: 0.6 }));
+  body.push(txt(cx, cyHub - 10, clip(hubItem.label, 24), { size: 18, weight: 800, fill: pal.ink, anchor: 'middle', dom: 'central' }));
+  if (hubItem.sub) body.push(txt(cx, cyHub + 14, clip(hubItem.sub, 30), { size: 11.5, fill: pal.sub, anchor: 'middle', dom: 'central' }));
+  body.push(txt(cx + RD.HUBW / 2 - 34, cyHub - RD.HUBH / 2 + 14, 'CORE', { size: 9.5, mono: true, weight: 700, fill: accent(0), anchor: 'middle', dom: 'central', ls: 1.2 }));
+
+  if (model.ext) {
+    const ey = contentH - extBand + 6, ew = Math.min(W - RD.PAD * 2, 460), ex = cx - ew / 2;
+    body.push(glassPanel(ex, ey, ew, RD.EXT_H, PAL.extern, { r: 12, fillA: 0.08, depth: 0, aura: 0 }));
+    body.push(txt(ex + 16, ey + 22, 'EXTERNAL PACKAGES', { size: 9.5, mono: true, weight: 700, fill: pal.muted, ls: 1.4 }));
+    body.push(txt(ex + 16, ey + 43, clip(model.ext.names.join(' · '), 46), { size: 12, fill: pal.sub }));
+    body.push(txt(ex + ew - 16, ey + 43, `${model.ext.count} deps`, { size: 11, mono: true, fill: pal.muted, anchor: 'end' }));
+  }
+
+  body.push(cb.svg);
+  const desc = `${title}: ${hubItem.label} is the core module the most others depend on; `
+    + `${sats.map((s) => `${s.label}${s.sub ? ` (${s.sub})` : ''}`).join(', ')}`
+    + `${model.ext ? `; external packages: ${model.ext.names.join(', ')}` : ''}. `
+    + `Each line runs from a module to what it depends on.`;
+  return { W, H, body: body.join('\n'), desc };
+}
+
 function wireTag(cx, midY, text, col) {
   const w = Math.ceil(measure(text, 11, { mono: true })) + 24, h = 22, x = cx - w / 2;
   return [
@@ -1022,11 +1131,16 @@ const DIAGRAMS = [
   // it, so when nothing is grounded (a 0-edge graph with authored rows everywhere) it is free — and a
   // list that never offers it starves the fourth slot. Caught by the all-demoted case in
   // tests/diagram-form-diversity.test.mjs before this ever reached a build.
+  // groundedFamily = the family this slot's GROUNDED renderer emits. Declaring it removes the old
+  // "grounded slots race for vertical-stack" rule, which forced whichever grounded slot lost the race
+  // into a concept archetype it had no business wearing.
   { key: 'architectureDiagram', file: 'architecture.svg', title: 'Architecture', grounded: 'architecture',
+    groundedFamily: FORM.RADIAL,
     conceptEyebrow: 'ARCHITECTURE', conceptHeading: 'How it is built', conceptPrefs: ['strata', 'orbit', 'ribbon', 'column'] },
   // A pipeline IS a left→right run, so 'ribbon' is the semantically right demotion for flow — not the
   // 'column' it used to take, which is the exact family grounded-architecture already occupies.
   { key: 'flowDiagram', file: 'flow.svg', title: 'Process / Data Flow', grounded: 'flow',
+    groundedFamily: FORM.VSTACK,
     conceptEyebrow: 'DATA FLOW', conceptHeading: 'What happens to your data', conceptPrefs: ['ribbon', 'column', 'strata', 'orbit'] },
   // "How it all fits together" is a CONTAINMENT idea (zones inside one thing) — strata first. This also
   // matches what the 2026-08-04 build actually drew and what graded well: a nested-frames big idea.
@@ -1066,10 +1180,15 @@ function ribbonIsSafe(slot) {
 function resolveForms(slots) {
   const taken = new Map();   // family -> key that claimed it
   const out = {};
-  // Pass 1 — grounded slots claim VSTACK in DIAGRAMS order (architecture first, so it wins the pin).
+  // Pass 1 — each grounded slot claims the family ITS OWN renderer emits. Architecture is radial
+  // (hub-and-spokes, which is what a dependency graph actually is) and flow is a vertical stack, so
+  // they no longer compete and NEITHER has to demote. Before 2026-08-06 both raced for vertical-stack
+  // and the loser was pushed into a concept archetype that misdescribed it — a sequence drawn as
+  // containment, or a 1385px ribbon illegible on a phone.
   for (const s of slots) {
     if (!s.grounded) continue;
-    if (!taken.has(FORM.VSTACK)) { taken.set(FORM.VSTACK, s.key); out[s.key] = { family: FORM.VSTACK, variant: null, demotedForForm: false }; }
+    const fam = s.groundedFamily || FORM.VSTACK;
+    if (!taken.has(fam)) { taken.set(fam, s.key); out[s.key] = { family: fam, variant: null, demotedForForm: false }; }
   }
   // Pass 2 — everything else (including a grounded slot that lost the VSTACK race) takes the first
   // free family from its own preference list.
@@ -1189,6 +1308,7 @@ function main() {
     .map((spec) => ({
       key: spec.key,
       conceptPrefs: spec.conceptPrefs,
+      groundedFamily: spec.groundedFamily,
       // How many cards this slot would draw if it demotes — the ribbon's width, and therefore its
       // mobile legibility, is a direct function of this.
       chainLength: (() => {
@@ -1218,7 +1338,7 @@ function main() {
       || (spec.grounded === 'flow' && flowAuthored)
       || decision.demotedForForm;
     if (spec.grounded === 'architecture' && !asConcept) {
-      rendered = renderArchitecture(`${name.toUpperCase()} · DEPENDENCY MAP`, 'Module dependency map', archModel, archCaption, PAL);
+      rendered = renderArchitectureRadial(`${name.toUpperCase()} · DEPENDENCY MAP`, 'Module dependency map', archModel, archCaption, PAL);
     } else if (spec.grounded === 'flow' && !asConcept) {
       // honest title: this model IS the build lifecycle (install → build → run → verify), so say so.
       rendered = renderFlow(`${name.toUpperCase()} · LIFECYCLE`, 'Build & run lifecycle', flowModel, flowCaption, PAL);
