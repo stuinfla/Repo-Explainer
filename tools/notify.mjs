@@ -195,7 +195,16 @@ const restLine = weakAxisCount > 1
   : (typeof overallMean === 'number' && overallMean >= 82)
     ? 'the rest of the page scored well'
     : 'the rest of the page is solid but not our best work';
-const belowBarNote = publish.belowBar ? `
+// A page the grader could not reach is a DIFFERENT disclosure from a page that graded low. Saying
+// "below the level we love" about an ungraded page would be a guess presented as a measurement.
+const ungradedNote = publish.graderUnavailable ? `
+<div style="border-left:3px solid #7a8aa0;background:#f2f5f8;padding:12px 16px;margin:0 0 20px;border-radius:0 4px 4px 0">
+  <p style="margin:0 0 8px;font-weight:600;color:#42536b">Note — we could not grade this one.</p>
+  <p style="margin:0;color:#42536b">The page is built and live, but our independent quality critic was unavailable when it finished,
+  so it went out ungraded rather than sit undelivered. That means we genuinely don't know how it scored — no scorecard below.
+  If anything looks off, reply and I'll rebuild and grade it properly. No charge.</p>
+</div>` : '';
+const belowBarNote = (publish.belowBar && !publish.graderUnavailable) ? `
 <div style="border-left:3px solid #d9822b;background:#fdf6ee;padding:12px 16px;margin:0 0 20px;border-radius:0 4px 4px 0">
   <p style="margin:0 0 8px;font-weight:600;color:#8a5620">Honest note — this one came through below the level we love.</p>
   <p style="margin:0;color:#5c4630">It's live and it's yours, and everything in it is real. The part that let it down was
@@ -210,7 +219,7 @@ const html = `<!doctype html><html><body style="font-family:-apple-system,Segoe 
 </div>
 <h2 style="margin:0 0 8px">Your repo explainer is ready ${overallPassed ? '✅' : '⚠️'}</h2>
 <p style="margin:0 0 16px;color:#555">${overallPassed ? 'It passed our dual quality gate on both mobile and desktop — an independent vision critic graded the real rendered page before we let it ship.' : 'See the scorecard below for any line flagged honestly under the bar — we show you the real grades, never a rubber stamp.'}</p>
-${belowBarNote}
+${ungradedNote}${belowBarNote}
 ${scoreRows ? `<h3 style="margin:16px 0 6px">Scorecard</h3>
 <table style="border-collapse:collapse;font-size:14px"><thead><tr>
 <th style="text-align:left;padding:4px 12px 4px 0">Device</th>

@@ -231,3 +231,21 @@ test('dispatch buffer covers the cure stage (agent + one grade + deploy) after a
   const wallMin = CURE.AGENT_WALL_MS / 60_000 + CURE.GRADE_WALL_MS / 60_000 + CURE.DEPLOY_WALL_MS / 60_000;
   assert.ok(wallMin <= 20, `cure worst case ${wallMin}min must fit the 25min buffer with margin`);
 });
+
+// ── ADR-0011 D4 / ADR-0012 D4 — the tracking that keeps the removed gate honest ───────────────────
+// Adversarial review, 2026-08-06: "the named mechanism is D4 tracking — and D4 is not implemented."
+// Correct at the time. Removing a gate's teeth without building the replacement signal is how a
+// signal becomes decorative, and this repo has form for exactly that (a keystone test red for a
+// week; a hook printing its own defect daily for eight days, unread).
+test('ADR-0011 D4 — every build records WHETHER it was a below-bar delivery and WHICH axis held it back', () => {
+  const src = read('bin/agentic-runner.mjs');
+  assert.match(src, /belowBarDelivery/, 'the receipt must carry the below-bar disclosure, not just the email');
+  assert.match(src, /publishDisclosure = \{/, 'the disclosure must be extracted from the publish slot');
+  assert.match(src, /weakest: pub\.weakest/, 'the weakest axis must be recorded, or "which axes hold pages back" stays anecdotal');
+});
+
+test('ADR-0012 D4 — every build records the FORM each diagram actually took (makes the taxonomy falsifiable)', () => {
+  const src = read('bin/agentic-runner.mjs');
+  assert.match(src, /diagramForms/, 'recorded forms are what let a grader "same form" verdict be checked against reality');
+  assert.match(src, /formVariant/, 'the concrete archetype matters, not only the family');
+});

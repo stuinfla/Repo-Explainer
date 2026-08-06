@@ -3,12 +3,14 @@
 //
 // NOT "the already-passed page" (the wording until 2026-08-06). Since ADR-0011 the quality gate
 // ADVISES and never destroys: this boundary refuses on INTEGRITY only — an unassembled page, a
-// source-identity violation, or a missing scorecard — never on a low grade. A below-bar page is
-// delivered with its weakest axis disclosed to the requester.
+// source-identity violation, or a scorecard that was never produced with no recorded grader failure
+// — never on a low grade. A below-bar page is delivered with its weakest axis disclosed; a page the
+// grader could not reach is delivered saying exactly that.
 //
 // CONTRACT (tools/CONTRACT.md): node tools/deploy.mjs <build-dir>
 //   Reads (declared inputs):  page.dir, repo.slug, quality.scorecard   (+ deploy-provider token from env)
-//   Writes (own slot only):   publish.liveUrl, publish.http200, publish.belowBar, publish.weakest
+//   Writes (own slot only):   publish.liveUrl, publish.http200, publish.belowBar, publish.weakest,
+//                             publish.graderUnavailable
 //   stdout = ONE JSON result object; diagnostics → stderr; exit 0 iff ok:true, else non-zero.
 //
 // Provider-agnostic adapter, DEFAULT NETLIFY (clean {slug}-explainer.netlify.app subdomain, zero
@@ -188,9 +190,25 @@ async function main() {
   // meanings, and the receipt still records the true scorecard. We changed what a `false` CAUSES, not
   // what it MEANS — which frees the grader to stay strict, because strictness no longer burns value.
   const q = bc.quality;
-  if (!q || !Array.isArray(q.scorecard) || q.scorecard.length === 0) {
-    throw new Error('INTEGRITY: refusing to deploy — build.json has no quality scorecard. '
-      + 'We ship below-bar pages, but never a page we cannot honestly describe to the person receiving it (ADR-0011 D1).');
+  const ungraded = !q || !Array.isArray(q.scorecard) || q.scorecard.length === 0;
+  // THE GRADER-OUTAGE HATCH (2026-08-06, from adversarial review). Before ADR-0011, DEPLOY_FORCE
+  // skipped this whole block INCLUDING the no-scorecard refusal, so a human at a terminal could still
+  // ship during a vision-API outage. Removing the quality gate accidentally removed that too — which
+  // left the stochastic judge holding a veto via its own AVAILABILITY, the exact thesis of ADR-0011
+  // inverted. A TTY hatch is no answer either: hosted builds have no human, and the hosted lane is
+  // where outages actually cost customers.
+  // So: an outage the pipeline RECORDED (quality.graderUnavailable, set by the runner when grading
+  // genuinely errors) is deliverable, because we can still describe the page honestly — "we could not
+  // grade this one" is a true and useful statement. A MISSING scorecard with no recorded reason is
+  // not: that is an unrun station, and shipping it would be a silent green.
+  if (ungraded && q?.graderUnavailable !== true) {
+    throw new Error('INTEGRITY: refusing to deploy — build.json has no quality scorecard and no recorded grader failure. '
+      + 'We ship below-bar pages and we ship ungraded pages when the grader is genuinely down (quality.graderUnavailable), '
+      + 'but never a page whose quality was simply never assessed (ADR-0011 D1).');
+  }
+  if (ungraded) {
+    console.error('[deploy] ADR-0011 — delivering UNGRADED: the grader was recorded unavailable '
+      + `(${q.graderUnavailable === true ? q.graderError || 'no detail recorded' : ''}). The requester is told plainly that this page was not graded.`);
   }
 
   // Compute the disclosure the delivery email needs: which device/axis is weakest, in human terms.
@@ -219,7 +237,7 @@ async function main() {
   // false purely from an operator question or an INV-18 diagram failure, where naming "spacing and
   // rhythm - 83" is a confident, specific, WRONG answer while the truth was an invisible diagram.
   let lowestAxis = null, nonNumeric = null;
-  for (const dev of q.scorecard) {
+  for (const dev of (q?.scorecard || [])) {
     for (const [axis, score] of Object.entries({ ...(dev.gateA || {}), ...(dev.gateB || {}) })) {
       if (typeof score !== 'number') continue;
       if (!lowestAxis || score < lowestAxis.score) lowestAxis = { axis, score, device: dev.device, label: AXIS_LABEL[axis] || axis };
@@ -232,7 +250,8 @@ async function main() {
     }
   }
   const weakest = (lowestAxis && lowestAxis.score < 70) ? lowestAxis : (nonNumeric || lowestAxis);
-  const belowBar = q.passed !== true;
+  const belowBar = q?.passed !== true;
+  const graderUnavailable = ungraded;
   if (belowBar) {
     console.error(`[deploy] ADR-0011 — shipping BELOW THE BAR (weakest: ${weakest?.device} ${weakest?.axis}=${weakest?.score}, "${weakest?.label}"). `
       + 'The page is delivered with an honest note; the scorecard is unchanged and fully recorded.');
@@ -257,9 +276,10 @@ async function main() {
     liveUrl,
     http200: true,
     belowBar,
+    graderUnavailable,
     weakest: weakest ? { axis: weakest.axis, score: weakest.score, device: weakest.device, label: weakest.label } : null,
   });
-  return { liveUrl, http200: true, provider, slot: 'publish', belowBar, weakest };
+  return { liveUrl, http200: true, provider, slot: 'publish', belowBar, graderUnavailable, weakest };
 }
 
 main()

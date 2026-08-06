@@ -1,6 +1,6 @@
 # ADR-0012: Decidable properties are decided in code, before the stochastic judge
 
-**Status**: Proposed (awaiting adversarial review round, Fable 5 vs GPT-5.6-Sol)
+**Status**: Accepted with a known open risk (adversarial review round 1 — Fable 5, 2026-08-06; see Review. GPT-5.6-Sol could not run: codex usage limit.)
 **Date**: 2026-08-06
 **Updated**: 2026-08-06
 **Authors**: Claude Code (Opus 5), directed by Stuart Kerr
@@ -147,3 +147,31 @@ vision model every build. The vision grader's budget belongs to judgements only 
 > Caught during implementation by test 4: the first preference lists omitted `column` entirely, so
 > when no slot was grounded the `vertical-stack` family went unused and the fourth slot starved. The
 > resolver correctly refused rather than colliding — the guard worked before the code was right.
+
+---
+
+## Review — round 1 (Fable 5, 2026-08-06)
+
+| # | Finding | Outcome |
+|---|---|---|
+| 1 | **The taxonomy has two linear-chain families.** `vertical-stack` and `horizontal-run` are the same *information shape* — a chain of cards joined by arrows, rotated 90°. The rubric's own vocabulary (`quality-grade.mjs`, check (c)) names the shapes "containment, journey, field, fan"; both of ours are **journey**. So the resolver can guarantee distinctness in *its* taxonomy while the judge scores in a *different* one — and they may disagree on exactly the pair the resolver most often emits (grounded architecture + demoted flow). There is also no `field`/`grid` family at all. | **Open, and now measurable.** See the risk note below. |
+| 2 | **The flow demotion loses the page's densest information.** `renderFlow`'s IN/OUT artifact annotations do not survive the concept ribbon, and a 6-item single-row ribbon is ~1,380px wide — which fit-to-width on a 390px phone scales 15px text to ~4px, below the 7.5px floor the 2026-07-30 portrait fix existed to establish. | **Open — needs a rendered check at 390px before the trade is accepted.** |
+| 3 | **The demotion satisfies check (c) by feeding check (d).** "Stages-in-boxes with arrows is a list, not a flow" is precisely what `flowRowsFromModel` + `conceptRibbon` produce. | **Open.** |
+| 4 | **The dominant alternative was never considered.** `archModel` already computes a `hub`; a grounded *radial* architecture plus a grounded vertical `renderFlow` keeps BOTH diagrams fully grounded with zero demotion. That strictly dominates demoting flow, and appears nowhere in the alternatives table. | **Open — this is probably the right answer.** |
+| 5 | **`conceptStrata` silently drops `connect` semantics.** A demoted architecture authored as a chain (`cli → router → parser`, `connect:true`) renders as concentric nested frames — asserting *containment*, which is false — while the `asciiFallback` for the same diagram still says `cli → router → parser`. The pixels and the accessible text describe different structures. | **Open — a correctness bug, not a taste issue.** |
+| 6 | **D5 was violated by its own commit.** The INV-22 cap shipped as a prompt plea asking the model that already botched the arithmetic to redo it in the right order. | **Fixed.** Verdicts are now structured output (`rasters[].takeaway/.swappable`) and the cap is arithmetic in `applyRasterCap`, with grader/arithmetic disagreements logged rather than invisible. `tests/raster-cap.test.mjs`. |
+
+### The taxonomy risk, stated plainly
+
+Finding 1 is real and unresolved. The counter-evidence is that the observed graders have grouped by
+*orientation*: the 2026-08-03 grader called two **horizontal** chains same-form, and the 2026-08-04
+grader called two **vertical** chains same-form — neither ever equated a vertical chain with a
+horizontal one. That is weak evidence from two samples, and it is not a reason to assume the cut is
+right.
+
+So the honest position is: **the four-family cut is a hypothesis, not a proven taxonomy.** It is now
+falsifiable rather than merely asserted — ADR-0011 D4 records the emitted `form`/`formVariant` of
+every diagram in the build receipt, so a grader verdict of "two same-form diagrams" can be checked
+against what was actually drawn. If that disagreement shows up in the receipts, the cut is wrong and
+finding 4 (grounded radial architecture) is the fix, not a fifth family.
+

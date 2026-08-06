@@ -74,6 +74,26 @@ test('INTEGRITY — deploy still REFUSES an ungraded build (we never ship what w
   assert.match(res.stdout, /no quality scorecard/, 'an ungraded page cannot be honestly disclosed, so it never ships');
 });
 
+// ── THE GRADER-OUTAGE HATCH (2026-08-06, from adversarial review) ────────────────────────────────
+// Before ADR-0011, DEPLOY_FORCE skipped the whole quality block INCLUDING the no-scorecard refusal,
+// so a human could still ship during a vision-API outage. Removing the quality gate removed that
+// too, leaving the stochastic judge holding a veto via its own AVAILABILITY — ADR-0011's thesis
+// exactly inverted, and a total delivery outage every time the grader is down. A TTY hatch is no
+// answer: hosted builds have no human, and hosted is where outages cost customers.
+test('OUTAGE — a RECORDED grader failure still delivers (the judge cannot veto by being offline)', () => {
+  const res = runDeploy({ quality: { graderUnavailable: true, graderError: 'openai 503' } });
+  assert.doesNotMatch(res.stdout, /INTEGRITY: refusing/, 'a recorded grader outage must not block delivery');
+  assert.match(res.stderr, /delivering UNGRADED/, 'must announce that this page is going out ungraded');
+  assert.match(res.stdout, /NETLIFY_AUTH_TOKEN/, 'must reach the provider step');
+});
+
+test('OUTAGE — a MISSING scorecard with no recorded reason still refuses (an unrun station is not an outage)', () => {
+  const res = runDeploy({});
+  assert.equal(res.status, 1);
+  assert.match(res.stdout, /no recorded grader failure/,
+    'silence is not an outage — a station that never ran must not ship as if the grader were down');
+});
+
 test('a passed build clears the boundary (fails later on the missing token, not on quality)', () => {
   const res = runDeploy({ quality: { passed: true, scorecard: belowBarScorecard } });
   assert.doesNotMatch(res.stdout, /SHIP BAR/);

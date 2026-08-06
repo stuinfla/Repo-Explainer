@@ -740,12 +740,37 @@ const reason = identityViolation
 // ask 2026-07-09: "grade every one 1-100 and tell yourself if you're getting better, worse,
 // or the same"). Extraction is defensive: a missing scorecard never blocks the ship.
 let scorecard = null;
+// ADR-0011 D4 (2026-08-06) — TRACK BELOW-BAR DELIVERIES. Removing the gate's teeth without building
+// the mechanism that replaces them is how a signal becomes decorative, and this repo has form: a
+// keystone test shipped red for a week, and the session hook printed its own defect daily for eight
+// days, both unread. So the disclosure that reaches the customer is also RECORDED here — which axis
+// held the page back, and what visual FORM each diagram actually took (ADR-0012 D4). Those two
+// together are what makes the INV-23 family taxonomy falsifiable: if the grader keeps calling two
+// diagrams same-form while the resolver recorded them as distinct families, the taxonomy is wrong
+// and the receipts will say so. Without this, that disagreement stays invisible forever.
+let publishDisclosure = null;
+let diagramForms = null;
+try {
+  const ctxAll = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
+  const pub = ctxAll.publish || {};
+  publishDisclosure = {
+    belowBar: pub.belowBar === true,
+    graderUnavailable: pub.graderUnavailable === true,
+    weakest: pub.weakest || null,
+  };
+  const v = ctxAll.visuals || {};
+  diagramForms = Object.fromEntries(['architectureDiagram', 'flowDiagram', 'bigIdeaDiagram', 'insightDiagram']
+    .filter((k) => v[k]).map((k) => [k, { form: v[k].form ?? null, variant: v[k].formVariant ?? null }]));
+} catch { /* build.json unreadable — the liveUrl check already reflects that */ }
+
 try {
   const q = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8')).quality;
   if (q && Array.isArray(q.scorecard) && q.scorecard.length) {
     scorecard = {
       passed: !!q.passed,
       exemplary: !!q.exemplary,
+      belowBarDelivery: publishDisclosure,   // ADR-0011 D4
+      diagramForms,                          // ADR-0012 D4
       executor: executor.lane, // which billing/endpoint lane built this — admin attributes grades + cost per lane
 
       iterations: Number.isInteger(q.iterations) ? q.iterations : null,
@@ -771,6 +796,7 @@ try {
   const fb = {
     kind: 'explainer-build-outcome', repo: repoUrl, ok, reason: ok ? null : reason.slice(0, 400),
     passed: scorecard?.passed ?? null, exemplary: scorecard?.exemplary ?? null,
+    belowBarDelivery: publishDisclosure, diagramForms,
     devices: scorecard?.devices?.map((d) => ({ device: d.device, gateA: d.gateA, gateB: d.gateB, operators: d.operators })) ?? null,
     costUsd: Math.round(totalCostUsd * 100) / 100, liveUrl: liveUrl || null,
   };

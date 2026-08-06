@@ -230,7 +230,13 @@ const RESPONSE_SPEC = `Return ONLY a JSON object, no prose, with EXACTLY this sh
     "architectureNote":          "<what you SAW of the architecture diagram>",
     "flowReadsClearly":          <true|false>,
     "flowNote":                  "<what you SAW of the flow/process diagram>"
-  }
+  },
+  "rasters": [
+    { "what": "<which image, e.g. 'hero' or 'the problem-section photo'>",
+      "takeaway": "PASS|FAIL",
+      "swappable": "PASS|FAIL",
+      "why": "<one sentence per verdict: what a stranger learns from the pixels, and whether THESE props with THESE labels in THIS arrangement could ship on another project>" }
+  ]
 }
 Every score is an integer 0–100. Every rationale is a non-empty string citing the crops.
 For clarity, judge legibility honestly — an illegible/garbled diagram is readsClearly:false.`;
@@ -763,7 +769,41 @@ async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
 // verdict (present + visible, from checkDiagramsInDom) and the VISION clarity verdict
 // (reads-clearly). A device passes iff headlineScore >= 95 AND INV-18 is clean.
 // ----------------------------------------------------------------------------
+// INV-22 CAP AS ARITHMETIC (ADR-0012 D5, 2026-08-06). The rubric's raster cap is: if a raster fails
+// BOTH the takeaway test AND the swap test, B5 is capped at 55. Given the two verdicts that is pure
+// arithmetic — yet it was left to the same model that had already botched it once, in prose, as a
+// plea to please evaluate in the right order. On 2026-08-04 the grader capped B5 at 55 over an image
+// that plainly passed the takeaway test (labelled binders, a legible note reading "Signal Decay
+// Curve — worth keeping?", and the same note faded on the floor — the project's thesis in pixels)
+// and destroyed a $6.51 build. The verdicts stay stochastic; that part is irreducible. The CAP does
+// not. And because the grader still reports its own B5, a cap it applies while recording a PASS is
+// now a DETECTABLE, LOGGED disagreement instead of an invisible one.
+function applyRasterCap(deviceLabel, graded) {
+  const rasters = Array.isArray(graded.rasters) ? graded.rasters : null;
+  if (!rasters || !rasters.length) return { b5: graded.gateB.B5, capped: false, note: null };
+  const isFail = (v) => String(v || '').trim().toUpperCase() === 'FAIL';
+  const bothFail = rasters.filter((r) => isFail(r.takeaway) && isFail(r.swappable));
+  const reportedB5 = graded.gateB.B5;
+  if (bothFail.length) {
+    const b5 = Math.min(reportedB5, 55);
+    return { b5, capped: true, note: `INV-22 cap applied by arithmetic: ${bothFail.length} raster(s) failed BOTH tests (${bothFail.map((r) => r.what || '?').join(', ')})` };
+  }
+  // No raster failed both — the cap must NOT be in force. If the grader nonetheless scored at or
+  // below the cap, its number and its own recorded verdicts disagree. Surface it; do not silently
+  // "fix" the score upward, because B5 can legitimately be low for reasons unrelated to rasters.
+  if (reportedB5 <= 55) {
+    return { b5: reportedB5, capped: false,
+      note: `INV-22 DISAGREEMENT on ${deviceLabel}: B5=${reportedB5} (at/below the raster cap) but every raster passed at least one test `
+        + `[${rasters.map((r) => `${r.what || '?'}: takeaway=${r.takeaway}, swappable=${r.swappable}`).join(' | ')}]. `
+        + `If this build failed on B5, check whether the cap was misapplied — that is exactly the 2026-08-04 incident.` };
+  }
+  return { b5: reportedB5, capped: false, note: null };
+}
+
 function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths, flowExpected = true) {
+  const rasterCap = applyRasterCap(deviceLabel, graded);
+  if (rasterCap.note) log(rasterCap.note);
+  graded.gateB.B5 = rasterCap.b5;
   const all = [...CRITERIA_A.map((k) => graded.gateA[k]), ...CRITERIA_B.map((k) => graded.gateB[k])];
   const headlineScore = Math.min(...all);
   const meanScore = Math.round(all.reduce((a, b) => a + b, 0) / all.length);
@@ -975,6 +1015,18 @@ async function main() {
     }
   } catch (e) {
     started.server.close();
+    // ADR-0011 + 2026-08-06 review: a grader OUTAGE must not become a delivery outage. Removing the
+    // quality gate accidentally left the stochastic judge holding a veto via its own availability —
+    // the ADR's thesis inverted. Record the failure in build.json so tools/deploy.mjs can deliver the
+    // page honestly ("we could not grade this one") instead of the build dying with a finished page
+    // on disk. This tool still exits NON-ZERO: the grade genuinely did not happen and no caller
+    // should read this as success. It simply leaves an honest, machine-readable reason behind.
+    try {
+      const cur = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
+      cur.quality = { ...(cur.quality || {}), graderUnavailable: true, graderError: String(e?.message || e).slice(0, 300) };
+      fs.writeFileSync(buildJsonPath, JSON.stringify(cur, null, 2) + '\n');
+      log('recorded quality.graderUnavailable — the page may still be DELIVERED ungraded, with that stated plainly to the requester (ADR-0011)');
+    } catch { /* build.json unwritable: nothing more we can do here, the non-zero exit still stands */ }
     return emit(false, {}, `quality grading failed: ${e?.message || e}`);
   } finally {
     started.server.close();
