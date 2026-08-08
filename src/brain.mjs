@@ -204,14 +204,22 @@ Author the visual brief. Return JSON:
       "rows": [ { "items": ["2 to 4 SHORT concept-card labels (<=42 chars each)"], "connect": true } ],
       "altText": "one-line takeaway describing the key insight"
     },
-    "architecture":{ "altText": "one-line description of the architecture diagram" },
-    "flow":        { "altText": "one-line description of the runtime/process flow diagram" }
+    "architecture":{
+      "altText": "one-line description of the architecture diagram",
+      "rows": [ { "items": ["3 to 5 SHORT labels naming the CONCEPTUAL parts a reader must hold in their head, in order", "..."], "connect": true } ]
+    },
+    "flow":        {
+      "altText": "one-line description of the runtime/process flow diagram",
+      "rows": [ { "items": ["3 to 5 SHORT labels naming the runtime steps, in order", "..."], "connect": true } ]
+    }
   }
 }
 DIAGRAM RULES (bigIdea + insight are DRAWN as real glassmorphic concept-cards joined by glowing arrows — NEVER ASCII):
 - Each "items" entry is ONE short card label: a concrete noun-phrase grounded in the brief (a real component, artifact, or step), <= 42 characters. NO ASCII art, NO box-drawing or pipe characters, NO arrows inside a label.
 - Use ONE row with "connect": true for a SEQUENCE (cards joined top-to-bottom by arrows). Use MULTIPLE rows (each "connect": false) for parallel/grouped ideas drawn without an arrow between groups.
-- bigIdea = the central mechanism in 3-6 cards (how the pieces combine to do the one big thing). insight = the single clever move in 2-4 cards. Keep BOTH distinct from the architecture diagram — do not just relist every module.`;
+- bigIdea = the central mechanism in 3-6 cards (how the pieces combine to do the one big thing). insight = the single clever move in 2-4 cards. Keep BOTH distinct from the architecture diagram — do not just relist every module.
+- architecture.rows and flow.rows are a REQUIRED FALLBACK, not decoration (issue #17.4, pacphi). Those two diagrams are normally drawn from the real KB dep-graph and entrypoints. But when a repo's dependency graph is TRIVIAL (a docs vault, a single-module tool — 0 internal edges), a dependency map would be a picture of nothing, so make-diagrams REFUSES to draw one and falls back to your rows instead. Without them the build stops dead at Station 4. Author them for every repo; they cost you two lines and they are the difference between a page and a crash.
+- architecture.rows = the CONCEPT of how the thing is built (the 3-5 parts a reader must hold in their head), NOT the package wiring — the wiring is what the grounded renderer already draws when it can. flow.rows = the runtime steps in order.`;
   const out = await callClaudeJSON({ apiKey, model, system, user, maxTokens: 6000 });
   if (!out?.hero?.prompt) throw new Error('authorVisualBrief: missing hero.prompt');
   const okRows = (d) => d && Array.isArray(d.rows) && d.rows.length
@@ -243,8 +251,13 @@ export function visualsSlotFromBrief(brief) {
     })),
     bigIdeaDiagram: conceptModel(brief.diagrams.bigIdea, 'How it all fits together'),
     insightDiagram: conceptModel(brief.diagrams.insight, 'The clever move'),
-    architectureDiagram: { altText: brief.diagrams.architecture?.altText || '' },
-    flowDiagram: { altText: brief.diagrams.flow?.altText || '' },
+    // Issue #17.4: these two carry the brain's rows THROUGH as a fallback. They are normally drawn
+    // from the real KB (dep-graph / entrypoints), and make-diagrams prefers that grounded model every
+    // time — but when the graph is trivial (0 internal edges) it refuses to draw a picture of nothing
+    // and demands authored rows instead. Dropping them here, as this mapper used to, meant the brain
+    // could author a perfectly good fallback and the pipeline would still die at Station 4.
+    architectureDiagram: conceptModel(brief.diagrams.architecture, 'How it is built'),
+    flowDiagram: conceptModel(brief.diagrams.flow, 'What happens to your data'),
   };
 }
 

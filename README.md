@@ -139,8 +139,9 @@ npx explainmyrepo https://github.com/owner/repo
 
 | For | What | Notes |
 |---|---|---|
-| The brain | `ANTHROPIC_API_KEY` in `.env` — **or nothing**, if you're logged into Claude Code | with no key set, the judgment steps run on your Claude subscription via the `claude` CLI |
+| The brain | `OPENROUTER_API_KEY`, **or** `ANTHROPIC_API_KEY`, **or nothing** if you're logged into Claude Code | any one of the three is enough. With an OpenRouter key the authoring runs on `z-ai/glm-5.2` — measured 15× cheaper than Sonnet 5 *and* higher-scoring on a blind art-direction A/B. Pin the old model with `EXPLAINMYREPO_AUTHORING=anthropic` |
 | Art + quality gate | `OPENAI_API_KEY` in `.env` | hero imagery and the vision grader |
+| **ImageMagick** | `magick` (v7) or `convert` (v6) on your `PATH` | **required** — the favicon station shells out to it and fails loudly without it. `brew install imagemagick` on macOS, `apt install imagemagick` on Debian/Ubuntu |
 | The live URL | `NETLIFY_AUTH_TOKEN` in `.env` — optional | skip with `--no-deploy` and you still get the complete page locally |
 | Private repos | `gh auth login` | public repos need nothing |
 

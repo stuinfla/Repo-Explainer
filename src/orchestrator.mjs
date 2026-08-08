@@ -271,7 +271,21 @@ function readQuality(buildDir) { try { return readContext(buildDir).quality; } c
 // re-grade — keeping the BEST iteration. Craft (B*) and diagram (INV-18) notes are not content-fixable so
 // they're left for the design system / make-diagrams, not looped on here.
 async function refineLoop({ buildDir, env, model, apiKey, opts }) {
-  const MAX = opts.maxRefine != null ? Math.max(0, parseInt(opts.maxRefine, 10) || 0) : 2;
+  // ── #17.7 (pacphi): --max-refine must not promise passes the grader will refuse ────────────────
+  // tools/quality-grade.mjs enforces its own hard MAX_QUALITY_ITERATIONS = 3 (1 initial grade + 2
+  // refines) and, past it, returns the PRIOR scorecard unchanged at zero cost rather than re-grading.
+  // This loop never knew that. So `--max-refine 5` re-authored content for real money on passes
+  // 3, 4 and 5 — full brain calls — and every one of them was then graded by a tool that had already
+  // stopped looking. Silently wasted spend, invisible unless you read both files side by side.
+  // Clamp, and SAY SO, rather than quietly honouring a number we cannot deliver.
+  const GRADER_MAX_REFINES = 2;              // = MAX_QUALITY_ITERATIONS(3) - 1 initial grade
+  const asked = opts.maxRefine != null ? Math.max(0, parseInt(opts.maxRefine, 10) || 0) : 2;
+  const MAX = Math.min(asked, GRADER_MAX_REFINES);
+  if (asked > GRADER_MAX_REFINES) {
+    log(`${C.yellow}--max-refine ${asked} clamped to ${GRADER_MAX_REFINES}${C.reset} ${C.dim}— quality-grade enforces a hard cap of `
+      + `${GRADER_MAX_REFINES + 1} total grades, so further passes would re-author content (real cost) and then be handed `
+      + `the previous scorecard unchanged. Raising it buys nothing but spend.${C.reset}`);
+  }
   // Fewer INV-20 violations breaks mean ties: when every iteration fails the deterministic acronym
   // gate (all means 0), "best" must be the one CLOSEST to clean, not whichever came first.
   const inv20Count = (qq) => (Array.isArray(qq?.inv20?.violations) ? qq.inv20.violations.length : 0);

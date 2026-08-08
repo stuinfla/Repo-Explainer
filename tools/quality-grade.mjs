@@ -42,6 +42,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
+import https from 'node:https';   // #17.6 — fresh-socket retry escapes a poisoned connection pool
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const _ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -677,6 +678,35 @@ async function renderDevice(chromium, url, device, assetsDir) {
 function isScore(n) { return typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 100; }
 function isText(s) { return typeof s === 'string' && s.trim().length > 0; }
 
+// A one-shot HTTPS POST on a GUARANTEED-FRESH socket (issue #17.6). Global fetch pools connections
+// per origin, so a corrupted session makes every retry fail identically — the reporter added retries
+// and still failed every time, which is what pointed at the pool rather than the network. keepAlive
+// false + a private Agent means this request cannot inherit a poisoned connection. Returns a
+// fetch-shaped object so the caller does not care which path produced it.
+function postJsonFreshSocket(url, { headers = {}, body } = {}) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const req = https.request({
+      hostname: u.hostname,
+      port: u.port || 443,
+      path: u.pathname + u.search,
+      method: 'POST',
+      headers: { ...headers, 'content-length': Buffer.byteLength(body) },
+      agent: new https.Agent({ keepAlive: false, maxSockets: 1 }),
+    }, (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => {
+        const text = Buffer.concat(chunks).toString('utf8');
+        resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, text: async () => text });
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
   if (!Array.isArray(crops) || crops.length < 2) {
     throw new Error(`too few section crops captured for ${deviceLabel} (need >= 2, got ${crops?.length || 0}) — cannot grade reliably`);
@@ -709,15 +739,47 @@ async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
     ],
   };
 
-  let resp;
-  try {
-    resp = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
+  // ── #17.5 + #17.6 (pacphi) ────────────────────────────────────────────────────────────────────
+  // #17.5: this call had NO retry at all, so a single network blip destroyed a fully rendered,
+  // fully cropped station — the most expensive point in the build to lose.
+  // #17.6 is the subtler half, and the reason a naive retry loop did not help the reporter: Node's
+  // global fetch keeps a POOLED connection per origin, and once that session is corrupted every
+  // subsequent request on it fails identically. The failure looks transient and is not: retrying
+  // over the same poisoned pool fails every time. So each attempt past the first gets a FRESH
+  // dispatcher, which is what actually makes the retry meaningful.
+  let resp, lastErr;
+  const DELAYS = [1_500, 5_000];
+  for (let attempt = 0; attempt <= DELAYS.length; attempt++) {
+    if (attempt > 0) {
+      log(`  ${deviceLabel}: ${lastErr} — retry ${attempt}/${DELAYS.length} on a fresh connection in ${DELAYS[attempt - 1] / 1000}s`);
+      await new Promise((r) => setTimeout(r, DELAYS[attempt - 1]));
+    }
+    const opts = {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
       body: JSON.stringify(body),
-    });
-  } catch (e) {
-    throw new Error(`vision API request failed for ${deviceLabel}: ${e?.message || e}`);
+    };
+    try {
+      // Attempt 0 uses global fetch (pooled, fast). Every RETRY goes over a brand-new socket via
+      // node:https with keepAlive off — that is what actually escapes a poisoned pool. undici's
+      // Agent would be the tidier tool but it is neither a Node builtin nor a dependency here
+      // (verified: `node:undici` -> ERR_UNKNOWN_BUILTIN_MODULE, `undici` -> ERR_MODULE_NOT_FOUND),
+      // and this fix must not add one to a package whose install footprint is a feature.
+      resp = attempt === 0
+        ? await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, opts)
+        : await postJsonFreshSocket(`${baseUrl.replace(/\/$/, '')}/chat/completions`, opts);
+    } catch (e) {
+      lastErr = `request failed (${e?.message || e})`;
+      resp = null;
+      if (attempt === DELAYS.length) throw new Error(`vision API request failed for ${deviceLabel} after ${DELAYS.length + 1} attempts: ${e?.message || e}`);
+      continue;
+    }
+    // 429/5xx are worth another connection; a 4xx is a real rejection and must not be hammered.
+    if (!resp.ok && (resp.status === 429 || resp.status >= 500) && attempt < DELAYS.length) {
+      lastErr = `HTTP ${resp.status}`;
+      continue;
+    }
+    break;
   }
   const raw = await resp.text();
   if (!resp.ok) throw new Error(`vision API HTTP ${resp.status} for ${deviceLabel}: ${raw.slice(0, 300)}`);
