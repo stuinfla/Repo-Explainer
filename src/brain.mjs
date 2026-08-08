@@ -102,7 +102,7 @@ Author the "concept" slot for this repo's explainer page. Return JSON:
   "typePersonality": { "display": "a Google font family name", "sans": "a Google font family name", "mono": "a mono font family name", "fontHref": "https://fonts.googleapis.com/css2?... for the chosen families" },
   "layoutRhythm": ["hero", "problem", "whatItIs", "insight", "howItWorks", "useCases", "getStarted", "pack"]
 }`;
-  const out = await callClaudeJSON({ apiKey, model, system, user, maxTokens: 2000, temperature: 0.8 });
+  const out = await callClaudeJSON({ apiKey, model, system, user, maxTokens: 6000 });
   if (!out || typeof out !== 'object') throw new Error('authorConcept: model did not return an object');
   if (!out.palette || typeof out.palette !== 'object') throw new Error('authorConcept: missing palette');
   if (!('accent' in out.palette) && !('--accent' in out.palette)) throw new Error("authorConcept: palette must define 'accent'");
@@ -162,7 +162,7 @@ ${revisionBlock(feedback)}${prior}Author the "content" slot. The page renders th
 }
 Rules: 2-4 paragraphs max per section; useCases has 2-3 cases; getStarted.install + steps must come from the brief's INSTALL/COMMANDS/QUICKSTART; cite real passage ids.
 GET-STARTED must give real IMPLEMENTATION CONFIDENCE (this is the most-failed axis): the steps must include (a) any PREREQUISITES (toolchain/version), (b) the EXACT command(s) to run, copyable and grounded in the brief, (c) WHAT THE READER WILL SEE when it succeeds (the concrete result/output), (d) what they HAVE at the end, and (e) the NEXT step. Prefer { "strong": "...", "text": "..." } steps so each has a bolded action + concrete detail. If the repo genuinely has no install command or CLI (a pure library), SAY so honestly, then give the real clone → build → test commands and what each produces — never a vague "just explore the code".`;
-  const out = await callClaudeJSON({ apiKey, model, system, user, maxTokens: 4000, temperature: 0.6 });
+  const out = await callClaudeJSON({ apiKey, model, system, user, maxTokens: 12000 });
   const need = ['hero', 'problem', 'whatItIs', 'insight', 'howItWorks', 'useCases', 'getStarted', 'pack'];
   if (!out?.sections) throw new Error('authorContent: missing sections');
   for (const s of need) if (!out.sections[s]) throw new Error(`authorContent: missing section "${s}"`);
@@ -212,7 +212,7 @@ DIAGRAM RULES (bigIdea + insight are DRAWN as real glassmorphic concept-cards jo
 - Each "items" entry is ONE short card label: a concrete noun-phrase grounded in the brief (a real component, artifact, or step), <= 42 characters. NO ASCII art, NO box-drawing or pipe characters, NO arrows inside a label.
 - Use ONE row with "connect": true for a SEQUENCE (cards joined top-to-bottom by arrows). Use MULTIPLE rows (each "connect": false) for parallel/grouped ideas drawn without an arrow between groups.
 - bigIdea = the central mechanism in 3-6 cards (how the pieces combine to do the one big thing). insight = the single clever move in 2-4 cards. Keep BOTH distinct from the architecture diagram — do not just relist every module.`;
-  const out = await callClaudeJSON({ apiKey, model, system, user, maxTokens: 2000, temperature: 0.7 });
+  const out = await callClaudeJSON({ apiKey, model, system, user, maxTokens: 6000 });
   if (!out?.hero?.prompt) throw new Error('authorVisualBrief: missing hero.prompt');
   const okRows = (d) => d && Array.isArray(d.rows) && d.rows.length
     && d.rows.every((r) => r && Array.isArray(r.items) && r.items.length
@@ -263,7 +263,7 @@ Write a primer for "${name}" as markdown. Use these ## sections, in order:
 ## 5. How do I install and use it
 ## 6. Honest scope and limits
 Keep it tight and real; ground every statement in the brief above.`;
-  const md = await callClaude({ apiKey, model, system, user, maxTokens: 3000, temperature: 0.4 });
+  const md = await callClaude({ apiKey, model, system, user, maxTokens: 9000 });
   const primerRel = ctx.kb?.primerPath;
   if (!primerRel) throw new Error('authorPrimer: build.json has no kb.primerPath (run build-kb first)');
   const primerAbs = path.isAbsolute(primerRel) ? primerRel : path.resolve(repoRoot, primerRel);
@@ -300,7 +300,7 @@ Return JSON for this repo's corpus config (only these keys):
     { "rule": "sourceBodies", "roots": ["src"], "ext": [".ts",".js",".mjs"] }
   ]
 }`;
-  const rules = await callClaudeJSON({ apiKey, model, system, user, maxTokens: 1500, temperature: 0.3 });
+  const rules = await callClaudeJSON({ apiKey, model, system, user, maxTokens: 5000 });
   return {
     slug,
     metaName: rules.metaName || ctx.understanding?.repoName || slug,
