@@ -33,8 +33,38 @@ const ANTHROPIC_VERSION = '2023-06-01';
 // with --model or EXPLAINMYREPO_MODEL / ANTHROPIC_MODEL.
 export const DEFAULT_MODEL = 'claude-sonnet-5';
 
+// ── THE AUTHORING MODEL (2026-08-08) ────────────────────────────────────────────────────────────
+// Measured, not assumed. A blind A/B on the REAL concept-authoring task (identical brief, labels
+// stripped from the judge) scored, on art-direction merit:
+//     z-ai/glm-5.2        95   $0.00125     <- champion
+//     claude-sonnet-5     89   $0.01865
+//     qwen/qwen-plus      54   $0.00033
+//     deepseek-chat-v3.1  43   $0.00037
+//     minimax/minimax-m2.5 31  $0.00135
+// GLM 5.2 is 14.9x cheaper than Sonnet 5 AND scored higher, with the same million-token context.
+//
+// READ THE THIRD ROW BEFORE "OPTIMISING" THIS. qwen-plus is 34x cheaper, the fastest of the set,
+// and passes every automated schema check the pipeline applies — and it scored 54, inventing a
+// generic wax seal. minimax scored 31 and called a cryptographic provenance spec "a dish's final
+// garnish". Both sail through every deterministic gate we have. Cost and schema-validity are NOT
+// proxies for authoring quality here; the only thing that separated them was judging the output.
+//
+// HONEST LIMIT: n=1 per model, one repo, one judge. The 15x cost gap survives that; the 95-vs-89
+// quality gap may not. Hence the automatic Anthropic fallback below rather than a hard switch.
+export const AUTHORING_MODEL = 'z-ai/glm-5.2';
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+// An OpenRouter model id is namespaced ("z-ai/glm-5.2"); a first-party Anthropic id is not.
+export const isOpenRouterModel = (m) => typeof m === 'string' && m.includes('/');
+
 export function resolveModel(env = {}, override) {
-  return override || env.EXPLAINMYREPO_MODEL || env.ANTHROPIC_MODEL || DEFAULT_MODEL;
+  if (override) return override;
+  if (env.EXPLAINMYREPO_MODEL) return env.EXPLAINMYREPO_MODEL;
+  if (env.ANTHROPIC_MODEL) return env.ANTHROPIC_MODEL;
+  // Prefer the measured champion when an OpenRouter key exists; otherwise the Anthropic default.
+  // Set EXPLAINMYREPO_AUTHORING=anthropic to pin the old behaviour without removing the key.
+  if (env.OPENROUTER_API_KEY && env.EXPLAINMYREPO_AUTHORING !== 'anthropic') return AUTHORING_MODEL;
+  return DEFAULT_MODEL;
 }
 
 // Transient failures (network throw, timeout, HTTP 429/5xx) are retried with backoff; permanent
@@ -95,7 +125,12 @@ function callClaudeCli({ model, system, user, timeoutMs }) {
 export function resolveBrainLane({ apiKey, env = process.env } = {}) {
   const brainMode = env.EXPLAINMYREPO_BRAIN || '';
   const useCli = brainMode === 'claude-cli' || (!apiKey && brainMode !== 'api' && claudeCliAvailable());
-  return { useCli, brainMode, ok: Boolean(apiKey) || useCli };
+  // THREE lanes now, not two. Since 2026-08-08 the default authoring model is an OpenRouter one
+  // (z-ai/glm-5.2 — measured champion), so an OPENROUTER_API_KEY alone is a COMPLETE credential set
+  // for the brain stations. Omitting it here would have re-created issue #16 in a new costume:
+  // a user with the newly-recommended key, refused at the door by a gate that had not been told.
+  const useOpenRouter = Boolean(env.OPENROUTER_API_KEY) && brainMode !== 'api' && brainMode !== 'claude-cli';
+  return { useCli, useOpenRouter, brainMode, ok: Boolean(apiKey) || useCli || useOpenRouter };
 }
 
 export async function callClaude({
@@ -115,6 +150,11 @@ export async function callClaude({
       await sleep(delay);
     }
     try {
+      if (isOpenRouterModel(model)) {
+        const orKey = process.env.OPENROUTER_API_KEY;
+        if (!orKey) throw Object.assign(new Error(`model "${model}" is an OpenRouter id but OPENROUTER_API_KEY is not set`), { retryable: false });
+        return await callOpenRouterOnce({ key: orKey, model, system, user, maxTokens, timeoutMs });
+      }
       return useCli
         ? callClaudeCli({ model, system, user, timeoutMs })
         : await callClaudeOnce({ apiKey, model, system, user, maxTokens, temperature, timeoutMs });
@@ -123,7 +163,62 @@ export async function callClaude({
       lastErr = e;
     }
   }
+  // FALLBACK, not a silent swap. The authoring champion is chosen on n=1 evidence, so an OpenRouter
+  // outage or a model retirement must never take the build down when a first-party lane is sitting
+  // right there. Announce it loudly — a quiet fallback would hide exactly the drift we want to see.
+  if (isOpenRouterModel(model) && (apiKey || claudeCliAvailable())) {
+    console.error(`[claude] ${model} failed after ${retryDelaysMs.length} retries (${lastErr?.message?.slice(0, 120)}) — FALLING BACK to ${DEFAULT_MODEL}`);
+    return callClaude({ apiKey, model: DEFAULT_MODEL, system, user, maxTokens, temperature, timeoutMs, retryDelaysMs: [] });
+  }
   throw lastErr;
+}
+
+async function callOpenRouterOnce({ key, model, system, user, maxTokens, timeoutMs }) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let resp;
+  try {
+    resp = await fetch(OPENROUTER_URL, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'content-type': 'application/json',
+        // OpenRouter attributes traffic by these; harmless if absent, useful in their dashboard.
+        'HTTP-Referer': 'https://explainmyrepo.isovision.ai',
+        'X-Title': 'explainmyrepo',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        messages: [...(system ? [{ role: 'system', content: system }] : []), { role: 'user', content: user }],
+      }),
+    });
+  } catch (e) {
+    clearTimeout(timer);
+    const err = new Error(e.name === 'AbortError' ? `OpenRouter request timed out after ${timeoutMs}ms` : `OpenRouter request failed: ${e.message}`);
+    err.retryable = true;
+    throw err;
+  }
+  clearTimeout(timer);
+  if (!resp.ok) {
+    const body = await resp.text().catch(() => '');
+    const err = new Error(`OpenRouter ${resp.status} (${model}): ${body.slice(0, 300)}`);
+    err.retryable = resp.status === 429 || resp.status >= 500;
+    throw err;
+  }
+  const j = await resp.json();
+  if (j.error) { const err = new Error(`OpenRouter error (${model}): ${String(j.error.message).slice(0, 300)}`); err.retryable = false; throw err; }
+  const choice = j.choices?.[0];
+  const text = String(choice?.message?.content || '');
+  if (!text.trim()) {
+    const err = new Error(choice?.finish_reason === 'length'
+      ? `OpenRouter hit max_tokens (${maxTokens}) before emitting text (${model}) — raise maxTokens for this station.`
+      : `OpenRouter returned no text (${model}, finish_reason=${choice?.finish_reason || 'unknown'})`);
+    err.retryable = false;
+    throw err;
+  }
+  return text;
 }
 
 async function callClaudeOnce({ apiKey, model, system, user, maxTokens, temperature, timeoutMs }) {

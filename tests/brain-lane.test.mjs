@@ -66,3 +66,46 @@ test('#16 — the refusal message names BOTH lanes, so a subscription user knows
   assert.match(src, /logged-in Claude Code CLI/, 'the error must tell the user the CLI is an option');
   assert.match(src, /no API key at all/, 'and that it needs no key — the thing the reporter had to discover by reading source');
 });
+
+// ── THE AUTHORING CHAMPION (2026-08-08) ──────────────────────────────────────────────────────────
+// A blind A/B on the real concept-authoring task scored z-ai/glm-5.2 at 95 vs claude-sonnet-5 at 89
+// on art-direction merit, at 1/15th the cost. These tests pin the ROUTING, not the verdict — the
+// verdict is evidence that can change, and EXPLAINMYREPO_AUTHORING=anthropic must always undo it.
+import { resolveModel, isOpenRouterModel, AUTHORING_MODEL, DEFAULT_MODEL } from '../src/claude.mjs';
+
+test('authoring — an OpenRouter key selects the measured champion', () => {
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x' }), AUTHORING_MODEL);
+  assert.equal(AUTHORING_MODEL, 'z-ai/glm-5.2');
+});
+
+test('authoring — NO OpenRouter key leaves the old behaviour exactly as it was', () => {
+  assert.equal(resolveModel({}), DEFAULT_MODEL, 'existing users must see no change at all');
+});
+
+test('authoring — EXPLAINMYREPO_AUTHORING=anthropic pins back without removing the key', () => {
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', EXPLAINMYREPO_AUTHORING: 'anthropic' }), DEFAULT_MODEL);
+});
+
+test('authoring — an explicit --model / env override still beats everything', () => {
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x' }, 'claude-opus-5'), 'claude-opus-5');
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', EXPLAINMYREPO_MODEL: 'z-ai/glm-5' }), 'z-ai/glm-5');
+});
+
+test('authoring — lane detection distinguishes namespaced OpenRouter ids from first-party ones', () => {
+  assert.equal(isOpenRouterModel('z-ai/glm-5.2'), true);
+  assert.equal(isOpenRouterModel('claude-sonnet-5'), false);
+});
+
+test('#16-redux — an OPENROUTER_API_KEY ALONE is a complete credential set', () => {
+  // The default authoring model is now an OpenRouter one, so demanding an Anthropic key here would
+  // re-create #16 in a new costume: refusing the very key we now tell people to bring.
+  const r = resolveBrainLane({ apiKey: '', env: { OPENROUTER_API_KEY: 'x' } });
+  assert.equal(r.ok, true, 'the newly-recommended key must not be refused at the door');
+  assert.equal(r.useOpenRouter, true);
+});
+
+test('authoring — the fallback to Anthropic is ANNOUNCED, never silent', () => {
+  const src = fs.readFileSync(path.join(REPO, 'src', 'claude.mjs'), 'utf8');
+  assert.match(src, /FALLING BACK to/, 'a lane switch must be visible in the log');
+  assert.match(src, /FALLBACK, not a silent swap/, 'and the reasoning recorded for whoever reads it next');
+});
