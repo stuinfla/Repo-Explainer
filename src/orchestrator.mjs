@@ -33,7 +33,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadEnv, getSecret, redact } from './env.mjs';
 import { initBuildDir, readContext, mergeSlot } from './build-context.mjs';
 import { runTool } from './run-tool.mjs';
-import { resolveModel } from './claude.mjs';
+import { resolveModel, resolveBrainLane } from './claude.mjs';
 import {
   authorConcept, authorContent, authorVisualBrief, visualsSlotFromBrief,
   authorPrimer, authorKbTarget,
@@ -157,9 +157,14 @@ async function preflight(list, env, repoRoot) {
   const ids = new Set(list.map((s) => s.id));
   const brainIds = ['kb:register', 'primer', 'concept', 'content', 'visual-brief'];
   const problems = [];
-  if (brainIds.some((id) => ids.has(id)) && !has(['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'])) {
-    problems.push({ fatal: true, need: 'ANTHROPIC_API_KEY (or CLAUDE_API_KEY)', why: 'the brain stations (concept/content/visual-brief/primer) author the page',
-      how: 'add ANTHROPIC_API_KEY=sk-ant-… to .env — create one at https://console.anthropic.com/settings/keys',
+  // Issue #16: the brain runs on EITHER an API key OR a logged-in Claude Code CLI (the user's
+  // subscription). This check used to demand the key alone, so a subscription user was refused
+  // before any station ran — while callClaude, one layer down, would have used their CLI happily.
+  // Both callers now ask the SAME predicate, so this cannot drift apart again.
+  const brainLane = resolveBrainLane({ apiKey: env.ANTHROPIC_API_KEY || env.CLAUDE_API_KEY, env });
+  if (brainIds.some((id) => ids.has(id)) && !brainLane.ok) {
+    problems.push({ fatal: true, need: 'ANTHROPIC_API_KEY (or CLAUDE_API_KEY), or a logged-in Claude Code CLI', why: 'the brain stations (concept/content/visual-brief/primer) author the page',
+      how: 'either add ANTHROPIC_API_KEY=sk-ant-… to .env (create one at https://console.anthropic.com/settings/keys), OR install Claude Code and log in — the brain then runs on your Claude subscription with no API key at all',
       envKey: 'ANTHROPIC_API_KEY', aliases: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'] });
   }
   if ((ids.has('generate-image') || ids.has('quality-grade')) && !has(['OPENAI_API_KEY', 'OPEN_AI_KEY'])) {

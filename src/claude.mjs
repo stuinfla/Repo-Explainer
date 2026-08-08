@@ -80,13 +80,30 @@ function callClaudeCli({ model, system, user, timeoutMs }) {
   return text;
 }
 
+/**
+ * THE SINGLE SOURCE OF TRUTH for "can the brain stations run?" (issue #16, 2026-08-08).
+ *
+ * There are two credential lanes: an Anthropic API key, or a logged-in Claude Code CLI running on
+ * the user's subscription. `callClaude` has always honoured both — but `orchestrator.mjs`'s
+ * preflight independently re-implemented only the FIRST, so a subscription user with no API key was
+ * refused before a single station ran, with `ANTHROPIC_API_KEY MISSING`, even though the very next
+ * layer would have happily used their CLI. Reported by ciprianmelian against a `--no-deploy` run.
+ *
+ * The bug was not the missing CLI branch as such — it was that the same decision lived in two
+ * places, so one could be taught something the other never learned. Both callers now ask HERE.
+ */
+export function resolveBrainLane({ apiKey, env = process.env } = {}) {
+  const brainMode = env.EXPLAINMYREPO_BRAIN || '';
+  const useCli = brainMode === 'claude-cli' || (!apiKey && brainMode !== 'api' && claudeCliAvailable());
+  return { useCli, brainMode, ok: Boolean(apiKey) || useCli };
+}
+
 export async function callClaude({
   apiKey, model = DEFAULT_MODEL, system, user,
-  maxTokens = 4096, temperature = 0.7, timeoutMs = 120_000,
+  maxTokens = 4096, temperature = null, timeoutMs = 120_000,
   retryDelaysMs = RETRY_DELAYS_MS,
 }) {
-  const brainMode = process.env.EXPLAINMYREPO_BRAIN || '';
-  const useCli = brainMode === 'claude-cli' || (!apiKey && brainMode !== 'api' && claudeCliAvailable());
+  const { useCli } = resolveBrainLane({ apiKey });
   if (!apiKey && !useCli) {
     throw new Error('no Anthropic API key and no Claude Code login — either set ANTHROPIC_API_KEY (or CLAUDE_API_KEY) in .env, or install Claude Code and log in (the brain then runs on your Claude subscription, no API key needed)');
   }
@@ -122,8 +139,16 @@ async function callClaudeOnce({ apiKey, model, system, user, maxTokens, temperat
         'anthropic-version': ANTHROPIC_VERSION,
         'content-type': 'application/json',
       },
+      // TEMPERATURE IS DEPRECATED ON CURRENT MODELS (issue #17.1, pacphi — verified live
+      // 2026-08-08 against api.anthropic.com: `claude-sonnet-5` + temperature -> HTTP 400
+      // "`temperature` is deprecated for this model"; the identical request without it -> HTTP 200).
+      // Because every brain station goes through here, sending it killed EVERY local build at the
+      // first Claude-calling station. The hosted lane survived only because it shells out to the
+      // `claude` CLI instead of this client, which is why 42 hosted builds passed while the npm
+      // package was dead on arrival. Send it ONLY if a caller explicitly opts in for an older model.
       body: JSON.stringify({
-        model, max_tokens: maxTokens, temperature,
+        model, max_tokens: maxTokens,
+        ...(temperature == null ? {} : { temperature }),
         system,
         messages: [{ role: 'user', content: user }],
       }),
@@ -143,7 +168,26 @@ async function callClaudeOnce({ apiKey, model, system, user, maxTokens, temperat
   }
   const j = await resp.json();
   const text = (j.content || []).filter((b) => b && b.type === 'text').map((b) => b.text).join('');
-  if (!text.trim()) throw new Error(`Anthropic returned no text (stop_reason=${j.stop_reason || 'unknown'})`);
+  // Issue #17.2 (pacphi): current models emit an invisible `thinking` block BEFORE the text, and it
+  // spends the same max_tokens budget — verified live 2026-08-08: `claude-sonnet-5` returns
+  // content blocks ["thinking","text"]. So a budget sized for the answer alone can be consumed by
+  // reasoning, yielding stop_reason=max_tokens with little or no visible text. The extraction below
+  // was already correct (it filters for type==='text'); what was missing was a diagnosable failure
+  // — the old message said only "returned no text", which reads like a model fault rather than a
+  // budget one, and sent the reporter looking in the wrong place.
+  if (!text.trim()) {
+    const kinds = (j.content || []).map((b) => b && b.type).filter(Boolean);
+    const err = new Error(j.stop_reason === 'max_tokens'
+      ? `Anthropic hit max_tokens (${maxTokens}) before emitting any text — the model spent the budget on its `
+        + `internal reasoning block${kinds.length ? ` (blocks: ${kinds.join(', ')})` : ''}. Raise maxTokens for this station.`
+      : `Anthropic returned no text (stop_reason=${j.stop_reason || 'unknown'}, blocks: ${kinds.join(', ') || 'none'})`);
+    err.retryable = false;
+    throw err;
+  }
+  if (j.stop_reason === 'max_tokens') {
+    process.stderr.write(`[claude] WARNING: response TRUNCATED at max_tokens=${maxTokens} — downstream JSON parsing may fail. `
+      + `A thinking block shares this budget (#17.2).\n`);
+  }
   return text;
 }
 
@@ -172,7 +216,7 @@ export async function callClaudeJSON(opts) {
   } catch (firstErr) {
     // One stricter retry — most JSON failures are a stray sentence the model can drop on request.
     const retryUser = `${opts.user}\n\n(Your previous reply was not parseable as JSON: ${firstErr.message}. Reply again with ONLY the JSON value.)`;
-    text = await callClaude({ ...opts, system: jsonSystem, user: retryUser, temperature: 0.2 });
+    text = await callClaude({ ...opts, system: jsonSystem, user: retryUser });
     return extractJSON(text);
   }
 }
