@@ -415,6 +415,33 @@ async function main() {
   // Only overwrite sections[] if the brain declared sections this run (otherwise leave untouched).
   if (Array.isArray(visuals.sections)) fresh.visuals.sections = newSections;
 
+  // ── IMAGE COST (2026-08-09) ───────────────────────────────────────────────────────────────────
+  // Rasters are the single largest line item in a LOCAL build and were entirely unaccounted, which
+  // is why "what does a build cost?" could only be answered by estimating. Per-image, per-size rates
+  // are published and the image APIs return no charge, so this is DERIVED and labelled as such.
+  // Rates last checked 2026-08-09; if they drift, the receipt is wrong in a visible, fixable way
+  // rather than silently absent.
+  const IMAGE_RATES = {                       // USD per image, quality=high
+    'gpt-image-2': { '1024x1024': 0.167, '1536x1024': 0.25, '1024x1536': 0.25 },
+    'gpt-image-1': { '1024x1024': 0.167, '1536x1024': 0.25, '1024x1536': 0.25 },
+  };
+  let imageUsd = 0;
+  const perImage = [];
+  for (const res of results) {
+    const r = res.value.rung;
+    const eng = r.kind === 'hero' ? engines.hero : engines.section;
+    const rate = IMAGE_RATES[eng]?.[r.px];
+    if (typeof rate === 'number') imageUsd += rate;
+    perImage.push({ id: r.id || r.kind, engine: eng, px: r.px, usd: rate ?? null });
+  }
+  fresh.visuals.cost = {
+    usd: Math.round(imageUsd * 1e4) / 1e4,
+    images: results.length,
+    perImage,
+    basis: 'derived from published per-image rates (the image APIs return no charge)',
+    ratesCheckedAt: '2026-08-09',
+  };
+
   fs.writeFileSync(buildJsonPath, JSON.stringify(fresh, null, 2) + '\n');
 
   const files = results.map((res) => res.value.filePath);

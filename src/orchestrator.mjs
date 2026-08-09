@@ -33,7 +33,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadEnv, getSecret, redact } from './env.mjs';
 import { initBuildDir, readContext, mergeSlot } from './build-context.mjs';
 import { runTool } from './run-tool.mjs';
-import { resolveModel, resolveBrainLane } from './claude.mjs';
+import { resolveModel, resolveBrainLane, getBrainSpend } from './claude.mjs';
 import {
   authorConcept, authorContent, authorVisualBrief, visualsSlotFromBrief,
   authorPrimer, authorKbTarget,
@@ -352,7 +352,36 @@ function reportQualityGap(quality) {
 }
 
 // ── the run ───────────────────────────────────────────────────────────────────────────────────
+// THE RECEIPT. Printed on EVERY exit path, including the held one — a build that stopped still spent
+// money, and "what did that cost me?" is exactly the question a failed run provokes. The first
+// version lived inline before the final return and silently never fired on the hold path, which is
+// how a real p-map build finished with no cost line at all.
+// Three ledgers: the brain is MEASURED (OpenRouter reports a real per-call charge); rasters and the
+// vision grade are DERIVED from published rates, because those APIs return none. The split is
+// printed rather than hidden — a derived number must never be mistaken for a measured one.
+function printReceipt(outDir, startedAt) {
+  try {
+    const ctx = readContext(outDir);
+    const brain = getBrainSpend();
+    const images = ctx.visuals?.cost || { usd: 0, images: 0 };
+    const grading = ctx.quality?.cost || { usd: 0, calls: 0 };
+    const total = Math.round((brain.usd + (images.usd || 0) + (grading.usd || 0)) * 1e4) / 1e4;
+    const elapsedSec = Math.round((Date.now() - startedAt) / 1000);
+    mergeSlot(outDir, 'cost', {
+      totalUsd: total,
+      brain: { ...brain, basis: 'measured (OpenRouter reports the charge)' },
+      images, grading, elapsedSec,
+    });
+    log('');
+    log(`${C.bold}Cost:${C.reset} ${C.green}$${total.toFixed(4)}${C.reset}  ${C.dim}= brain $${brain.usd.toFixed(4)} (${brain.calls} calls, measured)`
+      + ` + images $${(images.usd || 0).toFixed(4)} (${images.images || 0}, derived)`
+      + ` + grading $${(grading.usd || 0).toFixed(4)} (${grading.calls || 0} calls, derived)${C.reset}`);
+    log(`${C.bold}Time:${C.reset} ${elapsedSec}s`);
+  } catch { /* a receipt must never be the thing that fails a good build */ }
+}
+
 export async function run(repoUrl, opts = {}) {
+  const startedAt = Date.now();   // for the cost/time receipt at the end
   const parsed = parseRepoUrl(repoUrl);
   if (!parsed) throw new Error(`not a parseable GitHub repo URL: "${repoUrl}"`);
   // Slug is name-based, but a slug is an IDENTITY (build dir, kb store, kb.config target,
@@ -439,14 +468,24 @@ export async function run(repoUrl, opts = {}) {
     // honest scorecard travelling alongside — UNLESS it's genuinely broken (no device rendered the
     // mandatory diagrams), which always holds.
     reportQualityGap(quality);
+    // ── ADR-0011 ALIGNMENT (2026-08-09) ─────────────────────────────────────────────────────────
+    // ADR-0011 ("the gate ADVISES — it never destroys a paid-for build") was implemented at the
+    // HOSTED boundary in tools/deploy.mjs and this local path was never reconciled, so the two doors
+    // disagreed: hosted delivered a below-bar page with an honest note while local printed "Held at
+    // the quality gate — did NOT deploy or publish" and returned ok:false. Caught by running a real
+    // local build of sindresorhus/p-map, whose page scored mean 93 on mobile and was held anyway.
+    // The ADR's D1 is explicit that delivery is gated on INTEGRITY, not on quality — and the
+    // integrity condition is already computed right here as `diagramsOk`.
     const diagramsOk = !!(quality && Array.isArray(quality.scorecard) && quality.scorecard.some((c) => c.inv18?.passed));
-    if (!(opts.shipBestEffort && diagramsOk)) {
-      log(`\n${C.yellow}${C.bold}Held at the quality gate — did NOT deploy or publish a below-bar page.${C.reset}`);
-      log(`${C.dim}Best local build: ${outDir}/site . ${opts.shipBestEffort ? 'Held because the mandatory diagrams did not render — the one thing we will not ship broken. ' : ''}Lift the gaps above (or re-run with a higher --max-refine), then ship with: ${C.cyan}--from ${post[0] ? post[0].id : 'deploy'} --out ${outDir}${C.reset}`);
+    if (!diagramsOk) {
+      log(`\n${C.yellow}${C.bold}Held — the mandatory diagrams did not render. That is an INTEGRITY failure, not a low score.${C.reset}`);
+      log(`${C.dim}Best local build: ${outDir}/site . This is the one thing we will not ship broken (ADR-0011 D1). Fix the diagrams, then: ${C.cyan}--from ${post[0] ? post[0].id : 'deploy'} --out ${outDir}${C.reset}`);
+      printReceipt(outDir, startedAt);
       return { ok: false, gated: true, quality, outDir, results: preR.results };
     }
+    if (opts.shipBestEffort) log(`${C.dim}--ship-best-effort is now the default (ADR-0011) and no longer changes anything.${C.reset}`);
     const meanBE = quality.scorecard.map((c) => `${String(c.device).replace(/\(.*/, '')} ${c.meanScore}`).join(' / ');
-    log(`\n${C.yellow}${C.bold}Below the world-class bar (mean ${meanBE}) — shipping the best version (--ship-best-effort).${C.reset}`);
+    log(`\n${C.yellow}${C.bold}Below the bar (mean ${meanBE}) — delivering anyway, with the scorecard attached (ADR-0011).${C.reset}`);
     log(`${C.dim}Structurally sound (mandatory diagrams present). The per-axis gaps above are recorded in the scorecard and delivered honestly, not hidden. A stranger always gets a real page.${C.reset}`);
   } else {
     const meanPair = quality.scorecard.map((c) => `${String(c.device).replace(/\(.*/, '')} ${c.meanScore}`).join(' / ');
@@ -459,5 +498,14 @@ export async function run(repoUrl, opts = {}) {
   }
   const postR = post.length ? await runStations(post, baseArgs, total, qIdx + 1) : { ok: true, results: [] };
   finalSummary(outDir);
+  // ── THE RECEIPT (2026-08-09) ────────────────────────────────────────────────────────────────────
+  // The hosted lane has always reported what a build cost; the local lane reported nothing, so the
+  // simple question "what does this cost to run?" could only be answered by estimating — and an
+  // estimate is what got it wrong twice. Three ledgers feed this: the brain (MEASURED, OpenRouter
+  // returns a real per-call charge), the rasters and the vision grade (both DERIVED from published
+  // rates, because those APIs return no charge). The split is printed, not hidden, so nobody mistakes
+  // a derived figure for a measured one.
+  printReceipt(outDir, startedAt);
+
   return { ok: postR.ok !== false, outDir, results: [...preR.results, ...postR.results] };
 }

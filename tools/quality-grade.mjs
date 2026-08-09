@@ -707,6 +707,20 @@ function postJsonFreshSocket(url, { headers = {}, body } = {}) {
   });
 }
 
+// Vision-grade cost ledger (2026-08-09). Grading is the second-biggest line item in a local build
+// and was entirely unaccounted; `build.json` had no cost field at all. Derived from published
+// gpt-5.6-sol rates rather than a reported charge — OpenAI does not return one — so it is labelled
+// `derived` in the receipt. Wrong-but-labelled beats absent: an absent number gets estimated by
+// whoever asks next, and estimates are how this got mis-stated twice.
+const VISION_RATES = { 'gpt-5.6-sol': [1.25, 10] };   // $/M in, $/M out
+const _visionSpend = { usd: 0, calls: 0, inTokens: 0, outTokens: 0, basis: 'derived' };
+function recordVisionSpend(model, usage) {
+  const [rin, rout] = VISION_RATES[model] || [0, 0];
+  const i = usage?.prompt_tokens || 0, o = usage?.completion_tokens || 0;
+  _visionSpend.usd += (i * rin + o * rout) / 1e6;
+  _visionSpend.calls += 1; _visionSpend.inTokens += i; _visionSpend.outTokens += o;
+}
+
 async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
   if (!Array.isArray(crops) || crops.length < 2) {
     throw new Error(`too few section crops captured for ${deviceLabel} (need >= 2, got ${crops?.length || 0}) — cannot grade reliably`);
@@ -786,6 +800,7 @@ async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
 
   let envelope;
   try { envelope = JSON.parse(raw); } catch { throw new Error(`vision API returned non-JSON envelope for ${deviceLabel}: ${raw.slice(0, 200)}`); }
+  recordVisionSpend(model, envelope?.usage);
   const content = envelope?.choices?.[0]?.message?.content;
   if (!isText(content)) {
     const fin = envelope?.choices?.[0]?.finish_reason ?? 'unknown';
@@ -1108,6 +1123,16 @@ async function main() {
     pageHeights,
     refineNotes,
     gradedAt: new Date().toISOString(),
+    // Cost is CUMULATIVE across refine passes: this slot is rewritten each grade, so carry the prior
+    // total forward or a 3-pass build would report only its last pass and understate itself by ~3x.
+    cost: {
+      usd: Math.round(((ctx.quality?.cost?.usd || 0) + _visionSpend.usd) * 1e6) / 1e6,
+      calls: (ctx.quality?.cost?.calls || 0) + _visionSpend.calls,
+      inTokens: (ctx.quality?.cost?.inTokens || 0) + _visionSpend.inTokens,
+      outTokens: (ctx.quality?.cost?.outTokens || 0) + _visionSpend.outTokens,
+      model,
+      basis: 'derived from published rates (OpenAI returns no per-call charge)',
+    },
   };
 
   // --- Merge ONLY the `quality` slot; every other slot is left intact. ---

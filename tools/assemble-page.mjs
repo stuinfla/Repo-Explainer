@@ -726,10 +726,40 @@ ${footer}
   const scannable = html
     .replace(/<pre[\s\S]*?<\/pre>/gi, '')
     .replace(/<code[\s\S]*?<\/code>/gi, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '');
-  const leakRe = /\{\{|\}\}|\$\{|\[object Object\]|(?:^|[\s">])(?:undefined|NaN)(?:[\s"<]|$)|lorem ipsum|\bTODO\b|\bPLACEHOLDER\b/i;
-  const leak = scannable.match(leakRe);
-  if (leak) throw new Error(`unresolved token / placeholder leaked into the page: "${leak[0].trim()}"`);
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    // A table cell or definition-description whose ENTIRE content is a bare value is API
+    // DOCUMENTATION, not a render leak. Found 2026-08-09 on sindresorhus/p-map, whose options table
+    // correctly documents `signal`'s default as `undefined` — the guard read its own reference table
+    // as corruption and killed a perfect page. `undefined` is genuinely ambiguous here and the
+    // pattern cannot resolve it; the CONTEXT can. Only whole-cell values are masked, so a leak in
+    // prose, a heading, or mid-sentence is still caught.
+    .replace(/<(td|dd)\b[^>]*>\s*(undefined|NaN|null)\s*<\/\1>/gi, '<$1>—</$1>');
+  // CASE MATTERS, and the whole-regex /i flag was throwing away that signal (found 2026-08-08 by an
+  // end-to-end local build of sindresorhus/p-map). The page legitimately read "…that slot is simply
+  // omitted from the results array — no placeholder, no error, just a silently dropped entry",
+  // describing pMapSkip. `\bPLACEHOLDER\b/i` matched the ordinary English word and killed a build
+  // whose page was completely fine. Same latent fault on the others: /i made `\bTODO\b` fail any page
+  // about a to-do app, and `undefined` fail any JS page discussing undefined behaviour.
+  //
+  // A genuine unresolved sentinel SCREAMS — TODO, PLACEHOLDER, FIXME are conventionally upper-case,
+  // and a leaked JS value is exactly `undefined` / `NaN`. So those are matched case-SENSITIVELY.
+  // Only "lorem ipsum" stays case-insensitive: it is filler slop in any casing.
+  // `undefined` needed one more distinction than case, because the prose word is lowercase too:
+  // "reading it is undefined behaviour" vs "Version: undefined". A LEAKED value TERMINATES a phrase;
+  // the prose one is followed by another word. Hence the negative lookahead for a following
+  // lowercase word — it keeps "undefined behaviour" and "undefined variables" out of the net.
+  const leakCase = /\{\{|\}\}|\$\{|\[object Object\]|(?:^|[\s">:])(?:undefined|NaN)(?!\s+[a-z])(?:[\s"<.,;)]|$)|\bTODO\b|\bPLACEHOLDER\b|\bFIXME\b/;
+  const leakAny = /lorem ipsum/i;
+  const leak = scannable.match(leakCase) || scannable.match(leakAny);
+  if (leak) {
+    // SHOW WHERE. "undefined leaked into the page" with no location sends the next person hunting
+    // through 26KB of HTML — the same unhelpful-diagnosis shape as #17.2's "returned no text".
+    // The surrounding markup names the section immediately.
+    const at = leak.index ?? scannable.indexOf(leak[0]);
+    const ctx = scannable.slice(Math.max(0, at - 120), at + 120).replace(/\s+/g, ' ').trim();
+    throw new Error(`unresolved token / placeholder leaked into the page: "${leak[0].trim()}"\n`
+      + `  …${ctx}…`);
+  }
   // Every figure image must sit inside the click-to-enlarge button — an unzoomable image is a
   // shipped bug (owner, 2026-07-13: "every image should be zoomable, especially the smaller ones").
   for (const fig of html.matchAll(/<figure[\s\S]*?<\/figure>/g)) {

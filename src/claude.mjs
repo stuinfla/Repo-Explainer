@@ -74,6 +74,25 @@ const RETRY_DELAYS_MS = [2_000, 8_000];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// ── COST LEDGER (2026-08-09) ────────────────────────────────────────────────────────────────────
+// The hosted runner tracks totalCostUsd in nine places and writes it to a gist receipt. The LOCAL
+// path tracked nothing at all — build.json came out with no cost field, so "what does a build cost?"
+// was unanswerable except by estimating, and estimates are how I got it wrong twice. OpenRouter
+// returns a real `usage.cost` on every response, so the brain half can be measured exactly rather
+// than derived from a price list.
+const _spend = { usd: 0, calls: 0, byModel: {} };
+function recordSpend(model, usd, tokens) {
+  if (typeof usd !== 'number' || !Number.isFinite(usd)) usd = 0;
+  _spend.usd += usd;
+  _spend.calls += 1;
+  const m = (_spend.byModel[model] ||= { usd: 0, calls: 0, inTokens: 0, outTokens: 0 });
+  m.usd += usd; m.calls += 1;
+  m.inTokens += tokens?.in || 0; m.outTokens += tokens?.out || 0;
+}
+export function getBrainSpend() {
+  return { usd: Math.round(_spend.usd * 1e6) / 1e6, calls: _spend.calls, byModel: _spend.byModel };
+}
+
 // Is a logged-in Claude Code CLI available to carry the brain? Cached for the process lifetime.
 let _cliAvailable = null;
 export function claudeCliAvailable() {
@@ -209,6 +228,9 @@ async function callOpenRouterOnce({ key, model, system, user, maxTokens, timeout
   }
   const j = await resp.json();
   if (j.error) { const err = new Error(`OpenRouter error (${model}): ${String(j.error.message).slice(0, 300)}`); err.retryable = false; throw err; }
+  // OpenRouter reports the ACTUAL charge per call — no price-list arithmetic, no drift when they
+  // reprice. This is the measurement that makes a local build's cost a fact instead of an estimate.
+  recordSpend(model, j.usage?.cost, { in: j.usage?.prompt_tokens, out: j.usage?.completion_tokens });
   const choice = j.choices?.[0];
   const text = String(choice?.message?.content || '');
   if (!text.trim()) {
@@ -262,6 +284,12 @@ async function callClaudeOnce({ apiKey, model, system, user, maxTokens, temperat
     throw err;
   }
   const j = await resp.json();
+  // Anthropic does not return a charge, so this lane is DERIVED from published per-token rates and
+  // is marked as such in the receipt. Only the OpenRouter lane is a measured figure.
+  const RATES = { 'claude-sonnet-5': [2, 10], 'claude-opus-5': [5, 25], 'claude-haiku-4.5': [1, 5] };
+  const [rin, rout] = RATES[model] || [0, 0];
+  recordSpend(model, ((j.usage?.input_tokens || 0) * rin + (j.usage?.output_tokens || 0) * rout) / 1e6,
+    { in: j.usage?.input_tokens, out: j.usage?.output_tokens });
   const text = (j.content || []).filter((b) => b && b.type === 'text').map((b) => b.text).join('');
   // Issue #17.2 (pacphi): current models emit an invisible `thinking` block BEFORE the text, and it
   // spends the same max_tokens budget — verified live 2026-08-08: `claude-sonnet-5` returns
