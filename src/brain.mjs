@@ -188,10 +188,10 @@ ART DIRECTION — non-negotiable, this is what separates a memorable hero from g
 
 Author the visual brief. Return JSON:
 {
-  "hero": { "prompt": "a rich, SPECIFIC, art-directed text-to-image prompt for the HERO image — a concrete subject + camera angle + lighting + material + one unexpected compositional idea, embodying the metaphor WITHOUT the banned clichés; editorial/cinematic quality; no text/words/letters baked into the image" },
+  "hero": { "prompt": "a rich, SPECIFIC, art-directed text-to-image prompt for the HERO image — a concrete subject + camera angle + lighting + material + one unexpected compositional idea, embodying the metaphor WITHOUT the banned clichés; editorial/cinematic quality. MUST include ONE legible, project-specific written artifact (see THE SWAP TEST below)" },
   "sections": [
-    { "id": "problem", "role": "problem illustration", "prompt": "a specific, art-directed image prompt for the PROBLEM this repo solves — a concrete before-state scene, not an abstract mood; no baked-in text" },
-    { "id": "useCase", "role": "scenario", "prompt": "a specific, art-directed image prompt for a concrete real-world use-case scenario — a real moment of someone/something using this; no baked-in text" }
+    { "id": "problem", "role": "problem illustration", "prompt": "a specific, art-directed image prompt for the PROBLEM this repo solves — a concrete before-state scene, not an abstract mood. MUST include ONE legible, project-specific written artifact (see THE SWAP TEST below)" },
+    { "id": "useCase", "role": "scenario", "prompt": "a specific, art-directed image prompt for a concrete real-world use-case scenario — a real moment of someone/something using this. MUST include ONE legible, project-specific written artifact (see THE SWAP TEST below)" }
   ],
   "diagrams": {
     "bigIdea": {
@@ -214,6 +214,27 @@ Author the visual brief. Return JSON:
     }
   }
 }
+THE SWAP TEST — the single rule that decides whether an image ships (INV-22 / ADR-0008):
+Every raster is judged on two questions. (a) TAKEAWAY: what does a stranger learn about THIS project
+from the pixels alone, with the caption covered? (b) SWAP: could this exact image ship unchanged on a
+different project's page? An image that fails BOTH caps the whole page's imagery score at 55 — below
+the ship floor — however beautiful it is.
+- THEREFORE EVERY IMAGE MUST CARRY ONE LEGIBLE, PROJECT-SPECIFIC WRITTEN ARTIFACT: a label on a crate,
+  a stamped word, a handwritten note, a tag, a screen, a chalked number — bearing a real term from
+  THIS repo (a module name, a command, an option, an error, a domain noun from the brief). Keep it to
+  1-4 words so it renders cleanly. That artifact is what makes the image un-swappable: these props,
+  with THESE words, cannot ship on another project's page.
+- This REVERSES the old "no baked-in text" instruction, which was written when image models garbled
+  letters and became the single biggest cause of capped pages. Evidence from this project: the image
+  that scored best on takeaway showed binders labelled "ACME-2026-Q3" and a handwritten sticky note
+  reading "Signal Decay Curve — worth keeping?" — rendered perfectly by gpt-image-2, and it taught the
+  thesis in pixels. The image that capped a page at 55 was a beautiful, wordless industrial rail yard
+  that could have illustrated any queueing project ever written.
+- Still banned: decorative gibberish text, lorem ipsum, invented UI chrome, watermarks, long
+  paragraphs, and any word not grounded in the brief. One real term, legibly rendered, is the whole ask.
+- The scene itself must still be concrete and art-directed. The artifact EARNS the specificity; it does
+  not excuse a generic photograph with a sticker on it.
+
 DIAGRAM RULES (bigIdea + insight are DRAWN as real glassmorphic concept-cards joined by glowing arrows — NEVER ASCII):
 - Each "items" entry is ONE short card label: a concrete noun-phrase grounded in the brief (a real component, artifact, or step), <= 42 characters. NO ASCII art, NO box-drawing or pipe characters, NO arrows inside a label.
 - Use ONE row with "connect": true for a SEQUENCE (cards joined top-to-bottom by arrows). Use MULTIPLE rows (each "connect": false) for parallel/grouped ideas drawn without an arrow between groups.
