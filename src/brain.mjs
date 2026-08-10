@@ -102,7 +102,7 @@ Author the "concept" slot for this repo's explainer page. Return JSON:
   "typePersonality": { "display": "a Google font family name", "sans": "a Google font family name", "mono": "a mono font family name", "fontHref": "https://fonts.googleapis.com/css2?... for the chosen families" },
   "layoutRhythm": ["hero", "problem", "whatItIs", "insight", "howItWorks", "useCases", "getStarted", "pack"]
 }`;
-  const out = await callClaudeJSON({ apiKey, model, system, user, maxTokens: 6000 });
+  const out = await callClaudeJSON({ apiKey, env: ctx?._env, model, system, user, maxTokens: 6000 });
   if (!out || typeof out !== 'object') throw new Error('authorConcept: model did not return an object');
   if (!out.palette || typeof out.palette !== 'object') throw new Error('authorConcept: missing palette');
   if (!('accent' in out.palette) && !('--accent' in out.palette)) throw new Error("authorConcept: palette must define 'accent'");
@@ -162,7 +162,7 @@ ${revisionBlock(feedback)}${prior}Author the "content" slot. The page renders th
 }
 Rules: 2-4 paragraphs max per section; useCases has 2-3 cases; getStarted.install + steps must come from the brief's INSTALL/COMMANDS/QUICKSTART; cite real passage ids.
 GET-STARTED must give real IMPLEMENTATION CONFIDENCE (this is the most-failed axis): the steps must include (a) any PREREQUISITES (toolchain/version), (b) the EXACT command(s) to run, copyable and grounded in the brief, (c) WHAT THE READER WILL SEE when it succeeds (the concrete result/output), (d) what they HAVE at the end, and (e) the NEXT step. Prefer { "strong": "...", "text": "..." } steps so each has a bolded action + concrete detail. If the repo genuinely has no install command or CLI (a pure library), SAY so honestly, then give the real clone → build → test commands and what each produces — never a vague "just explore the code".`;
-  const out = await callClaudeJSON({ apiKey, model, system, user, maxTokens: 12000 });
+  const out = await callClaudeJSON({ apiKey, env: ctx?._env, model, system, user, maxTokens: 12000 });
   const need = ['hero', 'problem', 'whatItIs', 'insight', 'howItWorks', 'useCases', 'getStarted', 'pack'];
   if (!out?.sections) throw new Error('authorContent: missing sections');
   for (const s of need) if (!out.sections[s]) throw new Error(`authorContent: missing section "${s}"`);
@@ -241,7 +241,7 @@ DIAGRAM RULES (bigIdea + insight are DRAWN as real glassmorphic concept-cards jo
 - bigIdea = the central mechanism in 3-6 cards (how the pieces combine to do the one big thing). insight = the single clever move in 2-4 cards. Keep BOTH distinct from the architecture diagram — do not just relist every module.
 - architecture.rows and flow.rows are a REQUIRED FALLBACK, not decoration (issue #17.4, pacphi). Those two diagrams are normally drawn from the real KB dep-graph and entrypoints. But when a repo's dependency graph is TRIVIAL (a docs vault, a single-module tool — 0 internal edges), a dependency map would be a picture of nothing, so make-diagrams REFUSES to draw one and falls back to your rows instead. Without them the build stops dead at Station 4. Author them for every repo; they cost you two lines and they are the difference between a page and a crash.
 - architecture.rows = the CONCEPT of how the thing is built (the 3-5 parts a reader must hold in their head), NOT the package wiring — the wiring is what the grounded renderer already draws when it can. flow.rows = the runtime steps in order.`;
-  const out = await callClaudeJSON({ apiKey, model, system, user, maxTokens: 6000 });
+  const out = await callClaudeJSON({ apiKey, env: ctx?._env, model, system, user, maxTokens: 6000 });
   if (!out?.hero?.prompt) throw new Error('authorVisualBrief: missing hero.prompt');
   const okRows = (d) => d && Array.isArray(d.rows) && d.rows.length
     && d.rows.every((r) => r && Array.isArray(r.items) && r.items.length
@@ -297,7 +297,7 @@ Write a primer for "${name}" as markdown. Use these ## sections, in order:
 ## 5. How do I install and use it
 ## 6. Honest scope and limits
 Keep it tight and real; ground every statement in the brief above.`;
-  const md = await callClaude({ apiKey, model, system, user, maxTokens: 9000 });
+  const md = await callClaude({ apiKey, env: ctx?._env, model, system, user, maxTokens: 9000 });
   const primerRel = ctx.kb?.primerPath;
   if (!primerRel) throw new Error('authorPrimer: build.json has no kb.primerPath (run build-kb first)');
   const primerAbs = path.isAbsolute(primerRel) ? primerRel : path.resolve(repoRoot, primerRel);
@@ -334,7 +334,7 @@ Return JSON for this repo's corpus config (only these keys):
     { "rule": "sourceBodies", "roots": ["src"], "ext": [".ts",".js",".mjs"] }
   ]
 }`;
-  const rules = await callClaudeJSON({ apiKey, model, system, user, maxTokens: 5000 });
+  const rules = await callClaudeJSON({ apiKey, env: ctx?._env, model, system, user, maxTokens: 5000 });
   return {
     slug,
     metaName: rules.metaName || ctx.understanding?.repoName || slug,

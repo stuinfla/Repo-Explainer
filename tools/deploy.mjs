@@ -83,17 +83,49 @@ async function verify200(url, tries = 12) {
 }
 
 // ---- adapter: Netlify (DEFAULT) ----
-async function deployNetlify({ pageDir, slug }) {
+async function deployNetlify({ pageDir, slug, ownerName }) {
   const token = process.env.NETLIFY_AUTH_TOKEN;
   if (!token) throw new Error('NETLIFY_AUTH_TOKEN not set in environment (deploy-provider token required)');
   const auth = { Authorization: `Bearer ${token}` };
   // NETLIFY_SITE_NAME override (owner ask 2026-07-30): deploy stuinfla/helix's page onto the
   // existing 'helix-explainer' site rather than minting a new {slug}-explainer subdomain.
-  const name = process.env.NETLIFY_SITE_NAME || `${sanitize(slug)}-explainer`;
+  let name = process.env.NETLIFY_SITE_NAME || `${sanitize(slug)}-explainer`;
 
   const sites = await api(`https://api.netlify.com/api/v1/sites?name=${encodeURIComponent(name)}&filter=all`,
     { headers: auth }, 'netlify list sites');
   let site = (Array.isArray(sites) ? sites : []).find((s) => s.name === name) || null;
+
+  // ── CROSS-OWNER OVERWRITE GUARD (2026-08-10) ─────────────────────────────────────────────────
+  // clone-repo sets `slug: name`, DISCARDING the owner, so upstream/foo and attacker/foo both map to
+  // `foo-explainer` here. The 90f16dc guard catches this by comparing against a previous local
+  // build.json — but hosted builds run in a fresh timestamped directory every time, so there is never
+  // a prior build to compare and the guard is structurally blind on the exact path real customers
+  // use. Result: building a FORK, or merely another owner's repo with the same basename, silently
+  // replaced the first customer's live page. Identity passed (the page IS about the submitted repo),
+  // deploy returned 200, every advertised invariant reported success, and the wrong page was live at
+  // someone else's URL. Found by GPT-5.6-Sol in adversarial review; verified against the code.
+  //
+  // Every deployed site ships llms.txt carrying its canonical GitHub URL, so the LIVE SITE ITSELF is
+  // the ownership record — available on both doors, needing no local state.
+  if (site && ownerName) {
+    let incumbent = null;
+    try {
+      const probe = await fetch(`${site.ssl_url || `https://${name}.netlify.app`}/llms.txt`, { redirect: 'follow' });
+      if (probe.ok) {
+        const m = (await probe.text()).match(/https:\/\/github\.com\/([^/\s]+)\/([^/\s)"']+)/i);
+        if (m) incumbent = `${m[1]}/${m[2]}`.replace(/\.git$/i, '').toLowerCase();
+      }
+    } catch { /* unreachable/new site — nothing to protect */ }
+    if (incumbent && incumbent !== ownerName.toLowerCase()) {
+      const safe = `${sanitize(ownerName.split('/')[0])}-${name}`;
+      console.error(`[deploy] CROSS-OWNER COLLISION: '${name}' already serves ${incumbent}, not ${ownerName}. `
+        + `Refusing to overwrite another owner's live page — deploying to '${safe}' instead.`);
+      const alt = await api(`https://api.netlify.com/api/v1/sites?name=${encodeURIComponent(safe)}&filter=all`,
+        { headers: auth }, 'netlify list sites (disambiguated)');
+      site = (Array.isArray(alt) ? alt : []).find((s) => s.name === safe) || null;
+      name = safe;
+    }
+  }
   if (!site) {
     site = await api('https://api.netlify.com/api/v1/sites',
       { method: 'POST', headers: { ...auth, 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) },
@@ -264,7 +296,10 @@ async function main() {
   const adapter = ADAPTERS[provider];
   if (!adapter) throw new Error(`unknown DEPLOY_PROVIDER '${provider}' (supported: ${Object.keys(ADAPTERS).join(', ')})`);
 
-  const { liveUrl } = await adapter({ pageDir, slug });
+  // ownerName = the canonical "owner/name" this build is FOR — the guard needs it to tell a legitimate
+  // redeploy from another owner's same-named repo.
+  const ownerName = (bc.repo?.owner && bc.repo?.name) ? `${bc.repo.owner}/${bc.repo.name}` : null;
+  const { liveUrl } = await adapter({ pageDir, slug, ownerName });
   console.error(`[deploy] ${provider} → ${liveUrl} (verifying 200 unauthenticated)`);
   const http200 = await verify200(liveUrl);
   if (!http200) throw new Error(`deployed to ${liveUrl} but it did not return 200 unauthenticated within timeout`);

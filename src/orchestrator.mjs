@@ -107,6 +107,7 @@ function brainRun(fn) {
   return async ({ buildDir, apiKey, model }) => {
     const ctx = readContext(buildDir);
     ctx._repoRoot = REPO_ROOT;
+    ctx._env = env;   // the MERGED env — .env-only keys must survive to the brain client (Sol #6)
     await fn(ctx, { buildDir, apiKey, model });
     return { ok: true };
   };

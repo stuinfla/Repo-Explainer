@@ -109,3 +109,47 @@ test('authoring — the fallback to Anthropic is ANNOUNCED, never silent', () =>
   assert.match(src, /FALLING BACK to/, 'a lane switch must be visible in the log');
   assert.match(src, /FALLBACK, not a silent swap/, 'and the reasoning recorded for whoever reads it next');
 });
+
+// ── GPT-5.6-SOL REVIEW, 2026-08-10 — issue #16's shape, found twice more ─────────────────────────
+// The second independent reviewer found that callClaude destructured only `useCli` and ignored
+// `useOpenRouter`, so an OpenRouter-only user passed preflight and was rejected on the FIRST brain
+// call. It hid on this machine because the claude CLI is installed (useCli true); a CI box with just
+// OPENROUTER_API_KEY would have died. Third time this defect shape has appeared: a caller holding a
+// stale copy of a decision the shared predicate had already been taught.
+test('SOL#6 — callClaude asks the predicate for ALL of its answer, not just useCli', () => {
+  const src = fs.readFileSync(path.join(REPO, 'src', 'claude.mjs'), 'utf8');
+  assert.match(src, /const \{ useCli, useOpenRouter \} = resolveBrainLane/,
+    'both lanes must be read, or an OpenRouter-only user is refused after passing preflight');
+  assert.match(src, /!apiKey && !useCli && !useOpenRouter/,
+    'the refusal must require ALL three lanes to be absent');
+});
+
+test('SOL#6 — a .env-only OpenRouter key survives to execution', () => {
+  // src/env.mjs loadEnv() "Returns a NEW object (does not mutate process.env)". The key therefore
+  // reached preflight through the merged object and vanished at the call site, which read
+  // process.env directly. Preflight saying yes and execution saying no is the worst failure shape.
+  const src = fs.readFileSync(path.join(REPO, 'src', 'claude.mjs'), 'utf8');
+  assert.match(src, /envOverride && envOverride\.OPENROUTER_API_KEY/,
+    'an explicit env override must be honoured before the ambient process.env');
+  const orch = fs.readFileSync(path.join(REPO, 'src', 'orchestrator.mjs'), 'utf8');
+  assert.match(orch, /ctx\._env = env/, 'the orchestrator must hand the merged env to the brain');
+  const brain = fs.readFileSync(path.join(REPO, 'src', 'brain.mjs'), 'utf8');
+  assert.match(brain, /env: ctx\?\._env/, 'and every brain call site must pass it through');
+});
+
+test('SOL#6 — an explicit CLI lane choice outranks a namespaced model id', () => {
+  const src = fs.readFileSync(path.join(REPO, 'src', 'claude.mjs'), 'utf8');
+  assert.match(src, /brainMode === 'claude-cli'/,
+    'EXPLAINMYREPO_BRAIN=claude-cli must not be silently ignored because the model contains a slash');
+});
+
+test('SOL — the deploy boundary refuses to overwrite ANOTHER OWNER\'s live page', () => {
+  // clone-repo sets `slug: name`, discarding the owner, so upstream/foo and attacker/foo both target
+  // foo-explainer. The 90f16dc guard compares against a prior LOCAL build.json — and hosted builds
+  // use a fresh timestamped dir every run, so it never fires on the path customers actually use.
+  const src = fs.readFileSync(path.join(REPO, 'tools', 'deploy.mjs'), 'utf8');
+  assert.match(src, /CROSS-OWNER COLLISION/, 'the collision must be detected and named');
+  assert.match(src, /llms\.txt/, 'ownership is read from the LIVE site, which works on both doors');
+  assert.match(src, /Refusing to overwrite another owner's live page/,
+    'and it must refuse rather than silently replace');
+});

@@ -155,11 +155,17 @@ export function resolveBrainLane({ apiKey, env = process.env } = {}) {
 export async function callClaude({
   apiKey, model = DEFAULT_MODEL, system, user,
   maxTokens = 4096, temperature = null, timeoutMs = 120_000,
-  retryDelaysMs = RETRY_DELAYS_MS,
+  retryDelaysMs = RETRY_DELAYS_MS, env: envOverride = null,
 }) {
-  const { useCli } = resolveBrainLane({ apiKey });
-  if (!apiKey && !useCli) {
-    throw new Error('no Anthropic API key and no Claude Code login — either set ANTHROPIC_API_KEY (or CLAUDE_API_KEY) in .env, or install Claude Code and log in (the brain then runs on your Claude subscription, no API key needed)');
+  // ISSUE #16's SHAPE, THIRD OCCURRENCE (found by GPT-5.6-Sol, 2026-08-10). This destructured only
+  // `useCli` and ignored `useOpenRouter`, so an OpenRouter-only user — no Anthropic key, no CLI —
+  // sailed through preflight (which asks the shared predicate) and was rejected HERE on the first
+  // brain call. It went unnoticed locally only because this machine happens to have the claude CLI
+  // installed, making useCli true; a CI box with just OPENROUTER_API_KEY would have died. Ask the
+  // predicate for ALL of its answer, not the one field you happen to remember.
+  const { useCli, useOpenRouter } = resolveBrainLane({ apiKey, env: { ...process.env, ...(envOverride || {}) } });
+  if (!apiKey && !useCli && !useOpenRouter) {
+    throw new Error('no brain credentials — set OPENROUTER_API_KEY (recommended: authoring runs on z-ai/glm-5.2), or ANTHROPIC_API_KEY / CLAUDE_API_KEY, or install Claude Code and log in (the brain then runs on your Claude subscription with no API key at all).');
   }
   let lastErr;
   for (let attempt = 0; attempt <= retryDelaysMs.length; attempt++) {
@@ -169,8 +175,13 @@ export async function callClaude({
       await sleep(delay);
     }
     try {
-      if (isOpenRouterModel(model)) {
-        const orKey = process.env.OPENROUTER_API_KEY;
+      // An EXPLICIT lane choice outranks the model id. Previously the OpenRouter branch ran first, so
+      // EXPLAINMYREPO_BRAIN=claude-cli was silently ignored whenever the model happened to be namespaced.
+      if (isOpenRouterModel(model) && !(useCli && resolveBrainLane({ apiKey }).brainMode === 'claude-cli')) {
+        // src/env.mjs loadEnv() explicitly "Returns a NEW object (does not mutate process.env)", so a
+        // key living only in .env reached preflight through the merged object and then VANISHED here.
+        // Accept an explicit override from the caller before falling back to the ambient env.
+        const orKey = (envOverride && envOverride.OPENROUTER_API_KEY) || process.env.OPENROUTER_API_KEY;
         if (!orKey) throw Object.assign(new Error(`model "${model}" is an OpenRouter id but OPENROUTER_API_KEY is not set`), { retryable: false });
         return await callOpenRouterOnce({ key: orKey, model, system, user, maxTokens, timeoutMs });
       }
