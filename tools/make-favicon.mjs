@@ -28,6 +28,7 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import sharp from 'sharp';
 
 const HEX = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 const RGB = /^rgba?\(/i;
@@ -77,6 +78,76 @@ function resolveHero(buildDir, ctx) {
   return p;
 }
 
+// ── sharp fallback when ImageMagick is absent ─────────────────────────────────────────────────
+// Same outputs as the magick path: center-square crops of the hero at 16/32/48/192/512, a
+// 180px alpha-flattened apple-touch-icon, and a multi-resolution favicon.ico (16/32/48, 32-bit
+// BMP frames — the ICO format hand-assembled here because sharp writes only single-size .ico).
+async function centerCropPng(src, n, out, flattenBg) {
+  let p = sharp(src).resize(n, n, { fit: 'cover' });
+  if (flattenBg) p = p.flatten({ background: flattenBg });
+  return p.png().toFile(out);
+}
+
+async function rasterToBmpFrame(rawBuf, width, height) {
+  const rowBytes = width * 4;
+  const header = Buffer.alloc(40);
+  header.writeUInt32LE(40, 0);            // BITMAPINFOHEADER size
+  header.writeInt32LE(width, 4);
+  header.writeInt32LE(height * 2, 8);     // ICO doubles the height
+  header.writeUInt16LE(1, 12);            // planes
+  header.writeUInt16LE(32, 14);           // bpp
+  header.writeUInt32LE(0, 16);            // BI_RGB
+  header.writeUInt32LE(rowBytes * height, 20);
+  const data = Buffer.alloc(rowBytes * height);
+  for (let y = 0; y < height; y++) {
+    const sRow = y * rowBytes, dRow = (height - 1 - y) * rowBytes;   // bottom-up
+    for (let x = 0; x < width; x++) {
+      const s = sRow + x * 4, d = dRow + x * 4;
+      data[d] = rawBuf[s + 2];           // B
+      data[d + 1] = rawBuf[s + 1];       // G
+      data[d + 2] = rawBuf[s];           // R
+      data[d + 3] = rawBuf[s + 3];       // A
+    }
+  }
+  return Buffer.concat([header, data]);
+}
+
+function assembleIco(frames) {
+  const dirSize = 6 + 16 * frames.length;
+  const total = dirSize + frames.reduce((s, f) => s + f.bmp.length, 0);
+  const buf = Buffer.alloc(total);
+  buf.writeUInt16LE(0, 0);                // reserved
+  buf.writeUInt16LE(1, 2);                // type: icon
+  buf.writeUInt16LE(frames.length, 4);    // count
+  let off = dirSize;
+  frames.forEach((f, i) => {
+    const e = 6 + 16 * i;
+    buf.writeUInt8(f.size >= 256 ? 0 : f.size, e);
+    buf.writeUInt8(f.size >= 256 ? 0 : f.size, e + 1);
+    buf.writeUInt8(0, e + 2);             // colour count (0)
+    buf.writeUInt8(0, e + 3);             // reserved
+    buf.writeUInt16LE(1, e + 4);          // planes
+    buf.writeUInt16LE(32, e + 6);         // bpp
+    buf.writeUInt32LE(f.bmp.length, e + 8);
+    buf.writeUInt32LE(off, e + 12);
+    off += f.bmp.length;
+  });
+  let p = dirSize;
+  for (const f of frames) { f.bmp.copy(buf, p); p += f.bmp.length; }
+  return buf;
+}
+
+async function makeFaviconsWithSharp(hero, assets, bg) {
+  for (const n of ICON_SIZES) await centerCropPng(hero, n, path.join(assets, `favicon-${n}.png`));
+  await centerCropPng(hero, 180, path.join(assets, 'apple-touch-icon.png'), bg);
+  const frames = [];
+  for (const n of [16, 32, 48]) {
+    const { data, info } = await sharp(hero).resize(n, n, { fit: 'cover' }).raw().toBuffer({ resolveWithObject: true });
+    frames.push({ size: n, bmp: await rasterToBmpFrame(data, info.width, info.height) });
+  }
+  fs.writeFileSync(path.join(assets, 'favicon.ico'), assembleIco(frames));
+}
+
 // Re-read fresh and merge only brand.favicon, to minimise the window vs the parallel make-social-card.
 function mergeFavicon(buildDir, slot) {
   const bj = path.join(buildDir, 'build.json');
@@ -86,7 +157,7 @@ function mergeFavicon(buildDir, slot) {
   fs.writeFileSync(bj, JSON.stringify(ctx, null, 2) + '\n');
 }
 
-function main() {
+async function main() {
   const buildDir = process.argv[2];
   if (!buildDir) {
     emit({ ok: false, outputs: {}, error: 'usage: node tools/make-favicon.mjs <build-dir>' });
@@ -95,7 +166,6 @@ function main() {
   }
   try {
     const bin = findBin();
-    if (!bin) throw new Error('ImageMagick not found — need `magick` (v7) or `convert` (v6) on PATH');
 
     const ctx = readCtx(buildDir);
     const hero = resolveHero(buildDir, ctx);
@@ -104,6 +174,12 @@ function main() {
     const assets = path.join(buildDir, 'assets');
     fs.mkdirSync(assets, { recursive: true });
 
+    if (!bin) {
+      // FALLBACK: no ImageMagick binary on PATH (and possibly no rights to install it).
+      // sharp produces the identical output set, incl. a hand-assembled multi-resolution .ico.
+      log('ImageMagick not found — using the sharp fallback renderer.');
+      await makeFaviconsWithSharp(hero, assets, bg);
+    } else {
     // Standard square favicons — center-square crop of the hero so the icon keeps the hero's identity.
     for (const n of ICON_SIZES) {
       const out = path.join(assets, `favicon-${n}.png`);
@@ -121,6 +197,7 @@ function main() {
       '(', '-clone', '0', '-resize', '16x16', ')',
       '(', '-clone', '0', '-resize', '32x32', ')',
       ico]);
+    }
 
     const set = [...ICON_SIZES.map((n) => `favicon-${n}.png`), 'favicon.ico'];
     const allFiles = [...set, 'apple-touch-icon.png'];
