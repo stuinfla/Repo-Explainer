@@ -226,6 +226,84 @@ async function generateOneGrok(prompt, targetPx, apiKey) {
 
 function safeName(s) { return String(s).replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'image'; }
 
+// ── LOCAL-SYNTHETIC engine ──────────────────────────────────────────────────────────────────────
+// When no cloud image engine is available (no OpenAI/Grok key, or their probes fail), the
+// atmospheric rungs are rendered deterministically from the brand palette with sharp: a diagonal
+// palette gradient plus soft translucent shapes, seeded from the prompt so every rung differs but
+// re-runs are stable (the resume cache still applies on top). It is clearly LABELLED
+// local-synthetic and costs $0 in the slot — an honest stand-in, not a fake "gpt-image" receipt.
+// Auto-selected only as a fallback when the cloud engines are absent, so hosted runs are
+// untouched; EXPLAINMYREPO_LOCAL_IMAGES=1 forces it explicitly (offline builds by choice).
+function fnv1a(s) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h >>> 0;
+}
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function hexToRgbaStr(h, alpha) {
+  let s = String(h).replace('#', '');
+  if (s.length === 3 || s.length === 4) s = s.slice(0, 3).split('').map((c) => c + c).join('');
+  if (s.length < 6) return null;
+  const r = parseInt(s.slice(0, 2), 16), g = parseInt(s.slice(2, 4), 16), b = parseInt(s.slice(4, 6), 16);
+  if ([r, g, b].some((n) => Number.isNaN(n))) return null;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+function buildSyntheticSvg(w, h, prompt, palette) {
+  const rnd = mulberry32(fnv1a(prompt || 'explainmyrepo'));
+  const stops = [
+    { off: '0%', color: 'rgba(15,18,32,1)' },
+    { off: '55%', color: 'rgba(15,18,32,1)' },
+    { off: '100%', color: 'rgba(15,18,32,1)' },
+  ];
+  const circles = [];
+  const rectEls = [];
+  const n = 7 + Math.floor(rnd() * 5);
+  for (let i = 0; i < n; i++) {
+    const c = palette[i % palette.length];
+    const fill = hexToRgbaStr(c, (0.10 + rnd() * 0.22).toFixed(3));
+    if (!fill) continue;
+    if (i % 3 === 0) {
+      rectEls.push(`<rect x="${(rnd() * w).toFixed(1)}" y="${(rnd() * h).toFixed(1)}" width="${(60 + rnd() * 240).toFixed(1)}" height="${(60 + rnd() * 240).toFixed(1)}" rx="${(30 + rnd() * 40).toFixed(1)}" fill="${fill}" transform="rotate(${(rnd() * 60 - 30).toFixed(1)} ${(rnd() * w).toFixed(1)} ${(rnd() * h).toFixed(1)})"/>`);
+    } else {
+      circles.push(`<circle cx="${(rnd() * w).toFixed(1)}" cy="${(rnd() * h).toFixed(1)}" r="${(40 + rnd() * (Math.min(w, h) * 0.28)).toFixed(1)}" fill="${fill}"/>`);
+    }
+  }
+  const cA = hexToRgbaStr(palette[0], 0.85) || 'rgba(124,58,237,0.85)';
+  const cB = hexToRgbaStr(palette[palette.length - 1], 0.85) || 'rgba(56,189,248,0.85)';
+  stops[2].color = cB;
+  const gradAngle = 20 + rnd() * 50;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`
+    + `<defs><linearGradient id="g" x1="0" y1="0" x2="${Math.cos((gradAngle * Math.PI) / 180).toFixed(3)}" y2="${Math.sin((gradAngle * Math.PI) / 180).toFixed(3)}">`
+    + stops.map((s) => `<stop offset="${s.off}" stop-color="${s.color}"/>`).join('') + `</linearGradient></defs>`
+    + `<rect width="${w}" height="${h}" fill="url(#g)"/>`
+    + rectEls.join('') + circles.join('')
+    + `<circle cx="${(w * (0.2 + rnd() * 0.6)).toFixed(1)}" cy="${(h * (0.2 + rnd() * 0.5)).toFixed(1)}" r="${(Math.min(w, h) * (0.18 + rnd() * 0.12)).toFixed(1)}" fill="${cA}"/>`
+    + `<rect x="0" y="${h - Math.max(10, h * 0.05)}" width="${w}" height="${Math.max(10, h * 0.05)}" fill="${hexToRgbaStr(palette[1] || palette[0], 0.9) || cA}"/>`
+    + `</svg>`;
+}
+async function generateOneLocal(prompt, px, palette) {
+  const [w, h] = px.split('x').map(Number);
+  if (!w || !h) throw new Error(`cannot parse px="${px}" for the local synthetic engine`);
+  const flat = [];
+  (function collect(v) {
+    if (flat.length >= 6) return;
+    if (typeof v === 'string') { const s = v.trim(); if (/^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(s)) flat.push(s); }
+    else if (Array.isArray(v)) { for (const x of v) collect(x); }
+    else if (v && typeof v === 'object') { for (const x of Object.values(v)) collect(x); }
+  })(palette || {});
+  const colors = flat.length ? flat : ['#7c3aed', '#38bdf8', '#f472b6'];
+  const buf = await sharp(Buffer.from(buildSyntheticSvg(w, h, prompt, colors))).png().toBuffer();
+  if (!buf.subarray(0, 8).equals(PNG_MAGIC)) throw new Error('local synthetic engine produced non-PNG output');
+  return buf;
+}
+
 // Build a deterministic colour-direction suffix from the brain's palette (pure transform).
 function paletteSuffix(palette) {
   if (!palette || typeof palette !== 'object') return '';
@@ -300,20 +378,24 @@ async function main() {
   // Either engine covers for the other if its probe fails, so a missing key degrades, never dies.
   let generateFn = null;
   const engines = {};
+  // LOCAL-SYNTHETIC lane: an explicit opt-in flag forces it; otherwise it is selected only as a
+  // FALLBACK when no cloud image engine is available (no working OpenAI or Grok key). Hosted runs
+  // with a valid key are untouched.
+  const localFlag = /^(1|true|yes|on)$/i.test(String(process.env.EXPLAINMYREPO_LOCAL_IMAGES || '').trim());
   const grokKey = loadGrokKey();
-  const grokOK = !!grokKey && await probeGrok(grokKey);
+  const grokOK = !localFlag && !!grokKey && await probeGrok(grokKey);
   const apiKey = loadOpenAiKey();
   let openaiModel = null;
-  if (apiKey) {
+  if (!localFlag && apiKey) {
     if (await probeModel(PRIMARY_MODEL, apiKey)) openaiModel = PRIMARY_MODEL;
     else if (await probeModel(FALLBACK_MODEL, apiKey)) {
       openaiModel = FALLBACK_MODEL;
       console.error(`[generate-image] gpt-image-2 probe failed — falling back to ${FALLBACK_MODEL}`);
     }
   }
-  if (!grokOK && !openaiModel) {
-    return fail(`image-engine probe failed for Grok AND the whole OpenAI chain (${PRIMARY_MODEL}, ${FALLBACK_MODEL}) — refusing to substitute or fake an image`);
-  }
+  // No cloud engine available (missing key or failed probe) → the labelled synthetic engine
+  // carries the build rather than failing it.
+  const useLocal = localFlag || (!grokOK && !openaiModel);
   const grokFn = grokOK ? (prompt, px) => generateOneGrok(prompt, px, grokKey) : null;
   const openaiFn = openaiModel ? (prompt, px) => generateOne(openaiModel, prompt, px, apiKey) : null;
 
@@ -323,13 +405,20 @@ async function main() {
   // engine produced a problem-section image nobody could decode. Grok stays as the FALLBACK (it is genuinely
   // 10-23x faster and a fine safety net), but it is no longer the default for anything a reader sees big.
   // Cost of this decision: ~2 extra minutes per build. That is the correct trade and we measured it.
-  engines.hero = openaiModel || GROK_MODEL;
-  engines.section = openaiModel || GROK_MODEL;
-  const heroFn = openaiFn || grokFn;
-  const sectionFn = openaiFn || grokFn;
-  generateFn = (prompt, px, kind) => (kind === 'hero' ? heroFn : sectionFn)(prompt, px);
+  if (useLocal) {
+    engines.hero = 'local-synthetic';
+    engines.section = 'local-synthetic';
+    generateFn = (prompt, px) => generateOneLocal(prompt, px, palette);
+    console.error(`[generate-image] engines — hero + sections: local-synthetic (palette gradient via sharp; no cloud image key, so cloud engines skipped)`);
+  } else {
+    engines.hero = openaiModel || GROK_MODEL;
+    engines.section = openaiModel || GROK_MODEL;
+    const heroFn = openaiFn || grokFn;
+    const sectionFn = openaiFn || grokFn;
+    generateFn = (prompt, px, kind) => (kind === 'hero' ? heroFn : sectionFn)(prompt, px);
+    console.error(`[generate-image] engines — hero: ${engines.hero} (quality, above the fold) · sections: ${engines.section} (speed)`);
+  }
   const engine = `hero:${engines.hero} + sections:${engines.section}`;
-  console.error(`[generate-image] engines — hero: ${engines.hero} (quality, above the fold) · sections: ${engines.section} (speed)`);
 
   const assetsDir = path.join(absBuildDir, 'assets');
   fs.mkdirSync(assetsDir, { recursive: true });
@@ -438,8 +527,10 @@ async function main() {
     usd: Math.round(imageUsd * 1e4) / 1e4,
     images: results.length,
     perImage,
-    basis: 'derived from published per-image rates (the image APIs return no charge)',
-    ratesCheckedAt: '2026-08-09',
+    basis: useLocal
+      ? 'local-synthetic render (palette gradient via sharp) — $0, no external image API used'
+      : 'derived from published per-image rates (the image APIs return no charge)',
+    ratesCheckedAt: useLocal ? null : '2026-08-09',
   };
 
   fs.writeFileSync(buildJsonPath, JSON.stringify(fresh, null, 2) + '\n');
@@ -447,7 +538,7 @@ async function main() {
   const files = results.map((res) => res.value.filePath);
   succeed({
     engine,
-    quality: engine === GROK_MODEL ? 'n/a (Grok has no quality param; see px for the aspect_ratio/resolution tier used)' : QUALITY,
+    quality: useLocal ? 'n/a (local-synthetic palette render — no external image model)' : engine === GROK_MODEL ? 'n/a (Grok has no quality param; see px for the aspect_ratio/resolution tier used)' : QUALITY,
     rungs: results.map((res) => ({ id: res.value.rung.id, kind: res.value.rung.kind, px: res.value.rung.px, file: res.value.filePath, http200: true })),
     files,
     slots: ['visuals.hero', 'visuals.sections'],
