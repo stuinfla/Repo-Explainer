@@ -45,6 +45,33 @@ function parseRepoUrl(raw) {
   return { host: u.host, owner, name, cloneUrl: `https://${u.host}/${owner}/${name}.git` };
 }
 
+// ---------- LOCAL SOURCE (2026-09-11): an absolute directory instead of a URL -------------------
+// repo.url may be an absolute path to an already-checked-out working tree (e.g. a Gerrit repo that
+// is already cloned locally — private infra, no reachable clone URL). We copy that tree (minus .git
+// and dependency/build cruft that would bloat the KB corpus) into <build-dir>/repo, keeping the same
+// CONTRACT the downstream stations rely on: a real working tree at repo.clonePath, a default branch
+// name, an honest reachable=true. No network, no credentials.
+function copyLocalSource(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  const SKIP = new Set(['.git', 'node_modules', 'dist', 'build', 'target', 'coverage', '.next', '.cache', '.venv', 'venv', '__pycache__']);
+  let files = 0;
+  (function walk(dir) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (SKIP.has(e.name)) continue;
+      const sp = path.join(dir, e.name);
+      const dp = path.join(dest, path.relative(src, sp));
+      if (e.isDirectory()) { fs.mkdirSync(dp, { recursive: true }); walk(sp); }
+      else if (e.isFile()) {
+        if (e.name.endsWith('.o') || e.name.endsWith('.pyc') || e.name === 'package-lock.json') continue;
+        fs.mkdirSync(path.dirname(dp), { recursive: true });
+        fs.copyFileSync(sp, dp);
+        files++;
+      }
+    }
+  })(src);
+  return files;
+}
+
 // ---------- git helpers (token never logged) ----------
 function runGit(args, { capture = true, timeout = 120000 } = {}) {
   try {
@@ -84,6 +111,37 @@ async function main() {
 
   const url = ctx?.repo?.url;
   if (!url) fail('build.json has no repo.url — clone-repo requires repo.url as its declared input');
+
+  // LOCAL SOURCE: an absolute path to an already-checked-out working tree replaces the whole
+  // probe/clone half of this station (no host, no credentials, no network). Same CONTRACT output:
+  // a working tree at <build-dir>/repo + a repo slot downstream stations can rely on.
+  const localSrc = (!/^[a-z][a-z0-9+.-]*:\/\//i.test(String(url)) && String(url).startsWith('/') && fs.existsSync(String(url)) && fs.statSync(String(url)).isDirectory())
+    ? String(url) : null;
+  if (localSrc) {
+    const name = path.basename(localSrc).replace(/\.git$/i, '');
+    const owner = path.basename(path.dirname(localSrc)) || 'local';
+    const pinned = (process.env.EXPLAINER_SUBMITTED_REPO || '').trim().toLowerCase();
+    if (pinned && `${owner}/${name}`.toLowerCase() !== pinned) {
+      fail(`SOURCE-IDENTITY VIOLATION (INV-21): local source resolves to ${owner}/${name} but this build was submitted for ${pinned}.`);
+    }
+    const dest = path.join(buildDirAbs, 'repo');
+    try { fs.rmSync(dest, { recursive: true, force: true }); }
+    catch (e) { fail(`could not clear prior clone at ${dest}: ${e.message}`); }
+    let files;
+    try { files = copyLocalSource(localSrc, dest); }
+    catch (e) { fail(`could not copy local source ${localSrc} -> ${dest}: ${e.message}`); }
+    if (files === 0) fail(`local source at ${localSrc} copied 0 files — is it an empty working tree?`);
+    let defaultBranch = 'main';
+    const gh = runGit(['-C', localSrc, 'rev-parse', '--abbrev-ref', 'HEAD']);
+    if (gh.ok && gh.stdout.trim()) defaultBranch = gh.stdout.trim();
+    const repoSlot = { url, owner, name, slug: name, private: true, defaultBranch, clonePath: dest, reachable: true, author: null, localSource: localSrc };
+    ctx.buildId = ctx.buildId || randomUUID();
+    ctx.repo = { ...(ctx.repo || {}), ...repoSlot };
+    try { fs.writeFileSync(buildJsonPath, JSON.stringify(ctx, null, 2) + '\n'); }
+    catch (e) { fail(`could not write build.json: ${e.message}`); }
+    console.error(`[clone-repo] OK local source ${localSrc} -> ${dest} (${files} files, branch ${defaultBranch})`);
+    done({ slot: 'repo', buildId: ctx.buildId, repo: repoSlot, clonePath: dest });
+  }
 
   const parsed = parseRepoUrl(url);
   if (!parsed) fail(`could not parse owner/name from repo.url "${url}" (expected https://host/owner/name or git@host:owner/name)`);
