@@ -360,11 +360,11 @@ parallel.
      element that maps to no concept is decoration; cut it. (This is the paperbanana
      discipline: find the real-world analogy first, then draw only its load-bearing parts.)
 - **Precondition (probe, fail loud).** Before generating raster, the
-  `generate-image` tool probes the **verified primary `gpt-image-2`**
-  (`GET /v1/models/gpt-image-2` → expected HTTP 200, confirmed 2026-06-28). Only if
-  that build-time probe **fails** does it fall back to `gpt-image-1` (then the
-  deeper `imagen-3` → `gemini-2.x-image`). Never proceed on an unverified ID; if the
-  whole chain 404s, **stop loud** with the failing ID.
+  `generate-image` tool probes the **verified primary `gpt-image-2.5-flare`**
+  (Images 2.5, confirmed by a real 1536×1024 generation 2026-09-17). Only if that
+  build-time probe **fails** does it fall back to `gpt-image-2`; `grok-imagine-image-2.0`
+  covers a missing OpenAI key. Never proceed on an unverified ID; if the whole chain
+  fails, **stop loud** with the failing ID.
 - **Raster rungs (emotional) — `generate-image`, ONE call, no rung argument:**
   the tool reads every declared rung (`visuals.hero` + `visuals.sections[]`) from
   `build.json` itself and generates all of them internally with bounded
@@ -373,11 +373,10 @@ parallel.
   produced redundant concurrent processes racing on the same output files, papered
   over by shell-level `sleep`-polling. Call it once and let it finish). Covers the
   **hero (1536×1024)**, the **problem (1024×1024)**, and the **use-case scenario
-  (1024×1024)** at quality `medium` (dropped from `high` 2026-07-10 — measured
-  2.7x faster with no visible quality loss for this content type; see the QUALITY
-  comment in `tools/generate-image.mjs` for the A/B evidence). Valid `gpt-image-2`
-  sizes: `1024×1024`, `1024×1536`, `1536×1024`, `auto` (the DALL·E-3 `1792×1024`
-  is rejected — never use it).
+  (1024×1024)** at quality `xhigh` (2026-09-17: on Images 2.5 an `xhigh` hero measured
+  28.1s, and was clearly sharper with legible on-screen text than `gpt-image-2` at `medium`;
+  see the QUALITY comment in `tools/generate-image.mjs`). Valid sizes: `1024×1024`,
+  `1024×1536`, `1536×1024`, `auto` (the DALL·E-3 `1792×1024` is rejected — never use it).
 - **STRUCTURAL RUNGS ARE BESPOKE, AUTHORED, ANIMATED SVG (INV-23, 2026-07-13 — rails on
   truth, never on form).** The old path funneled every diagram through one renderer and the
   owner's verdict on the result was exact: "four different versions of the same process map."

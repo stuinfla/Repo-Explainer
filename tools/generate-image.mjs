@@ -37,7 +37,7 @@ const ROOT = path.resolve(TOOLS_DIR, '..');
 
 const API_URL = 'https://api.openai.com/v1';
 const GROK_API_URL = 'https://api.x.ai/v1';
-const GROK_MODEL = 'grok-imagine-image-quality';
+const GROK_MODEL = 'grok-imagine-image-2.0';   // 2026-09-17: newest on the live xAI list (2026-08-08); same aspect_ratio/resolution request verified HTTP 200
 // Grok has no per-pixel `size` param — it takes aspect_ratio + resolution. Mapped so the native
 // output is >= our target px (downscale-only). Verified live 2026-07-11: 1536x1024 -> "3:2"@"2k"
 // natively returns 2496x1664 (same 1.5 ratio); 1024x1024 -> "1:1"@"1k" returns EXACTLY 1024x1024.
@@ -56,9 +56,15 @@ const GROK_PX_MAP = {
 // gemini-3.1-flash-image is 14x faster but added an unrequested padded frame instead of filling
 // the canvas — a real defect, not fixed, flagged as a future candidate once that's resolved.
 // Meta's Emu has no public API at all (app-only, watermarked) — not usable regardless of quality.
-const QUALITY = 'medium';
-const PRIMARY_MODEL = 'gpt-image-2';         // verified primary (ADR-0005 D7)
-const FALLBACK_MODEL = 'gpt-image-1';        // safety net only if the probe fails
+// 2026-09-17 (owner: "latest and greatest graphics"): moved to the Images 2.5 family. OpenAI's image
+// guide: "Choose Sunburst for workflows where editing precision matters most, and Flare for fast,
+// high-quality everyday image generation" — this tool only generates, so Flare. Quality tiers are now
+// low/medium/high/xhigh/max. Measured on the real ruos hero brief at 1536x1024: high 23.8s, xhigh 28.1s
+// (2,459 vs 1,372 output tokens), both clearly sharper with legible on-screen text vs gpt-image-2 @
+// medium — so the 2026-07-10 speed argument below no longer applies. max was not measured.
+const QUALITY = 'xhigh';
+const PRIMARY_MODEL = 'gpt-image-2.5-flare';  // verified: real 1536x1024 generation, HTTP 200
+const FALLBACK_MODEL = 'gpt-image-2';          // previous generation, safety net only if the probe fails
 const VALID_SIZES = new Set(['1024x1024', '1024x1536', '1536x1024', 'auto']);
 const PROBE_TIMEOUT_MS = 30_000;
 const GEN_TIMEOUT_MS = 300_000;              // high-quality photoreal renders can take 60–90s+ when the endpoint is loaded; 180s was too tight and aborted mid-render
@@ -308,7 +314,7 @@ async function main() {
     if (await probeModel(PRIMARY_MODEL, apiKey)) openaiModel = PRIMARY_MODEL;
     else if (await probeModel(FALLBACK_MODEL, apiKey)) {
       openaiModel = FALLBACK_MODEL;
-      console.error(`[generate-image] gpt-image-2 probe failed — falling back to ${FALLBACK_MODEL}`);
+      console.error(`[generate-image] ${PRIMARY_MODEL} probe failed — falling back to ${FALLBACK_MODEL}`);
     }
   }
   if (!grokOK && !openaiModel) {
