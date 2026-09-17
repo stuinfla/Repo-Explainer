@@ -148,6 +148,50 @@ test('a degenerate dep-graph WITH authored concept rows renders the concept, not
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+// ── ZERO NODES is the most degenerate graph of all, not a different failure (2026-09-17) ─────────
+// ruvnet/ruos (one Rust binary + SKILL.md files) produced a dep-graph with nodes: []. The brain had
+// authored architecture rows, but an older guard ("dep-graph has no nodes") fired BEFORE the
+// 0-edge demotion above could run, so the build died at Station 4 with its answer already written.
+// A graph with no nodes has no edges; it must take the same path as the pair of tests above.
+function makeZeroNodeFixture() {
+  const dir = makeDegenerateFixture();
+  fs.writeFileSync(path.join(dir, 'kb', 'dep-graph.json'), JSON.stringify({   // ruos's real shape
+    ecosystems: [], componentCount: 0, internalEdgeCount: 0, externalDepCount: 0,
+    nodes: [], internalEdges: [], externalDeps: {}, externalDepNames: [],
+  }));
+  return dir;
+}
+
+test('a dep-graph with ZERO nodes WITH authored concept rows renders the concept (ruos regression)', () => {
+  const dir = makeZeroNodeFixture();
+  const bj = path.join(dir, 'build.json');
+  const b = JSON.parse(fs.readFileSync(bj, 'utf8'));
+  b.visuals.architectureDiagram = {
+    title: 'How it is built',
+    rows: [{ items: ['protocol layer', 'control tools', 'desktop executor', 'agent stack'], connect: true }],
+  };
+  fs.writeFileSync(bj, JSON.stringify(b, null, 2));
+  try {
+    runMakeDiagrams(dir);
+    const svg = fs.readFileSync(path.join(dir, 'assets', 'architecture.svg'), 'utf8');
+    assert.match(svg, /desktop executor/, 'must draw the authored concept');
+    assert.ok(!/Module dependency map/.test(svg), 'must NOT draw an empty dependency map');
+    assert.ok(!/0 modules|0 internal links/.test(svg), 'must never ship a "0 modules" caption');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('a dep-graph with ZERO nodes and NO authored rows still fails LOUD, naming what to author', () => {
+  const dir = makeZeroNodeFixture();
+  try {
+    assert.throws(() => runMakeDiagrams(dir), (err) => {
+      const out = String(err.stdout || '') + String(err.stderr || '');
+      assert.match(out, /architectureDiagram\.rows/,
+        'relaxing the guard must not let a zero-node repo through with an invented diagram');
+      return true;
+    });
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 // ── REGRESSION: the hero animation is PER-REPO and must never be borrowed (2026-07-12) ────────────
 // For about twenty minutes the animation's content (ternlight's own ternary weights, "it never
 // multiplies", "4.6 MB") was a CONSTANT inside make-diagrams — which would have stapled ternlight's

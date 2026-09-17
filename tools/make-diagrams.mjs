@@ -1349,7 +1349,11 @@ function main() {
   const dgPath = resolveKbPath(kb.depGraphPath, buildDir);
   if (!dgPath) die(`architecture diagram cannot be produced: kb.depGraphPath not found (${kb.depGraphPath ?? 'unset'}) — refusing to invent module structure`);
   const dg = loadJson(dgPath, 'dep-graph');
-  if (!Array.isArray(dg.nodes) || dg.nodes.length === 0) die(`architecture diagram cannot be produced: dep-graph has no nodes (${dgPath})`);
+  // Only a MALFORMED graph dies here. Zero nodes is the most degenerate graph, not a different failure:
+  // it has 0 edges, so it takes the authored-concept path below — which still dies loud, naming
+  // architectureDiagram.rows, if the brain authored none. (ruvnet/ruos, 2026-09-17: rows were authored,
+  // but this guard fired first and the build died with its answer already written.)
+  if (!Array.isArray(dg.nodes)) die(`architecture diagram cannot be produced: dep-graph is malformed — no nodes array (${dgPath})`);
 
   const epPath = resolveKbPath(kb.entrypointsPath, buildDir);
   if (!epPath) die(`flow diagram cannot be produced: kb.entrypointsPath not found (${kb.entrypointsPath ?? 'unset'}) — refusing to invent runtime flow`);
