@@ -16,6 +16,91 @@ const componentWord = ['crate', 'package', 'module', 'component'];
 
 /** @type {Record<string, object>} keyed by target slug. */
 export const targets = {
+  "mcp-studio": {
+    "slug": "mcp-studio",
+    "metaName": "mcp-studio",
+    "embed": {
+      "model": "Xenova/bge-small-en-v1.5",
+      "dim": 384,
+      "pooling": "mean",
+      "queryPrefix": "Represent this sentence for searching relevant passages: ",
+      "rankScale": 0.6,
+      "rvfSuffix": ".rvf"
+    },
+    "productNames": [],
+    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/mcp-studio/repo",
+    "scopeExclude": [
+      "node_modules",
+      "dist",
+      "target",
+      ".git",
+      "coverage",
+      "pkg",
+      ".next",
+      ".claude",
+      ".claude-flow",
+      "vendor",
+      "public",
+      "build",
+      ".github"
+    ],
+    "codeExt": [
+      ".ts",
+      ".tsx",
+      ".mjs",
+      ".js"
+    ],
+    "fullTextExt": [
+      ".md",
+      ".mdx",
+      ".txt"
+    ],
+    "templateExt": [],
+    "componentRoots": [
+      "app",
+      "lib",
+      "components",
+      "widget"
+    ],
+    "componentWord": [
+      "crate",
+      "package",
+      "module",
+      "component"
+    ],
+    "include": [
+      {
+        "rule": "mdSweepFullText",
+        "roots": [
+          "docs"
+        ]
+      },
+      {
+        "rule": "literalFiles",
+        "files": [
+          "README.md",
+          "package.json",
+          ".mcp.json"
+        ]
+      },
+      {
+        "rule": "sourceBodies",
+        "roots": [
+          "app",
+          "lib",
+          "components",
+          "widget",
+          "scripts"
+        ],
+        "ext": [
+          ".ts",
+          ".tsx",
+          ".mjs"
+        ]
+      }
+    ]
+  },
+
   "ruos": {
     "slug": "ruos",
     "metaName": "ruos",

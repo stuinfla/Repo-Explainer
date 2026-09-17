@@ -200,9 +200,15 @@ export function sourceBodies(ctx, rule) {
   const ROOTS_FILE = /(^|\/)(lib\.rs|main\.rs|mod\.rs|index\.ts|index\.js|index\.mjs)$/i;
   const MINIFIED = /\.(min|bundle)\.(js|css|mjs)$/i;
   const TESTY = /(^|\/)(tests?|benches?|__tests__|__mocks__|spec)\//i;
+  // NAMING A ROOT *IS* THE SCOPE DECISION (2026-09-17, ruvnet/mcp-studio). The /src/ + root-file
+  // convention below is the fallback for a target that named no specific root ("." or none). A
+  // Next.js app keeps its code in app/ + lib/ + components/ with no src/ anywhere, so the
+  // convention silently ingested ZERO source and the KB came out as README + config only.
+  const named = (rule.roots || []).filter((r) => r && r !== '.');
   const inScope = (rel) => {
     if (MINIFIED.test(rel)) return false;
     if (TESTY.test(rel)) return false;
+    if (named.some((r) => rel === r || rel.startsWith(`${r.replace(/\/+$/, '')}/`))) return true;
     if (/(^|\/)src\//.test(rel)) return true;
     return ROOTS_FILE.test(rel);
   };
