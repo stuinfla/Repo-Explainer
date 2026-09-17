@@ -286,11 +286,31 @@ reader asks a sequence of questions; every section answers the **next** one as i
 forms. **Never show a low-level detail before the high-level frame that makes it
 legible.**
 
-**THE COMPREHENSION LADDER (ADR-0006 — altitude control).** The reader is a **smart
-developer from a DIFFERENT domain** — intelligent, curious, knowing NOTHING about this
-project's field. Sections 1–4 (hero, problem, whatItIs, insight) assume **zero** domain
+**THE COMPREHENSION LADDER (ADR-0006 v1.2.0 — altitude control).** The reader is a **curious
+FIFTEEN-YEAR-OLD** (superseding "a smart developer from a different domain", 2026-09-17: the owner
+scored two shipped pages 6.5/10 — *"it still feels like it's asking me to geek out versus bringing it
+back to my level ... the whole point of this is to explain it like somebody is 15"*). They have never
+built software. After rungs 1–4 they must be able to say, in their own words: what this is, what it
+would do FOR THEM, why the trick is clever, and roughly how it works.
+
+Three hard rules, two of them measured deterministically before any vision pass:
+1. **SHAPE — INV-24 ReadsAtFifteen.** Flesch-Kincaid grade ≤ 9.5, no sentence over 30 words, average
+   ≤ 22, over the rung-1-4 text. The pages that triggered this averaged 25 and 39 words per sentence
+   and read at grade 11 and 16 — with every acronym correctly glossed. Vocabulary was never the whole
+   problem; a three-clause sentence of common words defeats INV-20 completely.
+2. **PLAIN WORDS OVER GLOSSED JARGON.** Prefer "the same login you already use" over "SSH session (a
+   secure shell login)". A gloss keeps the jargon; plain words remove it. Insider nouns (protocol,
+   endpoint, transport, runtime, schema, stateless, client, server) do not belong in rungs 1-4 at all
+   unless the page collapses without them. No file paths, code identifiers or commands there either.
+3. **LEAD WITH WHY IT EXISTS (D10).** Banned: naming the CATEGORY ("it is a virtual desktop") instead
+   of the change it makes for the reader, and explaining the ENABLER as if it were the product. Read
+   the repo's own README opening before fixing your thesis — if the project calls itself one thing and
+   your page sells something smaller, your page is wrong. State the PRIMARY use case explicitly.
+
+Sections 1–4 (hero, problem, whatItIs, insight) assume **zero** domain
 knowledge: no acronym or term of art without a plain-words gloss at first use (INV-20
-fails the build on violations, deterministically). The **problem section works from
+fails the build on violations, deterministically; the gloss must sit AT first use — an
+appositive or dash form — not in a later sentence). The **problem section works from
 first principles** — make the reader FEEL the pain in human, consequence terms BEFORE
 any category vocabulary; never name the solution's category before the reader feels the
 problem it kills. `howItWorks` may descend ONE technical level (terms still defined);
@@ -343,7 +363,13 @@ parallel.
   2. **The swap test kills generics:** if the finished image could ship unchanged on a
      DIFFERENT repo's page, it fails. A person at a laptop passes the swap test for every repo
      on earth — which is exactly why it is banned.
-  3. **BANNED imagery (the AI-slop list — these have all shipped and all read as slop):**
+  3. **BANNED imagery (the AI-slop list — these have all shipped and all read as slop).**
+     **NO ROOMS, NO PROPS, NO PEOPLE (ADR-0008 v1.1.0, 2026-09-17):** desks, offices, cafes, windows,
+     plants, coffee cups, notebooks, pens, books, stray phones, sticky notes as set dressing, hands.
+     Two consecutive builds shipped a desk-and-plant "problem" scene that the grader capped at B5=55
+     (*"a generic desk/plant/binder scene does not teach a discernible fact ... could ship unchanged on
+     many software or office-product pages"*). Compose from the SUBJECT ITSELF — the screens, artifacts
+     and objects the repo is about — filling the frame. Also banned:
      person at a laptop/desk/screen · hands typing · generic office or cafe scenes · glowing
      abstract networks/particles · fake UI floating on a fake device · concerned-developer
      stock moods. The model WILL drift back toward these under a vague brief; the brief is
@@ -481,7 +507,15 @@ parallel.
   chips band: "the animation is nothing more than a dotted line. That's worthless. You
   punted.").** For any repo whose trick is spatial or mechanical (most), author a **bespoke
   animated SVG SCENE** instead (`visuals.heroAnim.sceneSvg` → `assets/hero-scene.svg`, same
-  in-SVG CSS/SMIL rules as INV-23): a 6–10s loop in which the mechanism VISIBLY HAPPENS — for
+  in-SVG CSS/SMIL rules as INV-23). **IMPLEMENTED 2026-09-17 (ADR-0013)** — this path had been
+  specified since 2026-07-13 with no code behind it, so every spatial repo silently got chips or
+  nothing. `make-diagrams` now installs the scene and REFUSES it loudly if it lacks a viewBox, real
+  animation, or a `prefers-reduced-motion` static end state. **Labels inside a scene are page copy**
+  and obey the ladder: plain words, sentence case (ALL-CAPS reads as an acronym to INV-20).
+  **OPTIONAL 3D (`visuals.hero3d`)**: an authored ES module mounted OVER the flat scene only when the
+  viewer has WebGL and has not asked for reduced motion; the scene stays in the DOM as the fallback
+  and the 3D layer fades it rather than double-drawing. Use 3D only when the subject is genuinely
+  spatial — it earns nothing on the vision gate, which scores still screenshots: a 6–10s loop in which the mechanism VISIBLY HAPPENS — for
   a credential broker, the request plug travels the switchboard and returns with a result
   while the key never crosses the vault line; for a quantizer, the messy weights snap to
   three states. The chips band is the fallback for repos whose trick is genuinely abstract.
@@ -566,10 +600,13 @@ parallel.
   (3) Would this explain it for somebody who doesn't understand it? (4) Would it give me confidence I
   understand the architecture? (5) Does it make me smile — "oh, that's cool"? (6) Could someone who
   knows nothing about this domain read the first four sections and explain the problem and the
-  solution back to me? (ADR-0006 D4 — the critic answers (6) role-playing a smart developer from a
-  DIFFERENT domain.) These are independent of the numeric axes; a page can clear the numbers and
-  still fail one of these. **INV-20 (deterministic, free):** any acronym in the first four sections
-  without a plain-words gloss at first use fails the gate before the vision pass even runs.
+  solution back to me? (ADR-0006 v1.2.0 — the critic answers (6) role-playing a **curious
+  fifteen-year-old**, not a developer.) These are independent of the numeric axes; a page can clear the
+  numbers and still fail one of these. Two deterministic, FREE gates run before the vision pass:
+  **INV-20** — any acronym in the first four sections without a plain-words gloss AT first use; and
+  **INV-24 ReadsAtFifteen** — those sections must measure Flesch-Kincaid grade ≤ 9.5, no sentence over
+  30 words, average ≤ 22. Either failure costs zero tokens, charges no grading iteration, and returns
+  the measured numbers for the refine loop to fix.
 
 - **The bar + the loop (non-negotiable — iteration over a few revs is EXPECTED, not a failure):**
   - **BAR:** on **BOTH** devices, **mean ≥ 90 AND min axis ≥ 85 AND all six operator questions YES**

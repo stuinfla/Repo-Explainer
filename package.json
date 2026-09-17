@@ -1,6 +1,6 @@
 {
   "name": "explainmyrepo",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Turn any GitHub repo into a bespoke, art-directed explainer site \u2014 for humans and their AI \u2014 in one command.",
   "type": "module",
   "bin": {
