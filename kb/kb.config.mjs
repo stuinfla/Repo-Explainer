@@ -121,8 +121,7 @@ export const targets = {
       ".git",
       "coverage",
       "pkg",
-      ".next",
-      "skills"
+      ".next"
     ],
     "codeExt": [
       ".rs",
@@ -160,6 +159,11 @@ export const targets = {
         "rule": "literalFiles",
         "files": [
           "README.md",
+          "skills/README.md",
+          "skills/ruflo-swarm/SKILL.md",
+          "skills/ruflo-memory/SKILL.md",
+          "skills/ruflo-hooks/SKILL.md",
+          "skills/ruvector/SKILL.md",
           "package.json"
         ]
       },
@@ -1822,7 +1826,9 @@ export const targets = {
       gotchas:       'PRIMER#9-hardware-limits-and-gotchas',
     },
 
-    repoDir: '/tmp/agentic-proof-ruview/repo',
+    // 2026-09-17: repoDir pointed at a hosted proof run's scratch clone (/tmp/agentic-proof-ruview),
+    // which no longer exists; the local door clones into explainer-builds/<slug>/repo.
+    repoDir: '/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/ruview/repo',
     scopeExclude: [
       'node_modules',
       'dist',
@@ -1837,6 +1843,22 @@ export const targets = {
       'archive',
       'vendor',
       'releases',
+      // Agent tooling and bulk artifacts — not the product (3,423 files in this repo; the KB must
+      // hold what a reader needs to understand RuView, not every file that exists).
+      '.claude',
+      '.claude-flow',
+      '.github',
+      'harness',
+      'benchmarks',
+      'data',
+      'logging',
+      'monitoring',
+      'plans',
+      'references',
+      'semconv',
+      'templates',
+      'docker',
+      'assets',
     ],
 
     codeExt: ['.rs', '.py', '.js', '.ts', '.mjs', '.sh', '.toml'],
@@ -1853,22 +1875,24 @@ export const targets = {
     ],
     componentWord: ['module', 'component', 'crate', 'package', 'service', 'sensor'],
 
+    // A '.' md sweep pulled in CLAUDE.md / AGENTS.md (agent instructions, not product docs) and the
+    // whole 951-file markdown tree. Named docs verbatim + the integration guides + ORIENTATION-level
+    // doc comments from the engines: enough to explain RuView, small enough to stay on-topic.
     include: [
-      { rule: 'mdSweepFullText', roots: ['.', 'docs', 'docs/integrations'] },
       { rule: 'literalFiles', files: [
         'README.md',
+        'PROOF.md',
         'docs/user-guide.md',
         'docs/build-guide.md',
         'docs/proof-of-capabilities.md',
-        'pyproject.toml',
-        'requirements.txt',
+        'docs/calibration-guide.md',
+        'docs/user-guide-apple-homepod.md',
         'python/README.md',
         'ui/README.md',
         'firmware/esp32-csi-node/README.md',
       ]},
-      { rule: 'sourceBodies', roots: ['wifi_densepose', 'scripts', 'python/src'], ext: ['.py', '.rs', '.js', '.mjs'] },
-      { rule: 'sourceBodies', roots: ['ui'], ext: ['.js', '.ts', '.mjs'] },
-      { rule: 'docCommentSweep', roots: ['wifi_densepose', 'python', 'ui'] },
+      { rule: 'mdSweepFullText', roots: ['docs/integrations'] },
+      { rule: 'docCommentSweep', roots: ['v2/crates', 'wifi_densepose', 'ui', 'firmware'] },
     ],
   },
 

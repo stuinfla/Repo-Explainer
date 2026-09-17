@@ -179,3 +179,42 @@ see* — the owner's "high degree of confidence." A page that teaches but doesn'
 - **Phase 2 (this week):** D5 expanders in `tools/assemble-page.mjs` + Station 3 authoring of
   the deep layer.
 - **Phase 3 (after widget design approval):** D6 feedback loop.
+
+---
+
+## v1.2.0 (2026-09-17) — the reader is a FIFTEEN-YEAR-OLD, and shape is measured
+
+**Status: Accepted + Implemented.** Amends D1, D3 and the reader model.
+
+**What happened.** The owner read two live pages (ruos-explainer, mcp-studio-explainer) and scored
+them **6.5/10**: *"it still feels like it's asking me to geek out versus bringing it back to my
+level ... the whole point of this is to explain it like somebody is 15."* Measured on the first four
+sections of those exact pages: mcp-studio read at **grade 11.0** (25-word sentences), ruos at
+**grade 16.3** (39-word sentences, the longest 60+). Every acronym was glossed. INV-20 passed both.
+
+**Why the existing rails could not catch it.** D3 and INV-20 police VOCABULARY. Neither looks at
+SHAPE. A three-clause 39-word sentence made of common words defeats them completely, and that — not
+jargon — was the main barrier. A gloss also keeps the jargon on the page: "SSH session (a secure
+shell login)" still costs the reader a concept they did not need.
+
+**D8 — the reader model is a curious fifteen-year-old.** Not "a smart developer from a DIFFERENT
+domain" (D1's original wording, now superseded). They have never built software. After rungs 1–4
+they must be able to say, in their own words: what this is, what it would do FOR THEM, why the trick
+is clever, and roughly how it works. Prefer removing jargon over glossing it.
+
+**D9 — INV-24 ReadsAtFifteen, deterministic and free.** `tools/quality-grade.mjs` computes
+Flesch-Kincaid grade and sentence length over the rung-1-4 text and fails BEFORE the vision pass,
+charging no grading iteration, exactly like INV-20: **grade ≤ 9.5, no sentence over 30 words,
+average ≤ 22.** The failure feeds the refine loop with the measured numbers.
+
+**D10 — lead with WHY IT EXISTS, not with what it technically is.** The same owner pass asked of
+ruOS: *"why does ruOS exist, and what's the primary use case? ... that makes it seem like a very
+low-level utility. I was led to believe it did a lot more."* Two banned failures: naming the
+CATEGORY ("it is a virtual desktop") instead of the change it makes for the reader, and explaining
+the ENABLER as if it were the product (ruOS's page sold "an AI can click" — the enabler — while the
+repo's own README opens with "a desktop that runs itself ... it acts on its own"). The page must
+state the PRIMARY use case explicitly and check its thesis against the repo's own framing.
+
+**Measured after (same pages, same measurement):** ruos grade 16.3 → **6.8** (39 → 16 words per
+sentence); mcp-studio grade 11.0 → **5.6** (25 → 14). Implemented in `src/brain.mjs` (authoring
+prompt) and `tools/quality-grade.mjs` (INV-24).

@@ -48,3 +48,28 @@ better than this page." He was right, and the cause was in the spec, not the exe
 - Some sections will ship with no raster at all — by design: absence over decoration.
 - Existing wall pages predate INV-22 and will fail the new B5 if re-graded; regrade only on
   rebuild.
+
+---
+
+## v1.1.0 (2026-09-17) — no rooms, no props, no people
+
+**Status: Accepted + Implemented.** Strengthens INV-22's banned list, and moves the rule UPSTREAM
+from the gate into the brief.
+
+Both pages shipped in this session needed a hand-fixed problem image, for the same reason. ruOS drew
+a person at a desk with unrelated operating-system branding; mcp-studio drew a desk scene with a
+plant, coffee, books and a phone, which the vision grader correctly capped at **B5 = 55**: *"a
+generic desk/plant/binder scene does not teach a discernible fact ... could ship unchanged on many
+software or office-product pages."* INV-22 already banned people and offices, but the rule lived in
+the SKILL and the gate — not in the prompt that actually writes the brief, so the brief drifted every
+time and the gate caught it only after the money was spent.
+
+Now in `src/brain.mjs`'s visual-brief prompt: desks, offices, cafes, windows, plants, coffee cups,
+notebooks, pens, books, stray phones, sticky notes as set dressing, hands and people are banned
+outright from every raster. Compose from the SUBJECT ITSELF — the screens, artifacts and objects the
+repo is about — filling the frame. Every raster brief must open with a `takeaway:` line, and legible
+project-specific text inside the image is the cheapest way to pass the swap test.
+
+Measured: the replacement problem images (ruOS's finished terminal beside an unpressed Next button;
+mcp-studio's same dashboard rendered twice, one tile missing and the input clipped) both teach their
+section's exact claim with no props in frame.

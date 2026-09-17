@@ -510,6 +510,51 @@ ${jsonLdScript}
       if (refusalRaw) refusalHtml = `\n      <div class="hero-refusal" role="img" aria-label="${refusalAria}">${refusalRaw}</div>`;
     }
   }
+  // ── OPTIONAL 3D HERO (visuals.hero3d) — owner ask 2026-09-17, "the flourish of animations in Three.js"
+  // ─────────────────────────────────────────────────────────────────────────────────────────────────
+  // Deliberately an ENHANCEMENT, never the page: the vision gate scores still screenshots, WebGL costs
+  // battery on phones, and a rotating object that performs no argument is the decoration ADR-0008 bans.
+  // So the authored SVG scene (or the raster hero) renders FIRST and stays in the DOM; the 3D module
+  // only paints over it when the viewer has WebGL, has not asked for reduced motion, and the module
+  // actually loads. Any failure — no WebGL, blocked CDN, a throw inside the scene — leaves the page
+  // exactly as it was. The scene itself is authored per repo (never generic) and must say what it is.
+  let hero3dHtml = '';
+  if (visuals.hero3d && visuals.hero3d.module) {
+    const src = path.isAbsolute(visuals.hero3d.module) ? visuals.hero3d.module : path.join(buildDir, visuals.hero3d.module);
+    if (!fs.existsSync(src)) throw new Error(`visuals.hero3d.module not found: ${src} — author the scene before assembling, or drop the slot`);
+    const modName = copyAsset(src, buildDir, siteAssets, '3D hero module');
+    const label = esc(visuals.hero3d.altText || refusalAria);
+    hero3dHtml = `
+      <div class="hero-3d" data-hero-3d aria-hidden="true" style="position:absolute;inset:0;opacity:0;transition:opacity .9s ease;pointer-events:none"></div>
+      <script type="module">
+        (async () => {
+          const host = document.querySelector('[data-hero-3d]');
+          if (!host) return;
+          if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+          try {
+            const probe = document.createElement('canvas');
+            if (!(probe.getContext('webgl2') || probe.getContext('webgl'))) return;   // no WebGL: keep the flat scene
+            const scene = await import('./assets/${modName}');
+            if (typeof scene.mount !== 'function') return;
+            await scene.mount(host, { label: ${JSON.stringify(label)} });
+            host.style.opacity = '1';
+            // The flat scene STAYS in the DOM (fallback + screen readers) but stops drawing over the
+            // 3D one: composited together they double every element — two walls, two figures — which
+            // looked muddled on the first live render of ruview-explainer.
+            const flat = host.parentElement && host.parentElement.querySelector('.hero-refusal');
+            // .hero-refusal carries "animation: hero-enter ... both", and a filled animation BEATS an
+            // inline style — the first attempt set opacity and nothing happened. Clear the animation
+            // and set the value as !important, or the two scenes keep drawing over each other.
+            if (flat) {
+              flat.style.animation = 'none';
+              flat.style.transition = 'opacity .9s ease';
+              flat.style.setProperty('opacity', '0', 'important');
+            }
+          } catch (err) { /* blocked CDN, WebGL loss, scene throw — the page below is already correct */ }
+        })();
+      </script>`;
+  }
+
   reqStr(hero.lede, 'content.sections.hero.lede');
   const ctas = Array.isArray(hero.ctas) && hero.ctas.length ? hero.ctas : [
     { label: 'See how it works →', href: '#how-it-works' },
@@ -543,7 +588,7 @@ ${jsonLdScript}
         ${heroFile ? `<figure class="hero-art">
           <button type="button" class="diagram-zoom" data-src="assets/${esc(heroFile)}" data-alt="${esc(heroAlt)}" aria-label="Enlarge: ${esc(heroAlt)}"><img src="assets/${esc(heroFile)}" alt="${esc(heroAlt)}"></button>
         </figure>` : ''}
-      </div>${refusalHtml}${heroVideoHtml}
+      </div>${refusalHtml ? `<div class="hero-motion" style="position:relative">${refusalHtml}${hero3dHtml}</div>` : hero3dHtml}${heroVideoHtml}
     </div>${plainBand}
   </section>`;
 

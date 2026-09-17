@@ -304,6 +304,16 @@ export function extractRungText(html) {
     // can satisfy without helping the reader is worse than no check: it manufactures false confidence.
     // Hidden text is now stripped BEFORE the scan, so a gloss only counts if the reader can actually read it.
     .replace(/<[^>]*class="[^"]*\bvisually-hidden\b[^"]*"[^>]*>[\s\S]*?<\/[a-zA-Z]+>/g, ' ')
+    // BLOCK BOUNDARIES ARE SENTENCE BOUNDARIES (2026-09-17). Stripping tags with a bare space welded
+    // separate blocks into one run of words: on the RuView build, two button labels plus four table
+    // cells became a single "39-word sentence" and INV-24 failed a page that actually measured grade
+    // 7.8 with 16.9-word sentences. A gate that fires on page chrome teaches authors to distrust it.
+    // INV-20 is unaffected — an added full stop cannot hide or create an acronym.
+    // An inline SVG scene's <title>/<desc> is its accessible description, not visible copy — the alt-text
+    // rules already govern it, and scanning it double-counts one sentence as page prose.
+    .replace(/<(title|desc)[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<\/(p|li|h[1-6]|td|th|tr|figcaption|caption|button|a|summary|div|section|blockquote|dt|dd|text|tspan)\s*>/gi, '. ')
+    .replace(/<(br|hr)\s*\/?>/gi, '. ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/&(?:rsquo|lsquo|#8217|#8216);/g, "'").replace(/&(?:mdash|#8212);/g, '—')
@@ -342,6 +352,51 @@ export function findUnexplainedAcronyms(text, whitelist = INV20_WHITELIST) {
  * "95 on every axis" is unreachable by an honest grader. Exported so the gate logic is unit-testable
  * without a network call or a browser.
  */
+// ── INV-24 ReadsAtFifteen (ADR-0006 v1.2.0) — DETERMINISTIC, runs with INV-20, costs zero tokens ──
+// The owner's verdict on two shipped pages, 2026-09-17: "it still feels like it's asking me to geek
+// out versus bringing it back to my level ... the whole point is to explain it like somebody is 15".
+// Measured on those pages' first four sections: mcp-studio read at grade 11.0 (25-word sentences),
+// ruos at grade 16.3 (39-word sentences). INV-20 could not see this — every acronym was glossed and
+// every sentence was still a three-clause pile. Vocabulary was never the whole problem; SHAPE was.
+// A 15-year-old reads at about grade 8, so the bar is grade <= 9.5 with no sentence over 30 words.
+const SYLL_RE = /[aeiouy]{1,2}/g;
+export function syllablesIn(word) {
+  const w = String(word).toLowerCase().replace(/[^a-z]/g, '');
+  if (!w) return 0;
+  if (w.length <= 3) return 1;
+  const trimmed = w.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, '');
+  return (trimmed.match(SYLL_RE) || ['x']).length;
+}
+export const READS_AT_FIFTEEN = { maxGrade: 9.5, maxSentenceWords: 30, maxAvgWords: 22 };
+export function readingStats(text) {
+  const clean = String(text).replace(/\s+/g, ' ').trim();
+  const sentences = clean.split(/(?<![A-Z][a-z]?)[.!?]+(?=\s|$)/)
+    .map((s) => s.trim()).filter((s) => s.split(/\s+/).filter(Boolean).length > 3);
+  const words = clean.split(/\s+/).filter((w) => /[a-z]/i.test(w));
+  if (!sentences.length || !words.length) return { grade: 0, sentences: 0, avgWords: 0, longest: 0, longSentences: [] };
+  const sylls = words.reduce((n, w) => n + syllablesIn(w), 0);
+  const avgWords = words.length / sentences.length;
+  const grade = 0.39 * avgWords + 11.8 * (sylls / words.length) - 15.59;
+  const longSentences = sentences
+    .map((s) => ({ words: s.split(/\s+/).filter(Boolean).length, text: s }))
+    .filter((s) => s.words > READS_AT_FIFTEEN.maxSentenceWords)
+    .sort((a, b) => b.words - a.words);
+  return {
+    grade: Math.round(grade * 10) / 10, sentences: sentences.length,
+    avgWords: Math.round(avgWords * 10) / 10, longest: longSentences[0]?.words || 0, longSentences,
+  };
+}
+// Returns [] when the copy reads at the bar, else human-readable reasons (the refine loop's fuel).
+export function findReadabilityViolations(text, limits = READS_AT_FIFTEEN) {
+  const st = readingStats(text);
+  if (!st.sentences) return [];
+  const out = [];
+  if (st.grade > limits.maxGrade) out.push(`reading grade ${st.grade} (bar ${limits.maxGrade} — a 15-year-old reads about 8)`);
+  if (st.avgWords > limits.maxAvgWords) out.push(`sentences average ${st.avgWords} words (bar ${limits.maxAvgWords})`);
+  for (const s of st.longSentences.slice(0, 3)) out.push(`a ${s.words}-word sentence: "${s.text.slice(0, 120)}…"`);
+  return out;
+}
+
 export function evaluatePass({ mean, min, operatorQuestions } = {}) {
   const ops = Array.isArray(operatorQuestions) ? operatorQuestions : [];
   return typeof mean === 'number' && typeof min === 'number'
@@ -1010,6 +1065,33 @@ async function main() {
     return emit(true, { quality, screenshots: {}, pageHeights: {}, passed: false, headline: {}, refineNoteCount: refineNotes.length }, null);
   }
   log('INV-20 ok: no unexplained acronyms in ladder rungs 1-4');
+
+  // --- INV-24 ReadsAtFifteen (ADR-0006 v1.2.0) — deterministic, BEFORE the vision pass. ---
+  const rungText = extractRungText(fs.readFileSync(htmlPath, 'utf8'));
+  const readViolations = findReadabilityViolations(rungText);
+  if (readViolations.length) {
+    const st = readingStats(rungText);
+    log(`INV-24 FAIL: the first four sections read at grade ${st.grade} (avg ${st.avgWords} words/sentence) — failing before the vision pass (zero tokens)`);
+    const refineNotes = [{
+      device: 'both', criterion: 'operator:zeroKnowledgeReader', score: 0,
+      note: `INV-24 ReadsAtFifteen: the first four sections must be understandable by a curious 15-year-old. Measured: ${readViolations.join('; ')}. Fix the SHAPE, not just the words — one idea per sentence, most under 20 words, everyday comparisons instead of category vocabulary. Say plainly what it DOES FOR THE READER and why the trick is clever.`,
+    }];
+    const quality = {
+      scorecard: ctx.quality?.scorecard || [], passed: false, exemplary: false,
+      iterations: Number.isInteger(ctx.quality?.iterations) ? ctx.quality.iterations : 0,
+      visionModel: model,
+      screenshots: ctx.quality?.screenshots || {}, pageHeights: ctx.quality?.pageHeights || {},
+      refineNotes,
+      inv20: { passed: true, violations: [] },
+      inv24: { passed: false, grade: st.grade, avgWords: st.avgWords, violations: readViolations },
+      gradedAt: new Date().toISOString(),
+    };
+    ctx.quality = quality;
+    try { fs.writeFileSync(buildJsonPath, JSON.stringify(ctx, null, 2) + '\n'); }
+    catch (e) { return emit(false, {}, `could not write build.json: ${e?.message || e}`); }
+    return emit(true, { quality, screenshots: {}, pageHeights: {}, passed: false, headline: {}, refineNoteCount: refineNotes.length }, null);
+  }
+  log(`INV-24 ok: ladder rungs 1-4 read at grade ${readingStats(rungText).grade} (bar ${READS_AT_FIFTEEN.maxGrade})`);
 
   // Hard cap on refine iterations (owner mandate 2026-07-10). SKILL.md has always said "do NOT run
   // the refine loop more than twice" — but that was PROMPT-ONLY, nothing enforced it, and live

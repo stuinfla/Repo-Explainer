@@ -116,6 +116,37 @@ export async function authorContent(ctx, { apiKey, model, feedback }) {
   const voice = ctx.concept?.copyVoice || 'clear, confident, technical-but-human';
   const system = `You are a senior technical writer + narrative designer. You write the copy for a repo explainer page in this voice: ${voice}.
 
+WHO YOU ARE WRITING FOR (ADR-0006 v1.2.0 — the owner's bar, 2026-09-17): a curious FIFTEEN-YEAR-OLD.
+Not a developer from another field — a bright teenager who has never built software. They must finish
+the first four sections able to say, in their own words: what this is, what it would do FOR THEM, why
+the trick is clever, and roughly how it works. Three hard rules, measured by a deterministic gate
+(INV-24) that fails the build before any vision pass:
+  1. SHAPE: one idea per sentence. Most sentences under 20 words, none over 30. The two pages that
+     triggered this rule averaged 25 and 39 words per sentence and read at grade 11 and grade 16.
+  2. PLAIN WORDS OVER GLOSSED JARGON: prefer "the same login you already use to reach the machine"
+     over "SSH session (a secure shell login)". A gloss keeps the jargon; plain words remove it.
+     Insider nouns (protocol, endpoint, transport, runtime, schema, stateless, client, server) do not
+     belong in rungs 1-4 at all unless the whole page collapses without them.
+  3. SAY WHAT IT DOES FOR THEM, AND WHY IT IS CLEVER. "It is a virtual desktop" is a category, not an
+     explanation. The reader wants: what can I now do that I could not before, and what is the neat
+     idea that makes it work? Name the clever move in one plain sentence a teenager would repeat.
+Use everyday comparisons (a vending machine, a locked door with one key, a hotel phone line) instead
+of category vocabulary. Never show a file path, a code identifier or a command in rungs 1-4.
+
+LEAD WITH WHY IT EXISTS, NOT WITH WHAT IT TECHNICALLY IS (owner verdict, 2026-09-17: "why does this
+exist, and what is the primary use case? ... that makes it seem like a very low-level utility. I was
+led to believe it did a lot more."). Two failures caused that, and both are banned:
+  - Naming the CATEGORY instead of the point. "It is a virtual desktop" / "it is a starter kit" is a
+    shelf label. Open with the change it makes for the reader: what they can now do that they could
+    not before, in their own terms.
+  - Explaining the ENABLER as if it were the product. The repo's cleverest mechanism is usually what
+    makes the real use case possible, not the use case itself. Say what the thing is FOR first, then
+    name the trick that makes it work — and say the trick in one sentence a teenager would repeat.
+Read the repo's own framing of itself (its README's opening lines) before you decide the thesis: if
+the project calls itself one thing and your page sells something smaller, your page is wrong. State
+the PRIMARY use case explicitly — the one job a real person would hand it — and be honest about
+which parts are real today and which are still planned.
+
 THE COMPREHENSION LADDER (ADR-0006 — non-negotiable altitude control). Your reader is a smart
 developer from a DIFFERENT domain: intelligent and curious, but knowing NOTHING about this
 project's field. The page must carry them from "never heard of it" to "I could run this now".
@@ -189,6 +220,17 @@ ART DIRECTION — non-negotiable, this is what separates a memorable hero from g
 - BAN these clichés outright: glowing neural-network trees, generic floating DNA helixes, holographic "cyber" grids, neon circuit boards, abstract particle clouds, faceless hooded hackers, glowing brains, "matrix" rain. If the metaphor is the obvious one (e.g. DNA for genomics), find a FRESH, specific, unexpected angle on it — never the postcard version.
 - Anchor every image to a CONCRETE, specific scene or object grounded in what THIS repo actually does — a real moment, material, or mechanism — not a vague mood. Specificity is what reads as "designed," not "generated."
 - Direct it like a real photo/render: name the exact subject, the camera angle, the lighting (e.g. raking low light, soft studio, single hard key), the material/texture, depth of field, and one surprising compositional choice. Editorial photography or refined cinematic 3D — not "digital art."
+- NO ROOMS, NO PROPS, NO PEOPLE (2026-09-17 — both shipped pages had to be hand-fixed for exactly this).
+  Banned outright from every raster: desks, offices, cafes, windows, plants, coffee cups, notebooks,
+  pens, books, phones lying around, sticky notes as set dressing, hands, and any person or part of one.
+  A photo of a workspace is scenery: it teaches nothing and could ship on any product's page. Compose
+  from the SUBJECT ITSELF — the screens, the artifacts, the object the repo is about — filling the frame.
+- EVERY RASTER CARRIES A "takeaway:" LINE as the first line of its prompt: the one sentence a stranger
+  should be able to say about THIS repo after looking at the finished pixels. If you cannot write that
+  sentence, do not brief an image — say so and let the section carry a diagram instead.
+- THE SWAP TEST IS THE BAR: if the finished image could ship unchanged on a different repo's page, it
+  has failed. Legible, project-specific text inside the image (a real label, a real value, a real state)
+  is the cheapest way to pass it — the image models render short text crisply, so use it.
 - It must feel bespoke to this repo: someone who knows the project should think "yes, that's exactly it," and a stranger should think "that's striking."`;
   const user = `${brief}
 
