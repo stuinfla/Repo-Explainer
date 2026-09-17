@@ -1,7 +1,7 @@
 {
   "target": "RuView",
   "metaName": "RuView",
-  "generated": "2026-07-04T07:35:21.789Z",
+  "generated": "2026-09-17T20:45:53.220Z",
   "workspace": {
     "kind": "mixed",
     "members": []
@@ -83,9 +83,26 @@
       "description": null,
       "bins": [],
       "examples": []
+    },
+    {
+      "name": "wifi-veil",
+      "path": "wifi-veil",
+      "kind": "crate",
+      "description": "WiFi Veil (codename VEIL): compliant-waveform countermeasure against unauthorized WiFi sensing. Deterministic attacker-vs-protector experiment that drives beamforming-feedback identity inference toward chance while preserving link throughput. Std-only pure-compute leaf, no async/server/RF-hardware deps; SYNTHETIC data only.",
+      "bins": [
+        "veil"
+      ],
+      "examples": []
     }
   ],
-  "binaries": [],
+  "binaries": [
+    {
+      "name": "veil",
+      "component": "wifi-veil",
+      "path": "wifi-veil",
+      "kind": "rust-bin"
+    }
+  ],
   "commands": [
     {
       "cmd": "npm run dev",
@@ -186,6 +203,60 @@
       "note": null
     },
     {
+      "cmd": "npx @ruvnet/ruview@0.4.0 doctor",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.4.0 guidance --topic sensing --query \"model loading\"",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.4.0 agent run --host codex --repo . \\",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.4.0 brain search --query \"calibration\"",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.4.0 brain verify --repo .",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.4.0 claim-check --file REPORT.md",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.4.0 verify",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.4.0 spaces",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.4.0 mcp start",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
       "cmd": "docker pull ruvnet/wifi-densepose:latest",
       "category": "other",
       "source": "README.md",
@@ -258,138 +329,6 @@
       "note": null
     },
     {
-      "cmd": "npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest swarm status",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest swarm monitor",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest init --wizard",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest agent spawn -t coder --name my-coder",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest memory store --key \"pattern\" --value \"data\" --namespace patterns",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest memory search --query \"authentication\"",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest doctor --fix",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest memory store --key \"name\" --value \"data\" --namespace patterns",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest memory list --namespace patterns",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest memory init --force",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest hive-mind init --queen-type strategic",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest hive-mind status",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest hive-mind spawn --count 5 --type worker",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest hive-mind consensus --propose \"task\"",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest daemon start",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest agent spawn -t coder",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest agent list",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest memory search --query \"patterns\"",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest hooks pre-task --description \"task\"",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest hooks worker dispatch --trigger optimize",
-      "category": "run",
-      "source": ".claude-flow/CAPABILITIES.md",
-      "note": null
-    },
-    {
       "cmd": "cargo run -q -p wifi-densepose-train --bin aa_score_runner --no-default-features",
       "category": "run",
       "source": "aether-arena/VERIFY.md",
@@ -420,80 +359,182 @@
       "note": null
     },
     {
-      "cmd": "cargo test --workspace --no-default-features",
-      "category": "test",
-      "source": "CLAUDE.md",
+      "cmd": "npx @ruvnet/ruview@0.5.0 doctor",
+      "category": "run",
+      "source": "AGENTS.md",
       "note": null
     },
     {
-      "cmd": "cargo check -p wifi-densepose-train --no-default-features",
+      "cmd": "npx @ruvnet/ruview@0.5.0 guidance --topic homecore --query \"restore and plugins\"",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.5.0 agent run \\",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.5.0 brain search --query \"community memory\"",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.5.0 brain verify --repo .",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.5.0 spaces",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.5.0 mcp start",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "node harness/homecore/bin/cli.js guidance --topic plugins --query Wasmtime --repo .",
       "category": "other",
-      "source": "CLAUDE.md",
+      "source": "AGENTS.md",
       "note": null
     },
     {
-      "cmd": "python firmware/esp32-csi-node/provision.py --port COM7 \\",
+      "cmd": "node harness/homecore/bin/cli.js doctor --repo . --strict-wasm",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "node harness/homecore/bin/cli.js verify --repo . --profile core",
       "category": "other",
-      "source": "CLAUDE.md",
+      "source": "AGENTS.md",
       "note": null
     },
     {
-      "cmd": "python -m serial.tools.miniterm COM7 115200",
+      "cmd": "node harness/homecore/bin/cli.js agent run \\",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "node harness/homecore/bin/cli.js mcp start",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run flywheel:plan",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run flywheel:verify",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "node flywheel/run.mjs --confirm",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npm ci --ignore-scripts",
       "category": "other",
-      "source": "CLAUDE.md",
-      "note": null
-    },
-    {
-      "cmd": "python archive/v1/data/proof/verify.py --generate-hash",
-      "category": "other",
-      "source": "CLAUDE.md",
-      "note": null
-    },
-    {
-      "cmd": "npm run build",
-      "category": "build",
-      "source": "CLAUDE.md",
+      "source": "AGENTS.md",
       "note": null
     },
     {
       "cmd": "npm test",
       "category": "test",
-      "source": "CLAUDE.md",
+      "source": "AGENTS.md",
       "note": null
     },
     {
-      "cmd": "npm run lint",
+      "cmd": "npm run test:security",
+      "category": "test",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run brain:verify",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run manifest:verify",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npm audit --omit=optional",
+      "category": "other",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npm pack --dry-run",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run brain:verify -- --repo ../..",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo test --workspace --no-default-features",
+      "category": "test",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "python -m pytest tests/ -x -q",
+      "category": "other",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.4.0 guidance --topic homecore --query \"restore and plugins\"",
       "category": "run",
       "source": "CLAUDE.md",
       "note": null
     },
     {
-      "cmd": "npx @claude-flow/cli@latest swarm init --v3-mode",
+      "cmd": "npx @ruvnet/ruview@0.4.0 agent run \\",
       "category": "run",
       "source": "CLAUDE.md",
       "note": null
     },
     {
-      "cmd": "npx @claude-flow/cli@latest memory search --query \"authentication patterns\"",
+      "cmd": "npx @ruvnet/ruview@0.4.0 brain search --query \"community memory\"",
       "category": "run",
       "source": "CLAUDE.md",
       "note": null
     },
     {
-      "cmd": "npx @claude-flow/cli@latest memory store --key \"pattern-auth\" --value \"JWT with refresh\" --namespace patterns",
-      "category": "run",
+      "cmd": "node harness/homecore/bin/cli.js guidance --topic api --query \"WebSocket parity\" --repo .",
+      "category": "other",
       "source": "CLAUDE.md",
       "note": null
     },
     {
-      "cmd": "npx @claude-flow/cli@latest memory list --namespace patterns --limit 10",
-      "category": "run",
-      "source": "CLAUDE.md",
-      "note": null
-    },
-    {
-      "cmd": "npx @claude-flow/cli@latest memory retrieve --key \"pattern-auth\" --namespace patterns",
-      "category": "run",
+      "cmd": "node harness/homecore/bin/cli.js verify --repo . --profile wasm",
+      "category": "other",
       "source": "CLAUDE.md",
       "note": null
     },
@@ -738,6 +779,18 @@
       "note": null
     },
     {
+      "cmd": "cargo build --release -p wifi-densepose-sensing-server --features mqtt,otel",
+      "category": "build",
+      "source": "docs/observability.md",
+      "note": null
+    },
+    {
+      "cmd": "docker compose -f docker/otel-compose.yml up",
+      "category": "other",
+      "source": "docs/observability.md",
+      "note": null
+    },
+    {
       "cmd": "cargo build --release -p wifi-densepose-pointcloud",
       "category": "build",
       "source": "docs/readme-details.md",
@@ -912,6 +965,12 @@
       "note": null
     },
     {
+      "cmd": "python firmware/esp32-csi-node/provision.py --port COM7 \\",
+      "category": "other",
+      "source": "docs/readme-details.md",
+      "note": null
+    },
+    {
       "cmd": "cargo run -p wifi-densepose-sensing-server -- --http-port 3000 --source auto",
       "category": "run",
       "source": "docs/readme-details.md",
@@ -1032,6 +1091,12 @@
       "note": null
     },
     {
+      "cmd": "python -m serial.tools.miniterm COM7 115200",
+      "category": "other",
+      "source": "docs/TROUBLESHOOTING.md",
+      "note": null
+    },
+    {
       "cmd": "python firmware/esp32-csi-node/provision.py \\",
       "category": "other",
       "source": "docs/user-guide-apple-homepod.md",
@@ -1104,6 +1169,12 @@
       "note": null
     },
     {
+      "cmd": "cargo add wifi-densepose-sar",
+      "category": "install",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
       "cmd": "docker run -p 3000:3000 -p 3001:3001 ruvnet/wifi-densepose:latest",
       "category": "run",
       "source": "docs/user-guide.md",
@@ -1129,6 +1200,12 @@
     },
     {
       "cmd": "docker run --rm \\",
+      "category": "run",
+      "source": "docs/user-guide.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @ruvnet/ruview@0.5.0 spaces --resource alerts --limit 25",
       "category": "run",
       "source": "docs/user-guide.md",
       "note": null
@@ -1350,6 +1427,12 @@
       "note": null
     },
     {
+      "cmd": "cargo run -p wifi-densepose-hardware --bin vendor-rf-sim -- \\",
+      "category": "run",
+      "source": "docs/vendor-rf-providers.md",
+      "note": null
+    },
+    {
       "cmd": "cargo test --package wifi-densepose-mat",
       "category": "test",
       "source": "docs/wifi-mat-user-guide.md",
@@ -1468,6 +1551,48 @@
       "category": "other",
       "source": "ui/README.md",
       "note": null
+    },
+    {
+      "cmd": "cargo test",
+      "category": "test",
+      "source": "wifi-veil/CONTRIBUTING.md",
+      "note": "43 tests + the pinned witness"
+    },
+    {
+      "cmd": "cargo clippy --all-targets -- -D warnings",
+      "category": "other",
+      "source": "wifi-veil/CONTRIBUTING.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo fmt --check",
+      "category": "other",
+      "source": "wifi-veil/CONTRIBUTING.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --lib --target wasm32-unknown-unknown",
+      "category": "build",
+      "source": "wifi-veil/CONTRIBUTING.md",
+      "note": "WASM leaf must stay green"
+    },
+    {
+      "cmd": "node harness/bin/cli.js guidance --topic overview",
+      "category": "other",
+      "source": "wifi-veil/CONTRIBUTING.md",
+      "note": "harness (dependency-free)"
+    },
+    {
+      "cmd": "cargo run --bin veil",
+      "category": "run",
+      "source": "wifi-veil/README.md",
+      "note": "interactive TUI (one-shot report when piped)"
+    },
+    {
+      "cmd": "cargo run --bin veil -- optimize",
+      "category": "run",
+      "source": "wifi-veil/README.md",
+      "note": "derive the shipped shield config"
     }
   ],
   "install": [
@@ -1486,6 +1611,7 @@
     "cargo add wifi-densepose-ruvector --features crv",
     "cargo add wifi-densepose-wasm",
     "cargo add wifi-densepose-wasm-edge",
+    "cargo add wifi-densepose-sar",
     "npm install"
   ],
   "quickstart": [
@@ -1494,12 +1620,12 @@
     "npm run android",
     "npm run ios",
     "npm run web",
-    "docker run -p 3000:3000 ruvnet/wifi-densepose:latest",
-    "cargo run -p wifi-densepose-sensing-server -- --pretrain --dataset data/csi/ --pretrain-epochs 50",
-    "cargo run -p wifi-densepose-sensing-server -- --train --dataset data/mmfi/ --epochs 100 --save-rvf model.rvf",
-    "cargo run -p wifi-densepose-sensing-server -- --model model.rvf --embed",
-    "npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized",
-    "npx @claude-flow/cli@latest swarm status",
-    "npx @claude-flow/cli@latest swarm monitor"
+    "npx @ruvnet/ruview@0.4.0 doctor",
+    "npx @ruvnet/ruview@0.4.0 guidance --topic sensing --query \"model loading\"",
+    "npx @ruvnet/ruview@0.4.0 agent run --host codex --repo . \\",
+    "npx @ruvnet/ruview@0.4.0 brain search --query \"calibration\"",
+    "npx @ruvnet/ruview@0.4.0 brain verify --repo .",
+    "npx @ruvnet/ruview@0.4.0 claim-check --file REPORT.md",
+    "npx @ruvnet/ruview@0.4.0 verify"
   ]
 }

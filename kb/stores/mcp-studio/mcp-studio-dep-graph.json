@@ -1,0 +1,211 @@
+{
+  "target": "mcp-studio",
+  "metaName": "mcp-studio",
+  "generated": "2026-09-17T20:01:28.460Z",
+  "ecosystems": [
+    "npm"
+  ],
+  "componentCount": 1,
+  "internalEdgeCount": 0,
+  "externalDepCount": 26,
+  "nodes": [
+    {
+      "name": "site-creator-vinext-starter",
+      "version": "0.1.0",
+      "description": null,
+      "manifest": "package.json",
+      "deps": [
+        "@base-ui/react",
+        "@hookform/resolvers",
+        "@modelcontextprotocol/ext-apps",
+        "@modelcontextprotocol/sdk",
+        "@shadcn/react",
+        "class-variance-authority",
+        "clsx",
+        "cmdk",
+        "date-fns",
+        "drizzle-orm",
+        "embla-carousel-react",
+        "input-otp",
+        "lucide-react",
+        "next",
+        "next-themes",
+        "radix-ui",
+        "react",
+        "react-day-picker",
+        "react-dom",
+        "react-hook-form",
+        "react-resizable-panels",
+        "recharts",
+        "sonner",
+        "tailwind-merge",
+        "vaul",
+        "zod"
+      ],
+      "ecosystem": "npm"
+    }
+  ],
+  "internalEdges": [],
+  "externalDeps": {
+    "site-creator-vinext-starter": [
+      {
+        "name": "@base-ui/react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@hookform/resolvers",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@modelcontextprotocol/ext-apps",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@modelcontextprotocol/sdk",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "@shadcn/react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "class-variance-authority",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "clsx",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "cmdk",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "date-fns",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "drizzle-orm",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "embla-carousel-react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "input-otp",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "lucide-react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "next",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "next-themes",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "radix-ui",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-day-picker",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-dom",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-hook-form",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "react-resizable-panels",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "recharts",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "sonner",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "tailwind-merge",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "vaul",
+        "req": "*",
+        "kind": "normal"
+      },
+      {
+        "name": "zod",
+        "req": "*",
+        "kind": "normal"
+      }
+    ]
+  },
+  "externalDepNames": [
+    "@base-ui/react",
+    "@hookform/resolvers",
+    "@modelcontextprotocol/ext-apps",
+    "@modelcontextprotocol/sdk",
+    "@shadcn/react",
+    "class-variance-authority",
+    "clsx",
+    "cmdk",
+    "date-fns",
+    "drizzle-orm",
+    "embla-carousel-react",
+    "input-otp",
+    "lucide-react",
+    "next",
+    "next-themes",
+    "radix-ui",
+    "react",
+    "react-day-picker",
+    "react-dom",
+    "react-hook-form",
+    "react-resizable-panels",
+    "recharts",
+    "sonner",
+    "tailwind-merge",
+    "vaul",
+    "zod"
+  ]
+}

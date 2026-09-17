@@ -1,201 +1,93 @@
-# RuView — Primer
+## 1. What is RuView
 
-## 1. What is RuView?
+RuView (WiFi DensePose) is a WiFi sensing platform: it turns the radio waves your existing WiFi already fills a room with into spatial intelligence. When people move, breathe, or even sit still, they disturb those waves in measurable ways, and RuView captures this via Channel State Information (CSI) from low-cost ESP32 sensors, turning it into data about who's there, what they're doing, and whether they're okay — through walls, in the dark, with no cameras or wearables.
 
-RuView is a WiFi-based spatial intelligence platform that turns the radio waves already filling your home or office into a contactless sensing system — detecting people, measuring their breathing and heart rate, recognizing activity, and estimating body pose, all through walls, in complete darkness, with no cameras and no wearables.
+This particular knowledge base slice indexes the **npm side** of the repo — a 384-dim RVF knowledge base built from 1,145 passages, covering 2 npm components, 7,874 public symbols, and 246 entrypoint commands. The wider RuView project also spans Rust crates, Python packages, and ESP32 firmware, but the components formally cataloged here are the JavaScript/TypeScript apps: `mobile` and `@ruvnet/nvsim-dashboard`.
 
-The underlying physics: every WiFi router floods the space around it with radio signals. When a person moves, breathes, or even sits still, they perturb those signals in measurable ways. RuView captures those perturbations using Channel State Information (CSI) — the per-subcarrier, per-antenna signal fingerprint — from inexpensive ESP32 microcontrollers ($9 each), feeds those readings into signal-processing and machine-learning pipelines, and produces actionable data: who is in a room, what they are doing, and whether they are okay.
+RuView is built on RuVector and Cognitum Seed, and is designed to run entirely on edge hardware — an ESP32 mesh (as low as $9 per node) paired with a Cognitum Seed appliance. It integrates with the four major smart-home ecosystems: Home Assistant (via an HA-DISCO MQTT publisher), Apple Home & HomePod (as a HAP-1.1 bridge), Google Home, and Amazon Alexa.
 
-No cloud is required. No cameras. No app on the user's phone. Just physics and a $9 chip.
+## 2. What can it do for you
 
-## 2. What can RuView do for you?
+- **Presence and occupancy** — detect people through walls, count them, track entries and exits.
+- **Vital signs** — extract breathing rate and heart rate remotely.
+- **Movement tracking and room monitoring** — general spatial awareness without cameras.
+- **Through-wall sensing** — using Fresnel-zone geometry and multipath modeling, effective up to roughly 5 m (signal-dependent).
+- **Edge module ("cog") catalog** — a live catalog of small signed binaries covering categories like health, security, building, retail, industrial, research, AI, swarm, signal, and network. Sample counts by category: Health (14 modules, e.g. `cardiac-arrhythmia`, `cough-detect`, `baby-cry`), Security (14, e.g. `gunshot-detect`, `glass-break`, `behavioral-profiler`), Building (11, e.g. `elevator-count`, `frost-warning`), Retail (7, e.g. `customer-flow`, `dwell-heatmap`, `package-detect`). Modules are typically a few KB to ~450 KB and rated by difficulty.
+- **Visualization and observability** — the `mobile` app and `@ruvnet/nvsim-dashboard` component give you client-side views into sensing data (there are also public live demos: Observatory, Dual-Modal Pose Fusion, Live 3D Point Cloud, and three.js demos).
+- **No-hardware evaluation** — a Docker image (`ruvnet/wifi-densepose`) runs with simulated data so you can explore before buying ESP32 hardware.
 
-- **Presence and occupancy** — detect people through walls, count occupants, track entries and exits
-- **Vital signs** — breathing rate (6–30 BPM, bandpass 0.1–0.5 Hz on CSI phase) and heart rate (40–120 BPM, bandpass 0.8–2.0 Hz), contactless, without wearing anything
-- **Activity recognition** — walking, sitting, gestures, and falls detected from temporal CSI patterns
-- **Fall detection** — detected in under 200 ms using phase-acceleration thresholds with a 3-frame debounce
-- **17-keypoint pose estimation** — body skeleton reconstruction from WiFi signals, using a pretrained model published on Hugging Face (`ruvnet/wifi-densepose-pretrained`); 82.3% temporal-triplet accuracy on held-out test (v2 encoder)
-- **Multi-person counting** — adaptive P95 normalization with a runtime-tunable dedup factor
-- **Sleep monitoring** — overnight breathing and movement data with sleep-stage classification and apnea screening
-- **Environment mapping** — RF fingerprinting identifies rooms, detects moved furniture, spots new objects
-- **Smart home integration** — ships 21 Home Assistant entities per node (11 raw signals + 10 semantic states like "someone-sleeping", "fall-risk-elevated", "bathroom-occupied"), plus HAP-1.1 bridge for Apple Home, and a Matter endpoint for Google Home and Alexa
+## 3. What is it made of (the components)
 
-## 3. What is RuView made of?
+The npm-indexed portion of RuView has two components and no internal dependencies between them:
 
-RuView is a multi-language system with five layers:
+- **`mobile`** — a React Native / Expo application. Dependencies include `expo`, `expo-status-bar`, `react`, `react-native`, `react-native-web`, `react-native-webview`, navigation (`@react-navigation/native`, `@react-navigation/bottom-tabs`), UI/gesture support (`react-native-gesture-handler`, `react-native-reanimated`, `react-native-safe-area-context`, `react-native-screens`, `react-native-svg`, `@expo/vector-icons`), storage (`@react-native-async-storage/async-storage`), networking (`axios`, `react-native-wifi-reborn`), charts (`victory-native`), and 3D rendering (`three`, `@types/three`).
+- **`@ruvnet/nvsim-dashboard`** — a web dashboard built with `lit` (Web Components), state via `@preact/signals-core` and `zustand`, offline/PWA support via `workbox-window`, and 3D visualization via `three`.
 
-**Firmware (ESP32-S3 or ESP32-C6, C/Rust via ESP-IDF):**
-Located at `firmware/esp32-csi-node/`. Runs on a $9 ESP32-S3 or $6–10 ESP32-C6. Reads CSI from the WiFi hardware at up to 50 Hz, applies optional edge filtering, and streams the data over UDP to the Rust sensing server. The C6 variant adds WiFi 6 (HE-LTF subcarrier tagging), 802.15.4 mesh time-sync, and TWT power gating for ~5 µA sleep modes.
+Beyond these two, the broader repo (referenced throughout its docs and commands, though not part of this npm component list) includes a Rust workspace of crates such as `wifi-densepose-core`, `-signal`, `-nn`, `-vitals`, `-mat`, `-hardware`, `-train`, `-wifiscan`, `-ruvector`, `-wasm`, `-wasm-edge`, `-sar`, `-bfld`, `-pointcloud`, `-engine`, `-cli`, `-api`, and `-sensing-server`; Python packages (`ruview`, `wifi-densepose`) with an optional `[client]` extra for asyncio WebSocket and paho-mqtt clients; and ESP32 firmware/provisioning scripts.
 
-**Rust core (v2/ Cargo workspace, 22+ crates):**
-The primary processing engine. Key crates:
-- `wifi-densepose-core` — shared types (CSI frames, detections, events)
-- `wifi-densepose-signal` — signal processing: bandpass filtering, phase unwrapping, FFT, variance
-- `wifi-densepose-nn` — neural network inference (Candle framework), loads `.safetensors` models
-- `wifi-densepose-vitals` — breathing and heart rate extraction from the signal pipeline
-- `wifi-densepose-hardware` — device management and ESP32 connection handling
-- `wifi-densepose-sensing-server` — the HTTP/WebSocket server (Axum), exposes REST API at `/api/v1/`, WebSocket at `/ws`, and optional MQTT publisher
-- `wifi-densepose-mat` — WiFi mat sensing for floor-level presence
-- `wifi-densepose-engine` — integration/composition layer (ADR-135–146)
-- `wifi-densepose-calibration` — per-room calibration (30 seconds, spiking neural network adaptation)
-- `homecore` — state machine for smart home entity management (Home Assistant entities, HAP bridge)
+## 4. How it works
 
-**Python library (`wifi_densepose` / `ruview` on PyPI):**
-PyO3 bindings wrapping the Rust core. Install: `pip install ruview` or `pip install wifi-densepose`. Exposes `BreathingExtractor`, `HeartRateExtractor`, `SensingClient`, `RuViewMqttClient`. Ships as a compiled wheel (~250 KB, abi3-py310, Linux/macOS/Windows). No Rust toolchain needed.
+At the physical layer, an ESP32-S3 (or a research NIC) captures CSI — the fine-grained way WiFi signals are disturbed by bodies moving, breathing, or otherwise present. That CSI is processed through signal-processing and neural-network stages (the Rust `wifi-densepose-signal`, `-nn`, `-vitals`, `-mat` crates) to derive presence, vitals, and pose-related outputs.
 
-**Web UI (JavaScript, `ui/`):**
-A vanilla-JS PWA dashboard at `ui/index.html`. Real-time data visualization via WebSocket. The Observatory view (`ui/observatory.html`) shows 3D point-cloud rendering of room occupancy. A React Native mobile app (`ui/mobile/`, Expo) is also included for iOS and Android.
+A pretrained CSI encoder (hosted on Hugging Face as `ruvnet/wifi-densepose-pretrained`) produces 128-dimensional embeddings and feeds a presence-detection head; a separate MM-Fi pose model (`ruvnet/wifi-densepose-mmfi-pose`) targets pose estimation. Per-node LoRA adapters are supported for on-device fine-tuning.
 
-**Pretrained models (Hugging Face):**
-- `ruvnet/wifi-densepose-pretrained` — the 4-bit quantized pose model (8 KB), loads in 8.4 ms on Raspberry Pi 5
-- `ruvnet/wifi-densepose-mmfi-pose` — SOTA on MM-Fi: 82.69% torso-PCK@20, beats MultiFormer (72.25%) and CSI2Pose (68.41%)
-- Self-supervised contrastive encoder (128-dim, 12.2M training steps on 60K frames)
+A sensing server (`wifi-densepose-sensing-server`) aggregates data from one or more ESP32 nodes and serves it — over HTTP and WebSocket ports plus a UDP CSI channel in the Docker deployments — to consumers like the `mobile` app, the `@ruvnet/nvsim-dashboard` web dashboard, or smart-home bridges (MQTT for Home Assistant, HAP for Apple Home). The server is optional for basic operation: the ESP32 can run independently for presence detection, vital signs, and fall alerts.
 
-**Edge module catalog (105 Cogs):**
-Small programs for specialized sensing scenarios (health, security, retail, building, industrial). Loaded at runtime. Examples: `occupancy-zones`, `queue-length`, `fall-detection`, `sleep-monitor`.
+Separately, this repo/pack is also indexed into its own RVF (RuVector Format) knowledge base — 384-dim embeddings over 1,145 passages — which backs a `ruview` CLI (`brain search`, `brain verify`, `guidance`, `agent run`, `claim-check`, `verify`, `mcp start`) for source-cited guidance, agent runs, and reproducibility checks against the codebase itself.
 
-## 4. How WiFi sensing works — step by step
+## 5. How do I install and use it
 
-**Step 1: CSI capture.** The ESP32's WiFi chip reads Channel State Information — the complex amplitude and phase of each subcarrier (up to 234 subcarriers) on each antenna for every WiFi packet it receives. This is a fine-grained fingerprint of how the radio signal passed through the space.
+For the JS/npm side:
 
-**Step 2: Streaming.** Firmware sends each CSI frame (typically at 50 Hz) over UDP to the sensing server. A 3–6 node mesh multiplies coverage and enables multistatic sensing (using neighbors' routers as radar illuminators).
+```bash
+npm install
+npm run dev
+npm run start
+npm run android
+npm run ios
+npm run web
+```
 
-**Step 3: Signal processing.** The `wifi-densepose-signal` crate:
-- Unwraps the phase to remove 2π ambiguities
-- Applies bandpass filters: 0.1–0.5 Hz to isolate breathing motion, 0.8–2.0 Hz for heartbeat
-- Computes motion-band power for activity detection
-- Uses phase-acceleration thresholds for fall detection
-- Calculates subcarrier variance, which correlates with presence
+For the RuView documentation/agent CLI:
 
-**Step 4: Per-room calibration.** On first run (30 seconds), a spiking neural network learns the room's static fingerprint. This step is critical: WiFi sensing does not generalize zero-shot between rooms. The 30-second calibration resolves this completely.
+```bash
+npx @ruvnet/ruview@0.4.0 doctor
+npx @ruvnet/ruview@0.4.0 guidance --topic sensing --query "model loading"
+npx @ruvnet/ruview@0.4.0 agent run --host codex --repo . \
+  --prompt "Find the nearest tests and cite the source files"
+npx @ruvnet/ruview@0.4.0 brain search --query "calibration"
+npx @ruvnet/ruview@0.4.0 brain verify --repo .
+npx @ruvnet/ruview@0.4.0 claim-check --file REPORT.md
+npx @ruvnet/ruview@0.4.0 verify
+```
 
-**Step 5: Neural network inference.** The pre-trained CSI encoder produces 128-dim embeddings. A task-specific readout head (trained per-room if needed) maps embeddings to pose keypoints, presence count, or activity labels. The entire inference runs in microseconds on a Raspberry Pi.
+For evaluating the sensing platform without hardware:
 
-**Step 6: Semantic state.** The `homecore` state machine maps raw detections to 10 semantic entities per node: "someone-sleeping", "possible-distress", "room-active", "elderly-inactivity-anomaly", "meeting-in-progress", "bathroom-occupied", "fall-risk-elevated", "bed-exit", "no-movement", "multi-room-transition".
-
-**Step 7: Output.** Delivered simultaneously via REST (`/api/v1/status`, `/api/v1/presence`, `/api/v1/vitals`), WebSocket (real-time streaming), MQTT (Home Assistant auto-discovery), and HAP (Apple HomeKit).
-
-## 5. Is it production-ready? Scope and honest limits
-
-**What works and is confirmed shipped:**
-- Breathing rate and heart rate extraction (zero-crossing BPM from bandpass CSI phase)
-- Presence detection with phase-variance fallback (no model required)
-- Fall detection (phase-acceleration threshold + debounce)
-- 17-keypoint pose estimation via the Hugging Face model
-- Docker image (`ruvnet/wifi-densepose:latest`) with simulated data for evaluation
-- Python PyPI packages (`ruview`, `wifi-densepose`) — PyO3 compiled wheels
-- Home Assistant MQTT integration with 21 entities per node
-- ESP32-S3 and ESP32-C6 firmware, tested and validated
-
-**Honest limits:**
-- **CSI hardware required for full sensing.** Consumer WiFi adapters only provide RSSI (coarse presence/motion). Full CSI requires an ESP32-S3 ($9) or ESP32-C6 ($6–10) — or an Intel 5300/Atheros AR9580 research NIC.
-- **Zero-shot room transfer doesn't work.** The model must be calibrated to each room (30 seconds). This is a fundamental property of WiFi sensing, not a bug.
-- **Camera-free pose accuracy is modest.** The v2 encoder achieves 82.3% temporal-triplet accuracy on held-out test. Camera-supervised fine-tuning (using a co-located camera for training data, then removing the camera) reaches 92.9% PCK@20.
-- **Single node has limited spatial resolution.** 2+ nodes (or a Cognitum Seed with kNN + vector memory) significantly improve accuracy.
-- **Through-wall range is signal-dependent**, typically up to 5 m with commodity hardware.
-- **Multi-person counting** works well with the adaptive P95 algorithm but degrades in crowded rooms or when people are close together.
-
-## 6. Where to read more — the docs map
-
-- `README.md` — the primary overview, hardware options, quick-start commands
-- `docs/user-guide.md` — full user guide: installation, quick-start, API reference, hardware setup, training
-- `docs/build-guide.md` — building from source (Rust workspace + Python + firmware)
-- `docs/integrations/home-assistant.md` — Home Assistant MQTT/DISCO integration
-- `docs/user-guide-apple-homepod.md` — Apple Home / HomePod / HAP setup
-- `docs/adr/` — 150+ Architecture Decision Records documenting every major design choice
-- `v2/` — the Rust workspace (primary codebase for Rust builds)
-- `firmware/esp32-csi-node/` — ESP32 firmware source + build instructions
-- `python/` — PyO3 bindings source
-- `ui/` — web dashboard and mobile app
-
-## 7. How to install and use RuView end-to-end
-
-### Path 1: Docker demo (no hardware, 30 seconds)
 ```bash
 docker pull ruvnet/wifi-densepose:latest
 docker run -p 3000:3000 ruvnet/wifi-densepose:latest
-# Open http://localhost:3000
-# You'll see the real-time dashboard with simulated CSI data
+# then open http://localhost:3000
 ```
 
-### Path 2: Python library
+For real sensing hardware, flash and provision an ESP32-S3 ($9):
+
 ```bash
-pip install ruview
-# or: pip install wifi-densepose  (same wheel, different name)
-
-# Add WebSocket/MQTT clients:
-pip install "ruview[client]"
-
-# Use it:
-from ruview import BreathingExtractor, HeartRateExtractor
-# from ruview.client import SensingClient, RuViewMqttClient
-```
-
-### Path 3: Build from source (Rust)
-```bash
-# Prerequisites: Rust 1.85+, Python 3.10+
-git clone https://github.com/ruvnet/RuView
-cd RuView/v2
-
-# Run tests (no hardware needed — uses simulated data):
-cargo test --workspace --no-default-features
-
-# Start the sensing server (simulated mode):
-cargo run -p wifi-densepose-sensing-server -- --simulate
-# Open http://localhost:3000
-```
-
-### Path 4: Live ESP32 sensing ($9 hardware)
-```bash
-# 1. Flash firmware to ESP32-S3:
 python -m esptool --chip esp32s3 --port COM9 --baud 460800 \
   write_flash 0x0 bootloader.bin 0x8000 partition-table.bin \
   0xf000 ota_data_initial.bin 0x20000 esp32-csi-node.bin
-
-# 2. Provision WiFi and server IP:
 python firmware/esp32-csi-node/provision.py --port COM9 \
   --ssid "YourWiFi" --password "secret" --target-ip 192.168.1.20
-
-# 3. Start the sensing server:
-cargo run -p wifi-densepose-sensing-server
-# Dashboard at http://localhost:3000
-# API at http://localhost:3000/api/v1/
 ```
 
-### What you'll see when it works
-- The web dashboard shows real-time presence detection, breathing rate, and heart rate bars
-- REST API returns JSON: `GET /api/v1/status` → system status; `GET /api/v1/vitals` → breathing/heart rate; `GET /api/v1/presence` → occupancy count
-- WebSocket at `/ws` streams events in real-time
-- With Home Assistant: `--mqtt` flag publishes sensor entities automatically
+The Rust crates that make up the sensing pipeline are consumed as Cargo dependencies (e.g. `cargo add wifi-densepose-core`, `wifi-densepose-signal`, `wifi-densepose-nn`, `wifi-densepose-vitals`, `wifi-densepose-mat`, `wifi-densepose-hardware`, `wifi-densepose-train`, `wifi-densepose-wifiscan`, `wifi-densepose-ruvector`, `wifi-densepose-wasm`), with `wasm-pack` and `cargo-watch` as supporting tools. The Python client is `pip install "ruview[client]"` (or the equivalent `wifi-densepose[client]`).
 
-## 8. How to extend RuView
+## 6. Honest scope and limits
 
-**Add a custom Cog (edge module):**
-Implement the Cog interface in the edge-module runtime. Add it to `app-registry.json`. The catalog supports 105 modules across health, security, building, retail, and industrial domains.
-
-**Train a custom pose model:**
-Use camera-supervised fine-tuning: record 2.1 seconds of training data per pose with a MediaPipe camera, then run the Candle pipeline. Alternatively, use self-supervised contrastive pre-training on your own CSI data.
-
-**Add a new Home Assistant entity:**
-Extend the `homecore` state machine in `crates/homecore/`. New entities are published via MQTT DISCO auto-discovery.
-
-**Integrate with Matter:**
-Use the Matter endpoint in `homecore-api` (ADR-122). Works with Google Home, SmartThings, and any Matter-compatible hub.
-
-## 9. Hardware requirements and gotchas
-
-**Hardware options (smallest to largest):**
-| Option | Cost | Full CSI? | Capabilities |
-|--------|------|-----------|-------------|
-| Any WiFi laptop | $0 | No | RSSI-only: coarse presence and motion |
-| ESP32-S3 mesh (3–6× boards) | ~$54 | Yes | Presence, breathing, heartbeat, pose, fall detection |
-| ESP32-C6 research node | ~$10 | Yes (WiFi 6) | Same as S3 + WiFi 6 HE-LTF, lower power |
-| ESP32 + Cognitum Seed | ~$140 | Yes | All above + persistent vector store, kNN, witness chain, 105-cog catalog |
-
-**Key gotchas:**
-- ESP32-C3 and the original ESP32 are **not supported** (single-core, insufficient for CSI processing)
-- A single node has limited spatial resolution; 2+ nodes significantly improve accuracy
-- The 30-second calibration is **mandatory** for each new room — skip it and accuracy collapses
-- Camera-free pose estimation is the "good" option; camera-supervised training is the "great" option
-- Flash (provisioning) resets the entire NVS namespace — pass the full flag set each time or settings are wiped
-- On Windows, ESP-IDF requires a specific Python subprocess setup (see `CLAUDE.local.md`); do not use MSYS2/Git Bash directly
+- **Agent runs are read-only by default.** Workspace writes via the `ruview` CLI require both `--allow-write` and `--confirm`; anything retrieved from the "brain" is treated as evidence, not authority.
+- **Model maturity varies and is explicitly labeled (ADR-187).** "WiFi → pose" means different things at different tiers in this repo — read the maturity label for a given checkpoint rather than assuming a headline figure applies uniformly.
+- **Published accuracy has been corrected in public.** The pretrained CSI encoder's documented figure is 82.3% held-out temporal-triplet accuracy (up from a 66.4% raw baseline); an earlier "100% presence" claim was measured on a single-class recording and has since been retracted.
+- **Known artifact issue:** the published `model.safetensors` file has a NUL-padded header that the reference `safetensors.torch.load_file` rejects (tracked as issue #1522), pending a corrected re-upload.
+- **Through-wall range is bounded and signal-dependent** — roughly up to 5 m per the documented Fresnel-zone/multipath approach, not unlimited range.
+- **Hardware matters.** CSI-capable hardware (an ESP32-S3 at ~$9, or a research NIC) is recommended for presence, vital-sign, and through-wall capabilities; the Docker image runs on simulated data for evaluation only, and consumer WiFi laptops have limited capability by comparison.
+- **Older material is being deprecated with clear labeling** — an `archive/v1` path exists with its own deterministic proof/verification script (`archive/v1/data/proof/verify.py`), documented under ADR-187 as part of an honest-labeling effort rather than being presented as current.
+- **This knowledge pack's component inventory (2 components, npm ecosystem) reflects the indexed JS/TS surface only** — the fuller system (Rust crates, Python packages, ESP32 firmware, Docker images) is described in the repo's docs and build commands but isn't enumerated as a separate "component" in this particular index.

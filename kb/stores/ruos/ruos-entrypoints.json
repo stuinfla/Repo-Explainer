@@ -1,0 +1,60 @@
+{
+  "target": "ruos",
+  "metaName": "ruos",
+  "generated": "2026-09-17T20:31:03.293Z",
+  "workspace": {
+    "kind": null,
+    "members": []
+  },
+  "components": [
+    {
+      "name": "ruos-mcp",
+      "path": "mcp",
+      "kind": "crate",
+      "description": "MCP stdio server that gives an AI computer-use + CLI/console control of a ruOS desktop (screenshot + keyboard/mouse + shell + system actions + resolution), attached over SSH",
+      "bins": [
+        "ruos-mcp"
+      ],
+      "examples": []
+    }
+  ],
+  "binaries": [
+    {
+      "name": "ruos-mcp",
+      "component": "ruos-mcp",
+      "path": "mcp",
+      "kind": "rust-bin"
+    }
+  ],
+  "commands": [
+    {
+      "cmd": "cargo build --release",
+      "category": "build",
+      "source": "mcp/README.md",
+      "note": null
+    },
+    {
+      "cmd": "cargo build --release --target x86_64-unknown-linux-musl",
+      "category": "build",
+      "source": "mcp/README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest --help",
+      "category": "run",
+      "source": "skills/README.md",
+      "note": "Ruflo"
+    },
+    {
+      "cmd": "npx ruvector@latest --help",
+      "category": "run",
+      "source": "skills/README.md",
+      "note": "RuVector"
+    }
+  ],
+  "install": [],
+  "quickstart": [
+    "npx @claude-flow/cli@latest --help",
+    "npx ruvector@latest --help"
+  ]
+}

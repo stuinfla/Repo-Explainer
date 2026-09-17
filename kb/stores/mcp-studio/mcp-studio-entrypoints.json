@@ -1,0 +1,299 @@
+{
+  "target": "mcp-studio",
+  "metaName": "mcp-studio",
+  "generated": "2026-09-17T20:01:28.527Z",
+  "workspace": {
+    "kind": "npm",
+    "members": []
+  },
+  "components": [
+    {
+      "name": "site-creator-vinext-starter",
+      "path": "",
+      "kind": "package",
+      "description": null,
+      "scripts": {
+        "install:ci": "bash scripts/install-pnpm.sh",
+        "dev": "node scripts/run-framework.mjs dev",
+        "build": "node scripts/build-widget.mjs && node scripts/run-framework.mjs build",
+        "start": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
+        "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+        "typecheck": "tsc --noEmit",
+        "test": "node scripts/test-mcp.mjs",
+        "check": "pnpm typecheck && pnpm test && pnpm build",
+        "build:widget": "node scripts/build-widget.mjs",
+        "db:generate": "drizzle-kit generate"
+      },
+      "bins": [],
+      "deps": [
+        "@base-ui/react",
+        "@hookform/resolvers",
+        "@modelcontextprotocol/ext-apps",
+        "@modelcontextprotocol/sdk",
+        "@shadcn/react",
+        "class-variance-authority",
+        "clsx",
+        "cmdk",
+        "date-fns",
+        "drizzle-orm",
+        "embla-carousel-react",
+        "input-otp",
+        "lucide-react",
+        "next",
+        "next-themes",
+        "radix-ui",
+        "react",
+        "react-day-picker",
+        "react-dom",
+        "react-hook-form",
+        "react-resizable-panels",
+        "recharts",
+        "sonner",
+        "tailwind-merge",
+        "vaul",
+        "zod"
+      ]
+    }
+  ],
+  "binaries": [],
+  "commands": [
+    {
+      "cmd": "npm run install:ci",
+      "raw": "bash scripts/install-pnpm.sh",
+      "category": "install",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run dev",
+      "raw": "node scripts/run-framework.mjs dev",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build",
+      "raw": "node scripts/build-widget.mjs && node scripts/run-framework.mjs build",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run start",
+      "raw": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
+      "category": "run",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run lint",
+      "raw": "eslint . --ignore-pattern dist --ignore-pattern .next",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run typecheck",
+      "raw": "tsc --noEmit",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run test",
+      "raw": "node scripts/test-mcp.mjs",
+      "category": "test",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run check",
+      "raw": "pnpm typecheck && pnpm test && pnpm build",
+      "category": "test",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run build:widget",
+      "raw": "node scripts/build-widget.mjs",
+      "category": "build",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "npm run db:generate",
+      "raw": "drizzle-kit generate",
+      "category": "other",
+      "source": "package.json",
+      "note": null
+    },
+    {
+      "cmd": "pnpm install",
+      "category": "install",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "pnpm dev",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "pnpm check",
+      "category": "other",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "pnpm build:widget",
+      "category": "build",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest doctor --fix",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest memory init",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "pnpm build",
+      "category": "build",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "pnpm start",
+      "category": "run",
+      "source": "README.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest memory search --query \"mcp studio patterns\" --namespace patterns",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npx ruflo@latest hooks route --task \"describe the task\"",
+      "category": "run",
+      "source": "AGENTS.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory search --query \"[task keywords]\" --namespace patterns",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hooks route --task \"[task description]\"",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory store --namespace patterns --key \"[name]\" --value \"[what worked]\"",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hooks post-task --task-id \"[id]\" --success true --store-results true",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hooks worker dispatch --trigger audit",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npm run build && npm test",
+      "category": "test",
+      "source": "CLAUDE.md",
+      "note": null
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest init --wizard",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": "Setup"
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest swarm init --v3-mode",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": "Start swarm"
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest memory search --query \"\"",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": "Vector search"
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest hooks route --task \"\"",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": "Route to agent"
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest doctor --fix",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": "Diagnostics"
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest security scan",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": "Security scan"
+    },
+    {
+      "cmd": "npx @claude-flow/cli@latest performance benchmark",
+      "category": "run",
+      "source": "CLAUDE.md",
+      "note": "Benchmarks"
+    }
+  ],
+  "install": [
+    "npm run install:ci",
+    "pnpm install"
+  ],
+  "quickstart": [
+    "npm run dev",
+    "npm run start",
+    "pnpm dev",
+    "npx ruflo@latest doctor --fix",
+    "npx ruflo@latest memory init",
+    "npx ruflo@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized",
+    "pnpm start",
+    "npx ruflo@latest memory search --query \"mcp studio patterns\" --namespace patterns",
+    "npx ruflo@latest hooks route --task \"describe the task\"",
+    "npx @claude-flow/cli@latest swarm init --topology hierarchical --max-agents 8 --strategy specialized",
+    "npx @claude-flow/cli@latest memory search --query \"[task keywords]\" --namespace patterns",
+    "npx @claude-flow/cli@latest hooks route --task \"[task description]\""
+  ]
+}
