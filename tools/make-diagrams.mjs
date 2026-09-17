@@ -1567,7 +1567,28 @@ function main() {
   // generic default worth showing: an animation that does not perform THIS project's one idea is the
   // decoration we spent all of 2026-07-12 removing.
   const animSpec = (visualsIn.heroAnim && typeof visualsIn.heroAnim === 'object') ? visualsIn.heroAnim : null;
-  if (animSpec) {
+  // INV-23's BESPOKE SCENE, previously documented but unimplemented (2026-09-17). SKILL.md says a repo
+  // whose trick is spatial or mechanical gets an authored animated SVG scene and that "the chips band is
+  // the fallback for repos whose trick is genuinely abstract" — but the only code path here built chips,
+  // so every spatial repo either got value-flipping chips that did not fit or (ruos) no animation at all.
+  // When the brain authors `visuals.heroAnim.sceneSvg`, that file IS the band: validated, never invented.
+  if (animSpec && typeof animSpec.sceneSvg === 'string' && animSpec.sceneSvg.trim()) {
+    const srcPath = path.isAbsolute(animSpec.sceneSvg) ? animSpec.sceneSvg : path.join(buildDir, animSpec.sceneSvg);
+    if (!fs.existsSync(srcPath)) die(`visuals.heroAnim.sceneSvg not found: ${srcPath} — the brain must author the scene before make-diagrams runs`);
+    const scene = fs.readFileSync(srcPath, 'utf8');
+    if (!/viewBox=/i.test(scene)) die(`heroAnim.sceneSvg has no viewBox (${srcPath}) — it cannot scale on the page`);
+    if (!/@keyframes|<animate/i.test(scene)) die(`heroAnim.sceneSvg carries no animation (${srcPath}) — a static picture belongs in a diagram slot, not the hero band`);
+    if (!/prefers-reduced-motion/i.test(scene)) die(`heroAnim.sceneSvg must honour prefers-reduced-motion with a static end state (${srcPath})`);
+    const dest = path.join(assetsDir, 'hero-scene.svg');
+    if (path.resolve(srcPath) !== path.resolve(dest)) fs.writeFileSync(dest, scene, 'utf8');
+    assertXmllintClean(dest, 'heroAnim.sceneSvg');
+    const desc = (scene.match(/<desc[^>]*>([\s\S]*?)<\/desc>/i) || [])[1];
+    merged.heroAnim = {
+      ...animSpec, svgPath: dest, altText: (desc || animSpec.altText || 'The one idea, in motion').trim(),
+      format: 'svg-vector-animated-scene', xmllintOK: true,
+    };
+    process.stderr.write(`${TOOL}: hero-scene.svg — authored scene installed as the hero animation (reduced-motion safe)\n`);
+  } else if (animSpec) {
     const r = renderRefusal(PAL, animSpec);
     const svg = wrapSvg(r.W, r.H, r.body, `${name} — the one idea, in motion`, r.desc, null, r.style);
     const p = path.join(assetsDir, 'refusal.svg');

@@ -162,7 +162,13 @@ ${revisionBlock(feedback)}${prior}Author the "content" slot. The page renders th
 }
 Rules: 2-4 paragraphs max per section; useCases has 2-3 cases; getStarted.install + steps must come from the brief's INSTALL/COMMANDS/QUICKSTART; cite real passage ids.
 GET-STARTED must give real IMPLEMENTATION CONFIDENCE (this is the most-failed axis): the steps must include (a) any PREREQUISITES (toolchain/version), (b) the EXACT command(s) to run, copyable and grounded in the brief, (c) WHAT THE READER WILL SEE when it succeeds (the concrete result/output), (d) what they HAVE at the end, and (e) the NEXT step. Prefer { "strong": "...", "text": "..." } steps so each has a bolded action + concrete detail. If the repo genuinely has no install command or CLI (a pure library), SAY so honestly, then give the real clone → build → test commands and what each produces — never a vague "just explore the code".`;
-  const out = await callClaudeJSON({ apiKey, env: ctx?._env, model, system, user, maxTokens: 12000 });
+  // 32k output / 300s, not 12k / 120s (both raised 2026-09-17 on ruvnet/mcp-studio, which failed
+  // twice here): the 120s default timed out three times, and then 12k died with "hit max_tokens
+  // before emitting any text — the model spent the budget on its internal reasoning block" (#17.2).
+  // A thinking block SHARES this budget, so 12k was the whole allowance for reasoning + a ~12k JSON
+  // answer. The same squeeze produced the silent "TRUNCATED at max_tokens" warning on ruos. Verified
+  // live: claude-sonnet-5 accepts max_tokens 64000, so 32k leaves real headroom for both halves.
+  const out = await callClaudeJSON({ apiKey, env: ctx?._env, model, system, user, maxTokens: 32000, timeoutMs: 300_000 });
   const need = ['hero', 'problem', 'whatItIs', 'insight', 'howItWorks', 'useCases', 'getStarted', 'pack'];
   if (!out?.sections) throw new Error('authorContent: missing sections');
   for (const s of need) if (!out.sections[s]) throw new Error(`authorContent: missing section "${s}"`);
@@ -297,7 +303,7 @@ Write a primer for "${name}" as markdown. Use these ## sections, in order:
 ## 5. How do I install and use it
 ## 6. Honest scope and limits
 Keep it tight and real; ground every statement in the brief above.`;
-  const md = await callClaude({ apiKey, env: ctx?._env, model, system, user, maxTokens: 9000 });
+  const md = await callClaude({ apiKey, env: ctx?._env, model, system, user, maxTokens: 9000, timeoutMs: 300_000 });
   const primerRel = ctx.kb?.primerPath;
   if (!primerRel) throw new Error('authorPrimer: build.json has no kb.primerPath (run build-kb first)');
   const primerAbs = path.isAbsolute(primerRel) ? primerRel : path.resolve(repoRoot, primerRel);
