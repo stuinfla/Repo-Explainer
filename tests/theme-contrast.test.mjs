@@ -54,6 +54,17 @@ test('REGRESSION: an explicit sub-AA on-accent is overridden, not shipped', () =
   assert.equal(onAccent({ accent: fill, 'on-accent': DARK_INK }), LIGHT_INK);
 });
 
+test('REGRESSION: a bare colour-list --spectrum becomes a real gradient (ruos/ruvector/helix CTA was invisible)', () => {
+  const { css } = quiet(() => buildTheme({ palette: { accent: '#4be3c8', spectrum: '#4be3c8, #6fb1e6, #8b7bf0, #f2b04c' } }));
+  assert.match(css, /--spectrum:\s*linear-gradient\(96deg, #4be3c8, #6fb1e6, #8b7bf0, #f2b04c\);/);
+});
+
+test('a real gradient --spectrum is left untouched', () => {
+  const g = 'linear-gradient(135deg,#00e5c8 0%,#3d9fff 50%,#a855f7 100%)';
+  const { css } = quiet(() => buildTheme({ palette: { accent: '#00e5c8', spectrum: g } }));
+  assert.ok(css.includes(`--spectrum: ${g};`), 'a valid gradient must pass through verbatim');
+});
+
 test('an explicit on-accent that already clears AA is respected', () => {
   assert.equal(onAccent({ accent: '#0b1020', 'on-accent': '#ffffff' }), '#ffffff');
 });

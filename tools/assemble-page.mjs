@@ -163,6 +163,25 @@ function bestOnAccent(fills) {
   return { color: best, minRatio: bestMin };
 }
 
+// A bare colour list ("#a, #b, #c") is not a valid `background` value. Through a custom property the
+// browser discards it at computed-value time, `.cta` paints NO fill, and its dark ink lands on the dark
+// page — the primary button went invisible on ruos, ruvector and helix (2026-09-17). The contrast guard
+// below could not catch it: it measured the listed colours of a fill that never painted. Wrap the list.
+const GRADIENT_FN = /^(repeating-)?(linear|radial|conic)-gradient\(/i;
+const COLOR_TOKEN = /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([^)]*\))$/i;
+function normalizeSpectrum(val) {
+  if (GRADIENT_FN.test(val)) return val;
+  const parts = [];
+  let depth = 0, cur = '';
+  for (const ch of val) {
+    if (ch === '(') depth++;
+    if (ch === ')') depth--;
+    if (ch === ',' && depth === 0) { parts.push(cur.trim()); cur = ''; } else cur += ch;
+  }
+  parts.push(cur.trim());
+  return parts.length >= 2 && parts.every((p) => COLOR_TOKEN.test(p)) ? `linear-gradient(96deg, ${parts.join(', ')})` : val;
+}
+
 function buildTheme(concept) {
   const palette = reqObj(concept.palette, 'concept.palette');
   const decls = [];
@@ -172,7 +191,7 @@ function buildTheme(concept) {
     const k = normKnob(rawK);
     if (k === 'color-scheme' || k === 'colorscheme') { colorScheme = safeCssValue(rawV, 'color-scheme'); continue; }
     if (!KNOBS.has(k)) { process.stderr.write(`assemble-page: ignoring unknown palette knob '${rawK}'\n`); continue; }
-    decls.push([`--${k}`, safeCssValue(rawV, k)]);
+    decls.push([`--${k}`, k === 'spectrum' ? normalizeSpectrum(safeCssValue(rawV, k)) : safeCssValue(rawV, k)]);
     tokensUsed.push(`--${k}`);
   }
   if (!tokensUsed.includes('--accent')) throw new Error("concept.palette must define 'accent' (the cohesion anchor)");
