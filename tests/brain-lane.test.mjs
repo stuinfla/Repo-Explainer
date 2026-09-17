@@ -137,6 +137,27 @@ test('SOL#6 — a .env-only OpenRouter key survives to execution', () => {
   assert.match(brain, /env: ctx\?\._env/, 'and every brain call site must pass it through');
 });
 
+test('SOL#6 — brainRun EXECUTES the env hand-off (the regex above passed on code that threw)', async () => {
+  // 2026-09-17: 67b3623 (2026-08-10) put `ctx._env = env` inside a closure that never destructured
+  // `env`, so every brain station on the LOCAL door (primer/concept/content/visual-brief) threw
+  // "env is not defined" — the hosted runner never imports the orchestrator and npm 0.5.0 predates
+  // the commit. The source-shape assertion above stayed green throughout: it proved the line was
+  // TYPED, not that it RUNS. This one crosses the boundary: a real build dir, a real call, the value
+  // observed inside. Verified to fail with that exact ReferenceError before the fix.
+  const { brainRun } = await import('../src/orchestrator.mjs');
+  const os = await import('node:os');
+  const buildDir = fs.mkdtempSync(path.join(os.tmpdir(), 'brainrun-'));
+  fs.writeFileSync(path.join(buildDir, 'build.json'), JSON.stringify({ repo: { name: 'fixture' } }));
+  let seen;
+  try {
+    const r = await brainRun(async (ctx) => { seen = ctx._env; })({
+      buildDir, env: { OPENROUTER_API_KEY: 'only-in-dotenv' }, apiKey: null, model: 'm',
+    });
+    assert.equal(r.ok, true);
+    assert.equal(seen?.OPENROUTER_API_KEY, 'only-in-dotenv', 'the merged env must arrive in ctx._env');
+  } finally { fs.rmSync(buildDir, { recursive: true, force: true }); }
+});
+
 test('SOL#6 — an explicit CLI lane choice outranks a namespaced model id', () => {
   const src = fs.readFileSync(path.join(REPO, 'src', 'claude.mjs'), 'utf8');
   assert.match(src, /brainMode === 'claude-cli'/,

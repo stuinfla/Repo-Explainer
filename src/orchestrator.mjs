@@ -103,8 +103,8 @@ async function kbRegisterStation({ buildDir, env, model, apiKey, opts }) {
 }
 
 // ── brain station runners (each reads fresh ctx, authors, merges its slot) ──────────────────────
-function brainRun(fn) {
-  return async ({ buildDir, apiKey, model }) => {
+export function brainRun(fn) {
+  return async ({ buildDir, env, apiKey, model }) => {
     const ctx = readContext(buildDir);
     ctx._repoRoot = REPO_ROOT;
     ctx._env = env;   // the MERGED env — .env-only keys must survive to the brain client (Sol #6)
