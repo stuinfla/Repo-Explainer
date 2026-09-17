@@ -16,6 +16,79 @@ const componentWord = ['crate', 'package', 'module', 'component'];
 
 /** @type {Record<string, object>} keyed by target slug. */
 export const targets = {
+  "ruos": {
+    "slug": "ruos",
+    "metaName": "ruos",
+    "embed": {
+      "model": "Xenova/bge-small-en-v1.5",
+      "dim": 384,
+      "pooling": "mean",
+      "queryPrefix": "Represent this sentence for searching relevant passages: ",
+      "rankScale": 0.6,
+      "rvfSuffix": ".rvf"
+    },
+    "productNames": [],
+    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/ruos/repo",
+    "scopeExclude": [
+      "node_modules",
+      "dist",
+      "target",
+      ".git",
+      "coverage",
+      "pkg",
+      ".next",
+      "skills"
+    ],
+    "codeExt": [
+      ".rs",
+      ".ts",
+      ".js",
+      ".mjs",
+      ".json"
+    ],
+    "fullTextExt": [
+      ".md",
+      ".mdx",
+      ".txt"
+    ],
+    "templateExt": [],
+    "componentRoots": [
+      "mcp",
+      "src",
+      "bin",
+      "examples"
+    ],
+    "componentWord": [
+      "crate",
+      "package",
+      "module",
+      "component"
+    ],
+    "include": [
+      {
+        "rule": "mdSweepFullText",
+        "roots": [
+          "."
+        ]
+      },
+      {
+        "rule": "literalFiles",
+        "files": [
+          "README.md",
+          "package.json"
+        ]
+      },
+      {
+        "rule": "sourceBodies",
+        "roots": [
+          "mcp/src"
+        ],
+        "ext": [
+          ".rs"
+        ]
+      }
+    ]
+  },
   "ternlight": {
     "slug": "ternlight",
     "metaName": "ternlight",
