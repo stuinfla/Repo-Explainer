@@ -10,6 +10,10 @@
 //   TS/JS: import scan of the source tree (no madge dependency required) → module/package graph
 //          (internal edges between componentRoots packages via workspace imports + external deps
 //          from each package.json).
+//   Python: pyproject.toml workspace/member discovery + import scan → package dependency graph.
+//           This matters for repos such as the-goodies: treating an unsupported ecosystem as an
+//           empty graph used to force an authored list into a nested-box renderer, which looked like
+//           random concentric boxes rather than architecture.
 //
 // Repo shape is DATA (kb.config.mjs target: repoDir, scopeExclude, componentRoots). Ships in the
 // drop-in for-ai/. NO repo name is baked in here.
@@ -81,6 +85,62 @@ function rustGraph(repoDir) {
   // unique external deps across the workspace
   const allExternal = [...new Set(Object.values(externalDeps).flat().map((d) => d.name))].sort();
   return { ok: true, ecosystem: 'rust', nodes, internalEdges, externalDeps, externalDepNames: allExternal };
+}
+
+// ---------------- Python: pyproject.toml + import scan ----------------
+// Deliberately small TOML reader: we only need [project].name and its dependencies array. Keeping
+// this extractor dependency-free makes it usable in the hosted runner before target code is installed.
+function pyProject(file) {
+  const text = tryRead(file); if (!text) return null;
+  const project = (text.match(/^\[project\]\s*$([\s\S]*?)(?=^\[|$(?![\s\S]))/m) || [])[1];
+  if (!project) return null;
+  const name = (project.match(/^name\s*=\s*["']([^"']+)["']/m) || [])[1];
+  if (!name) return null;
+  const depsBlock = (project.match(/^dependencies\s*=\s*\[([\s\S]*?)\]/m) || [])[1] || '';
+  const deps = [...depsBlock.matchAll(/["']([A-Za-z0-9_.-]+)(?:\[[^"']*\])?[^"']*["']/g)].map((m) => m[1]);
+  return { name, deps };
+}
+const pyNorm = (s) => String(s).toLowerCase().replace(/[-.]+/g, '_');
+export function pyGraph(repoDir, skip = new Set(), componentRoots = []) {
+  const roots = [...new Set([...(componentRoots || []), '.'])];
+  // Also inspect one level down. Python workspaces commonly keep each member at the root without a
+  // shared packages/ directory (the-goodies: funkygibbon/, inbetweenies/, blowing-off/, oook/).
+  try { for (const d of fs.readdirSync(repoDir, { withFileTypes: true })) if (d.isDirectory() && !skip.has(d.name)) roots.push(d.name); } catch {}
+  const projects = [];
+  for (const r of [...new Set(roots)]) {
+    const dir = path.resolve(repoDir, r); const manifest = path.join(dir, 'pyproject.toml');
+    if (!fs.existsSync(manifest)) continue;
+    const meta = pyProject(manifest); if (meta) projects.push({ ...meta, dir, manifest });
+  }
+  // A root pyproject in a multi-member workspace is usually a development aggregator, not a runtime
+  // component. Draw the members and their real edges; keep the root only for a single-package repo.
+  const members = projects.filter((p) => path.resolve(p.dir) !== path.resolve(repoDir));
+  const shown = members.length ? members : projects;
+  if (!shown.length) return { ok: false, reason: 'no Python projects found' };
+  const nodes = shown.map((p) => ({ name: p.name, version: null, description: null,
+    manifest: path.relative(repoDir, p.manifest), deps: p.deps }));
+  const aliases = new Map();
+  for (const p of shown) {
+    aliases.set(pyNorm(p.name), p.name);
+    // Distribution names can differ from import names (blowing-off -> blowingoff). Learn actual
+    // top-level package directories as aliases rather than guessing only from punctuation.
+    try { for (const d of fs.readdirSync(p.dir, { withFileTypes: true })) if (d.isDirectory() && fs.existsSync(path.join(p.dir, d.name, '__init__.py'))) aliases.set(pyNorm(d.name), p.name); } catch {}
+    if (fs.existsSync(path.join(p.dir, '__init__.py'))) aliases.set(pyNorm(path.basename(p.dir)), p.name);
+  }
+  const internalEdges = [], seen = new Set(), externalDeps = {};
+  const addEdge = (from, to, kind) => { if (!to || from === to) return; const k = `${from}->${to}`; if (!seen.has(k)) { seen.add(k); internalEdges.push({ from, to, kind }); } };
+  for (const p of shown) {
+    externalDeps[p.name] = [];
+    for (const d of p.deps) { const to = aliases.get(pyNorm(d)); if (to) addEdge(p.name, to, 'dependency'); else externalDeps[p.name].push({ name: d, req: '*', kind: 'normal' }); }
+    for (const file of walk(p.dir, skip)) {
+      if (!/\.py$/.test(file)) continue; const text = tryRead(file); if (!text) continue;
+      for (const m of text.matchAll(/^\s*(?:from\s+([A-Za-z_][\w.]*)\s+import|import\s+([A-Za-z_][\w.]*))/gm)) {
+        const top = (m[1] || m[2]).split('.')[0]; addEdge(p.name, aliases.get(pyNorm(top)), 'import');
+      }
+    }
+  }
+  const externalDepNames = [...new Set(Object.values(externalDeps).flat().map((d) => d.name))].sort();
+  return { ok: true, ecosystem: 'python', nodes, internalEdges, externalDeps, externalDepNames };
 }
 
 // ---------------- TS/JS: import scan + package.json ----------------
@@ -162,6 +222,9 @@ function main() {
       (fs.statSync(abs).isDirectory() && fs.readdirSync(abs).some((d) => { try { return fs.existsSync(path.join(abs, d, 'package.json')); } catch { return false; } })));
   });
   if (hasNpm) { const g = tsGraph(repoDir, skip, target.componentRoots); if (g.ok && g.nodes.length) graphs.push(g); }
+  const hasPython = fs.existsSync(path.join(repoDir, 'pyproject.toml'))
+    || (() => { try { return fs.readdirSync(repoDir, { withFileTypes: true }).some((d) => d.isDirectory() && !skip.has(d.name) && fs.existsSync(path.join(repoDir, d.name, 'pyproject.toml'))); } catch { return false; } })();
+  if (hasPython) { const g = pyGraph(repoDir, skip, target.componentRoots); if (g.ok && g.nodes.length) graphs.push(g); else console.warn(`[dep-graph] ${g.reason}`); }
 
   // Merge ecosystems into one report.
   const nodes = graphs.flatMap((g) => g.nodes.map((n) => ({ ...n, ecosystem: g.ecosystem })));
@@ -183,4 +246,4 @@ function main() {
   console.log(`[dep-graph] wrote ${path.relative(__dirname, outFile)}`);
 }
 
-main();
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) main();
