@@ -790,16 +790,21 @@ const RB = { CARD_H: 118, HGAP: 60, TOP: 156, PADX: 64, MINW: 158, MAXW: 300 };
 function ribW(label) { return clamp(Math.ceil(measure(clip(label, 34), 15.5, { bold: true })) + 46, RB.MINW, RB.MAXW); }
 function conceptRibbon(eyebrow, title, steps, caption, pal) {
   const n = steps.length;
-  const ws = steps.map((s) => ribW(s.label));
-  const rowW = ws.reduce((a, b) => a + b, 0) + RB.HGAP * (n - 1);
+  // Four-stage Big Idea handoffs must remain readable after fitting to a 390px phone. The general
+  // ribbon's 300px cards produce a 1385px canvas and 2-3px mobile text. Use compact fixed cards for
+  // this one grounded handoff: the labels wrap, while the arrows and left-to-right meaning stay clear.
+  const compactHandoff = eyebrow === 'THE BIG IDEA' && n === 4;
+  const ws = compactHandoff ? steps.map(() => 170) : steps.map((s) => ribW(s.label));
+  const hgap = compactHandoff ? 34 : RB.HGAP;
+  const rowW = ws.reduce((a, b) => a + b, 0) + hgap * (n - 1);
   const titleMinW = Math.ceil(measure(title, 30, { bold: true })) + 120;
-  const W = Math.max(rowW + RB.PADX * 2, titleMinW);
+  const W = Math.max(rowW + (compactHandoff ? 34 : RB.PADX) * 2, titleMinW);
   const cardY = RB.TOP, contentH = cardY + RB.CARD_H;
   const cb = captionBlock(W / 2, contentH, W, caption, pal, 84);
   const H = contentH + cb.band;
   const body = ['  <!-- concept archetype: ribbon -->', background(W, H, pal), header(W / 2, 30, eyebrow, title, pal)];
   let x = (W - rowW) / 2;
-  const geo = steps.map((s, i) => { const g = { ...s, x, w: ws[i], col: accent(s.colorIdx != null ? s.colorIdx : i) }; x += ws[i] + RB.HGAP; return g; });
+  const geo = steps.map((s, i) => { const g = { ...s, x, w: ws[i], col: accent(s.colorIdx != null ? s.colorIdx : i) }; x += ws[i] + hgap; return g; });
   for (let i = 0; i < n - 1; i++) if (geo[i].arrow) body.push(beam(geo[i].x + geo[i].w + 6, cardY + RB.CARD_H / 2, geo[i + 1].x - 6, cardY + RB.CARD_H / 2, mix(geo[i].col, geo[i + 1].col, 0.5)));
   for (const g of geo) {
     body.push(glassPanel(g.x, cardY, g.w, RB.CARD_H, g.col, { r: 16, fillA: 0.16, depth: 8, aura: 0.4 }));
@@ -1192,10 +1197,10 @@ const DIAGRAMS = [
   { key: 'flowDiagram', file: 'flow.svg', title: 'Process / Data Flow', grounded: 'flow',
     groundedFamily: FORM.VSTACK,
     conceptEyebrow: 'DATA FLOW', conceptHeading: 'What happens to your data', conceptPrefs: ['ribbon', 'column', 'grid', 'strata', 'orbit'] },
-  // "How it all fits together" is a CONTAINMENT idea (zones inside one thing) — strata first. This also
-  // matches what the 2026-08-04 build actually drew and what graded well: a nested-frames big idea.
+  // Big Idea explains a relationship or handoff. It must not claim literal containment from its own
+  // authored wording; prefer a connected sequence, then other non-containment relationship forms.
   { key: 'bigIdeaDiagram', file: 'big-idea.svg', title: 'Big Idea', grounded: null,
-    conceptEyebrow: 'THE BIG IDEA', conceptHeading: 'How it all fits together', conceptPrefs: ['strata', 'ribbon', 'grid', 'column', 'orbit'] },
+    conceptEyebrow: 'THE BIG IDEA', conceptHeading: 'How it all fits together', conceptPrefs: ['ribbon', 'grid', 'column', 'orbit'] },
   { key: 'insightDiagram', file: 'insight.svg', title: 'The Insight', grounded: null,
     conceptEyebrow: 'THE INSIGHT', conceptHeading: 'The clever move', conceptPrefs: ['orbit', 'ribbon', 'grid', 'strata', 'column'] },
 ];
@@ -1226,10 +1231,20 @@ const RIBBON_MAX_ITEMS = 3;
 // Nested frames assert literal containment. They are valid only when the authored takeaway explicitly
 // says that one thing is inside/contains another. A title such as 'How it all fits together' is not
 // evidence of containment; using strata there turns an ordinary relationship into meaningless boxes.
-function containmentIsGrounded(slot) { return slot.semanticContainment === true; }
-function ribbonIsSafe(slot) {
-  return !Number.isInteger(slot.chainLength) || slot.chainLength <= RIBBON_MAX_ITEMS;
+function containmentIsGrounded(slot) {
+  // A Big Idea's own prose is not independent evidence that containment exists. The renderer must
+  // not turn its self-authored shape claim into permission to draw that same shape. Big Idea is a
+  // relationship/handoff slot unless a future source-backed model supplies explicit containment.
+  if (slot.key === 'bigIdeaDiagram') return false;
+  return slot.semanticContainment === true;
 }
+function ribbonIsSafe(slot) {
+  // Big Idea handoffs commonly have four grounded stages. Four is still readable in the dedicated
+  // ribbon renderer and is preferable to falsely implying containment. Other slots keep the tighter cap.
+  const max = slot.key === 'bigIdeaDiagram' ? 4 : RIBBON_MAX_ITEMS;
+  return !Number.isInteger(slot.chainLength) || slot.chainLength <= max;
+}
+
 // A grid only EARNS its own family when it actually wraps. With items <= PER_ROW it draws a single
 // row of cards — which is a ribbon in disguise, and would sit alongside a real ribbon looking
 // identical while the resolver cheerfully recorded two distinct families. That is precisely the
@@ -1556,7 +1571,10 @@ function main() {
     // formCorrectedAlt first: if the authored claim contradicted the drawn form we rewrote it, and
     // the ACCESSIBLE text must carry the correction too. Fixing only the visible caption would leave
     // a screen reader hearing a structure the page never drew — the same lie, told more quietly.
-    const altText = formCorrectedAlt
+    const relationshipAlt = spec.key === 'bigIdeaDiagram' && decision.family === FORM.HRUN
+      ? `A left-to-right handoff: ${String(asciiSrc || '').replace(/\s*->\s*/g, ' → ')}.`
+      : null;
+    const altText = relationshipAlt || formCorrectedAlt
       || ((typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText : defaultAltText(spec, dg, ep, name, rendered.desc, archModel, asConcept));
     const svg = wrapSvg(rendered.W, rendered.H, rendered.body, `${name} — ${spec.title}`, altText, asciiSrc || rendered.desc);
     const svgPath = path.join(assetsDir, spec.file);
