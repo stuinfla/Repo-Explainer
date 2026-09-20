@@ -1223,6 +1223,10 @@ function flowRowsFromModel(model) {
 // that graded as legible, that is 2.4x the width and ~40% the text size. The 2026-07-30 portrait work
 // exists precisely to stop that. So: a ribbon is only offered for a SHORT chain.
 const RIBBON_MAX_ITEMS = 3;
+// Nested frames assert literal containment. They are valid only when the authored takeaway explicitly
+// says that one thing is inside/contains another. A title such as 'How it all fits together' is not
+// evidence of containment; using strata there turns an ordinary relationship into meaningless boxes.
+function containmentIsGrounded(slot) { return slot.semanticContainment === true; }
 function ribbonIsSafe(slot) {
   return !Number.isInteger(slot.chainLength) || slot.chainLength <= RIBBON_MAX_ITEMS;
 }
@@ -1254,7 +1258,8 @@ function resolveForms(slots) {
     if (out[s.key]) continue;
     const prefs = (s.conceptPrefs || [])
       .filter((v) => v !== 'ribbon' || ribbonIsSafe(s))
-      .filter((v) => v !== 'grid' || gridIsDistinct(s));
+      .filter((v) => v !== 'grid' || gridIsDistinct(s))
+      .filter((v) => v !== 'strata' || containmentIsGrounded(s));
     // If filtering left nothing, fall back to the unfiltered list: an illegible diagram is bad, but
     // refusing to draw one at all is worse, and INV-18 requires the mandatory diagrams to exist.
     const pick = prefs.find((v) => !taken.has(VARIANT_FAMILY[v]))
@@ -1419,6 +1424,10 @@ function main() {
       key: spec.key,
       conceptPrefs: spec.conceptPrefs,
       groundedFamily: spec.groundedFamily,
+      // Containment is a factual relationship, not a decorative layout choice. Permit nested frames
+      // only when the authored takeaway explicitly claims a real inside/contains relationship.
+      semanticContainment: /\b(?:nested|concentric|contain(?:s|ing|ed)?|inside|within)\b/i.test(
+        String(((visualsIn[spec.key] || {}).altText) || '')),
       // How many cards this slot would draw if it demotes — the ribbon's width, and therefore its
       // mobile legibility, is a direct function of this.
       chainLength: (() => {
