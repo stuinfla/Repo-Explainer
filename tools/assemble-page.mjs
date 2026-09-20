@@ -347,8 +347,12 @@ function main() {
   const dsCss = fs.readFileSync(DS_CSS, 'utf8');
   fs.writeFileSync(path.join(siteDir, 'styles.css'), `${dsCss}\n\n${theme.css}\n`);
 
-  // --- copy mandatory + optional visual assets (fail loud on a declared-but-broken file) ---
-  const heroFile = visuals.hero?.file ? copyAsset(visuals.hero.file, buildDir, siteAssets, 'hero image') : null;
+  // --- copy mandatory visual assets (fail loud). Generated explainers always carry meaningful
+  // raster imagery. Previously the renderer treated every raster as optional, so a skipped image
+  // station or a missing file still produced a polished page with no visible images. That is a
+  // silent partial build. The image generator already fails loudly; assembly must enforce its output.
+  const heroVisual = reqObj(visuals.hero, 'visuals.hero (MANDATORY generated image)');
+  const heroFile = copyAsset(reqStr(heroVisual.file, 'visuals.hero.file'), buildDir, siteAssets, 'hero image');
   const heroAlt = visuals.hero?.altText || visuals.hero?.alt || `${repoName}: ${concept.heroConcept || concept.metaphor}`;
 
   const arch = reqObj(visuals.architectureDiagram, 'visuals.architectureDiagram (MANDATORY)');
@@ -364,10 +368,15 @@ function main() {
   const optDiagram = (d) => (d && d.svgPath) ? { file: copyAsset(d.svgPath, buildDir, siteAssets, 'diagram'), alt: d.altText || '' } : null;
   const bigIdea = optDiagram(visuals.bigIdeaDiagram);
   const insightDia = optDiagram(visuals.insightDiagram);
-  const rungs = Array.isArray(visuals.sections) ? visuals.sections : [];
+  const rungs = reqArr(visuals.sections, 'visuals.sections (at least one generated section image is MANDATORY)');
+  for (const [i, rung] of rungs.entries()) {
+    reqObj(rung, `visuals.sections[${i}]`);
+    copyAsset(reqStr(rung.file, `visuals.sections[${i}].file`), buildDir, siteAssets, `section image ${i + 1}`);
+  }
   const findRung = (re) => rungs.find((r) => re.test(String(r.id || '')) || re.test(String(r.role || '')));
   const problemRung = findRung(/problem/i);
   const useCaseRung = findRung(/use.?case|scenario/i);
+  if (!problemRung && !useCaseRung) throw new Error('visuals.sections must include a visible problem or use-case generated image; arbitrary generated files do not satisfy the page image contract');
   const problemImg = problemRung?.file ? { file: copyAsset(problemRung.file, buildDir, siteAssets, 'problem illustration'), alt: problemRung.alt || problemRung.altText || `${repoName}: the problem` } : null;
   const useCaseImg = useCaseRung?.file ? { file: copyAsset(useCaseRung.file, buildDir, siteAssets, 'use-case scenario'), alt: useCaseRung.alt || useCaseRung.altText || `${repoName} in use` } : null;
 
@@ -603,9 +612,10 @@ ${jsonLdScript}
     paras(problem.paragraphs),
     // A designed diagram of the architectural challenge (visuals.problemVisual) beats a decorative
     // raster every time — it VISUALISES the copy. Fall back to the raster image only if none authored.
-    (visuals.problemVisual && typeof visuals.problemVisual === 'string')
-      ? visuals.problemVisual
-      : (problemImg ? figureHtml(problemImg.file, problemImg.alt, problemRung?.caption, { tier: { cls: 'friendly', label: 'The problem' } }) : ''),
+    // A supplementary authored problem visual must not hide the generated raster. Both teach
+    // different things, and generation is not complete until its output is visible on the page.
+    (visuals.problemVisual && typeof visuals.problemVisual === 'string') ? visuals.problemVisual : '',
+    problemImg ? figureHtml(problemImg.file, problemImg.alt, problemRung?.caption, { tier: { cls: 'friendly', label: 'The problem' } }) : '',
     noteHtml(problem.note),
   ].filter(Boolean).join('\n      ')));
 
