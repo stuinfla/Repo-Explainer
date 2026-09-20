@@ -1,0 +1,47 @@
+name: Deploy preserved Goodies artifact
+on:
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install deterministic runtime only
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils zip unzip
+      - name: Recover Build 120 artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/${{ github.repository }}/actions/artifacts/10608084895/zip > artifact.zip
+          echo '0f15e8c8abecd5432742764962fc24c4571a35faceaa022259e96f64be1c5364  artifact.zip' | sha256sum -c -
+          mkdir build && unzip -q artifact.zip -d build
+          mkdir -p kb/stores/the-goodies /tmp/pack
+          unzip -oq build/site/the-goodies-knowledge-pack.zip 'for-ai/*' 'for-humans/*' -d /tmp/pack
+          cp /tmp/pack/for-ai/the-goodies-* kb/stores/the-goodies/
+          cp /tmp/pack/for-humans/the-goodies-primer.md kb/stores/the-goodies/
+          jq '
+            .repo.clonePath="/tmp/no-clone-needed" |
+            .visuals.hero.file="assets/hero.png" |
+            .visuals.sections |= map(.file=("assets/" + (.file|split("/")|last))) |
+            .brand.socialCard.file="assets/social-card.png"
+          ' build/build.json > build/build.tmp && mv build/build.tmp build/build.json
+      - name: Deterministically redraw and assemble
+        run: |
+          node tools/make-diagrams.mjs build
+          node tools/assemble-page.mjs build
+          ! grep -Rqi 'concept archetype: strata\|Nested containment\|nested frames' build/site/assets/big-idea.svg build/site/index.html
+          grep -q 'concept archetype: ribbon' build/site/assets/big-idea.svg
+          test "$(find build/site -type f | wc -l)" -ge 20
+      - name: Deploy preserved site without model calls
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_NAME: the-goodies-explainer
+          EXPLAINER_SUBMITTED_REPO: adrianco/the-goodies
+        run: node tools/deploy.mjs build
