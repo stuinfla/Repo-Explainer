@@ -49,6 +49,19 @@ const step = (n, total, label, kind) => log(`\n${C.bold}${C.cyan}[${n}/${total}]
 export function parseRepoUrl(raw) {
   let s = String(raw || '').trim();
   if (!s) return null;
+  // LOCAL SOURCE: an absolute path to an already-checked-out working tree — no host,
+  // no owner (the parent dir stands in), identity = the tree's own name. Downstream (clone-repo)
+  // recognises the same shape and copies the tree instead of cloning a URL.
+  if (s.startsWith('/')) {
+    let u; try { u = new URL(s); } catch { /* not a file:// URL */ }
+    const isFilePath = !u || (u.protocol !== 'file:');
+    if (isFilePath) {
+      const name = s.replace(/\/+$/, '').split('/').filter(Boolean).pop() || 'repo';
+      const owner = s.replace(/\/+$/, '').split('/').filter(Boolean).slice(-2, -1)[0] || 'local';
+      return { owner, name, url: s };
+    }
+    s = u.pathname;
+  }
   const scp = s.match(/^git@([^:]+):(.+)$/);
   if (scp) s = `https://${scp[1]}/${scp[2]}`;
   if (!/^[a-z]+:\/\//i.test(s)) {
