@@ -35,7 +35,7 @@ jobs:
 
   publish:
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       id-token: write # OIDC — this is what npm exchanges for the publish credential
