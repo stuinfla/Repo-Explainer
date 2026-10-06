@@ -63,3 +63,28 @@ test('gives up after exhausting retries and surfaces the last error', async () =
   await assert.rejects(() => callClaude(baseOpts), /Anthropic request failed: fetch failed/);
   assert.equal(calls, 3, 'expected initial attempt + 2 retries');
 });
+
+// 2026-09-17: OpenRouter ran out of credits (HTTP 402) and the very first brain step of a build died
+// with it — while a working Anthropic key and a logged-in CLI sat right there. The comment above the
+// fallback in callClaude says an OpenRouter outage "must never take the build down", but only RETRYABLE
+// errors ever reached it; a 402 is "permanent", so it was rethrown on the spot. A lane that cannot
+// serve us (no credits, bad key, retired model) is exactly when the OTHER lane should take over.
+const openRouterDown = (status) => async (url) => (String(url).includes('openrouter.ai')
+  ? { ok: false, status, text: async () => `{"error":{"message":"status ${status}"}}` }
+  : okResponse('from anthropic'));
+
+for (const status of [401, 402, 403, 404]) {
+  test(`OpenRouter ${status} falls back to the Anthropic lane instead of killing the build`, async () => {
+    let orCalls = 0;
+    const down = openRouterDown(status);
+    globalThis.fetch = async (url) => { if (String(url).includes('openrouter.ai')) orCalls += 1; return down(url); };
+    const text = await callClaude({ ...baseOpts, model: 'z-ai/glm-5.2', env: { OPENROUTER_API_KEY: 'or-key' } });
+    assert.equal(text, 'from anthropic');
+    assert.equal(orCalls, 1, 'a lane that cannot serve us must not be retried');
+  });
+}
+
+test('an OpenRouter 400 is OUR bug, not a lane outage — it must surface, not be papered over', async () => {
+  globalThis.fetch = openRouterDown(400);
+  await assert.rejects(() => callClaude({ ...baseOpts, model: 'z-ai/glm-5.2', env: { OPENROUTER_API_KEY: 'or-key' } }), /OpenRouter 400/);
+});

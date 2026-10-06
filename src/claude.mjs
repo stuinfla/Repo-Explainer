@@ -189,8 +189,9 @@ export async function callClaude({
         ? callClaudeCli({ model, system, user, timeoutMs })
         : await callClaudeOnce({ apiKey, model, system, user, maxTokens, temperature, timeoutMs });
     } catch (e) {
-      if (!e.retryable) throw e;
       lastErr = e;
+      if (e.fallback) break;        // lane unusable: skip pointless retries, go straight to the fallback below
+      if (!e.retryable) throw e;
     }
   }
   // FALLBACK, not a silent swap. The authoring champion is chosen on n=1 evidence, so an OpenRouter
@@ -235,6 +236,9 @@ async function callOpenRouterOnce({ key, model, system, user, maxTokens, timeout
     const body = await resp.text().catch(() => '');
     const err = new Error(`OpenRouter ${resp.status} (${model}): ${body.slice(0, 300)}`);
     err.retryable = resp.status === 429 || resp.status >= 500;
+    // No credits (402), bad key (401/403) or a retired model (404): THIS lane cannot serve us, however many
+    // times we ask. That is when the other lane should take over — not a reason to kill the build.
+    err.fallback = [401, 402, 403, 404].includes(resp.status);
     throw err;
   }
   const j = await resp.json();
