@@ -71,12 +71,18 @@ jobs:
       - run: npm publish --access public
 
       - name: Verify the registry serves it
+        # npm reports "+ pkg@x.y.z" the moment the upload is accepted but the registry takes a few minutes
+        # to serve it (measured 2026-10-06: ~3 min for 0.9.1 by hand, ~2 min for 0.9.2 from CI). A single
+        # check 20s later turned a SUCCESSFUL publish into a red run. Poll for up to 8 minutes instead.
         run: |
-          sleep 20
-          LIVE="$(npm view explainmyrepo version)"
           PKG_V="$(node -p "require('./package.json').version")"
-          if [ "$LIVE" != "$PKG_V" ]; then
-            echo "::error::registry serves $LIVE, expected $PKG_V"
-            exit 1
-          fi
-          echo "explainmyrepo@$LIVE is live."
+          for i in $(seq 1 32); do
+            LIVE="$(npm view explainmyrepo version)"
+            if [ "$LIVE" = "$PKG_V" ]; then
+              echo "explainmyrepo@$LIVE is live."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::registry still serves $LIVE after 8 min, expected $PKG_V"
+          exit 1
