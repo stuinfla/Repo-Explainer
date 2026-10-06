@@ -271,6 +271,14 @@ function readQuality(buildDir) { try { return readContext(buildDir).quality; } c
 // findings (A* substance axes + operator questions) back to the brain, re-author the copy, re-assemble,
 // re-grade — keeping the BEST iteration. Craft (B*) and diagram (INV-18) notes are not content-fixable so
 // they're left for the design system / make-diagrams, not looped on here.
+// How many content re-authors can still be GRADED. quality-grade refuses a grade past its cap (3: one
+// initial + two refines) and hands back the old scorecard unchanged, so a pass beyond that is a full
+// brain call whose result nobody reads — it cost two paid rewrites on the ruvnet/ruos build.
+const GRADER_MAX_GRADES = 3;                 // = MAX_QUALITY_ITERATIONS in tools/quality-grade.mjs
+export function refineBudget(asked, gradesUsed = 1) {
+  return Math.max(0, Math.min(asked, GRADER_MAX_GRADES - 1, GRADER_MAX_GRADES - gradesUsed));
+}
+
 async function refineLoop({ buildDir, env, model, apiKey, opts }) {
   // ── #17.7 (pacphi): --max-refine must not promise passes the grader will refuse ────────────────
   // tools/quality-grade.mjs enforces its own hard MAX_QUALITY_ITERATIONS = 3 (1 initial grade + 2
@@ -279,18 +287,21 @@ async function refineLoop({ buildDir, env, model, apiKey, opts }) {
   // 3, 4 and 5 — full brain calls — and every one of them was then graded by a tool that had already
   // stopped looking. Silently wasted spend, invisible unless you read both files side by side.
   // Clamp, and SAY SO, rather than quietly honouring a number we cannot deliver.
-  const GRADER_MAX_REFINES = 2;              // = MAX_QUALITY_ITERATIONS(3) - 1 initial grade
   const asked = opts.maxRefine != null ? Math.max(0, parseInt(opts.maxRefine, 10) || 0) : 2;
-  const MAX = Math.min(asked, GRADER_MAX_REFINES);
-  if (asked > GRADER_MAX_REFINES) {
-    log(`${C.yellow}--max-refine ${asked} clamped to ${GRADER_MAX_REFINES}${C.reset} ${C.dim}— quality-grade enforces a hard cap of `
-      + `${GRADER_MAX_REFINES + 1} total grades, so further passes would re-author content (real cost) and then be handed `
+  let q = readQuality(buildDir);
+  const MAX = refineBudget(asked, q?.iterations);
+  if (asked > GRADER_MAX_GRADES - 1) {
+    log(`${C.yellow}--max-refine ${asked} clamped to ${GRADER_MAX_GRADES - 1}${C.reset} ${C.dim}— quality-grade enforces a hard cap of `
+      + `${GRADER_MAX_GRADES} total grades, so further passes would re-author content (real cost) and then be handed `
       + `the previous scorecard unchanged. Raising it buys nothing but spend.${C.reset}`);
+  }
+  if (MAX < Math.min(asked, GRADER_MAX_GRADES - 1)) {
+    log(`${C.yellow}grader cap already spent (${q?.iterations}/${GRADER_MAX_GRADES} grades)${C.reset} ${C.dim}— skipping refine passes: a re-author now `
+      + `would be a full brain call whose result the grader refuses to read.${C.reset}`);
   }
   // Fewer INV-20 violations breaks mean ties: when every iteration fails the deterministic acronym
   // gate (all means 0), "best" must be the one CLOSEST to clean, not whichever came first.
   const inv20Count = (qq) => (Array.isArray(qq?.inv20?.violations) ? qq.inv20.violations.length : 0);
-  let q = readQuality(buildDir);
   let best = { mean: sumMean(q), inv20: inv20Count(q), content: (() => { try { return readContext(buildDir).content; } catch { return null; } })() };
   let pass = 0;
   while (q && !q.passed && pass < MAX) {

@@ -47,3 +47,6 @@ explainer-builds/
 
 # repaired-db backups (local recovery artifacts, not source)
 .swarm/*.corrupt-bak-*
+
+# pasted screenshots — one showed a complete npm token on 2026-10-06; never source
+.docs/

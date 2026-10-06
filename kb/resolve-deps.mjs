@@ -73,11 +73,15 @@ export function loadRvf() {
  */
 export async function loadTransformers() {
   // 1. project node_modules — resolve the package entry, import via file:// URL.
-  try {
-    const resolved = localRequire.resolve('@xenova/transformers');
-    const T = await import('file://' + resolved);
-    return { T, modelCache: chooseModelCache(), via: 'project node_modules' };
-  } catch { /* fall through */ }
+  let resolved = null;
+  try { resolved = localRequire.resolve('@xenova/transformers'); } catch { /* absent: the "run npm i" message below says so */ }
+  let importErr = null;
+  if (resolved) {
+    try {
+      const T = await import('file://' + resolved);
+      return { T, modelCache: chooseModelCache(), via: 'project node_modules' };
+    } catch (e) { importErr = e; }   // PRESENT but broken is not ABSENT — keep the reason (a skipped sharp install script looked like "not installed" for three months)
+  }
 
   // 2. explicit env override — may be a transformers.js file path or a package dir.
   const envPath = process.env.XENOVA_PATH;
@@ -94,6 +98,7 @@ export async function loadTransformers() {
   throw new Error(
     "Cannot resolve '@xenova/transformers'. Run `npm i` (it is a declared dependency), "
     + 'or set XENOVA_PATH to the transformers package dir / src/transformers.js.'
+    + (importErr ? ` (It IS installed, but importing it failed: ${String(importErr.message || importErr).split('\n').map((l) => l.trim()).find(Boolean)})` : '')
   );
 }
 

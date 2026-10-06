@@ -278,8 +278,22 @@ test('the four concept slots render as DISTINCT archetypes (no shared vertical-c
   }
   assert.equal(new Set(Object.values(arch)).size, 4,
     `all four concept diagrams must use DISTINCT archetypes — this is the whole fix. Got ${JSON.stringify(arch)}`);
+  // Nested frames assert literal containment, so since 2026-09-20 (0258c2d) architecture only gets
+  // 'strata' when its authored text actually claims containment. This fixture claims nothing.
   assert.deepEqual(arch,
-    { architectureDiagram: 'strata', flowDiagram: 'ribbon', bigIdeaDiagram: 'column', insightDiagram: 'orbit' },
+    { architectureDiagram: 'orbit', flowDiagram: 'ribbon', bigIdeaDiagram: 'column', insightDiagram: 'grid' },
     'each diagram key must map to its assigned archetype');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('architecture earns nested frames (strata) only when its own text claims containment', () => {
+  const dir = makeAllConceptFixture();
+  const bj = path.join(dir, 'build.json');
+  const b = JSON.parse(fs.readFileSync(bj, 'utf8'));
+  b.visuals.architectureDiagram.altText = 'Three layers nested inside one another, from the outer layer to the inner core.';
+  fs.writeFileSync(bj, JSON.stringify(b, null, 2));
+  runMakeDiagrams(dir);
+  const svg = fs.readFileSync(path.join(dir, 'assets', 'architecture.svg'), 'utf8');
+  assert.equal(/concept archetype: (\w+)/.exec(svg)?.[1], 'strata');
   fs.rmSync(dir, { recursive: true, force: true });
 });

@@ -1231,6 +1231,9 @@ const RIBBON_MAX_ITEMS = 3;
 // Nested frames assert literal containment. They are valid only when the authored takeaway explicitly
 // says that one thing is inside/contains another. A title such as 'How it all fits together' is not
 // evidence of containment; using strata there turns an ordinary relationship into meaningless boxes.
+// One definition of "this text claims containment", used both to GROUND a nested-frames diagram and to
+// notice an author claim the page no longer draws.
+const CONTAINMENT_CLAIM = /\b(?:nested|concentric|contain(?:s|ing|ed)?|inside|within)\b/i;
 function containmentIsGrounded(slot) {
   // A Big Idea's own prose is not independent evidence that containment exists. The renderer must
   // not turn its self-authored shape claim into permission to draw that same shape. Big Idea is a
@@ -1441,8 +1444,7 @@ function main() {
       groundedFamily: spec.groundedFamily,
       // Containment is a factual relationship, not a decorative layout choice. Permit nested frames
       // only when the authored takeaway explicitly claims a real inside/contains relationship.
-      semanticContainment: /\b(?:nested|concentric|contain(?:s|ing|ed)?|inside|within)\b/i.test(
-        String(((visualsIn[spec.key] || {}).altText) || '')),
+      semanticContainment: CONTAINMENT_CLAIM.test(String(((visualsIn[spec.key] || {}).altText) || '')),
       // How many cards this slot would draw if it demotes — the ribbon's width, and therefore its
       // mobile legibility, is a direct function of this.
       chainLength: (() => {
@@ -1550,7 +1552,7 @@ function main() {
         [FORM.VSTACK, /vertical|top to bottom|stacked|down the|column/i],
       ];
       const rawCap = (typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText.trim() : null;
-      const cap = rawCap
+      let cap = rawCap
         ? rawCap.replace(/,?\s*drawn as [^:;.]+/i, (mm) => {
           const hits = FORM_CUES.filter(([, re]) => re.test(mm)).map(([fam]) => fam);
           const claimed = hits.length === 1 ? hits[0] : null;   // ambiguous => trust the author
@@ -1560,7 +1562,14 @@ function main() {
           return `, ${truth}`;
         })
         : null;
-      formCorrectedAlt = (cap && rawCap && cap !== rawCap) ? cap : null;  // the caption AND <desc> must agree
+      // A Big Idea drawn as a left-to-right handoff says so — but ONLY when the author wrote nothing, or
+      // claimed a containment the page does not draw. An ACCURATE description stays in the author's own
+      // words (ADR-0012). Decided here, BEFORE drawing, so the visible caption and the accessible <desc>
+      // cannot disagree (upstream's first cut fixed only <desc> and left "containing two zones" on screen).
+      if (spec.key === 'bigIdeaDiagram' && decision.family === FORM.HRUN && (!rawCap || CONTAINMENT_CLAIM.test(rawCap))) {
+        cap = `A left-to-right handoff: ${rows.map((r) => r.items.map((it) => it.label).join(' → ')).join('; ')}.`;
+      }
+      formCorrectedAlt = (cap && cap !== rawCap) ? cap : null;  // the caption AND <desc> must agree
       rendered = renderConcept(eyebrow, heading, rows, cap, PAL, decision.variant);
       // round-trip the structured source + heading so re-running this station (e.g. a refine loop) redraws
       // identically WITHOUT a fresh brain call — and never reverts to the generic title.
@@ -1571,10 +1580,7 @@ function main() {
     // formCorrectedAlt first: if the authored claim contradicted the drawn form we rewrote it, and
     // the ACCESSIBLE text must carry the correction too. Fixing only the visible caption would leave
     // a screen reader hearing a structure the page never drew — the same lie, told more quietly.
-    const relationshipAlt = spec.key === 'bigIdeaDiagram' && decision.family === FORM.HRUN
-      ? `A left-to-right handoff: ${String(asciiSrc || '').replace(/\s*->\s*/g, ' → ')}.`
-      : null;
-    const altText = relationshipAlt || formCorrectedAlt
+    const altText = formCorrectedAlt
       || ((typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText : defaultAltText(spec, dg, ep, name, rendered.desc, archModel, asConcept));
     const svg = wrapSvg(rendered.W, rendered.H, rendered.body, `${name} — ${spec.title}`, altText, asciiSrc || rendered.desc);
     const svgPath = path.join(assetsDir, spec.file);
