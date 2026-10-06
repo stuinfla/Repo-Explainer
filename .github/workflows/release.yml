@@ -29,28 +29,9 @@ permissions:
   contents: read
 
 jobs:
+  # The test gate is shared with every pull request (.github/workflows/ci.yml): one definition of "green".
   test:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 22
-
-      # --ignore-scripts: dependency postinstall hooks never run in CI. The suite is pure
-      # node:test with no browser launches, so playwright's browser download isn't needed.
-      - run: npm ci --ignore-scripts
-
-      # The diagram tests (tests/diagrams.test.mjs, added 2026-07-12) spawn make-diagrams, which
-      # shells out to graphviz's `dot` and `xmllint` — present locally and in build-explainer.yml
-      # but not on a bare runner. Their absence failed the v0.4.0 release's test job (execSync
-      # ENOENT) with a green suite locally; system deps here must mirror what the tools invoke.
-      - run: sudo apt-get update && sudo apt-get install -y graphviz libxml2-utils
-
-      - run: npm test
+    uses: ./.github/workflows/ci.yml
 
   publish:
     needs: test

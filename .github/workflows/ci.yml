@@ -1,0 +1,43 @@
+# The test gate — ONE definition, used two ways: on every pull request and push to main (so a red suite
+# cannot merge unnoticed), and called by release.yml before it will publish anything.
+#
+# 2026-10-06: the tests used to run ONLY when a release tag was pushed. Ten commits merged on Sep 20 with
+# two tests newly red and nobody knew — and the release job had by then been failing for three months
+# for a different reason (the sharp step below), so there was no signal at all.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      # --ignore-scripts: dependency install hooks never run in CI (supply-chain posture) ...
+      - run: npm ci --ignore-scripts
+
+      # ... with ONE deliberate exception. @xenova/transformers carries its own nested `sharp`, whose native
+      # binary is fetched by its install script. Skipped, importing the package throws and the 9 kb-delta
+      # end-to-end tests fail — which blocked every release since July. Rebuilding ONLY sharp restores the
+      # one binary that needs it. Reproduced and verified in a clean v0.9.0 checkout (185 tests, 0 failing).
+      - run: npm rebuild sharp
+
+      # The diagram tests spawn make-diagrams, which shells out to graphviz's `dot` and `xmllint` — present
+      # locally and in build-explainer.yml but not on a bare runner. Their absence failed the v0.4.0 release's
+      # test job (execSync ENOENT) with a green suite locally; system deps here must mirror what the tools invoke.
+      - run: sudo apt-get update && sudo apt-get install -y graphviz libxml2-utils
+
+      - run: npm test
