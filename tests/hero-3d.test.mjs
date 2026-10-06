@@ -27,6 +27,7 @@ function baseContext(dir) {
   fs.writeFileSync(path.join(assets, 'hero.png'), png);
   fs.writeFileSync(path.join(assets, 'card.png'), png);
   fs.writeFileSync(path.join(assets, 'favicon-32.png'), png);
+  fs.writeFileSync(path.join(assets, 'problem.png'), png);   // assemble-page now REQUIRES a generated section image
   fs.writeFileSync(path.join(assets, 'arch.svg'), '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><title>a</title><desc>d</desc><rect width="4" height="4"/></svg>');
   return { assets };
 }
@@ -45,6 +46,7 @@ function fixture({ hero3d, sceneSvg } = {}) {
     kb: { primerPath: path.join(dir, 'primer.md') },
     visuals: {
       hero: { file: path.join(assets, 'hero.png'), altText: 'h' },
+      sections: [{ id: 'problem', role: 'problem illustration', file: path.join(assets, 'problem.png'), alt: 'p' }],
       architectureDiagram: { svgPath: path.join(assets, 'arch.svg'), altText: 'arch' },
       ...(sceneSvg ? { heroAnim: { svgPath: path.join(assets, 'hero-scene.svg'), altText: 'scene' } } : {}),
       ...(hero3d ? { hero3d: { module: 'assets/hero-3d.js', altText: 'a room seen by wifi' } } : {}),
