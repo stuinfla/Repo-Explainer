@@ -336,15 +336,33 @@ test('ADR-0012 — an alt-text form claim that CONTRADICTS the drawn form is rew
     'the recorded alt text must carry the correction too');
 });
 
-test('ADR-0012 — an ACCURATE alt-text form claim is left in the author\'s own words', () => {
+test('ADR-0012 — an ACCURATE alt text is left in the author\'s own words, even on a handoff-shaped Big Idea', () => {
   const dir = makeFixture();
   const bj = path.join(dir, 'build.json');
   const b = JSON.parse(fs.readFileSync(bj, 'utf8'));
-  // bigIdea resolves to containment; this claim agrees with it and is richer than any boilerplate.
-  b.visuals.bigIdeaDiagram.altText = 'The big idea, drawn as one outlined file containing two zones stacked inside it: front matter and body.';
+  // Three connected items draw as a left-to-right handoff. This description is accurate for that form
+  // and richer than the generated "A left-to-right handoff: a → b → c" template.
+  const ACCURATE = 'The file starts with front matter, carries the document body, and ends with a colophon.';
+  b.visuals.bigIdeaDiagram.altText = ACCURATE;
   fs.writeFileSync(bj, JSON.stringify(b, null, 2));
   run(dir);
   const v = visualsOf(dir);
-  assert.match(v.bigIdeaDiagram.altText, /containing two zones/,
-    'an accurate claim must survive — the first version of this rewrite replaced good descriptions with boilerplate');
+  assert.equal(v.bigIdeaDiagram.form, 'horizontal-run', 'precondition: this fixture draws a handoff');
+  assert.equal(v.bigIdeaDiagram.altText, ACCURATE,
+    'an accurate claim must survive — upstream\'s unconditional template replaced good descriptions with boilerplate');
+  assert.match(fs.readFileSync(v.bigIdeaDiagram.svgPath, 'utf8'), /ends with a colophon/,
+    'the accessible <desc> must carry the author\'s words too, not only the recorded alt text');
+});
+
+test('a Big Idea alt text that claims CONTAINMENT is corrected — the page draws a handoff, not nested frames', () => {
+  const dir = makeFixture();
+  const bj = path.join(dir, 'build.json');
+  const b = JSON.parse(fs.readFileSync(bj, 'utf8'));
+  b.visuals.bigIdeaDiagram.altText = 'The big idea, drawn as one outlined file containing two zones stacked inside it.';
+  fs.writeFileSync(bj, JSON.stringify(b, null, 2));
+  run(dir);
+  const v = visualsOf(dir);
+  assert.match(v.bigIdeaDiagram.altText, /left-to-right handoff: front matter → document body → colophon/);
+  assert.doesNotMatch(fs.readFileSync(v.bigIdeaDiagram.svgPath, 'utf8'), /containing two zones/,
+    'a screen reader must not hear a containment the page never drew');
 });
