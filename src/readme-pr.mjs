@@ -20,6 +20,11 @@ export function buildPrTitle(repoName) {
   return `docs: a visual README to help more people discover ${repoName}`;
 }
 
+/** The issue-first title. Stable text: the station finds its own earlier issue by this exact string. */
+export function buildIssueTitle(repoName) {
+  return `A visual README for ${repoName}? (happy to send a PR)`;
+}
+
 const MODE_LINE = {
   ascii: (repo) => `It's your README, exactly as you wrote it, with a link to an explainer page right under the title and your own ASCII diagrams drawn as clean, animated graphics just above the originals. Nothing is replaced.`,
   fallback: (repo) => `It's your README, exactly as you wrote it, with a link to an explainer page right under the title and two diagrams just after your intro: what ${repo} plugs into, and how it works.`,
@@ -37,6 +42,7 @@ const MODE_LINE = {
  * @param {string[]} o.files       other files in the PR (repo-relative)
  * @param {string} [o.intro]       replaces the two opening paragraphs; {repo} is substituted
  * @param {string} [o.signoff]     name to sign with
+ * @param {'pr'|'issue'} [o.kind]  'issue' = a proposal with the work already visible and a PR on request
  */
 export function buildPrBody(o) {
   const repo = o.repoName;
@@ -69,12 +75,17 @@ export function buildPrBody(o) {
   out.push(`**[${String(o.liveUrl).replace(/^https?:\/\//, '').replace(/\/$/, '')} →](${o.liveUrl})**`);
   out.push('');
   if (img.hero) out.push(`[![The ${repo} explainer page](${img.hero})](${o.liveUrl})`, '');
-  out.push("## What's in this PR");
+  const isIssue = o.kind === 'issue';
+  out.push(isIssue ? "## What I'd change" : "## What's in this PR");
   out.push('');
-  out.push(`- \`README.md\`: ${o.addedLines} lines added, **0 removed**. Nothing you wrote has been changed.`);
+  out.push(`- \`README.md\`: ${o.addedLines} lines added, **0 removed**. Nothing you wrote ${isIssue ? 'would be' : 'has been'} changed.`);
   for (const f of o.files || []) out.push(`- \`${f}\``);
   out.push('');
-  out.push(`The diagrams were generated from your repo, and every claim on them was checked against your source, but please give them a quick accuracy check before merging. Take it as is, tweak it, or ignore it. It's yours either way. If you'd rather not have it, closing this is completely fine, and I won't send another.`);
+  if (isIssue) {
+    out.push(`I haven't touched your repo. If you'd like this, say the word and I'll open a pull request with exactly that, or you're welcome to take whatever is useful. The diagrams were generated from your repo, and every claim on them was checked against your source, but please give them a quick accuracy check. If you'd rather not, closing this is completely fine, and I won't send another.`);
+  } else {
+    out.push(`The diagrams were generated from your repo, and every claim on them was checked against your source, but please give them a quick accuracy check before merging. Take it as is, tweak it, or ignore it. It's yours either way. If you'd rather not have it, closing this is completely fine, and I won't send another.`);
+  }
   out.push('');
   out.push('Thanks again for building this, and for making it open.');
   out.push('');
@@ -94,6 +105,7 @@ export function buildPrBody(o) {
  * @returns {{action:'send'}|{action:'reuse',url:string}|{action:'skip',reason:string}}
  */
 export function decideSend(o) {
+  // (shared by the issue and PR channels: "already responded" means a CLOSED or MERGED item of ours)
   if (!o.liveUrl) return { action: 'skip', reason: 'no-live-url' };
   if (o.isPrivate) return { action: 'skip', reason: 'private-source-repo' };
   if (o.ghLogin && o.owner && o.ghLogin.toLowerCase() === o.owner.toLowerCase()) return { action: 'skip', reason: 'own-repo' };

@@ -2,7 +2,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPrTitle, buildPrBody, decideSend, readmePrEnabled } from '../src/readme-pr.mjs';
+import { buildPrTitle, buildIssueTitle, buildPrBody, decideSend, readmePrEnabled } from '../src/readme-pr.mjs';
 
 const README_URL = 'https://github.com/stuinfla/claude-swap/blob/docs/add-visual-explainer/README.md';
 const LIVE = 'https://claude-swap-explainer.netlify.app';
@@ -80,6 +80,25 @@ test('voice: a runner can supply their own first-person intro and sign-off', () 
 test('mode: ascii mode says the originals are kept; link-only makes no promise about diagrams', () => {
   assert.match(buildPrBody({ ...BASE, mode: 'ascii' }), /ASCII diagrams drawn as clean, animated graphics just above the originals/);
   assert.doesNotMatch(buildPrBody({ ...BASE, mode: 'link-only' }), /two diagrams just after|ASCII diagrams drawn/);
+});
+
+test('issue: asks first — says nothing was touched, offers the PR, keeps the README link first', () => {
+  const body = buildPrBody({ ...BASE, kind: 'issue' });
+  assert.match(body, /^## 👋 Thank you for claude-swap/);
+  assert.match(body, /I haven't touched your repo/);
+  assert.match(body, /say the word and I'll open a pull request/);
+  assert.match(body, /## What I'd change/);
+  assert.doesNotMatch(body, /What's in this PR|before merging/);
+  assert.equal(urlsInOrder(body)[0], README_URL);
+  assert.match(body, /closing this is completely fine, and I won't send another/);
+});
+
+test('issue: the default kind is still the PR wording (back-compat)', () => {
+  assert.match(buildPrBody(BASE), /What's in this PR/);
+});
+
+test('issue title: stable and friendly (the station finds its own earlier issue by it)', () => {
+  assert.equal(buildIssueTitle('claude-swap'), 'A visual README for claude-swap? (happy to send a PR)');
 });
 
 test('title: friendly and specific', () => {

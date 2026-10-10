@@ -38,6 +38,7 @@ OPTIONS
   --no-deploy            skip the deploy station (build + grade locally only)
   --no-publish           skip publish-repo + repo-seo (no GitHub explainer repo)
   --no-notify            skip the email notify station
+  --no-readme-pr         don't contact the repo's maintainer (see OUTREACH below)
   --no-quality           skip the local vision quality gate (faster dry iterations)
   --no-refine            grade once but don't auto-iterate the copy to lift weak axes
   --max-refine <n>       max content-refine passes when below the quality bar (default 2)
@@ -67,6 +68,17 @@ WHAT YOU NEED (checked up-front — you'll be told exactly what's missing and wh
   GitHub     nothing for public repos; PRIVATE repos need "gh auth login" first.
   (SMTP_USER/SMTP_PASS/EMAIL_TO — notify only, optional, failure is non-blocking.)
 
+OUTREACH (on by default — the readme-enhance station)
+  After a build ships, the maintainer gets ONE friendly GitHub issue showing a better README for
+  their repo: theirs exactly as written + an explainer link + diagrams. It shows the finished work in
+  one click and offers a PR if they want it. Nothing in their repo is touched until they say yes.
+  Rules it keeps: never your own repo or a private one, one contact per repo ever, a closed item is
+  never re-sent, 5 a day at most (README_OUTREACH_DAILY_CAP), additions only, every send tracked.
+  Turn it off:  --no-readme-pr   (or README_ENHANCE=0)        Send PRs directly:  README_OUTREACH=pr
+  Your own voice: README_PR_INTRO="…{repo}…" README_PR_SIGNOFF="Your Name"   Rehearse: README_OUTREACH_DRYRUN=1
+  Track replies:  npx explainmyrepo outreach status
+  After a yes:    npx explainmyrepo outreach open-pr owner/name
+
 WHICH DOOR IS FOR YOU
   Public repo, zero setup      →  https://explainmyrepo.isovision.ai (paste the URL — done)
   Private repo, or your keys   →  THIS command, run inside a VS Code / Claude Code session
@@ -79,7 +91,7 @@ EXAMPLES
   npx explainmyrepo owner/cool-lib --from concept --out ./explainer-builds/cool-lib
 `;
 
-const BOOL_FLAGS = new Set(['--no-deploy', '--no-publish', '--no-notify', '--no-quality', '--no-refine', '--ship-best-effort', '--register-kb', '--dry-run', '-h', '--help', '-v', '--version']);
+const BOOL_FLAGS = new Set(['--no-deploy', '--no-publish', '--no-notify', '--no-readme-pr', '--no-quality', '--no-refine', '--ship-best-effort', '--register-kb', '--dry-run', '-h', '--help', '-v', '--version']);
 const VALUE_FLAGS = new Set(['--out', '--model', '--from', '--to', '--only', '--max-refine']);
 
 function parseArgs(argv) {
@@ -118,6 +130,22 @@ async function main() {
   // The Alive Kit discovery surface (ADR-0009 §7): `npx explainmyrepo capabilities` renders the
   // verified-capability registry — the ONLY availability source, so it cannot overstate.
   // Local-door-only by policy: these companions never run on the hosted pipeline.
+  // Outreach tracking (ADR-0015): `outreach status` polls every message we've sent;
+  // `outreach open-pr <owner/name>` is the second step after a maintainer says yes.
+  if (positional[0] === 'outreach') {
+    const { statusCommand, openPrCommand } = await import('../src/outreach-cli.mjs');
+    const sub = positional[1] || 'status';
+    if (sub === 'status') { await statusCommand({ env: process.env }); return; }
+    if (sub === 'open-pr') {
+      if (!positional[2] || !/^[^/\s]+\/[^/\s]+$/.test(positional[2])) {
+        process.stderr.write('usage: explainmyrepo outreach open-pr <owner/name>\n'); process.exit(2);
+      }
+      process.exit(openPrCommand(positional[2], { env: { ...process.env, ...loadEnv(path.join(HERE, '..')) }, repoRoot: path.join(HERE, '..') }));
+    }
+    process.stderr.write(`unknown outreach command: ${sub}\nusage: explainmyrepo outreach [status | open-pr <owner/name>]\n`);
+    process.exit(2);
+  }
+
   if (positional[0] === 'capabilities') {
     const reg = JSON.parse(readFileSync(path.join(HERE, '..', 'capabilities.json'), 'utf8'));
     const B = '\x1b[1m', D = '\x1b[2m', G = '\x1b[32m', R = '\x1b[0m';
