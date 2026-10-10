@@ -166,7 +166,13 @@ test('INV-23 — holds for a library repo with no runtime entrypoints (flow skip
 // to take, and assert the tool dies loudly naming INV-23 instead of emitting two identical shapes.
 test('INV-23 — the guard FAILS LOUD when no distinct form remains (mutation proof, not a tautology)', () => {
   const mutantDir = fs.mkdtempSync(path.join(os.tmpdir(), 'emr-form-mutant-'));
-  const mutant = path.join(mutantDir, 'make-diagrams.mjs');
+  // Mirror the real layout (tools/ + src/): the tool imports ../src/story-diagrams.mjs (ADR-0014), so a
+  // bare copy in a temp dir would die on MODULE_NOT_FOUND and the mutation would be "caught" for the
+  // wrong reason — exactly the failure mode the stderr assertion below exists to rule out.
+  fs.mkdirSync(path.join(mutantDir, 'tools'));
+  fs.mkdirSync(path.join(mutantDir, 'src'));
+  fs.copyFileSync(path.join(path.dirname(TOOL), '..', 'src', 'story-diagrams.mjs'), path.join(mutantDir, 'src', 'story-diagrams.mjs'));
+  const mutant = path.join(mutantDir, 'tools', 'make-diagrams.mjs');
   const src = fs.readFileSync(TOOL, 'utf8');
   // Strand the insight slot: no preferences => the resolver can find no free family for it.
   const NEEDLE = /conceptHeading: 'The clever move', conceptPrefs: \[[^\]]*\]/;
