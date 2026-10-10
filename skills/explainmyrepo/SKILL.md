@@ -477,6 +477,24 @@ parallel.
   bulleted list, not a structure):
   `"rows": [{ "items": ["your sentence", "tokenizer", "add · skip · subtract", "384 numbers"], "connect": true }]`
 
+- **STORY DIAGRAMS (`visuals.systemMap`, `visuals.decision`) — answer the questions a reader
+  actually has (ADR-0014).** The dependency graph says how the code is arranged; it cannot say
+  *what this plugs into*, *what it works with*, or *how it decides*. Author these two when the repo
+  has a real answer, and OMIT them when it does not:
+  - `systemMap` → replaces the architecture slot: inputs → one engine (2–4 steps) → the surfaces that
+    drive it (with their real commands) + a **works-with** strip + **runs-on**. Include the hosts,
+    editors and platforms a reader would WONDER about (does it work with Codex? Windows?), each as
+    `yes`/`partial` with `file` + a VERBATIM `quote`, or `no` with `terms` to search.
+  - `decision` → replaces the flow slot, for repos that CHOOSE among candidates by a rule (pickers,
+    routers, schedulers, rankers): 2–6 candidates as gauges against a threshold, one picked, one
+    skipped for a stated reason, and `rule: { file, quote }` pointing at the source line that
+    defines it.
+  **You do not get to assert these.** `make-diagrams` checks every quote against the cloned repo and
+  runs the "no" searches itself; whatever it cannot confirm is dropped, and if nothing survives the
+  slot keeps the grounded graph diagram. So quote, do not paraphrase, and prefer fewer true claims.
+  Shapes are in `src/story-diagrams.mjs` (`validateSystemMap`, `validateDecision`) and a worked
+  example is `tests/fixtures/story-claude-swap.mjs`.
+
 - **THE HERO ANIMATION (`visuals.heroAnim`) — motion that PERFORMS the argument.** Author this for
   every repo that has a "trick" (almost all of them do). It renders above the fold as a 9s loop and
   it is the only motion on the page. **Animate the ARGUMENT, never the chrome.** Crawling dashed

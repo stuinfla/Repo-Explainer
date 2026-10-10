@@ -259,7 +259,9 @@ Author the visual brief. Return JSON:
     "flow":        {
       "altText": "one-line description of the runtime/process flow diagram",
       "rows": [ { "items": ["3 to 5 SHORT labels naming the runtime steps, in order", "..."], "connect": true } ]
-    }
+    },
+    "systemMap": "OPTIONAL — omit this key unless the brief shows a real inputs -> one engine -> surfaces pipeline. Shape: { \"title\": \"What X plugs into\", \"subtitle\": \"...\", \"inputs\": { \"label\": \"YOUR ACCOUNTS\", \"items\": [{ \"name\": \"<=40 chars\", \"sub\": \"...\" }] (1-5), \"note\": \"optional, 2 short lines separated by a newline\" }, \"engine\": { \"name\": \"...\", \"sub\": \"...\", \"steps\": [{ \"title\": \"<=30\", \"sub\": \"<=80\" }] (2-4) }, \"outputs\": { \"label\": \"THREE WAYS TO DRIVE IT\", \"streamLabel\": \"one event stream\", \"items\": [{ \"name\": \"...\", \"cmd\": \"a real command\", \"sub\": \"...\" }] (1-4) }, \"worksWith\": { \"items\": [ { \"name\": \"Claude Code CLI\", \"status\": \"yes\", \"file\": \"README.md\", \"quote\": \"a VERBATIM line from that file, copied from the brief\" }, { \"name\": \"Codex\", \"status\": \"no\", \"terms\": [\"codex\"] } ] (1-6), \"noNote\": \"not mentioned anywhere in the README or source\", \"runsOn\": [\"macOS\", \"Windows\"] } }",
+    "decision": "OPTIONAL — omit this key unless the repo visibly CHOOSES among candidates by a rule (picks, ranks, routes, selects). Shape: { \"title\": \"The moment X picks one\", \"subtitle\": \"Illustrative numbers. ...\", \"threshold\": { \"value\": 90, \"label\": \"switch point\" }, \"qualify\": { \"value\": 83, \"label\": \"to qualify\" } or null, \"candidates\": [{ \"name\": \"<=24\", \"value\": 0-100, \"status\": \"active|skipped|picked|eligible\", \"note\": \"short\" }] (2-6, at most one active and one picked), \"steps\": [{ \"title\": \"<=40\", \"sub\": \"<=60\" }] (2-4), \"caption\": \"one line\", \"rule\": { \"file\": \"path\", \"quote\": \"a VERBATIM line of source that defines the rule, copied from the brief\" } }"
   }
 }
 THE SWAP TEST — the single rule that decides whether an image ships (INV-22 / ADR-0008):
@@ -288,8 +290,9 @@ DIAGRAM RULES (bigIdea + insight are DRAWN as real glassmorphic concept-cards jo
 - Use ONE row with "connect": true for a SEQUENCE (cards joined top-to-bottom by arrows). Use MULTIPLE rows (each "connect": false) for parallel/grouped ideas drawn without an arrow between groups.
 - bigIdea = the central mechanism in 3-6 cards (how the pieces combine to do the one big thing). insight = the single clever move in 2-4 cards. Keep BOTH distinct from the architecture diagram — do not just relist every module.
 - architecture.rows and flow.rows are a REQUIRED FALLBACK, not decoration (issue #17.4, pacphi). Those two diagrams are normally drawn from the real KB dep-graph and entrypoints. But when a repo's dependency graph is TRIVIAL (a docs vault, a single-module tool — 0 internal edges), a dependency map would be a picture of nothing, so make-diagrams REFUSES to draw one and falls back to your rows instead. Without them the build stops dead at Station 4. Author them for every repo; they cost you two lines and they are the difference between a page and a crash.
-- architecture.rows = the CONCEPT of how the thing is built (the 3-5 parts a reader must hold in their head), NOT the package wiring — the wiring is what the grounded renderer already draws when it can. flow.rows = the runtime steps in order.`;
-  const out = await callClaudeJSON({ apiKey, env: ctx?._env, model, system, user, maxTokens: 6000 });
+- architecture.rows = the CONCEPT of how the thing is built (the 3-5 parts a reader must hold in their head), NOT the package wiring — the wiring is what the grounded renderer already draws when it can. flow.rows = the runtime steps in order.
+- systemMap and decision (ADR-0014) are the BETTER answer to "what does it plug into / how does it decide" and REPLACE the architecture / flow drawing when present and verified. They are optional: omit rather than invent. THE TOOL VERIFIES EVERY CLAIM against the real repo and silently drops what it cannot confirm: a "yes"/"partial" must carry a file and a VERBATIM quote that is in that file in the brief; a "no" must list the search terms the tool will grep (use the other hosts / editors / platforms a reader would wonder about — the tool performs the search, you do not assert the absence). Use real commands and real numbers from the source; never paraphrase a quote.`;
+  const out = await callClaudeJSON({ apiKey, env: ctx?._env, model, system, user, maxTokens: 10000 });
   if (!out?.hero?.prompt) throw new Error('authorVisualBrief: missing hero.prompt');
   const okRows = (d) => d && Array.isArray(d.rows) && d.rows.length
     && d.rows.every((r) => r && Array.isArray(r.items) && r.items.length
@@ -327,6 +330,10 @@ export function visualsSlotFromBrief(brief) {
     // could author a perfectly good fallback and the pipeline would still die at Station 4.
     architectureDiagram: conceptModel(brief.diagrams.architecture, 'How it is built'),
     flowDiagram: conceptModel(brief.diagrams.flow, 'What happens to your data'),
+    // ADR-0014: optional evidence-backed story models. Carried through UNCHANGED — make-diagrams
+    // validates and VERIFIES them against the cloned repo before anything is drawn.
+    ...(brief.diagrams.systemMap && typeof brief.diagrams.systemMap === 'object' ? { systemMap: brief.diagrams.systemMap } : {}),
+    ...(brief.diagrams.decision && typeof brief.diagrams.decision === 'object' ? { decision: brief.diagrams.decision } : {}),
   };
 }
 

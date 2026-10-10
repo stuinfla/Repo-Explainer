@@ -28,6 +28,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import {
+  renderSystemMap, renderDecision, validateSystemMap, validateDecision, verifySystemMap, verifyDecision,
+  describeSystemMap, describeDecision,
+} from '../src/story-diagrams.mjs';
 
 const TOOL = 'make-diagrams';
 
@@ -1356,6 +1360,81 @@ function reportLegibility(merged) {
   }
 }
 
+
+// ── STORY DIAGRAMS (ADR-0014) ────────────────────────────────────────────────────────────────────────
+// The brain may author `visuals.systemMap` and `visuals.decision`. They REPLACE the dependency-graph
+// drawing in the architecture / flow slots ONLY when every claim in them is confirmed against the real
+// cloned repo by THIS tool (a quote that is really in the file; a "no" that is a zero-hit search).
+// Anything unverifiable is dropped, and a model that cannot be drawn falls back to the grounded graph
+// diagram — never to an unverified claim, and never a failed build (ADR-0011).
+const STORY_SLOT = { architectureDiagram: 'systemMap', flowDiagram: 'decision' };
+const SEARCH_SKIP = new Set(['.git', 'node_modules', '.venv', 'venv', 'dist', 'build', '__pycache__', '.next', 'target']);
+
+function makeRepoReaders(buildJson, buildDir) {
+  const cp = buildJson.repo && buildJson.repo.clonePath;
+  const root = cp ? (path.isAbsolute(cp) ? cp : path.resolve(buildDir, cp)) : null;
+  if (!root || !fs.existsSync(root)) return null;
+  const read = (file) => {
+    if (typeof file !== 'string' || path.isAbsolute(file) || file.split(/[\\/]/).includes('..')) return null;
+    try {
+      const full = path.join(root, file);
+      const st = fs.statSync(full);
+      return st.isFile() && st.size <= 2_000_000 ? fs.readFileSync(full, 'utf8') : null;
+    } catch { return null; }
+  };
+  const search = (terms) => {
+    const needles = terms.map((t) => String(t).toLowerCase());
+    const hits = [];
+    let files = 0;
+    const walk = (dir) => {
+      let ents; try { ents = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+      for (const e of ents) {
+        if (hits.length >= 20 || files > 6000) return;
+        if (e.isDirectory()) { if (!SEARCH_SKIP.has(e.name)) walk(path.join(dir, e.name)); continue; }
+        if (!e.isFile()) continue;
+        files++;
+        const full = path.join(dir, e.name);
+        let st; try { st = fs.statSync(full); } catch { continue; }
+        if (st.size > 1_000_000) continue;
+        let txt; try { txt = fs.readFileSync(full, 'utf8'); } catch { continue; }
+        if (txt.includes('\u0000')) continue;
+        const lines = txt.split('\n');
+        for (let i = 0; i < lines.length && hits.length < 20; i++) {
+          const l = lines[i].toLowerCase();
+          if (needles.some((n) => l.includes(n))) hits.push({ file: path.relative(root, full), line: i + 1 });
+        }
+      }
+    };
+    walk(root);
+    return hits;
+  };
+  return { read, search };
+}
+
+function storyFor(key, visualsIn, readers) {
+  const slot = STORY_SLOT[key];
+  const model = slot && visualsIn[slot];
+  if (!model || typeof model !== 'object') return null;
+  if (!readers) { warn(`${slot}: no cloned repo to verify against — using the grounded graph diagram`); return null; }
+  try {
+    if (slot === 'systemMap') {
+      const bad = validateSystemMap(model);
+      if (bad.length) { warn(`systemMap rejected: ${bad.join('; ')}`); return null; }
+      const { model: ok, notes } = verifySystemMap(model, readers);
+      notes.forEach((n) => warn(`systemMap: ${n}`));
+      if (!ok.worksWith.items.length) { warn('systemMap: no "works with" claim could be verified — using the grounded graph diagram'); return null; }
+      return { svg: renderSystemMap(ok), altText: `${ok.title}. ${describeSystemMap(ok)}`, kind: 'systemMap', notes,
+        evidence: ok.worksWith.items.map((x) => ({ name: x.name, status: x.status, evidence: x.evidence })) };
+    }
+    const bad = validateDecision(model);
+    if (bad.length) { warn(`decision rejected: ${bad.join('; ')}`); return null; }
+    const v = verifyDecision(model, readers);
+    if (!v.ok) { warn(v.note); return null; }
+    return { svg: renderDecision(model), altText: `${model.title}. ${describeDecision(model)}`, kind: 'decision', notes: [],
+      evidence: [{ rule: model.rule }] };
+  } catch (e) { warn(`${slot} could not be drawn (${e.message}) — using the grounded graph diagram`); return null; }
+}
+
 function main() {
   const argv = process.argv.slice(2);
   if (argv.length !== 1 || !argv[0]) die('usage: node tools/make-diagrams.mjs <build-dir>');
@@ -1403,6 +1482,7 @@ function main() {
   fs.mkdirSync(assetsDir, { recursive: true });
 
   const visualsIn = (buildJson.visuals && typeof buildJson.visuals === 'object') ? buildJson.visuals : {};
+  const storyReaders = (visualsIn.systemMap || visualsIn.decision) ? makeRepoReaders(buildJson, buildDir) : null;
   const merged = {};
 
   // captions (mono, lowercase, reference-style)
@@ -1582,15 +1662,18 @@ function main() {
     // a screen reader hearing a structure the page never drew — the same lie, told more quietly.
     const altText = formCorrectedAlt
       || ((typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText : defaultAltText(spec, dg, ep, name, rendered.desc, archModel, asConcept));
-    const svg = wrapSvg(rendered.W, rendered.H, rendered.body, `${name} — ${spec.title}`, altText, asciiSrc || rendered.desc);
+    const story = storyFor(spec.key, visualsIn, storyReaders);
+    const finalAlt = story ? story.altText : altText;
+    const svg = story ? story.svg : wrapSvg(rendered.W, rendered.H, rendered.body, `${name} — ${spec.title}`, altText, asciiSrc || rendered.desc);
     const svgPath = path.join(assetsDir, spec.file);
     fs.writeFileSync(svgPath, svg, 'utf8');
     assertXmllintClean(svgPath, spec.key);
     // `form` travels with the diagram so the INV-23 guarantee is AUDITABLE after the fact: a test can
     // assert the emitted set is pairwise distinct, and a grader verdict of "two same-form diagrams" can
     // be checked against what was actually drawn instead of being taken on faith.
-    merged[spec.key] = { svgPath, altText, asciiFallback: asciiSrc || rendered.desc, format: 'svg-vector-dark', xmllintOK: true,
-      form: decision.family, formVariant: decision.variant, mobileLabelPx: legibilityOf(svg), ...(conceptBack || {}) };
+    merged[spec.key] = { svgPath, altText: finalAlt, asciiFallback: story ? story.altText : (asciiSrc || rendered.desc), format: 'svg-vector-dark', xmllintOK: true,
+      form: story ? story.kind : decision.family, formVariant: story ? story.kind : decision.variant, mobileLabelPx: legibilityOf(svg), ...(conceptBack || {}),
+      ...(story ? { story: story.kind, storyEvidence: story.evidence, storyNotes: story.notes } : {}) };
   }
 
   reportLegibility(merged);
