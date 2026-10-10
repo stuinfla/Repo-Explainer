@@ -23,7 +23,7 @@
 //   14 deploy ................. tool   (Station 8 — skip with --no-deploy)
 //   15 publish-repo ........... tool   (Station 8 — skip with --no-publish)
 //   16 repo-seo .............. tool   (Station 8 — skip with --no-publish)
-//   17 readme-enhance ......... tool   (Station 8b — optional, env-gated, NON-BLOCKING)
+//   17 readme-enhance ......... tool   (Station 8b — ON by default, skip with --no-readme-pr / README_ENHANCE=0, NON-BLOCKING)
 //   18 notify ................. tool   (Station 9 — NON-BLOCKING)
 
 import fs from 'node:fs';
@@ -146,6 +146,7 @@ function stations(opts) {
     if (opts.noDeploy && s.id === 'deploy') return false;
     if (opts.noPublish && (s.id === 'publish-repo' || s.id === 'repo-seo')) return false;
     if (opts.noNotify && s.id === 'notify') return false;
+    if (opts.noReadmePr && s.id === 'readme-enhance') return false;
     return true;
   });
 }

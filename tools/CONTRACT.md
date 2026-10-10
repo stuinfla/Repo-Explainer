@@ -182,7 +182,7 @@ slots, never mutated incrementally.
 | `publish.explainerRepoUrl` / `.ownerInvited` | `publish-repo` | 8 |
 | `publish.liveUrl` / `.http200` | `deploy` | 8 |
 | `publish.repoTopics` / `.repoDescription` / `.sourceRepoSeoSuggested` | `repo-seo` | 8 |
-| `readmePr` (optional) | `readme-enhance` | 8b |
+| `readmePr` (optional) | `readme-enhance` | 8b | *(ADR-0015: ON by default; issue-first, PR on request; ledger + daily cap; `README_ENHANCE=0` / `--no-readme-pr` to disable)*
 | `notify` | `notify` | 9 |
 
 `concept` and `content` are filled by the **brain directly** (pure judgment, ADR-0005 S2/S3) — there
