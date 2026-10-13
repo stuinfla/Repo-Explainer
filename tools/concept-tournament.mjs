@@ -110,8 +110,8 @@ function parseSpec(text, model) {
 }
 
 const CANDIDATES = [
-  { model: 'claude-sonnet-5', call: callAnthropic, needs: anthropicKey },
-  { model: 'claude-fable-5', call: callAnthropic, needs: anthropicKey },
+  { model: 'claude-sonnet-5-5', call: callAnthropic, needs: anthropicKey },
+  { model: 'claude-fable-5-1', call: callAnthropic, needs: anthropicKey },
   { model: 'gpt-5.6-sol', call: callOpenAI, needs: openaiKey },
 ];
 const JUDGE = { model: 'gpt-5.6-terra', call: callOpenAI, needs: openaiKey };

@@ -61,7 +61,7 @@ const buildId = args['build-id'] || '';
 // compete on specs for cents; a cheap judge ranks them) — so the implementation agent runs on
 // the low-cost tier. All-Fable implementation measured $7-9/page; tournament + Sonnet executor
 // targets $2.50-4.00 at the same gate bar. Both IDs verified live via GET /v1/models 2026-07-13.
-const model = args.model || 'claude-sonnet-5';
+const model = args.model || 'claude-sonnet-5-5';
 // Which endpoint + billing lane runs the executor (`claude -p`). Default: first-party Anthropic.
 // The credential preflight may FAIL THIS OVER to OpenRouter's Anthropic-compatible endpoint
 // (their "Anthropic Skin" — same executor model, billed to the owner's OpenRouter credits) when
@@ -271,7 +271,7 @@ async function probeCred(label, candidates, url, headers) {
   // completion (which also validates the model slug + credits in one shot, loudly).
   if (!a.ok && a.usageLimited) {
     const orCands = credCandidates('OPENROUTER_API_KEY');
-    const orModel = process.env.OPENROUTER_ANTHROPIC_MODEL || 'anthropic/claude-sonnet-5';
+    const orModel = process.env.OPENROUTER_ANTHROPIC_MODEL || 'anthropic/claude-sonnet-5.5';
     for (const cand of orCands) {
       try {
         const r = await fetch('https://openrouter.ai/api/v1/messages', {
