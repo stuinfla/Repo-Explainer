@@ -69,10 +69,13 @@ const resolveIn = (buildDir, p) => (path.isAbsolute(p) ? p : path.resolve(buildD
 function caption(alt, fallback) {
   const t = String(alt || '').replace(/\s+/g, ' ').trim();
   if (!t) return fallback;
-  const sentences = t.match(/[^.!?]+[.!?]+/g) || [t];
+  // Split on sentence-ending punctuation followed by whitespace, so ".NET", "v1.2" and "e.g." mid-sentence don't end a caption early.
+  const sentences = t.split(/(?<=[.!?])\s+/).filter(Boolean);
   let out = '';
-  for (const s of sentences) { if ((out + s).length > 240) break; out += s; if (out.split(/[.!?]/).filter(Boolean).length >= 2) break; }
-  return (out || t.slice(0, 240)).trim();
+  for (const s of sentences) { if ((out + s).length > 240) break; out += (out ? ' ' : '') + s; if (out.split(/[.!?]/).filter(Boolean).length >= 2) break; }
+  if (out) return out.trim();
+  const cut = t.slice(0, 240); // one long sentence: break at a word, never mid-word
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(' '), 1)).replace(/[,;:\s]+$/, '')}…`;
 }
 
 async function rasterize(svgPath, outPath) {
