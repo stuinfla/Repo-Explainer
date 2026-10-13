@@ -31,7 +31,9 @@ const ANTHROPIC_VERSION = '2023-06-01';
 // tonight's model-freshness sweep checked OpenAI's family and missed our own Anthropic default).
 // Sonnet is the authoring default: strong judgment for concept/content at a sane cost. Override
 // with --model or EXPLAINMYREPO_MODEL / ANTHROPIC_MODEL.
-export const DEFAULT_MODEL = 'claude-sonnet-5';
+// 2026-10-13: bumped sonnet-5 -> sonnet-5-5 (created 2026-09-28). Live 1-token probe returned HTTP 200 with
+// model echoed; the no-temperature rule above still applies.
+export const DEFAULT_MODEL = 'claude-sonnet-5-5';
 
 // ── THE AUTHORING MODEL (2026-08-08) ────────────────────────────────────────────────────────────
 // Measured, not assumed. A blind A/B on the REAL concept-authoring task (identical brief, labels
@@ -51,7 +53,11 @@ export const DEFAULT_MODEL = 'claude-sonnet-5';
 //
 // HONEST LIMIT: n=1 per model, one repo, one judge. The 15x cost gap survives that; the 95-vs-89
 // quality gap may not. Hence the automatic Anthropic fallback below rather than a hard switch.
-export const AUTHORING_MODEL = 'z-ai/glm-5.2';
+// 2026-10-13 re-measure (blind, 2 repos, 4 judge passes each, same concept prompt): glm-5.2 scored 79/61
+// (clearly behind), glm-5.3 scored 91/94 vs claude-sonnet-5-5 96/93 at near-identical $/concept
+// (glm spends its budget on hidden reasoning; 2-3x slower). So glm-5.3 replaces 5.2 as the OpenRouter
+// lane's model, but it is NOT the default whenever a direct Anthropic key exists (see resolveModel).
+export const AUTHORING_MODEL = 'z-ai/glm-5.3';
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 // An OpenRouter model id is namespaced ("z-ai/glm-5.2"); a first-party Anthropic id is not.
@@ -61,9 +67,14 @@ export function resolveModel(env = {}, override) {
   if (override) return override;
   if (env.EXPLAINMYREPO_MODEL) return env.EXPLAINMYREPO_MODEL;
   if (env.ANTHROPIC_MODEL) return env.ANTHROPIC_MODEL;
-  // Prefer the measured champion when an OpenRouter key exists; otherwise the Anthropic default.
-  // Set EXPLAINMYREPO_AUTHORING=anthropic to pin the old behaviour without removing the key.
-  if (env.OPENROUTER_API_KEY && env.EXPLAINMYREPO_AUTHORING !== 'anthropic') return AUTHORING_MODEL;
+  // Owner directive 2026-10-13: local runs bill the owner's own Anthropic developer account directly,
+  // never via OpenRouter when a direct key exists (a pass-through reseller is never cheaper than the
+  // source). The OpenRouter authoring champion is now used only when it is the ONLY credential
+  // (nothing else could run) or when explicitly opted into with EXPLAINMYREPO_AUTHORING=openrouter.
+  // EXPLAINMYREPO_AUTHORING=anthropic still pins Anthropic unconditionally.
+  const hasAnthropicKey = Boolean(env.ANTHROPIC_API_KEY || env.CLAUDE_API_KEY);
+  const a = env.EXPLAINMYREPO_AUTHORING;
+  if (env.OPENROUTER_API_KEY && a !== 'anthropic' && (a === 'openrouter' || !hasAnthropicKey)) return AUTHORING_MODEL;
   return DEFAULT_MODEL;
 }
 
@@ -301,7 +312,8 @@ async function callClaudeOnce({ apiKey, model, system, user, maxTokens, temperat
   const j = await resp.json();
   // Anthropic does not return a charge, so this lane is DERIVED from published per-token rates and
   // is marked as such in the receipt. Only the OpenRouter lane is a measured figure.
-  const RATES = { 'claude-sonnet-5': [2, 10], 'claude-opus-5': [5, 25], 'claude-haiku-4.5': [1, 5] };
+  // sonnet-5-5 rate is the published list price as reported by third-party sources, not read from a bill.
+  const RATES = { 'claude-sonnet-5-5': [2, 10], 'claude-sonnet-5': [2, 10], 'claude-opus-5-5': [4, 20], 'claude-fable-5-1': [10, 50], 'claude-opus-5': [5, 25], 'claude-haiku-5-5': [0.1, 0.5], 'claude-haiku-4.5': [1, 5] };
   const [rin, rout] = RATES[model] || [0, 0];
   recordSpend(model, ((j.usage?.input_tokens || 0) * rin + (j.usage?.output_tokens || 0) * rout) / 1e6,
     { in: j.usage?.input_tokens, out: j.usage?.output_tokens });

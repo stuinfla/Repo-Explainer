@@ -75,7 +75,16 @@ import { resolveModel, isOpenRouterModel, AUTHORING_MODEL, DEFAULT_MODEL } from 
 
 test('authoring — an OpenRouter key selects the measured champion', () => {
   assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x' }), AUTHORING_MODEL);
-  assert.equal(AUTHORING_MODEL, 'z-ai/glm-5.2');
+  assert.equal(AUTHORING_MODEL, 'z-ai/glm-5.3');
+});
+
+test('authoring — a direct Anthropic key outranks OpenRouter (owner directive 2026-10-13)', () => {
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', CLAUDE_API_KEY: 'k' }), DEFAULT_MODEL);
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', ANTHROPIC_API_KEY: 'k' }), DEFAULT_MODEL);
+});
+
+test('authoring — EXPLAINMYREPO_AUTHORING=openrouter is the explicit opt-in even with an Anthropic key', () => {
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', CLAUDE_API_KEY: 'k', EXPLAINMYREPO_AUTHORING: 'openrouter' }), AUTHORING_MODEL);
 });
 
 test('authoring — NO OpenRouter key leaves the old behaviour exactly as it was', () => {
