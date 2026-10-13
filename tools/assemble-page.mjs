@@ -459,7 +459,7 @@ ${jsonLdScript}
   <div class="prov-banner">
     <div class="wrap prov-banner-inner">
       <p class="prov-attr">An independent explainer for <strong>${esc(owner)}</strong>'s <a href="${esc(repoUrl)}" target="_blank" rel="noopener">${esc(repoName)}</a> — built to help you actually implement it.</p>
-      <p class="prov-live"><span class="prov-dot" aria-hidden="true">&#9679;</span> source <code>${esc(repoUrl.replace(/^https?:\/\//, ''))}</code></p>
+      <p class="prov-live"><span class="prov-dot" aria-hidden="true">&#9679;</span> source <a href="${esc(repoUrl)}" target="_blank" rel="noopener"><code>${esc(repoUrl.replace(/^https?:\/\//, ''))}</code></a></p>
     </div>
   </div>
   <header class="site-head">
