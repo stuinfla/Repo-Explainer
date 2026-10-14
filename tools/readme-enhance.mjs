@@ -183,8 +183,13 @@ async function main() {
   // ── the rewrite (additions only) ─────────────────────────────────────────────────────────────────
   const readmeName = fs.readdirSync(clone).find((f) => /^readme(\.md|\.markdown)?$/i.test(f)) || 'README.md';
   const original = fs.existsSync(path.join(clone, readmeName)) ? fs.readFileSync(path.join(clone, readmeName), 'utf8') : '';
+  // Hero: the NotebookLM infographic from Station 6b, when one was made (the picture sits up near the title).
+  const heroSrc = ctx.overview && ctx.overview.infographic && ctx.overview.infographic.path && ctx.page && ctx.page.dir
+    ? path.join(ctx.page.dir, ctx.overview.infographic.path) : null;
+  const heroRel = heroSrc && fs.existsSync(heroSrc) ? `${SVG_DIR}/overview${path.extname(heroSrc).toLowerCase() || '.png'}` : null;
   const rw = rewriteReadme(original, {
     liveUrl, repoName: repo.name, svgDir: SVG_DIR,
+    hero: heroRel ? { rel: heroRel, alt: `How ${repo.name} works` } : null,
     fallback: [
       { alt: caption(arch.altText, `How ${repo.name} is put together.`), rel: `${SVG_DIR}/architecture.svg` },
       { alt: caption(flow.altText, `How ${repo.name} works.`), rel: `${SVG_DIR}/flow.svg` },
@@ -206,6 +211,7 @@ async function main() {
     fs.copyFileSync(flowSvg, path.join(proposal, SVG_DIR, 'flow.svg'));
     files.push(`${SVG_DIR}/architecture.svg`, `${SVG_DIR}/flow.svg`);
   }
+  if (heroRel) { fs.copyFileSync(heroSrc, path.join(proposal, heroRel)); files.push(heroRel); }
   const haveArchPng = await rasterize(archSvg, path.join(proposal, 'preview', 'architecture.png'));
   const haveFlowPng = await rasterize(flowSvg, path.join(proposal, 'preview', 'flow.png'));
 
@@ -259,7 +265,7 @@ async function main() {
   // ── the message ──────────────────────────────────────────────────────────────────────────────────
   let body = buildPrBody({
     repoName: repo.name, liveUrl, readmeUrl: readmeUrl || liveUrl, mode: rw.mode, addedLines, files, images,
-    intro: env.README_PR_INTRO, signoff: env.README_PR_SIGNOFF || ghName, kind: channel === 'pr' ? 'pr' : 'issue',
+    intro: env.README_PR_INTRO, signoff: env.README_PR_SIGNOFF || ghName, contact: env.README_PR_CONTACT ?? env.OUTREACH_CONTACT, kind: channel === 'pr' ? 'pr' : 'issue',
   });
   if (channel === 'pr' && env.README_ENHANCE_ISSUE) body = `Follow-up to #${String(env.README_ENHANCE_ISSUE).replace(/\D/g, '')}, as offered.\n\n${body}`;
 
@@ -290,6 +296,34 @@ async function main() {
     explainerRepo: explainerUrl, buildDir: path.resolve(buildDir), mode: rw.mode, sentBy: ghLogin,
   });
   log(`sent ${channel}: ${url}`);
+
+  // Owner's review copy of the maintainer email (never sent to the maintainer), then settle any older
+  // follow-ups. Both are best-effort and never change the result of this send.
+  if (channel === 'issue') {
+    try {
+      const smtpUser = (env.SMTP_USER || env.GMAIL_USER || '').trim();
+      const smtpPass = (env.SMTP_PASS || env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '');
+      const reviewTo = (env.OUTREACH_REVIEW_TO || '').trim();
+      if (reviewTo && smtpUser && smtpPass && !/^(0|false|no|off)$/i.test(String(env.OUTREACH_REVIEW_MAIL || ''))) {
+        const { pickMaintainerEmail, renderEmail } = await import('../src/outreach-mail.mjs');
+        const { sendMail } = await import('../src/smtp.mjs');
+        let to = null;
+        try { to = pickMaintainerEmail(JSON.parse(run('gh', ['api', `repos/${repoFull}/commits?per_page=40`]))); } catch { /* no public address */ }
+        const contact = env.README_PR_CONTACT ?? env.OUTREACH_CONTACT;
+        const draft = to ? renderEmail({ name: repo.name, to, liveUrl, issueUrl: url, fromName: env.README_PR_SIGNOFF || ghName, contact }) : null;
+        const text = [
+          `A note was posted on ${repoFull}: ${url}`, `Explainer: ${liveUrl}`, '',
+          draft ? `Draft email to the maintainer (${draft.to}) — NOT sent. Forward it if you want to:\n\nSubject: ${draft.subject}\n\n${draft.body}` : 'No public maintainer address was found in recent commits.',
+        ].join('\n');
+        await sendMail({ host: env.SMTP_HOST || 'smtp.gmail.com', port: Number(env.SMTP_PORT || 465), user: smtpUser, pass: smtpPass, fromName: 'explainmyrepo outreach', to: reviewTo, subject: `[review] ${repoFull}: note posted, email draft inside`, text });
+        log(`review copy mailed to ${reviewTo}`);
+      }
+    } catch (e) { log(`review mail skipped: ${String(e.message).slice(0, 120)}`); }
+  }
+  try {
+    const { followupCommand } = await import('../src/outreach-cli.mjs');
+    followupCommand({ env, write: (s) => log(s.trim()) });
+  } catch (e) { log(`follow-up pass skipped: ${String(e.message).slice(0, 120)}`); }
   done({ prUrl: url, kind: channel, mode: rw.mode, previewUrl: previewReadmeUrl, addedLines, svgsShared: files }, { url });
 }
 

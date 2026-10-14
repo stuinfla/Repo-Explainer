@@ -42,6 +42,7 @@ const MODE_LINE = {
  * @param {string[]} o.files       other files in the PR (repo-relative)
  * @param {string} [o.intro]       replaces the two opening paragraphs; {repo} is substituted
  * @param {string} [o.signoff]     name to sign with
+ * @param {string} [o.contact]     one plain line (name · phone · email) so a person can be reached; omitted when empty
  * @param {'pr'|'issue'} [o.kind]  'issue' = a proposal with the work already visible and a PR on request
  */
 export function buildPrBody(o) {
@@ -90,6 +91,7 @@ export function buildPrBody(o) {
   out.push('Thanks again for building this, and for making it open.');
   out.push('');
   if (o.signoff && o.signoff.trim()) out.push(o.signoff.trim(), '');
+  if (o.contact && String(o.contact).trim()) out.push(`Questions are welcome: ${String(o.contact).trim()}`, '');
   out.push(`Made with [explainmyrepo](${EXPLAINER_REPO})`);
   return `${out.join('\n')}\n`;
 }

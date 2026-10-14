@@ -132,6 +132,7 @@ function stations(opts) {
     tool('make-diagrams', 'make-diagrams'),
     tool('assemble-page', 'assemble-page'),
     tool('make-pack', 'make-pack'),
+    tool('make-overview', 'make-overview', { fatal: false }),     // Station 6b — NotebookLM video + infographic, local door only, non-blocking
     tool('quality-grade', 'quality-grade'),
     tool('deploy', 'deploy'),
     tool('publish-repo', 'publish-repo'),

@@ -77,6 +77,7 @@ OUTREACH (on by default — the readme-enhance station)
   Turn it off:  --no-readme-pr   (or README_ENHANCE=0)        Send PRs directly:  README_OUTREACH=pr
   Your own voice: README_PR_INTRO="…{repo}…" README_PR_SIGNOFF="Your Name"   Rehearse: README_OUTREACH_DRYRUN=1
   Track replies:  npx explainmyrepo outreach status
+  Check in once:  npx explainmyrepo outreach followup   (one note, a week after the last message, only if unanswered)
   After a yes:    npx explainmyrepo outreach open-pr owner/name
 
 WHICH DOOR IS FOR YOU
@@ -133,16 +134,17 @@ async function main() {
   // Outreach tracking (ADR-0015): `outreach status` polls every message we've sent;
   // `outreach open-pr <owner/name>` is the second step after a maintainer says yes.
   if (positional[0] === 'outreach') {
-    const { statusCommand, openPrCommand } = await import('../src/outreach-cli.mjs');
+    const { statusCommand, openPrCommand, followupCommand } = await import('../src/outreach-cli.mjs');
     const sub = positional[1] || 'status';
     if (sub === 'status') { await statusCommand({ env: process.env }); return; }
+    if (sub === 'followup') { followupCommand({ env: { ...process.env, ...loadEnv(path.join(HERE, '..')) }, dryRun: process.argv.includes('--dry-run') }); return; }
     if (sub === 'open-pr') {
       if (!positional[2] || !/^[^/\s]+\/[^/\s]+$/.test(positional[2])) {
         process.stderr.write('usage: explainmyrepo outreach open-pr <owner/name>\n'); process.exit(2);
       }
       process.exit(openPrCommand(positional[2], { env: { ...process.env, ...loadEnv(path.join(HERE, '..')) }, repoRoot: path.join(HERE, '..') }));
     }
-    process.stderr.write(`unknown outreach command: ${sub}\nusage: explainmyrepo outreach [status | open-pr <owner/name>]\n`);
+    process.stderr.write(`unknown outreach command: ${sub}\nusage: explainmyrepo outreach [status | followup | open-pr <owner/name>]\n`);
     process.exit(2);
   }
 
