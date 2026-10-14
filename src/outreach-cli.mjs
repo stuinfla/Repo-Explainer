@@ -19,9 +19,12 @@ const NEGATIVE = new Set(['THUMBS_DOWN', 'CONFUSED']);
  * Map `gh issue|pr view --json state,createdAt,closedAt,mergedAt,comments,reactionGroups` to the shape
  * classifyResponse() reads. `ownerLogin` is the repo owner, whose replies count as "the maintainer".
  */
-export function snapshotFromGh(j, ownerLogin) {
+export function snapshotFromGh(j, ownerLogin, selfLogin = '') {
   const owner = String(ownerLogin || '').toLowerCase();
-  const comments = Array.isArray(j.comments) ? j.comments : [];
+  const self = String(selfLogin || '').toLowerCase();
+  // Our own follow-up/update comments are not a response from anyone.
+  const comments = (Array.isArray(j.comments) ? j.comments : [])
+    .filter((c) => !(self && c.author && String(c.author.login).toLowerCase() === self));
   const rg = Array.isArray(j.reactionGroups) ? j.reactionGroups : [];
   const count = (set) => rg.filter((g) => set.has(g.content)).reduce((n, g) => n + ((g.users && g.users.totalCount) || 0), 0);
   return {
@@ -51,7 +54,7 @@ export async function statusCommand({ env = process.env, view = ghView, write = 
   for (const e of sent) {
     let label = 'unknown', days = null;
     try {
-      const snap = snapshotFromGh(view(e), String(e.repo).split('/')[0]);
+      const snap = snapshotFromGh(view(e), String(e.repo).split('/')[0], e.sentBy);
       const c = classifyResponse(snap);
       label = c.label; days = c.days;
       appendLedger(file, { type: 'status', ts: new Date().toISOString(), url: e.url, label, days });
@@ -102,7 +105,7 @@ export function followupCommand({ env = process.env, view = ghView, post, dryRun
   result.due = due.length;
   for (const e of due) {
     try {
-      const snap = snapshotFromGh(view({ ...e, kind: 'issue' }), String(e.repo).split('/')[0]);
+      const snap = snapshotFromGh(view({ ...e, kind: 'issue' }), String(e.repo).split('/')[0], e.sentBy);
       const c = classifyResponse(snap, now);
       if (c.label !== 'waiting') {
         if (!dryRun) appendLedger(file, { type: 'followup', ts: new Date(now).toISOString(), url: e.url, repo: e.repo, action: 'none', reason: c.label });

@@ -167,3 +167,13 @@ t2('rewriteReadme: hero image sits under the explainer link and strips cleanly o
   const none = rw2(md, { liveUrl: 'https://l.app', repoName: 'Proj', svgDir: 'docs/explainer' });
   a2.ok(!none.markdown.includes('overview.jpg'));
 });
+
+import { snapshotFromGh } from '../src/outreach-cli.mjs';
+t2('our own update/follow-up comments never count as a reply', () => {
+  const j = { state: 'OPEN', createdAt: '2026-10-13T00:00:00Z', comments: [{ author: { login: 'stuinfla' } }, { author: { login: 'StuInfla' } }], reactionGroups: [] };
+  const mine = snapshotFromGh(j, 'morluto', 'stuinfla');
+  a2.equal(mine.comments, 0);
+  a2.equal(classifyResponse(mine, Date.parse('2026-10-14T00:00:00Z')).label, 'waiting');
+  const theirs = snapshotFromGh({ ...j, comments: [...j.comments, { author: { login: 'morluto' } }] }, 'morluto', 'stuinfla');
+  a2.equal(classifyResponse(theirs).label, 'replied');
+});
