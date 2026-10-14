@@ -263,7 +263,7 @@ function diagramAlt(body, n) {
  * @param {{svgPath:string,alt:string,rel:string}[]} [o.fallback]  generated diagrams used ONLY when no ASCII diagram exists
  * @returns {{ markdown:string, diagrams:{file:string,svg:string,alt:string}[], mode:'ascii'|'fallback'|'link-only' }}
  */
-export function rewriteReadme(md, { liveUrl, repoName, svgDir, fallback = [] }) {
+export function rewriteReadme(md, { liveUrl, repoName, svgDir, fallback = [], hero = null }) {
   const clean = stripEnhancements(md);
   const base = clean.trim() === '' ? `# ${repoName}\n` : clean;
   const lines = base.split('\n');
@@ -294,6 +294,7 @@ export function rewriteReadme(md, { liveUrl, repoName, svgDir, fallback = [] }) 
     `[![Explainer — live](https://img.shields.io/badge/Explainer-live-7c3aed?style=flat-square)](${liveUrl})`,
     '',
     `A visual, newcomer-friendly explainer for **${repoName}**: ${liveUrl}`,
+    ...(hero ? ['', `[![${String(hero.alt || `How ${repoName} works`).replace(/[\[\]\r\n]+/g, ' ')}](${hero.rel})](${liveUrl})`] : []),
     LINK_END,
     '',
   ];

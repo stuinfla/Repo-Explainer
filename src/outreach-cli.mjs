@@ -1,4 +1,4 @@
-// src/outreach-cli.mjs — `npx explainmyrepo outreach [status | open-pr <owner/name>]` (ADR-0015).
+// src/outreach-cli.mjs — `npx explainmyrepo outreach [status | followup | open-pr <owner/name>]` (ADR-0015).
 //
 //   status   poll GitHub for every message we've sent and say who responded — the owner's "make sure
 //            you always track these and see if people respond and react to them".
@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { ledgerPath, readLedger, appendLedger, classifyResponse, summarize } from './outreach.mjs';
+import { followupsDue, renderFollowup, DEFAULT_FOLLOWUP_DAYS } from './outreach-followup.mjs';
 
 const POSITIVE = new Set(['THUMBS_UP', 'HEART', 'HOORAY', 'ROCKET', 'EYES']);
 const NEGATIVE = new Set(['THUMBS_DOWN', 'CONFUSED']);
@@ -83,4 +84,38 @@ export function openPrCommand(repoFull, { env = process.env, repoRoot, write = (
     env: { ...env, README_OUTREACH: 'pr', README_ENHANCE_ISSUE: String(issue.number || '') },
   });
   return r.status || 0;
+}
+
+/**
+ * `outreach followup` — ONE short check-in per issue, `OUTREACH_FOLLOWUP_DAYS` (default 7) after our last
+ * message, only while the maintainer has not replied and the issue is still open. Records a 'followup' line
+ * either way, so it can never post twice. `dryRun` writes nothing and posts nothing.
+ */
+export function followupCommand({ env = process.env, view = ghView, post, dryRun = false, now = Date.now(), write = (s) => process.stdout.write(s) } = {}) {
+  const file = ledgerPath(env);
+  const entries = readLedger(file);
+  const minDays = Number(env.OUTREACH_FOLLOWUP_DAYS || DEFAULT_FOLLOWUP_DAYS);
+  const contact = env.README_PR_CONTACT ?? env.OUTREACH_CONTACT;
+  const poster = post || ((e, body) => execFileSync('gh', ['issue', 'comment', e.url, '--body', body], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+  const result = { due: 0, posted: [], quiet: [], errors: [] };
+  const due = followupsDue(entries, now, minDays);
+  result.due = due.length;
+  for (const e of due) {
+    try {
+      const snap = snapshotFromGh(view({ ...e, kind: 'issue' }), String(e.repo).split('/')[0]);
+      const c = classifyResponse(snap, now);
+      if (c.label !== 'waiting') {
+        if (!dryRun) appendLedger(file, { type: 'followup', ts: new Date(now).toISOString(), url: e.url, repo: e.repo, action: 'none', reason: c.label });
+        result.quiet.push({ url: e.url, why: c.label });
+        continue;
+      }
+      const body = renderFollowup({ repoName: String(e.repo).split('/')[1], liveUrl: e.liveUrl, contact });
+      if (dryRun) { result.posted.push({ url: e.url, dryRun: true, body }); continue; }
+      poster(e, body);
+      appendLedger(file, { type: 'followup', ts: new Date(now).toISOString(), url: e.url, repo: e.repo, action: 'commented' });
+      result.posted.push({ url: e.url });
+    } catch (err) { result.errors.push(`${e.url}: ${String(err.stderr || err.message).slice(0, 100)}`); }
+  }
+  write(`follow-ups: ${result.due} due, ${result.posted.length} posted, ${result.quiet.length} quiet (replied/closed), ${result.errors.length} errors\n`);
+  return result;
 }
