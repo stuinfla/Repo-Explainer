@@ -13,9 +13,9 @@ export function lastContact(entries) {
     if ((e.type !== 'sent' && e.type !== 'update') || !e.url) continue;
     const prev = m.get(e.url);
     const ts = Date.parse(e.ts);
-    if (!prev) m.set(e.url, { url: e.url, repo: e.repo, kind: e.kind, number: e.number, liveUrl: e.liveUrl, lastTs: ts });
+    if (!prev) m.set(e.url, { url: e.url, repo: e.repo, kind: e.kind, number: e.number, liveUrl: e.liveUrl, sentBy: e.sentBy, lastTs: ts });
     else {
-      if (e.type === 'sent') Object.assign(prev, { repo: e.repo || prev.repo, kind: e.kind || prev.kind, number: e.number || prev.number, liveUrl: e.liveUrl || prev.liveUrl });
+      if (e.type === 'sent') Object.assign(prev, { repo: e.repo || prev.repo, kind: e.kind || prev.kind, number: e.number || prev.number, liveUrl: e.liveUrl || prev.liveUrl, sentBy: e.sentBy || prev.sentBy });
       if (ts > prev.lastTs) prev.lastTs = ts;
     }
   }
