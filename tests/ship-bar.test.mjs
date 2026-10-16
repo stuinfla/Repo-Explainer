@@ -27,10 +27,10 @@ import { fileURLToPath } from 'node:url';
 // with a space yields ".../Ruv%20Explainer/..." and spawning the tool fails).
 const DEPLOY = fileURLToPath(new URL('../tools/deploy.mjs', import.meta.url));
 
-function runDeploy(buildJson, envOverrides = {}) {
+function runDeploy(buildJson, envOverrides = {}, html = null) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-bar-'));
   fs.mkdirSync(path.join(dir, 'site'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'site', 'index.html'), '<!doctype html><title>t</title>');
+  fs.writeFileSync(path.join(dir, 'site', 'index.html'), html ?? '<!doctype html><title>Test explainer page</title>');
   fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify({
     repo: { url: 'https://github.com/o/r', slug: 'r' },
     page: { dir: path.join(dir, 'site') },
@@ -126,4 +126,11 @@ test('SOURCE SHAPE — deploy.mjs never throws on a quality VALUE (only on integ
   // And the positive half: the integrity refusal must still be present, or nothing guards delivery.
   assert.match(src, /INTEGRITY: refusing to deploy/,
     'the integrity refusal (ungraded page) must remain — ADR-0011 removed the QUALITY gate, not every gate');
+});
+
+test('SITE INTEGRITY — deploy refuses a page that links a file it does not ship, before touching any provider', () => {
+  const res = runDeploy({ quality: { passed: true, scorecard: belowBarScorecard } }, {}, '<!doctype html><title>Test explainer page</title><img src="assets/never-shipped.png">');
+  assert.notEqual(res.status, 0);
+  assert.match(res.stdout + res.stderr, /SITE INTEGRITY/);
+  assert.match(res.stdout + res.stderr, /never-shipped\.png/);
 });

@@ -1,0 +1,6 @@
+# The central "Ask this project" service for every explainmyrepo explainer.
+# Explainer sites stay pure static zip deploys; they call this one function. See ask-service/README.md.
+[build]
+  publish = "public"
+[functions]
+  directory = "netlify/functions"

@@ -25,6 +25,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { finalize as finalizeAsk } from '../src/ask.mjs';
+import { checkSite, formatResults, blockingFailures } from '../src/site-check.mjs';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const sanitize = (s) => String(s).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
@@ -133,6 +135,11 @@ async function deployNetlify({ pageDir, slug, ownerName }) {
   }
   console.error(`[deploy] netlify site '${name}' (id ${site.id})`);
 
+  // The Ask box's credential is bound to the FINAL host, which is only known here (name may have been
+  // disambiguated above). No secret → the box ships in closest-passages mode and says so.
+  const askResult = finalizeAsk(pageDir, `${name}.netlify.app`, process.env.ASK_SIGNING_SECRET);
+  if (askResult.ask !== 'absent') console.error(`[deploy] ask: ${JSON.stringify(askResult)}`);
+
   const zipPath = path.join(os.tmpdir(), `deploy-${name}-${Date.now()}.zip`);
   zipDir(pageDir, zipPath);
   const zipBuf = fs.readFileSync(zipPath);
@@ -193,6 +200,18 @@ async function main() {
   if (!slug) throw new Error('repo.slug missing in build.json (run clone-repo first)');
   if (!bc.page?.dir) throw new Error('page.dir missing in build.json (run assemble-page first)');
   if (!fs.existsSync(path.join(pageDir, 'index.html'))) throw new Error(`page.dir has no index.html: ${pageDir}`);
+
+  // SITE INTEGRITY (blocking): a page that links a file it does not ship, or carries a dead Ask box, would
+  // go live broken. The Ask credential is filled in later in this same step, so its placeholder is allowed here.
+  {
+    process.env.ASK_CHECK_ALLOW_PLACEHOLDER = '1';
+    const checks = checkSite(pageDir);
+    delete process.env.ASK_CHECK_ALLOW_PLACEHOLDER;
+    const bad = blockingFailures(checks);
+    if (bad.length) throw new Error(`SITE INTEGRITY: refusing to deploy a broken page —\n${formatResults(checks.filter((c) => !c.ok))}`);
+    const warn = checks.filter((c) => !c.ok);
+    if (warn.length) console.error(`[deploy] site checks (advisory):\n${formatResults(warn)}`);
+  }
 
   // ── HISTORY: THE SHIP-BAR RAIL, 2026-07-13 → 2026-08-06 (REMOVED — kept for the reasoning) ──────
   // For three weeks this boundary ENFORCED the gate's verdict. Two real incidents built it:
