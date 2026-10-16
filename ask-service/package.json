@@ -1,0 +1,1 @@
+{ "name": "explainmyrepo-ask-service", "private": true, "type": "module", "dependencies": { "@netlify/blobs": "latest" } }

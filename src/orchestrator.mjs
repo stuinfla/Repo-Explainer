@@ -23,6 +23,7 @@
 //   14 deploy ................. tool   (Station 8 — skip with --no-deploy)
 //   15 publish-repo ........... tool   (Station 8 — skip with --no-publish)
 //   16 repo-seo .............. tool   (Station 8 — skip with --no-publish)
+//   13c make-ask ............. tool   (Station 6c — adds the Ask box; NON-BLOCKING; the signed credential is added by deploy)
 //   17 readme-enhance ......... tool   (Station 8b — ON by default, skip with --no-readme-pr / README_ENHANCE=0, NON-BLOCKING)
 //   18 notify ................. tool   (Station 9 — NON-BLOCKING)
 
@@ -132,6 +133,7 @@ function stations(opts) {
     tool('make-diagrams', 'make-diagrams'),
     tool('assemble-page', 'assemble-page'),
     tool('make-pack', 'make-pack'),
+    tool('make-ask', 'make-ask', { fatal: false }),               // Station 6c — "Ask this project" box (non-blocking; skipped with ASK_DISABLE=1)
     tool('make-overview', 'make-overview', { fatal: false }),     // Station 6b — NotebookLM video + infographic, local door only, non-blocking
     tool('quality-grade', 'quality-grade'),
     tool('deploy', 'deploy'),

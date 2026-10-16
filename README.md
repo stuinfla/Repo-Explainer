@@ -128,6 +128,16 @@ project whose `.env` already holds your keys, so everything is picked up automat
 
 ---
 
+## Every explainer can answer follow-up questions
+
+Each page ends with an **Ask box**: type a question in plain words and get a short written answer, with
+numbered links to the exact files it came from. It searches the page and the repo's own files in the reader's
+browser, then a small model writes the answer through one central service (`ask-service/`) — the explainer stays
+a plain static site. If the service is down it shows the closest passages instead, and says so. Set
+`ASK_SIGNING_SECRET` (same value on the service and your build machine) to turn on written answers;
+`ASK_DISABLE=1` leaves the box off. Deploy also now refuses a page that links a file it does not ship.
+See `docs/adr/0016-ask-this-project.md`.
+
 ## Get started
 
 ```bash
