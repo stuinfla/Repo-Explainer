@@ -25,5 +25,8 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "overrides": {
+    "protobufjs": "7.5.5"
   }
 }
