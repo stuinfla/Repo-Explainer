@@ -6,15 +6,14 @@
 // raster image, and merges ONLY its own two slots back into build.json. The STRUCTURAL rungs
 // (architecture/flow/big-idea/insight SVGs) are make-diagrams' job, not this one.
 //
-// Image engine (2026-07-11, real evidence — see the QUALITY comment below for the A/B numbers):
-// PRIMARY = grok-imagine-image-quality (xAI). Live-measured 5-10s/image vs gpt-image-2's 44-120s
-// (10-23x faster), same visual quality tier for this flat-illustrative content, verified once the
-// correct params were found (Grok takes `aspect_ratio`+`resolution`, NOT `size` — that's OpenAI's
-// shape and Grok hard-rejects it). Native output can exceed our target px by design (we request a
-// resolution tier >= target so we only ever downscale via sharp, never upscale-blur) — see
-// GROK_PX_MAP. FALLBACK (if the Grok key/probe is unavailable) = gpt-image-2, quality "medium",
-// then gpt-image-1 if THAT probe fails too. If everything 404s we STOP LOUD with the failing IDs —
-// never a silent substitution, never a placeholder.
+// Image engine (as the code in main() actually selects it — corrected 3.0.1):
+// PRIMARY = OpenAI PRIMARY_MODEL (gpt-image-2.5-flare) at QUALITY (xhigh), for the hero AND every
+// section raster. If its probe fails -> FALLBACK_MODEL (gpt-image-2) at the same quality. Only when
+// there is no OpenAI key, or the whole OpenAI chain fails its probe, does Grok (GROK_MODEL, xAI) render.
+// Grok was primary on 2026-07-11 and was demoted on 2026-07-12 (see the engine comments in main()).
+// Grok takes `aspect_ratio`+`resolution`, NOT `size`; its native output can exceed our target px by
+// design (we only ever downscale via sharp) — see GROK_PX_MAP. If every probe fails we STOP LOUD with
+// the failing IDs — never a silent substitution, never a placeholder.
 //
 // Sizes: hero = 1536x1024; raster sections = 1024x1024 (valid sizes: 1024x1024, 1024x1536,
 // 1536x1024, auto — the DALL·E-3 1792x1024 is rejected). `auto` has no Grok mapping (falls
@@ -29,7 +28,8 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import crypto from 'node:crypto';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import sharp from 'sharp';
 
 const TOOLS_DIR = path.dirname(fileURLToPath(import.meta.url)); // tools/
@@ -232,6 +232,52 @@ async function generateOneGrok(prompt, targetPx, apiKey) {
 
 function safeName(s) { return String(s).replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'image'; }
 
+// ── IMAGE CACHE KEY (3.0.1) ─────────────────────────────────────────────────────────────────────
+// The resume cache used to reuse ANY valid PNG on disk, so a repair that rewrote a prompt and re-ran
+// this tool got the OLD picture back and the weakness only looked fixed. A cached file is now reused
+// only when its sidecar (`<file>.key.json`) records the same hash of everything that changes the
+// picture: the full prompt sent (palette suffix included), px, engine, quality. A legacy file with no
+// sidecar is REGENERATED, not trusted: we cannot know which prompt drew it, and re-rolling it costs
+// one image once, whereas trusting it would silently keep the exact bug this fixes.
+export function imageCacheKey({ prompt, px, engine, quality }) {
+  return crypto.createHash('sha256').update(JSON.stringify([String(prompt), String(px), String(engine), String(quality)])).digest('hex');
+}
+export const sidecarPath = (filePath) => `${filePath}.key.json`;
+export function cacheDecision(filePath, key) {
+  let buf;
+  try { buf = fs.readFileSync(filePath); } catch { return { reuse: false, reason: 'no file' }; }
+  if (!(buf.length > 0 && buf.subarray(0, 8).equals(PNG_MAGIC))) return { reuse: false, reason: 'not a valid PNG' };
+  let side;
+  try { side = JSON.parse(fs.readFileSync(sidecarPath(filePath), 'utf8')); } catch { return { reuse: false, reason: 'no cache-key sidecar (legacy file — regenerating)' }; }
+  if (side?.key !== key) return { reuse: false, reason: 'prompt/size/engine changed since this file was drawn' };
+  return { reuse: true, bytes: buf.length };
+}
+export function writeSidecar(filePath, key) {
+  fs.writeFileSync(sidecarPath(filePath), JSON.stringify({ key }) + '\n');
+}
+
+// ── IMAGE PRICING (3.0.1) ───────────────────────────────────────────────────────────────────────
+// USD per image, quality=high, last checked 2026-08-09. There is NO sourced rate for
+// gpt-image-2.5-flare (the primary) or for Grok, so those come back null and the total is reported as
+// UNPRICED (usd: null) — never as $0, which every receipt since the flare switch silently claimed.
+export const IMAGE_RATES = {
+  'gpt-image-2': { '1024x1024': 0.167, '1536x1024': 0.25, '1024x1536': 0.25 },
+  'gpt-image-1': { '1024x1024': 0.167, '1536x1024': 0.25, '1024x1536': 0.25 },
+};
+export function priceImages(items, rates = IMAGE_RATES) {
+  let sum = 0;
+  const perImage = [];
+  const unpricedEngines = new Set();
+  for (const { id, engine, px } of items) {
+    const rate = rates[engine]?.[px];
+    if (typeof rate === 'number') sum += rate; else unpricedEngines.add(engine);
+    perImage.push({ id, engine, px, usd: typeof rate === 'number' ? rate : null });
+  }
+  const unpriced = perImage.filter((p) => p.usd == null).length;
+  const pricedUsd = Math.round(sum * 1e4) / 1e4;
+  return { usd: unpriced ? null : pricedUsd, pricedUsd, unpriced, unpricedEngines: [...unpricedEngines], perImage };
+}
+
 // Build a deterministic colour-direction suffix from the brain's palette (pure transform).
 function paletteSuffix(palette) {
   if (!palette || typeof palette !== 'object') return '';
@@ -370,17 +416,19 @@ async function main() {
     const label = `${r.kind}${r.kind === 'section' ? `(${r.id})` : ''}`;
     const fileName = `${safeName(r.kind === 'hero' ? 'hero' : r.id)}.png`;
     const filePath = path.join(assetsDir, fileName);
-    // resume idempotency: reuse a valid PNG already on disk (from an earlier partial run) — don't re-roll finished work
-    try {
-      const cached = fs.readFileSync(filePath);
-      if (cached.length > 0 && cached.subarray(0, 8).equals(PNG_MAGIC)) {
-        console.error(`[generate-image] ${label}: reusing cached ${cached.length} bytes -> ${filePath}`);
-        return { rung: r, filePath, bytes: cached.length };
-      }
-    } catch { /* not cached — generate below */ }
+    // resume idempotency: reuse a PNG on disk ONLY if it was drawn from these exact inputs (see imageCacheKey)
+    const fullPrompt = String(r.prompt) + colourSuffix;
+    const rungEngine = r.kind === 'hero' ? engines.hero : engines.section;
+    const key = imageCacheKey({ prompt: fullPrompt, px: r.px, engine: rungEngine, quality: rungEngine === GROK_MODEL ? 'n/a' : QUALITY });
+    const cache = cacheDecision(filePath, key);
+    if (cache.reuse) {
+      console.error(`[generate-image] ${label}: reusing cached ${cache.bytes} bytes (same prompt/size/engine) -> ${filePath}`);
+      return { rung: r, filePath, bytes: cache.bytes };
+    }
+    if (cache.reason !== 'no file') console.error(`[generate-image] ${label}: not reusing ${filePath} — ${cache.reason}`);
     let buf, lastErr;
     for (let attempt = 1; attempt <= GEN_ATTEMPTS; attempt++) {
-      try { buf = await generateFn(String(r.prompt) + colourSuffix, r.px, r.kind); break; }
+      try { buf = await generateFn(fullPrompt, r.px, r.kind); break; }
       catch (e) {
         lastErr = e;
         if (attempt < GEN_ATTEMPTS) {
@@ -391,6 +439,7 @@ async function main() {
     }
     if (!buf) throw lastErr || new Error(`image generation failed after ${GEN_ATTEMPTS} attempts`);
     fs.writeFileSync(filePath, buf);
+    writeSidecar(filePath, key);
     console.error(`[generate-image] ${label}: ${buf.length} bytes -> ${filePath}`);
     return { rung: r, filePath, bytes: buf.length };
   }
@@ -426,25 +475,22 @@ async function main() {
   // is why "what does a build cost?" could only be answered by estimating. Per-image, per-size rates
   // are published and the image APIs return no charge, so this is DERIVED and labelled as such.
   // Rates last checked 2026-08-09; if they drift, the receipt is wrong in a visible, fixable way
-  // rather than silently absent.
-  const IMAGE_RATES = {                       // USD per image, quality=high
-    'gpt-image-2': { '1024x1024': 0.167, '1536x1024': 0.25, '1024x1536': 0.25 },
-    'gpt-image-1': { '1024x1024': 0.167, '1536x1024': 0.25, '1024x1536': 0.25 },
-  };
-  let imageUsd = 0;
-  const perImage = [];
-  for (const res of results) {
+  // rather than silently absent. An engine with no sourced rate is reported UNPRICED, never $0.
+  const priced = priceImages(results.map((res) => {
     const r = res.value.rung;
-    const eng = r.kind === 'hero' ? engines.hero : engines.section;
-    const rate = IMAGE_RATES[eng]?.[r.px];
-    if (typeof rate === 'number') imageUsd += rate;
-    perImage.push({ id: r.id || r.kind, engine: eng, px: r.px, usd: rate ?? null });
-  }
+    return { id: r.id || r.kind, engine: r.kind === 'hero' ? engines.hero : engines.section, px: r.px };
+  }));
+  if (priced.unpriced) console.error(`[generate-image] cost: ${priced.unpriced} image(s) UNPRICED — no sourced rate for ${priced.unpricedEngines.join(', ')}`);
   fresh.visuals.cost = {
-    usd: Math.round(imageUsd * 1e4) / 1e4,
+    usd: priced.usd,
+    pricedUsd: priced.pricedUsd,
+    unpriced: priced.unpriced,
+    unpricedEngines: priced.unpricedEngines,
     images: results.length,
-    perImage,
-    basis: 'derived from published per-image rates (the image APIs return no charge)',
+    perImage: priced.perImage,
+    basis: priced.unpriced
+      ? `UNPRICED: no sourced per-image rate for ${priced.unpricedEngines.join(', ')} — usd is null, not $0`
+      : 'derived from published per-image rates (the image APIs return no charge)',
     ratesCheckedAt: '2026-08-09',
   };
 
@@ -461,4 +507,9 @@ async function main() {
   });
 }
 
-main().catch((e) => fail(`unexpected error: ${e?.stack || e?.message || e}`));
+// Run only as a CLI, so tests can import the pure helpers above without firing the pipeline.
+const isDirectRun = (() => {
+  try { return !!process.argv[1] && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href; }
+  catch { return false; }
+})();
+if (isDirectRun) main().catch((e) => fail(`unexpected error: ${e?.stack || e?.message || e}`));

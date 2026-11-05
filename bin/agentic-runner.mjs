@@ -27,7 +27,8 @@ import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { classifyEndState, buildCurePrompt, CURE } from './cure.mjs';
+import { classifyEndState, buildCurePrompt, CURE, cureImproved, snapshotForCure, restoreCureSnapshot, discardCureSnapshot, shouldRestoreAfterCure,
+  maxBudgetArgs, createCostMeter, overUsdBackstop, isNativeBudgetStop } from './cure.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..');
@@ -450,6 +451,10 @@ if (executor.baseUrl) {
 }
 
 const claudeBin = process.env.CLAUDE_BIN || 'claude';
+// $ ceiling (review finding 8): Claude Code enforces it natively per turn; a streamed-usage meter
+// below is the backstop. Without either, --budget-usd only ever gated the cure step.
+const budgetArgs = maxBudgetArgs(budgetUsd);
+if (!budgetArgs.length) log(`WARN — --budget-usd "${args['budget-usd']}" is not a positive number; the main run has NO dollar ceiling`);
 const child = spawn(claudeBin, [
   '-p', prompt,
   '--permission-mode', 'bypassPermissions',
@@ -457,6 +462,7 @@ const child = spawn(claudeBin, [
   '--output-format', 'stream-json',
   '--verbose',
   '--model', executor.model,
+  ...budgetArgs,
   '--allowed-tools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep',
   // Defense in depth beyond the env allowlist above: observed live in testing (2026-07-04) that the
   // agent will happily `cat .env` if it perceives a missing credential and try to work around it —
@@ -479,6 +485,9 @@ let spawnErrorMsg = null;
 child.on('error', (e) => { spawnErrorMsg = e.message; log(`claude spawn FAILED TO START: ${e.message}`); });
 
 let killedForBudget = false;
+let killedForUsd = null; // null, or how the $ ceiling stopped the run ('native' | 'backstop')
+const costMeter = createCostMeter(executor.model);
+if (!costMeter.known) log(`WARN — no rate for ${executor.model}; the streamed $ backstop is off, only --max-budget-usd guards the ceiling`);
 let lastActivity = Date.now();
 let totalCostUsd = 0;
 let finalResultText = '';
@@ -492,6 +501,9 @@ function classifyFailure(reason) {
   const r = String(reason || '');
   if (/credit balance|insufficient.*balance|billing|usage limits|regain access/i.test(r)) {
     return `We ran this build for free, and it's been genuinely popular — the community budget is tapped out for the moment, not anything wrong with your repo. ${NPX_LINE}`;
+  }
+  if (/dollar budget/i.test(r)) {
+    return `Your repo needed more work than our free per-build budget covers this round — not a failure of the build itself. ${NPX_LINE}`;
   }
   if (/exceeded its.*budget|wall-clock/i.test(r)) {
     return `Your repo needed more time than we could give it for free this round — not a failure of the build itself. ${NPX_LINE}`;
@@ -540,6 +552,13 @@ child.stdout.on('data', (chunk) => {
     if (!line.trim()) continue;
     let evt;
     try { evt = JSON.parse(line); } catch { continue; }
+    costMeter.add(evt);
+    if (!killedForUsd && overUsdBackstop(costMeter.usd, budgetUsd)) {
+      killedForUsd = 'backstop';
+      log(`DOLLAR BUDGET EXCEEDED — streamed usage estimates $${costMeter.usd.toFixed(2)} against a $${budgetUsd} ceiling and the native cap did not stop the agent; stopping it now.`);
+      child.kill('SIGTERM');
+      setTimeout(() => child.kill('SIGKILL'), 10_000);
+    }
     if (evt.type === 'assistant' && Array.isArray(evt.message?.content)) {
       for (const block of evt.message.content) {
         if (block.type === 'tool_use') {
@@ -554,6 +573,10 @@ child.stdout.on('data', (chunk) => {
       sawResultEvent = true;
       totalCostUsd = evt.total_cost_usd || 0;
       finalResultText = evt.result || '';
+      if (isNativeBudgetStop(evt)) {
+        killedForUsd = killedForUsd || 'native';
+        log(`DOLLAR BUDGET EXCEEDED — Claude Code stopped the agent at $${totalCostUsd.toFixed(2)} (ceiling $${budgetUsd}).`);
+      }
       log(`agent finished: is_error=${evt.is_error} cost=$${totalCostUsd.toFixed(2)} turns=${evt.num_turns}`);
       // Two builds failed on 2026-07-09 with nothing but "exited 1" in the log — when the
       // session itself errors, its own words are the diagnosis. Log them.
@@ -568,6 +591,10 @@ const exitCode = await new Promise((resolve) => {
   child.on('error', () => resolve(-1)); // covers an 'error' that fires after this Promise is built
 });
 clearTimeout(hardTimer);
+if (!sawResultEvent && costMeter.usd > totalCostUsd) {
+  totalCostUsd = costMeter.usd; // no final `result` event (killed/crashed) — the streamed estimate is the best figure there is
+  log(`no result event — cost taken from the streamed usage estimate: ~$${totalCostUsd.toFixed(2)}`);
+}
 
 // ── Determine outcome ────────────────────────────────────────────────────────────────────────────
 const resultLineMatch = finalResultText.match(/RESULT:\s*(\{.*\})\s*$/s);
@@ -609,11 +636,15 @@ try {
 // lane exists to improve. classifyEndState distinguishes the two cases ('near-miss' = not yet
 // delivered, 'shipped-below-bar' = delivered and improvable); the redeploy is ratcheted so a live
 // page can only ever be replaced by a measurably better one.
-if (exitCode === 0 && !killedForBudget && !identityViolation) {
+const liveBeforeCure = liveUrl;
+let cureSnapshot = null;   // pre-cure copy of what the live page was built from (review finding 4)
+let cureRedeployed = false;
+let cureRecord = null;
+if (exitCode === 0 && !killedForBudget && !killedForUsd && !identityViolation) {
   try {
     const bc = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
     const endState = classifyEndState({
-      exitCode, killedForBudget, identityViolation, spawnError: spawnErrorMsg, liveUrl,
+      exitCode, killedForBudget: killedForBudget || Boolean(killedForUsd), identityViolation, spawnError: spawnErrorMsg, liveUrl,
       siteExists: fs.existsSync(path.join(buildDir, 'site', 'index.html')),
       quality: bc.quality,
     });
@@ -646,9 +677,10 @@ if (exitCode === 0 && !killedForBudget && !identityViolation) {
       {
         log(`cure stage: spawning the narrow cure agent (fix ONLY: ${endState.weaknesses.map((w) => `${w.device}/${w.name}`).join(', ')})`);
         const curePrompt = buildCurePrompt({ repoUrl, buildDir, weaknesses: endState.weaknesses, quality: q });
+        if (liveBeforeCure) cureSnapshot = snapshotForCure(buildDir);
         const c = spawnSync(claudeBin, [
           '-p', curePrompt, '--permission-mode', 'bypassPermissions', '--bare',
-          '--output-format', 'json', '--model', executor.model,
+          '--output-format', 'json', '--model', executor.model, ...maxBudgetArgs(budgetUsd - totalCostUsd),
           '--allowed-tools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep',
           '--disallowed-tools', 'Read(./.env)', 'Read(./.env.*)', 'Read(**/.env)', 'Read(**/.env.*)',
         ], { cwd: REPO_ROOT, env: agentEnv, encoding: 'utf8', timeout: CURE.AGENT_WALL_MS, maxBuffer: 32 * 1024 * 1024 });
@@ -662,7 +694,8 @@ if (exitCode === 0 && !killedForBudget && !identityViolation) {
       }
       if (cureAgentOk) {
         const before = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-        before.quality.iterations = before.quality.iterations - 1; // authorize exactly ONE verification grade
+        // authorize exactly ONE verification grade (never below 0: a gate-refusal cure arrives uncharged)
+        before.quality.iterations = Math.max(0, (Number.isInteger(before.quality.iterations) ? before.quality.iterations : 0) - 1);
         fs.writeFileSync(buildJsonPath, JSON.stringify(before, null, 2) + '\n');
         const g = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'quality-grade.mjs'), buildDir],
           { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: CURE.GRADE_WALL_MS });
@@ -673,6 +706,7 @@ if (exitCode === 0 && !killedForBudget && !identityViolation) {
           endState: endState.cls, weaknesses: endState.weaknesses.length,
           cureAgentSpawned: true, mainAgentNote: Boolean(savedNote), gradeExit: g.status,
         };
+        cureRecord = after.quality.cure;
         fs.writeFileSync(buildJsonPath, JSON.stringify(after, null, 2) + '\n');
         if (g.status === 0) {
           // THE RATCHET (ADR-0011 + 2026-08-06 adversarial review). When the page is ALREADY LIVE,
@@ -681,19 +715,8 @@ if (exitCode === 0 && !killedForBudget && !identityViolation) {
           // unconditional redeploy would let an automatic "cure" downgrade a delivered page.
           // Therefore: measure, and only replace on a strictly better verdict. Delivery is a floor
           // that is never given back — the cure may raise the page, never lower it.
-          const scoreOf = (qq) => {
-            const devs = Array.isArray(qq?.scorecard) ? qq.scorecard : [];
-            const axes = devs.flatMap((d2) => [...Object.values(d2.gateA || {}), ...Object.values(d2.gateB || {})])
-              .filter((n) => typeof n === 'number');
-            if (!axes.length) return null;
-            return { min: Math.min(...axes), mean: axes.reduce((a, b) => a + b, 0) / axes.length };
-          };
           const wasLive = Boolean(liveUrl);
-          const pre = scoreOf(before.quality);
-          const post = scoreOf(after.quality);
-          const improved = !pre || !post
-            ? false
-            : (post.min > pre.min) || (post.min === pre.min && post.mean > pre.mean + 0.5);
+          const { improved, pre, post } = cureImproved(before.quality, after.quality); // bin/cure.mjs, unit-tested
           if (wasLive && !improved) {
             log(`cure stage: the cure did NOT improve the page (min ${pre?.min}→${post?.min}, mean ${pre?.mean?.toFixed(1)}→${post?.mean?.toFixed(1)}) `
               + `— KEEPING the already-delivered version. A live page is never replaced by a worse one.`);
@@ -704,6 +727,7 @@ if (exitCode === 0 && !killedForBudget && !identityViolation) {
             const shipped = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
             if (d.status === 0 && shipped.publish?.liveUrl && shipped.publish?.http200) {
               liveUrl = shipped.publish.liveUrl;
+              cureRedeployed = true;
               log(`cure stage: ${wasLive ? 'IMPROVED AND REDEPLOYED' : 'CURED AND SHIPPED'} — ${liveUrl}`);
             } else if (wasLive) {
               log(`cure stage: redeploy of the improved page failed (exit ${d.status}) — the originally delivered page is still live and untouched`);
@@ -720,14 +744,27 @@ if (exitCode === 0 && !killedForBudget && !identityViolation) {
     }
   } catch (e) { log(`cure stage: skipped on error (${e?.message || e}) — run outcome unchanged`); }
 }
+if (cureSnapshot) {
+  // The cured version did not replace the live page: put back exactly what IS live, so the status
+  // gist and the requester email describe the deployed page, not the rejected repair.
+  if (shouldRestoreAfterCure({ wasLive: liveBeforeCure, redeployed: cureRedeployed })) {
+    try {
+      restoreCureSnapshot(buildDir, cureSnapshot, cureRecord ? { ...cureRecord, outcome: 'not-deployed — build dir restored to the live version' } : null);
+      log('cure stage: restored site/, assets/ and build.json to the version that is actually live');
+    } catch (e) { log(`cure stage: RESTORE FAILED (${e?.message || e}) — build.json/site may describe the rejected repair, not the live page`); }
+  }
+  discardCureSnapshot(cureSnapshot);
+}
 
-const budgetExceeded = killedForBudget;
+const budgetExceeded = killedForBudget || Boolean(killedForUsd);
 const ok = exitCode === 0 && !budgetExceeded && !!liveUrl && !identityViolation;
 const elapsedMin = ((Date.now() - (lastActivity - 0)) / 60000); // approx; refined below
 const reason = identityViolation
   ? `SOURCE-IDENTITY VIOLATION: ${identityViolation} — treating any deploy from this run as invalid`
   : spawnErrorMsg
   ? `could not start the claude binary: ${spawnErrorMsg}`
+  : killedForUsd
+  ? `exceeded its $${budgetUsd} dollar budget before finishing (~$${totalCostUsd.toFixed(2)} spent; stopped by ${killedForUsd === 'native' ? 'Claude Code --max-budget-usd' : 'the streamed-usage backstop'})`
   : budgetExceeded
   ? `exceeded its ${budgetMin}-minute budget before finishing`
   : agentReported && agentReported.ok === false ? agentReported.reason

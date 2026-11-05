@@ -253,19 +253,33 @@ async function runStations(subList, baseArgs, total, startIdx) {
   for (const s of subList) {
     i++;
     step(i, total, s.id, s.kind);
+    const t0 = Date.now();
     let r;
     try { r = await s.run(baseArgs); }
     catch (e) { r = { ok: false, error: e.message }; }
+    const sec = Math.round((Date.now() - t0) / 100) / 10;
     if (r.ok) {
-      log(`${C.green}✓ ${s.id}${C.reset}${r.skipped ? ` ${C.dim}(${r.skipped})${C.reset}` : ''}`);
-      results.push({ id: s.id, ok: true });
+      log(`${C.green}✓ ${s.id}${C.reset} (${sec}s)${r.skipped ? ` ${C.dim}(${r.skipped})${C.reset}` : ''}`);
+      results.push({ id: s.id, ok: true, sec });
     } else {
-      results.push({ id: s.id, ok: false, error: r.error });
-      if (s.fatal) { log(`${C.red}✗ ${s.id} FAILED:${C.reset} ${r.error}`); return { ok: false, failedAt: s.id, error: r.error, results }; }
-      log(`${C.yellow}⚠ ${s.id} failed (non-blocking): ${r.error}${C.reset}`);
+      results.push({ id: s.id, ok: false, error: r.error, sec });
+      if (s.fatal) { log(`${C.red}✗ ${s.id} FAILED (${sec}s):${C.reset} ${r.error}`); return { ok: false, failedAt: s.id, error: r.error, results }; }
+      log(`${C.yellow}⚠ ${s.id} failed (non-blocking) (${sec}s): ${r.error}${C.reset}`);
     }
   }
   return { ok: true, results };
+}
+
+// Per-station wall-clock table for the receipt. PURE (unit-tested): rows = runStations results.
+export function stationTimingTable(rows = []) {
+  const list = (rows || []).filter((r) => r && r.id);
+  const w = Math.max('station'.length, 'total'.length, ...list.map((r) => String(r.id).length));
+  const fmt = (n) => (typeof n === 'number' && Number.isFinite(n) ? n : 0).toFixed(1);
+  const lines = [`${'station'.padEnd(w)}  seconds`];
+  for (const r of list) lines.push(`${String(r.id).padEnd(w)}  ${fmt(r.sec)}${r.ok ? '' : '  (failed)'}`);
+  const total = Math.round(list.reduce((t, r) => t + (Number.isFinite(r.sec) ? r.sec : 0), 0) * 10) / 10;
+  lines.push(`${'total'.padEnd(w)}  ${fmt(total)}`);
+  return lines;
 }
 
 const sumMean = (q) => (Array.isArray(q?.scorecard) ? q.scorecard.reduce((s, c) => s + (c.meanScore || 0), 0) : 0);
@@ -283,7 +297,51 @@ export function refineBudget(asked, gradesUsed = 1) {
   return Math.max(0, Math.min(asked, GRADER_MAX_GRADES - 1, GRADER_MAX_GRADES - gradesUsed));
 }
 
-async function refineLoop({ buildDir, env, model, apiKey, opts }) {
+// Which iteration is "best" (review 3.0.1 #3 + the live ruvllm 3.0.0 build). A real scorecard for THIS
+// copy beats an ungraded copy that cleared the deterministic pre-checks, which beats a copy the
+// pre-checks refused (fewer violations first). The old rule compared sumMean alone, so an ungraded
+// pass (mean 0) could never win, and a pre-check refusal (which keeps the PREVIOUS copy's scorecard)
+// was ranked by grades it never earned.
+export function iterationRank(q) {
+  if (!q) return { tier: -1, score: 0 };
+  const scored = Array.isArray(q.scorecard) && q.scorecard.length > 0;
+  if (q.gateRefusal) {
+    const n = (k) => (Array.isArray(q[k]?.violations) ? q[k].violations.length : 0);
+    return { tier: 0, score: -(n('inv20') + n('inv24')) };
+  }
+  if (scored && q.graderUnavailable !== true) return { tier: 2, score: sumMean(q) };
+  if (q.graderUnavailable === true) return { tier: 1, score: 0 };
+  return { tier: -1, score: 0 };
+}
+const rankBetter = (a, b) => a.tier > b.tier || (a.tier === b.tier && a.score > b.score);
+
+// The full-page screenshots are re-written in place by every grade, so the best iteration's files
+// would be overwritten by later (worse) passes. Keep a copy and point the saved slot at it.
+function snapshotBest(q) {
+  const copy = JSON.parse(JSON.stringify(q || {}));
+  const keep = (p) => {
+    if (typeof p !== 'string' || !fs.existsSync(p)) return p;
+    const dest = path.join(path.dirname(p), `best-${path.basename(p)}`);
+    try { fs.copyFileSync(p, dest); return dest; } catch { return p; }
+  };
+  if (copy.screenshots && typeof copy.screenshots === 'object') {
+    for (const k of Object.keys(copy.screenshots)) copy.screenshots[k] = keep(copy.screenshots[k]);
+  }
+  for (const c of (Array.isArray(copy.scorecard) ? copy.scorecard : [])) if (c.screenshot) c.screenshot = keep(c.screenshot);
+  return copy;
+}
+
+// A refine pass only re-authors COPY, so it can only help when a copy-addressable weakness exists:
+// a substance axis (A*) or a reader/operator question. The overall-MEAN note alone is a consequence,
+// not a cause — with only design/imagery/diagram (B*, INV-18) failures a rewrite is a full 8-section
+// brain call plus a vision grade that cannot move them (review 3.0.1 #9b).
+export function contentFixable(notes) {
+  return (notes || []).some((n) => /^A\d|^operator:/.test(String(n?.criterion || '')));
+}
+
+export async function refineLoop({ buildDir, env, model, apiKey, opts }, deps = {}) {
+  const author = deps.authorContent || authorContent;
+  const tool = deps.runTool || runTool;
   // ── #17.7 (pacphi): --max-refine must not promise passes the grader will refuse ────────────────
   // tools/quality-grade.mjs enforces its own hard MAX_QUALITY_ITERATIONS = 3 (1 initial grade + 2
   // refines) and, past it, returns the PRIOR scorecard unchanged at zero cost rather than re-grading.
@@ -303,41 +361,76 @@ async function refineLoop({ buildDir, env, model, apiKey, opts }) {
     log(`${C.yellow}grader cap already spent (${q?.iterations}/${GRADER_MAX_GRADES} grades)${C.reset} ${C.dim}— skipping refine passes: a re-author now `
       + `would be a full brain call whose result the grader refuses to read.${C.reset}`);
   }
-  // Fewer INV-20 violations breaks mean ties: when every iteration fails the deterministic acronym
-  // gate (all means 0), "best" must be the one CLOSEST to clean, not whichever came first.
-  const inv20Count = (qq) => (Array.isArray(qq?.inv20?.violations) ? qq.inv20.violations.length : 0);
-  let best = { mean: sumMean(q), inv20: inv20Count(q), content: (() => { try { return readContext(buildDir).content; } catch { return null; } })() };
+  const contentNow = () => { try { return readContext(buildDir).content; } catch { return null; } };
+  let best = { rank: iterationRank(q), content: contentNow(), quality: snapshotBest(q) };
   let pass = 0;
   while (q && !q.passed && pass < MAX) {
-    pass++;
     const fb = (q.refineNotes || []).filter((n) => /^A\d|^operator:|^MEAN$/.test(n.criterion));
+    if (!contentFixable(fb)) {
+      log(`${C.dim}refine skipped — every remaining weakness is design, imagery or diagrams; rewriting the copy cannot move those.${C.reset}`);
+      break;
+    }
+    pass++;
     const axes = [...new Set(fb.map((f) => f.criterion))].join(', ') || 'the weak axes';
     log(`\n${C.bold}${C.cyan}Refine pass ${pass}/${MAX}${C.reset} ${C.dim}(re-authoring content to lift ${axes})${C.reset}`);
     const ctx = readContext(buildDir); ctx._repoRoot = REPO_ROOT;
-    try { mergeSlot(buildDir, 'content', await authorContent(ctx, { apiKey, model, feedback: fb })); }
+    try { mergeSlot(buildDir, 'content', await author(ctx, { apiKey, model, feedback: fb })); }
     catch (e) { log(`${C.yellow}refine: content re-author failed (${e.message}) — stopping refine${C.reset}`); break; }
-    const a = runTool('assemble-page', buildDir, { repoRoot: REPO_ROOT, env });
+    const a = tool('assemble-page', buildDir, { repoRoot: REPO_ROOT, env });
     if (!a.ok) { log(`${C.yellow}refine: assemble-page failed (${a.error}) — stopping refine${C.reset}`); break; }
-    const g = runTool('quality-grade', buildDir, { repoRoot: REPO_ROOT, env });
-    if (!g.ok) { log(`${C.yellow}refine: quality-grade failed (${g.error}) — stopping refine${C.reset}`); break; }
+    const before = JSON.stringify(readQuality(buildDir));
+    const g = tool('quality-grade', buildDir, { repoRoot: REPO_ROOT, env });
     q = readQuality(buildDir);
-    const m = sumMean(q);
-    log(`${C.dim}refine pass ${pass}: mean(sum of devices)=${m}  passed=${q?.passed}${C.reset}`);
-    const v = inv20Count(q);
-    if (m > best.mean || (m === best.mean && v < best.inv20)) best = { mean: m, inv20: v, content: readContext(buildDir).content };
+    // A grader outage that quality-grade RECORDED for this copy still describes this copy (pre-checks
+    // passed, ungraded) and is a candidate; any other failure leaves a slot about an older copy.
+    const freshOutage = !g.ok && q?.graderUnavailable === true && JSON.stringify(q) !== before;
+    if (g.ok || freshOutage) {
+      const rank = iterationRank(q);
+      if (rankBetter(rank, best.rank)) best = { rank, content: contentNow(), quality: snapshotBest(q) };
+    }
+    if (!g.ok) { log(`${C.yellow}refine: quality-grade failed (${g.error}) — stopping refine${C.reset}`); break; }
+    log(`${C.dim}refine pass ${pass}: mean(sum of devices)=${sumMean(q)}  passed=${q?.passed}${C.reset}`);
   }
-  // not passing → restore the BEST iteration so the local build is the strongest we reached
+  // not passing → restore the BEST iteration's content AND its quality slot. Re-grading here is what
+  // went wrong before: at the cap quality-grade refuses and leaves the LAST pass's scorecard beside the
+  // best pass's content, and a pre-check failure on the restored copy re-wrote the slot as a refusal.
   if (q && !q.passed && best.content) {
     const cur = readContext(buildDir);
     if (JSON.stringify(cur.content) !== JSON.stringify(best.content)) {
-      log(`${C.dim}restoring the best-scoring iteration (mean ${best.mean})${C.reset}`);
+      log(`${C.dim}restoring the best iteration (tier ${best.rank.tier}, score ${best.rank.score}) — its content and its own grade${C.reset}`);
       mergeSlot(buildDir, 'content', best.content);
-      runTool('assemble-page', buildDir, { repoRoot: REPO_ROOT, env });
-      runTool('quality-grade', buildDir, { repoRoot: REPO_ROOT, env });
+      tool('assemble-page', buildDir, { repoRoot: REPO_ROOT, env });
+      const ctx2 = readContext(buildDir);
+      ctx2.quality = {
+        ...best.quality,
+        // spend and the grade budget are cumulative facts about the BUILD, not about one iteration
+        ...(Number.isInteger(cur.quality?.iterations) ? { iterations: cur.quality.iterations } : {}),
+        ...(cur.quality?.cost ? { cost: cur.quality.cost } : {}),
+        restoredBest: true,
+      };
+      fs.writeFileSync(path.join(buildDir, 'build.json'), JSON.stringify(ctx2, null, 2) + '\n');
       q = readQuality(buildDir);
     }
   }
   return q;
+}
+
+// What a BELOW-BAR local build does next (pure, unit-tested). An empty scorecard with a RECORDED reason
+// is not a diagram failure (review 3.0.1 #2, and the live ruvllm 3.0.0 build held as "the mandatory
+// diagrams did not render" while both diagrams rendered): a deterministic pre-check refusal
+// (quality.gateRefusal) or a grader outage (quality.graderUnavailable) means no vision verdict exists for
+// this copy, and tools/deploy.mjs delivers both with that disclosed.
+export function belowBarVerdict(quality) {
+  const scored = !!(quality && Array.isArray(quality.scorecard) && quality.scorecard.length);
+  if (!scored && quality?.gateRefusal) {
+    return { action: 'deliver-ungraded', why: `the copy failed a deterministic reader check before the vision grade (${quality.gateRefusal})` };
+  }
+  if (!scored && quality?.graderUnavailable === true) {
+    return { action: 'deliver-ungraded', why: `the vision grader was unavailable (${String(quality.graderError || 'no detail recorded').slice(0, 160)})` };
+  }
+  if (!scored) return { action: 'hold', why: 'no quality scorecard was produced and no reason was recorded' };
+  if (!quality.scorecard.some((c) => c.inv18?.passed)) return { action: 'hold', why: 'the mandatory diagrams did not render' };
+  return { action: 'deliver', why: 'below the bar, structurally sound' };
 }
 
 function finalSummary(outDir) {
@@ -363,7 +456,7 @@ function reportQualityGap(quality) {
   for (const n of (quality.refineNotes || [])) {
     const k = n.device + n.criterion;
     if (seen.has(k)) continue; seen.add(k);
-    log(`   ${C.yellow}• [${n.device}] ${n.criterion} (${n.score})${C.reset} ${C.dim}${String(n.saw || '').replace(/\s+/g, ' ').slice(0, 150)}${C.reset}`);
+    log(`   ${C.yellow}• [${n.device}] ${n.criterion} (${n.score})${C.reset} ${C.dim}${String(n.saw || n.note || '').replace(/\s+/g, ' ').slice(0, 150)}${C.reset}`);
   }
 }
 
@@ -375,12 +468,25 @@ function reportQualityGap(quality) {
 // Three ledgers: the brain is MEASURED (OpenRouter reports a real per-call charge); rasters and the
 // vision grade are DERIVED from published rates, because those APIs return none. The split is
 // printed rather than hidden — a derived number must never be mistaken for a measured one.
-function printReceipt(outDir, startedAt) {
+// Partial (--from/--only) runs print only timing: rewriting the cost slot from a slice's spend would
+// understate the build's real total.
+function printTiming(outDir, stations) {
+  if (!Array.isArray(stations) || !stations.length) return;
+  try { mergeSlot(outDir, 'timing', { stations: stations.map((r) => ({ id: r.id, ok: r.ok, sec: r.sec })) }); } catch { /* best-effort */ }
+  for (const line of stationTimingTable(stations)) log(`${C.dim}${line}${C.reset}`);
+}
+export function formatImagesCost(images = {}) {
+  if (images && images.usd === null) return `images UNPRICED (${images.images || 0})`;
+  return `images $${((images && images.usd) || 0).toFixed(4)} (${(images && images.images) || 0}, derived)`;
+}
+function printReceipt(outDir, startedAt, stations = null) {
   try {
     const ctx = readContext(outDir);
     const brain = getBrainSpend();
     const images = ctx.visuals?.cost || { usd: 0, images: 0 };
     const grading = ctx.quality?.cost || { usd: 0, calls: 0 };
+    // generate-image records usd:null when any image has no known price — never print that as $0.
+    const imagesUnpriced = images.usd === null;
     const total = Math.round((brain.usd + (images.usd || 0) + (grading.usd || 0)) * 1e4) / 1e4;
     const elapsedSec = Math.round((Date.now() - startedAt) / 1000);
     mergeSlot(outDir, 'cost', {
@@ -389,10 +495,11 @@ function printReceipt(outDir, startedAt) {
       images, grading, elapsedSec,
     });
     log('');
-    log(`${C.bold}Cost:${C.reset} ${C.green}$${total.toFixed(4)}${C.reset}  ${C.dim}= brain $${brain.usd.toFixed(4)} (${brain.calls} calls, measured)`
-      + ` + images $${(images.usd || 0).toFixed(4)} (${images.images || 0}, derived)`
+    log(`${C.bold}Cost:${C.reset} ${C.green}$${total.toFixed(4)}${imagesUnpriced ? ' + unpriced images' : ''}${C.reset}  ${C.dim}= brain $${brain.usd.toFixed(4)} (${brain.calls} calls, measured)`
+      + ` + ${formatImagesCost(images)}`
       + ` + grading $${(grading.usd || 0).toFixed(4)} (${grading.calls || 0} calls, derived)${C.reset}`);
     log(`${C.bold}Time:${C.reset} ${elapsedSec}s`);
+    printTiming(outDir, stations);
   } catch { /* a receipt must never be the thing that fails a good build */ }
 }
 
@@ -462,8 +569,9 @@ export async function run(repoUrl, opts = {}) {
   // No quality gate in this slice (--no-quality, or a partial --only/--from run) → run linearly.
   if (qIdx === -1) {
     const r = await runStations(list, baseArgs, total, 0);
-    if (!r.ok) { log(`\n${C.red}${C.bold}Build stopped at "${r.failedAt}".${C.reset} Resume: ${C.cyan}--from ${r.failedAt} --out ${outDir}${C.reset}`); return { ok: false, failedAt: r.failedAt, error: r.error, outDir, results: r.results }; }
+    if (!r.ok) { log(`\n${C.red}${C.bold}Build stopped at "${r.failedAt}".${C.reset} Resume: ${C.cyan}--from ${r.failedAt} --out ${outDir}${C.reset}`); printTiming(outDir, r.results); return { ok: false, failedAt: r.failedAt, error: r.error, outDir, results: r.results }; }
     finalSummary(outDir);
+    printTiming(outDir, r.results);
     return { ok: true, outDir, results: r.results };
   }
 
@@ -471,7 +579,11 @@ export async function run(repoUrl, opts = {}) {
   const pre = list.slice(0, qIdx + 1);
   const post = list.slice(qIdx + 1);
   const preR = await runStations(pre, baseArgs, total, 0);
-  if (!preR.ok) { log(`\n${C.red}${C.bold}Build stopped at "${preR.failedAt}".${C.reset} Resume: ${C.cyan}--from ${preR.failedAt} --out ${outDir}${C.reset}`); return { ok: false, failedAt: preR.failedAt, error: preR.error, outDir, results: preR.results }; }
+  // A grader OUTAGE on the first grade is recorded by quality-grade (quality.graderUnavailable) and
+  // ADR-0011 delivers such a page ungraded with that said plainly — it is not a reason to stop here.
+  const outageOnly = !preR.ok && preR.failedAt === 'quality-grade' && readQuality(outDir)?.graderUnavailable === true;
+  if (outageOnly) log(`${C.yellow}quality-grade: the grader was unavailable — continuing; the page is delivered ungraded and says so (ADR-0011).${C.reset}`);
+  if (!preR.ok && !outageOnly) { log(`\n${C.red}${C.bold}Build stopped at "${preR.failedAt}".${C.reset} Resume: ${C.cyan}--from ${preR.failedAt} --out ${outDir}${C.reset}`); printReceipt(outDir, startedAt, preR.results); return { ok: false, failedAt: preR.failedAt, error: preR.error, outDir, results: preR.results }; }
 
   let quality = readQuality(outDir);
   if (quality && !quality.passed && !opts.noRefine) {
@@ -492,17 +604,25 @@ export async function run(repoUrl, opts = {}) {
     // local build of sindresorhus/p-map, whose page scored mean 93 on mobile and was held anyway.
     // The ADR's D1 is explicit that delivery is gated on INTEGRITY, not on quality — and the
     // integrity condition is already computed right here as `diagramsOk`.
-    const diagramsOk = !!(quality && Array.isArray(quality.scorecard) && quality.scorecard.some((c) => c.inv18?.passed));
-    if (!diagramsOk) {
-      log(`\n${C.yellow}${C.bold}Held — the mandatory diagrams did not render. That is an INTEGRITY failure, not a low score.${C.reset}`);
-      log(`${C.dim}Best local build: ${outDir}/site . This is the one thing we will not ship broken (ADR-0011 D1). Fix the diagrams, then: ${C.cyan}--from ${post[0] ? post[0].id : 'deploy'} --out ${outDir}${C.reset}`);
-      printReceipt(outDir, startedAt);
-      return { ok: false, gated: true, quality, outDir, results: preR.results };
-    }
+    // An empty scorecard with a RECORDED reason is not a diagram failure (review 3.0.1 #2, and the live
+    // ruvllm 3.0.0 build that was held as "diagrams did not render" while both diagrams rendered): a
+    // deterministic pre-check refusal (quality.gateRefusal) or a grader outage (quality.graderUnavailable)
+    // means no vision verdict exists for this copy. tools/deploy.mjs delivers both with that disclosed.
+    const verdict = belowBarVerdict(quality);
     if (opts.shipBestEffort) log(`${C.dim}--ship-best-effort is now the default (ADR-0011) and no longer changes anything.${C.reset}`);
-    const meanBE = quality.scorecard.map((c) => `${String(c.device).replace(/\(.*/, '')} ${c.meanScore}`).join(' / ');
-    log(`\n${C.yellow}${C.bold}Below the bar (mean ${meanBE}) — delivering anyway, with the scorecard attached (ADR-0011).${C.reset}`);
-    log(`${C.dim}Structurally sound (mandatory diagrams present). The per-axis gaps above are recorded in the scorecard and delivered honestly, not hidden. A stranger always gets a real page.${C.reset}`);
+    if (verdict.action === 'deliver-ungraded') {
+      log(`\n${C.yellow}${C.bold}Not vision-graded — ${verdict.why}. Delivering anyway, with that stated plainly (ADR-0011).${C.reset}`);
+      log(`${C.dim}No scorecard exists for this copy, so diagram legibility was not judged by the grader. Best local build: ${outDir}/site${C.reset}`);
+    } else if (verdict.action === 'hold') {
+      log(`\n${C.yellow}${C.bold}Held — ${verdict.why}. That is an INTEGRITY failure, not a low score.${C.reset}`);
+      log(`${C.dim}Best local build: ${outDir}/site . This is the one thing we will not ship broken (ADR-0011 D1). Fix it, then: ${C.cyan}--from ${post[0] ? post[0].id : 'deploy'} --out ${outDir}${C.reset}`);
+      printReceipt(outDir, startedAt, preR.results);
+      return { ok: false, gated: true, quality, outDir, results: preR.results };
+    } else {
+      const meanBE = quality.scorecard.map((c) => `${String(c.device).replace(/\(.*/, '')} ${c.meanScore}`).join(' / ');
+      log(`\n${C.yellow}${C.bold}Below the bar (mean ${meanBE}) — delivering anyway, with the scorecard attached (ADR-0011).${C.reset}`);
+      log(`${C.dim}Structurally sound (mandatory diagrams present). The per-axis gaps above are recorded in the scorecard and delivered honestly, not hidden. A stranger always gets a real page.${C.reset}`);
+    }
   } else {
     const meanPair = quality.scorecard.map((c) => `${String(c.device).replace(/\(.*/, '')} ${c.meanScore}`).join(' / ');
     if (quality.exemplary) {
@@ -521,7 +641,7 @@ export async function run(repoUrl, opts = {}) {
   // returns a real per-call charge), the rasters and the vision grade (both DERIVED from published
   // rates, because those APIs return no charge). The split is printed, not hidden, so nobody mistakes
   // a derived figure for a measured one.
-  printReceipt(outDir, startedAt);
+  printReceipt(outDir, startedAt, [...preR.results, ...postR.results]);
 
   return { ok: postR.ok !== false, outDir, results: [...preR.results, ...postR.results] };
 }

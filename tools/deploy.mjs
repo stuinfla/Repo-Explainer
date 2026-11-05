@@ -252,12 +252,20 @@ async function main() {
   // genuinely errors) is deliverable, because we can still describe the page honestly — "we could not
   // grade this one" is a true and useful statement. A MISSING scorecard with no recorded reason is
   // not: that is an unrun station, and shipping it would be a silent green.
-  if (ungraded && q?.graderUnavailable !== true) {
+  // A deterministic pre-check refusal (INV-20 acronyms / INV-24 reading level, recorded by quality-grade
+  // as quality.gateRefusal) is a KNOWN reason, not an unrun station: the copy was measured and the
+  // measurement is disclosable. Refusing here let one over-long sentence stop a finished page (review
+  // 3.0.1 #2), the exact outcome ADR-0011 forbids.
+  const gateRefusal = (typeof q?.gateRefusal === 'string' && q.gateRefusal.trim()) ? q.gateRefusal.trim() : null;
+  if (ungraded && q?.graderUnavailable !== true && !gateRefusal) {
     throw new Error('INTEGRITY: refusing to deploy — build.json has no quality scorecard and no recorded grader failure. '
       + 'We ship below-bar pages and we ship ungraded pages when the grader is genuinely down (quality.graderUnavailable), '
       + 'but never a page whose quality was simply never assessed (ADR-0011 D1).');
   }
-  if (ungraded) {
+  if (ungraded && gateRefusal) {
+    console.error(`[deploy] ADR-0011 — delivering a page that failed a deterministic pre-check before vision grading (${gateRefusal}). `
+      + 'The requester is told plainly what failed; there is no vision scorecard for this copy.');
+  } else if (ungraded) {
     console.error('[deploy] ADR-0011 — delivering UNGRADED: the grader was recorded unavailable '
       + `(${q.graderUnavailable === true ? q.graderError || 'no detail recorded' : ''}). The requester is told plainly that this page was not graded.`);
   }
@@ -288,6 +296,11 @@ async function main() {
   // false purely from an operator question or an INV-18 diagram failure, where naming "spacing and
   // rhythm - 83" is a confident, specific, WRONG answer while the truth was an invisible diagram.
   let lowestAxis = null, nonNumeric = null;
+  // The pre-check measured THIS copy; any scorecard kept beside it graded an earlier version. So the
+  // refusal is the honest weakest point and outranks the numbers (both pre-checks are reader-level).
+  const refusalWeakest = gateRefusal
+    ? { axis: (gateRefusal.match(/^INV-\d+/) || ['pre-check'])[0], score: null, device: 'both', label: OPERATOR_LABEL.zeroKnowledgeReader }
+    : null;
   for (const dev of (q?.scorecard || [])) {
     for (const [axis, score] of Object.entries({ ...(dev.gateA || {}), ...(dev.gateB || {}) })) {
       if (typeof score !== 'number') continue;
@@ -300,9 +313,9 @@ async function main() {
       if (ok === false && !nonNumeric) nonNumeric = { axis: `operator:${op}`, score: null, device: dev.device, label: OPERATOR_LABEL[op] || op };
     }
   }
-  const weakest = (lowestAxis && lowestAxis.score < 70) ? lowestAxis : (nonNumeric || lowestAxis);
+  const weakest = refusalWeakest || ((lowestAxis && lowestAxis.score < 70) ? lowestAxis : (nonNumeric || lowestAxis));
   const belowBar = q?.passed !== true;
-  const graderUnavailable = ungraded;
+  const graderUnavailable = ungraded && !gateRefusal;
   if (belowBar) {
     console.error(`[deploy] ADR-0011 — shipping BELOW THE BAR (weakest: ${weakest?.device} ${weakest?.axis}=${weakest?.score}, "${weakest?.label}"). `
       + 'The page is delivered with an honest note; the scorecard is unchanged and fully recorded.');

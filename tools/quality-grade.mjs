@@ -1042,10 +1042,8 @@ async function main() {
   const inv20Violations = findUnexplainedAcronyms(extractRungText(fs.readFileSync(htmlPath, 'utf8')));
   if (inv20Violations.length) {
     log(`INV-20 FAIL: unexplained acronym(s) in ladder rungs 1-4: ${inv20Violations.join(', ')} — failing before the vision pass (zero tokens)`);
-    const refineNotes = [{
-      device: 'both', criterion: 'operator:zeroKnowledgeReader', score: 0,
-      note: `INV-20 UnexplainedAcronymZero: the first four sections (hero, problem, what-it-is, insight) use ${inv20Violations.join(', ')} with no plain-words gloss at first use. The reader is a smart developer from a DIFFERENT domain — define each term inline (e.g. "SSG (pre-building pages as plain files)") or replace it with plain language.`,
-    }];
+    const inv20Note = `INV-20 UnexplainedAcronymZero: the first four sections (hero, problem, what-it-is, insight) use ${inv20Violations.join(', ')} with no plain-words gloss at first use. The reader is a smart developer from a DIFFERENT domain — define each term inline (e.g. "SSG (pre-building pages as plain files)") or replace it with plain language.`;
+    const refineNotes = [{ device: 'both', criterion: 'operator:zeroKnowledgeReader', score: 0, note: inv20Note, saw: inv20Note }];
     // NO iteration charge and NO scorecard wipe (fixed 2026-07-15): the cap exists to bound the
     // EXPENSIVE two-device vision round trip, but this path costs zero tokens — and on the
     // autonomous-wealth-builder build it silently ate 2 of the 3 allowed grades, so the agent's
@@ -1057,6 +1055,10 @@ async function main() {
       screenshots: ctx.quality?.screenshots || {}, pageHeights: ctx.quality?.pageHeights || {},
       refineNotes,
       inv20: { passed: false, violations: inv20Violations },
+      // The machine-readable REASON this page has no scorecard for its current copy (review 3.0.1 #2).
+      // Without it an empty scorecard is indistinguishable from an unrun station, so deploy refused
+      // "no scorecard" and the local door blamed the diagrams — one long sentence stopped a finished page.
+      gateRefusal: `INV-20 unexplained acronym(s): ${inv20Violations.join(', ')}`,
       gradedAt: new Date().toISOString(),
     };
     ctx.quality = quality;
@@ -1072,10 +1074,8 @@ async function main() {
   if (readViolations.length) {
     const st = readingStats(rungText);
     log(`INV-24 FAIL: the first four sections read at grade ${st.grade} (avg ${st.avgWords} words/sentence) — failing before the vision pass (zero tokens)`);
-    const refineNotes = [{
-      device: 'both', criterion: 'operator:zeroKnowledgeReader', score: 0,
-      note: `INV-24 ReadsAtFifteen: the first four sections must be understandable by a curious 15-year-old. Measured: ${readViolations.join('; ')}. Fix the SHAPE, not just the words — one idea per sentence, most under 20 words, everyday comparisons instead of category vocabulary. Say plainly what it DOES FOR THE READER and why the trick is clever.`,
-    }];
+    const inv24Note = `INV-24 ReadsAtFifteen: the first four sections must be understandable by a curious 15-year-old. Measured: ${readViolations.join('; ')}. Fix the SHAPE, not just the words — one idea per sentence, most under 20 words, everyday comparisons instead of category vocabulary. Say plainly what it DOES FOR THE READER and why the trick is clever.`;
+    const refineNotes = [{ device: 'both', criterion: 'operator:zeroKnowledgeReader', score: 0, note: inv24Note, saw: inv24Note }];
     const quality = {
       scorecard: ctx.quality?.scorecard || [], passed: false, exemplary: false,
       iterations: Number.isInteger(ctx.quality?.iterations) ? ctx.quality.iterations : 0,
@@ -1084,6 +1084,7 @@ async function main() {
       refineNotes,
       inv20: { passed: true, violations: [] },
       inv24: { passed: false, grade: st.grade, avgWords: st.avgWords, violations: readViolations },
+      gateRefusal: `INV-24 reads above age 15: ${readViolations.join("; ")}`,
       gradedAt: new Date().toISOString(),
     };
     ctx.quality = quality;
@@ -1106,6 +1107,12 @@ async function main() {
   const priorIterations = Number.isInteger(ctx.quality?.iterations) ? ctx.quality.iterations : 0;
   if (priorIterations >= MAX_QUALITY_ITERATIONS) {
     log(`REFINE CAP REACHED (${priorIterations}/${MAX_QUALITY_ITERATIONS}) — refusing to re-render/re-grade (zero additional cost/wall-clock). Returning the last scorecard as final.`);
+    // This copy just CLEARED both pre-checks, so a gateRefusal left by an earlier run is no longer true;
+    // leaving it would make deploy disclose a refusal the current page does not have.
+    if (ctx.quality && ctx.quality.gateRefusal) {
+      delete ctx.quality.gateRefusal;
+      try { fs.writeFileSync(buildJsonPath, JSON.stringify(ctx, null, 2) + '\n'); } catch { /* best-effort */ }
+    }
     const capped = { ...(ctx.quality || {}), capReached: true };
     return emit(true, {
       quality: capped,
@@ -1147,11 +1154,18 @@ async function main() {
   const screenshots = {};
   const pageHeights = {};
   try {
-    // Render both devices first (local Playwright work — kept sequential, simple & deterministic logs).
+    // Render both devices CONCURRENTLY (review 3.0.1 #10b). Each device keeps its own browser, context,
+    // viewport, files and ~6s hero-animation sampling exactly as before — they share nothing but the
+    // static server — so the screenshots are the same; only the wall-clock wait is no longer paid twice.
+    // allSettled, not all: never return (and close the server) while the other browser is still open.
+    for (const d of DEVICES) log(`rendering ${d.label} → full-page artifact + section crops`);
+    const settled = await Promise.allSettled(DEVICES.map((d) => renderDevice(chromium, baseHref, d, assetsDir)));
+    const failedRender = settled.find((r) => r.status === 'rejected');
+    if (failedRender) throw failedRender.reason;
     const rendered = [];
-    for (const d of DEVICES) {
-      log(`rendering ${d.label} → full-page artifact + section crops`);
-      const { domInv18, fullPagePath, crops, pageHeight } = await renderDevice(chromium, baseHref, d, assetsDir);
+    for (let i = 0; i < DEVICES.length; i++) {
+      const d = DEVICES[i];
+      const { domInv18, fullPagePath, crops, pageHeight } = settled[i].value;
       screenshots[d.isMobile ? 'mobile' : 'desktop'] = fullPagePath;
       pageHeights[d.isMobile ? 'mobile' : 'desktop'] = pageHeight;
       log(`${d.label}: pageHeight=${pageHeight}px, crops=${crops.map((c) => c.key).join(',')}, DOM inv18 arch(present=${domInv18.architecturePresent},vis=${domInv18.architectureVisible}) flow(present=${domInv18.flowPresent},vis=${domInv18.flowVisible})`);
@@ -1182,7 +1196,19 @@ async function main() {
     // should read this as success. It simply leaves an honest, machine-readable reason behind.
     try {
       const cur = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-      cur.quality = { ...(cur.quality || {}), graderUnavailable: true, graderError: String(e?.message || e).slice(0, 300) };
+      // A FRESH slot, not a spread of the old one (review 3.0.1 #2/#3): the old scorecard graded EARLIER
+      // copy, and keeping it made deploy disclose another version's grades as this page's; a stale
+      // gateRefusal would claim a pre-check failure this copy just passed. Budget and spend carry over.
+      const prev = cur.quality || {};
+      cur.quality = {
+        scorecard: [], passed: false, exemplary: false,
+        iterations: Number.isInteger(prev.iterations) ? prev.iterations : 0,
+        visionModel: model, screenshots, pageHeights, refineNotes: [],
+        inv20: { passed: true, violations: [] }, inv24: { passed: true, violations: [] },
+        ...(prev.cost ? { cost: prev.cost } : {}),
+        graderUnavailable: true, graderError: String(e?.message || e).slice(0, 300),
+        gradedAt: new Date().toISOString(),
+      };
       fs.writeFileSync(buildJsonPath, JSON.stringify(cur, null, 2) + '\n');
       log('recorded quality.graderUnavailable — the page may still be DELIVERED ungraded, with that stated plainly to the requester (ADR-0011)');
     } catch { /* build.json unwritable: nothing more we can do here, the non-zero exit still stands */ }

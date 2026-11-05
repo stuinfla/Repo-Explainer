@@ -21,24 +21,67 @@ function readJsonRel(repoRoot, rel) {
   const p = path.isAbsolute(rel) ? rel : path.resolve(repoRoot, rel);
   try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return null; }
 }
+// Which passages the writer sees. File order used to decide (the first ~20 lines of passages.jsonl),
+// so on helix the brief was ADR-001 x13 + loop ledgers and never the README (review 3.0.1 #1).
+// Deterministic, offline ranking instead: root README, then docs, then source, then ADRs, then the
+// rest; agent boilerplate (AGENTS.md / CLAUDE.md / tool dirs) and loop ledgers (*STATUS.md) are
+// skipped, and no file gets more than `perFile` slots until every file has had its turn.
+const BOILERPLATE_RE = /(^|\/)(AGENTS|CLAUDE|GEMINI|CODEX)\.md$|(^|\/)\.(claude|codex|cursor|github|windsurf|roo|clinerules)\/|(^|\/)(\.cursorrules|copilot-instructions\.md)$|(^|\/)[\w.-]*STATUS\.md$|(^|\/)[\w.-]*(ledger|LEDGER|Ledger)[\w.-]*\.md$/;
+export function passageTier(rec) {
+  const p = String(rec?.path || '');
+  if (BOILERPLATE_RE.test(p)) return 9;
+  if (/^readme(\.[a-z]+)?$/i.test(p)) return 0;
+  const kind = String(rec?.kind || '');
+  if (kind === 'adr' || /(^|\/)adrs?\//i.test(p)) return 3;
+  if (kind === 'doc' && rec?.source_type === 'doc') return 1;
+  if (kind === 'source') return 2;
+  return 4;
+}
+export function selectPassages(records, { maxChars = 12_000, perFile = 3 } = {}) {
+  let usable = records.map((rec, i) => ({ rec, i, body: String(rec.text || rec.passage || rec.body || '').trim() }))
+    .filter((r) => r.body);
+  // Boilerplate is skipped outright unless it is all the repo has.
+  if (usable.some((r) => passageTier(r.rec) < 9)) usable = usable.filter((r) => passageTier(r.rec) < 9);
+  const ordered = usable.sort((a, b) => passageTier(a.rec) - passageTier(b.rec) || a.i - b.i);
+  const seen = new Map();
+  const first = [], rest = [];
+  for (const r of ordered) {
+    const k = r.rec.path || '?';
+    const n = seen.get(k) || 0;
+    seen.set(k, n + 1);
+    (n < perFile ? first : rest).push(r);
+  }
+  const out = [];
+  let used = 0;
+  for (const r of [...first, ...rest]) {
+    const snippet = r.body.slice(0, 600);
+    if (used + snippet.length > maxChars) break;
+    out.push({ rec: r.rec, snippet });
+    used += snippet.length;
+  }
+  return out;
+}
 function readPassageSample(repoRoot, rel, maxChars = 12_000) {
   if (!rel) return '';
   const p = path.isAbsolute(rel) ? rel : path.resolve(repoRoot, rel);
   let text;
   try { text = fs.readFileSync(p, 'utf8'); } catch { return ''; }
-  const out = [];
-  let used = 0;
+  const records = [];
   for (const line of text.split('\n')) {
     if (!line.trim()) continue;
-    let rec; try { rec = JSON.parse(line); } catch { continue; }
-    const body = String(rec.text || rec.passage || rec.body || '').trim();
-    if (!body) continue;
-    const snippet = body.slice(0, 600);
-    if (used + snippet.length > maxChars) break;
-    out.push(`• [${rec.id || rec.path || '?'}] ${snippet}`);
-    used += snippet.length;
+    try { records.push(JSON.parse(line)); } catch { /* skip a bad line */ }
   }
-  return out.join('\n');
+  return selectPassages(records, { maxChars })
+    .map(({ rec, snippet }) => `• [${rec.id || rec.path || '?'}] ${snippet}`).join('\n');
+}
+// The repo's own framing of itself (same source + size as tools/concept-tournament.mjs digest()).
+function readReadmeHead(repoRoot, clonePath, maxChars = 6000) {
+  if (!clonePath) return '';
+  const dir = path.isAbsolute(clonePath) ? clonePath : path.resolve(repoRoot || '.', clonePath);
+  for (const f of ['README.md', 'readme.md', 'README.rst']) {
+    try { return fs.readFileSync(path.join(dir, f), 'utf8').slice(0, maxChars).trim(); } catch { /* next */ }
+  }
+  return '';
 }
 
 export function gatherBrief(ctx, repoRoot) {
@@ -47,6 +90,7 @@ export function gatherBrief(ctx, repoRoot) {
   const ent = readJsonRel(repoRoot, kb.entrypointsPath) || {};
   const sym = readJsonRel(repoRoot, kb.symbolsPath) || {};
   const passages = readPassageSample(repoRoot, kb.passagesPath);
+  const readme = readReadmeHead(repoRoot, ctx.repo?.clonePath);
   const components = Array.isArray(dep.nodes) ? dep.nodes.map((n) => n.name || n).slice(0, 40) : [];
   const edges = Array.isArray(dep.internalEdges) ? dep.internalEdges.map((e) => `${e.from}->${e.to}`).slice(0, 60) : [];
   const install = Array.isArray(ent.install) ? ent.install : [];
@@ -64,6 +108,7 @@ export function gatherBrief(ctx, repoRoot) {
     `COMMANDS: ${commands.join(' ; ') || '(none)'}`,
     `QUICKSTART: ${quickstart.join(' ; ') || '(none)'}`,
     '',
+    ...(readme ? ['README (head — the project\'s own framing of itself):', readme, ''] : []),
     'KB PASSAGE SAMPLE (ground every claim in these — do NOT invent facts, numbers, or benchmarks):',
     passages || '(no passages available)',
   ].join('\n');
@@ -239,7 +284,7 @@ Author the visual brief. Return JSON:
   "hero": { "prompt": "a rich, SPECIFIC, art-directed text-to-image prompt for the HERO image — a concrete subject + camera angle + lighting + material + one unexpected compositional idea, embodying the metaphor WITHOUT the banned clichés; editorial/cinematic quality. MUST include ONE legible, project-specific written artifact (see THE SWAP TEST below)" },
   "sections": [
     { "id": "problem", "role": "problem illustration", "prompt": "a specific, art-directed image prompt for the PROBLEM this repo solves — a concrete before-state scene, not an abstract mood. MUST include ONE legible, project-specific written artifact (see THE SWAP TEST below)" },
-    { "id": "useCase", "role": "scenario", "prompt": "a specific, art-directed image prompt for a concrete real-world use-case scenario — a real moment of someone/something using this. MUST include ONE legible, project-specific written artifact (see THE SWAP TEST below)" }
+    { "id": "useCase", "role": "scenario", "prompt": "a specific, art-directed image prompt for a concrete real-world use-case scenario shown through the SUBJECT ITSELF — the screen, output, or artifact at the moment this repo does its job for someone (no people, hands, desks, or rooms). MUST include ONE legible, project-specific written artifact (see THE SWAP TEST below)" }
   ],
   "diagrams": {
     "bigIdea": {
@@ -270,15 +315,16 @@ from the pixels alone, with the caption covered? (b) SWAP: could this exact imag
 different project's page? An image that fails BOTH caps the whole page's imagery score at 55 — below
 the ship floor — however beautiful it is.
 - THEREFORE EVERY IMAGE MUST CARRY ONE LEGIBLE, PROJECT-SPECIFIC WRITTEN ARTIFACT: a label on a crate,
-  a stamped word, a handwritten note, a tag, a screen, a chalked number — bearing a real term from
+  a stamped word, a tag on the object, a screen readout, a chalked number — bearing a real term from
   THIS repo (a module name, a command, an option, an error, a domain noun from the brief). Keep it to
   1-4 words so it renders cleanly. That artifact is what makes the image un-swappable: these props,
   with THESE words, cannot ship on another project's page.
 - This REVERSES the old "no baked-in text" instruction, which was written when image models garbled
   letters and became the single biggest cause of capped pages. Evidence from this project: the image
-  that scored best on takeaway showed binders labelled "ACME-2026-Q3" and a handwritten sticky note
-  reading "Signal Decay Curve — worth keeping?" — rendered perfectly by gpt-image-2, and it taught the
-  thesis in pixels. The image that capped a page at 55 was a beautiful, wordless industrial rail yard
+  that scored best on takeaway carried short, legible, project-specific labels ("ACME-2026-Q3",
+  "Signal Decay Curve") — rendered perfectly by gpt-image-2, and it taught the thesis in pixels. Copy
+  its WORDS, not its props: put the label on the subject itself (a screen, a stamped artifact, a tag on
+  the object the repo is about), never on office set dressing, which stays banned above. The image that capped a page at 55 was a beautiful, wordless industrial rail yard
   that could have illustrated any queueing project ever written.
 - Still banned: decorative gibberish text, lorem ipsum, invented UI chrome, watermarks, long
   paragraphs, and any word not grounded in the brief. One real term, legibly rendered, is the whole ask.
