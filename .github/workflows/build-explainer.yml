@@ -4,13 +4,8 @@ name: Build Explainer
 # keys (repo secrets), deploy it to its own Netlify site, and write progress back to a status
 # gist that the website polls. Triggered by the /build Netlify function.
 #
-# ARCHITECTURE (2026-07-04 rebuild — see project memory "hosted-agentic-architecture", approved
-# 2026-06-30 but never actually wired until now): this invokes bin/agentic-runner.mjs, which runs
-# the real explainmyrepo SKILL as a headless Claude Code agent — the brain decides, tools/*.mjs do
-# the mechanics — instead of the old deterministic orchestrator.mjs pipeline. GitHub Actions is
-# still the right HOST for this (ADR-033, agent-harness-generator: triggered, autonomous, no human
-# at the keyboard); what changed is that it now runs the AGENT, which adapts per-repo, instead of a
-# fixed script that broke on off-mold repos (empty dep-graphs, oversized monorepos).
+# ARCHITECTURE: bin/agentic-runner.mjs runs the explainmyrepo SKILL as a headless Claude Code agent (the brain
+# decides, tools/*.mjs do the mechanics); GitHub Actions is only the host. The local door is src/orchestrator.mjs.
 #
 # RAILS: timeout-minutes is COMPUTED from budget_min (a pre-flight repo-size signal from build.js)
 # instead of one fixed ceiling for every repo · serialized concurrency (no cost fan-out) · the
@@ -57,19 +52,16 @@ jobs:
     runs-on: ubuntu-latest
     # The agent enforces its OWN budget (budget_min) internally and exits cleanly well before this
     # outer ceiling would ever need to fire — this is just the backstop. timeout_min is budget_min +
-    # a fixed overhead buffer, computed in build.js (plain JS), not here: GitHub Actions expressions
-    # don't support arithmetic on inputs the way `fromJSON(x) + 10` implies — learned this the hard
-    # way, it rejects the whole dispatch at parse time, which a YAML-structure check doesn't catch
-    # since it's an expression-syntax error, not a YAML one.
+    # a fixed overhead buffer computed in build.js (Actions expressions cannot add to an input).
     timeout-minutes: ${{ fromJSON(inputs.timeout_min || '30') }}
     steps:
       - name: Checkout the explainer tool
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: "20"
+          node-version: 22
 
       - name: Validate input (abuse guard)
         env:
@@ -79,34 +71,29 @@ jobs:
           REPO: ${{ github.event.inputs.target_repo }}
         run: |
           echo "target: $REPO"
-          if ! printf '%s' "$REPO" | grep -qE '^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$'; then
+          if ! printf '%s' "$REPO" | grep -qE '^[A-Za-z0-9_][A-Za-z0-9_.-]*/[A-Za-z0-9_][A-Za-z0-9_.-]*$'; then
             echo "::error::invalid repo format (expected owner/name): $REPO"; exit 1
           fi
 
       - name: Install dependencies
         run: |
-          npm ci || npm install
-          # Belt-and-suspenders: guarantee the 3 runtime deps are present (CI 'npm ci' was leaving
-          # playwright unresolved -> quality-grade failed). EXACT pinned versions + --no-save so this
-          # cannot drift to a newer/compromised patch or rewrite the committed lockfile (no supply-
-          # chain bypass; these match package-lock.json).
-          npm install --no-save playwright@1.61.1 @xenova/transformers@2.17.2 @ruvector/rvf@0.2.2
+          # The lockfile is the single source of truth for runtime deps (playwright, @xenova/transformers,
+          # @ruvector/rvf, sharp); no ad-hoc --no-save installs that could drift from it.
+          npm ci
           npx playwright install --with-deps chromium
           # System tools the pipeline shells out to (scanned from tools/*.mjs), not all preinstalled
           # on the runner: ImageMagick (magick/convert/identify — favicon, social card), xmllint
-          # (libxml2-utils — diagram SVG validation), dot (graphviz — diagram layout), zip (AI pack).
+          # (libxml2-utils — diagram SVG validation), zip (AI pack).
           # Fonts help text render in generated imagery.
-          sudo apt-get update && sudo apt-get install -y imagemagick libxml2-utils graphviz zip fonts-liberation fonts-dejavu-core
+          sudo apt-get update && sudo apt-get install -y imagemagick libxml2-utils zip fonts-liberation fonts-dejavu-core
           # The agentic kernel itself (bin/agentic-runner.mjs spawns this headless) — pinned exact
           # version, same rationale as the runtime deps above: no supply-chain drift on a bare runner.
           npm install -g @anthropic-ai/claude-code@2.1.201
           claude --version
 
-      # 2026-07-16 HF outage (build 79f135b3): a CloudFront outage made the mandatory embedding
-      # model undownloadable and the agent burned its whole budget discovering it. Cache the
-      # 33 MB model between runs so KB builds are offline-first; the warm step downloads it only
-      # when the cache is cold and VALIDATES it with one real embedding. Warm failure is a soft
-      # warning: the runner's own embedding preflight is the honest gate and alerts in seconds.
+      # Cache the embedding model between runs so KB builds are offline-first (an HF outage once burned a whole
+      # agent budget); the warm step downloads only when cold and validates with one real embedding. A warm
+      # failure is a soft warning: the runner's embedding preflight is the honest gate.
       - name: Restore embedding model cache (offline-first KB)
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
@@ -122,9 +109,7 @@ jobs:
           # failure alert) — the runner builds a SEPARATE, much narrower allowlist for the spawned
           # agent process itself (see bin/agentic-runner.mjs), which never sees GH/SMTP creds.
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          # Failover lane only (2026-07-19): engaged by the runner's preflight EXCLUSIVELY when the
-          # primary key is usage-limited — same executor model via OpenRouter's Anthropic Skin.
-          # Empty when the secret is unset: the lane stays inert and behavior is unchanged.
+          # Failover lane only: the runner's preflight uses it when the primary key is usage-limited.
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
@@ -164,11 +149,8 @@ jobs:
             exit 1
           fi
 
-      # A failed run's assembled work is NOT garbage (learned 2026-07-15: autonomous-wealth-builder
-      # built a complete grounded site, stalled at B5 56/58, and the runner's _temp dir evaporated
-      # with the job — the whole spend was lost when a 10-minute operator cure could have finished
-      # it). Preserve the curable core (site + build.json + graded assets; NOT the repo clone, NOT
-      # logs) so the operator can download, fix, re-grade, and deploy without a rebuild.
+      # A failed run's assembled work is not garbage: keep the curable core (site + build.json + graded assets;
+      # not the clone, not logs) so an operator can fix, re-grade and deploy without a rebuild.
       - name: Preserve curable build on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
