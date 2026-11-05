@@ -1,12 +1,23 @@
-// smtp.mjs — minimal SMTP-over-implicit-TLS sender (same dialogue as tools/notify.mjs, no npm deps).
-// Used by tools/outreach.mjs to mail the OWNER a review copy of the maintainer email draft.
+// smtp.mjs — the ONE minimal SMTP-over-implicit-TLS sender (no npm deps). Callers: tools/notify.mjs (delivery email,
+// raw MIME), tools/readme-enhance.mjs (owner review copy), tools/notify-failure.mjs, tools/alert-owner.mjs.
+// Every address that reaches a header or an SMTP command is validated here, so a CR/LF can never inject one.
 import tls from 'node:tls';
 
 const CRLF = '\r\n';
 const b64 = (s) => Buffer.from(s, 'utf8').toString('base64');
 const wrap = (s) => s.replace(/(.{76})/g, '$1' + CRLF);
 
+// Strict single-mailbox address: no whitespace, no angle brackets, no commas, no CR/LF. Defence in depth —
+// the landing form validates too, but this is the last line before a socket write.
+const ADDRESS = /^[A-Za-z0-9._%+'-]{1,64}@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/;
+export function isSafeAddress(v) { return typeof v === 'string' && v.length <= 254 && ADDRESS.test(v); }
+export function assertAddress(label, v) {
+  if (!isSafeAddress(v)) throw new Error(`invalid ${label} address (must be a single plain email address)`);
+  return v;
+}
+
 export function buildMessage({ from, fromName, to, subject, text }) {
+  assertAddress('from', from); assertAddress('to', to);
   const safe = (v) => String(v).replace(/[\r\n]+/g, ' ');   // header-injection guard
   return [
     `From: =?UTF-8?B?${b64(safe(fromName || from))}?= <${safe(from)}>`,
@@ -21,10 +32,17 @@ export function buildMessage({ from, fromName, to, subject, text }) {
   ].join(CRLF);
 }
 
-export function sendMail({ host = 'smtp.gmail.com', port = 465, user, pass, from, fromName, to, subject, text }) {
-  const message = buildMessage({ from: from || user, fromName, to, subject, text }).replace(/\r\n\./g, '\r\n..');
+// `connect` is injectable so tests drive the dialogue with a stub socket instead of the network.
+export function sendMail({ host = 'smtp.gmail.com', port = 465, user, pass, from, fromName, to, subject, text, raw, connect = tls.connect }) {
+  // `raw`: a caller-built MIME message (notify's multipart/attachments). Addresses are validated here either way.
+  let message;
+  try {
+    assertAddress('user', user);
+    assertAddress('to', to);
+    message = (raw ?? buildMessage({ from: from || user, fromName, to, subject, text })).replace(/\r\n\./g, '\r\n..');
+  } catch (e) { return Promise.reject(e); }
   return new Promise((resolve, reject) => {
-    const socket = tls.connect({ host, port, servername: host });
+    const socket = connect({ host, port, servername: host });
     socket.setEncoding('utf8');
     socket.setTimeout(60000, () => { reject(new Error(`SMTP connection to ${host}:${port} timed out.`)); socket.destroy(); });
     const steps = [

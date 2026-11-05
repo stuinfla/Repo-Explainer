@@ -1,13 +1,4 @@
-// tests/review-c-cure-and-budget.test.mjs — code-review findings 2b, 4, 8 and 9a (3.0.0 review).
-//
-//  9a  A DELIVERED below-bar page used to go to the cure agent whatever its shape (10 min + a full
-//      regrade), skipping the near-miss envelope that held pages get. Same limits now apply.
-//  2b  A deterministic pre-check refusal (quality.gateRefusal) left no scorecard and was classed
-//      'unbuilt' — no repair — although the page exists and the blocker is fixable copy.
-//  4   When the cure did not replace the live page, site/, assets/ and build.json kept the REJECTED
-//      repair, so the status gist and requester email showed a page nobody deployed.
-//  8   --budget-usd was never enforced during the main run (cost only arrives on the final
-//      `result` event). Native --max-budget-usd + a streamed-usage backstop now enforce it.
+// tests/review-c-cure-and-budget.test.mjs — cure-lane envelope, gate-refusal repair, rollback of a rejected cure, the $ ceiling, receipts.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,6 +6,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { finalizeRun, createStreamHandler, scorecardOf, disclosureOf, buildAgentPrompt, elapsedMinutes, classifyFailure, agentReportOf, liveUrlOf } from '../bin/runner-lib.mjs';
+import { recordClaims } from '../src/claims-record.mjs';
+import { MAX_QUALITY_ITERATIONS } from '../tools/quality-grade.mjs';
 import {
   classifyEndState, buildCurePrompt, CURE, cureImproved,
   snapshotForCure, restoreCureSnapshot, discardCureSnapshot, shouldRestoreAfterCure,
@@ -58,7 +52,7 @@ test('9a — a delivered near-miss (inside the envelope) still gets improve-and-
 
 // ── 2b ──────────────────────────────────────────────────────────────────────────────────────────
 const refused = {
-  passed: false, iterations: 0, scorecard: [], gateRefusal: 'INV-20 UnexplainedAcronymZero: SSG, CRDT unexplained',
+  passed: false, iterations: 0, scorecard: [], gateRefusal: 'INV-20 unexplained acronym(s): SSG, CRDT',
   refineNotes: [{ device: 'both', criterion: 'operator:zeroKnowledgeReader', score: 0, note: 'define each term inline' }],
 };
 
@@ -70,7 +64,7 @@ test('2b — a quality pre-check refusal is its own REPAIRABLE class, not "unbui
   assert.equal(r.weaknesses[0].name, refused.gateRefusal);
   assert.equal(r.weaknesses[0].saw, 'define each term inline');
   const p = buildCurePrompt({ repoUrl: 'https://github.com/a/b', buildDir: '/tmp/b', weaknesses: r.weaknesses, quality: refused });
-  assert.match(p, /INV-20 UnexplainedAcronymZero/);
+  assert.match(p, /INV-20 unexplained acronym\(s\): SSG, CRDT/);
   assert.match(p, /define each term inline/);
 });
 
@@ -150,15 +144,6 @@ test('4 — restore exactly when a live page was NOT replaced', () => {
   assert.equal(shouldRestoreAfterCure({ wasLive: null, redeployed: true }), false);
 });
 
-test('4/8 — the runner wires the snapshot and both $ guards (complements the behaviour tests above)', () => {
-  const src = fs.readFileSync(path.join(ROOT, 'bin/agentic-runner.mjs'), 'utf8');
-  assert.match(src, /cureSnapshot = snapshotForCure\(buildDir\)/);
-  assert.match(src, /shouldRestoreAfterCure\(\{ wasLive: liveBeforeCure, redeployed: cureRedeployed \}\)/);
-  assert.match(src, /\.\.\.budgetArgs,/);
-  assert.match(src, /costMeter\.add\(evt\)/);
-  assert.match(src, /isNativeBudgetStop\(evt\)/);
-});
-
 // ── 8 ───────────────────────────────────────────────────────────────────────────────────────────
 const asst = (id, usage) => ({ type: 'assistant', message: { id, usage, content: [] } });
 
@@ -216,4 +201,131 @@ test('8 — the native cap is passed to claude and its stop is recognised', () =
   assert.equal(isNativeBudgetStop({ type: 'result', subtype: 'error_max_budget_usd', is_error: true, total_cost_usd: 8.3 }), true);
   assert.equal(isNativeBudgetStop({ type: 'result', subtype: 'success' }), false);
   assert.equal(isNativeBudgetStop({ type: 'assistant', subtype: 'error_max_budget_usd' }), false);
+});
+
+// ── the runner's after-agent decisions, as the real functions ────────────────────────────────────────
+const END = { exitCode: 0, killedForBudget: false, killedForUsd: null, spawnErrorMsg: null, agentReported: null, liveUrl: 'https://x.netlify.app',
+  finalCtx: { repo: { url: 'https://github.com/a/b' } }, submittedRepoId: 'a/b', budgetMin: 20, budgetUsd: 8, totalCostUsd: 3.456 };
+
+test('finalizeRun: ok needs a clean exit, no budget kill, a live URL and the right repo', () => {
+  assert.equal(finalizeRun(END).ok, true);
+  assert.equal(finalizeRun({ ...END, exitCode: 1 }).ok, false);
+  assert.equal(finalizeRun({ ...END, liveUrl: null }).ok, false);
+  assert.equal(finalizeRun({ ...END, killedForBudget: true }).ok, false, 'a wall-clock kill is never ok, even with a live URL');
+  assert.equal(finalizeRun({ ...END, killedForUsd: 'backstop' }).ok, false, 'a $ kill is never ok, even with a live URL');
+});
+
+test('finalizeRun: the failure reason names the real cause, in priority order', () => {
+  assert.match(finalizeRun({ ...END, liveUrl: null, exitCode: -1, spawnErrorMsg: 'spawn claude ENOENT' }).reason, /could not start the claude binary: spawn claude ENOENT/);
+  assert.match(finalizeRun({ ...END, exitCode: 0, killedForUsd: 'native' }).reason, /\$8 dollar budget.*~\$3\.46 spent; stopped by Claude Code --max-budget-usd/);
+  assert.match(finalizeRun({ ...END, killedForUsd: 'backstop' }).reason, /streamed-usage backstop/);
+  assert.match(finalizeRun({ ...END, killedForBudget: true }).reason, /exceeded its 20-minute budget/);
+  assert.equal(finalizeRun({ ...END, liveUrl: null, agentReported: { ok: false, reason: 'repo is empty' } }).reason, 'repo is empty');
+  assert.match(finalizeRun({ ...END, liveUrl: null, exitCode: 2 }).reason, /exited 2/);
+  assert.match(finalizeRun({ ...END, liveUrl: null }).reason, /no verified live URL/);
+});
+
+test('classifyFailure: the submitter hears an honest category, never the raw reason', () => {
+  assert.match(classifyFailure('exceeded its $8 dollar budget before finishing'), /free per-build budget/);
+  assert.match(classifyFailure('exceeded its 20-minute budget'), /more time/);
+  assert.match(classifyFailure('Credit balance is too low'), /community budget/);
+  assert.doesNotMatch(classifyFailure('TypeError: x is not a function'), /TypeError/);
+});
+
+test('agent report + live URL: build.json is the truth; the agent RESULT line never supplies a URL', () => {
+  const rep = agentReportOf('did stuff\nRESULT: {"ok": true, "liveUrl": "https://agent.example"}');
+  assert.deepEqual(rep, { ok: true, liveUrl: 'https://agent.example' });
+  assert.equal(liveUrlOf({ publish: { liveUrl: 'https://real.example', http200: true } }), 'https://real.example');
+  assert.equal(liveUrlOf({ publish: { liveUrl: 'https://real.example', http200: false } }), null, 'an unverified URL is not a live URL');
+  assert.equal(liveUrlOf({ publish: { liveUrl: 'https://real.example' } }), null, 'no http200 flag, no live URL');
+  assert.equal(liveUrlOf(null), null, 'nothing in build.json, nothing live — whatever the agent printed');
+  assert.equal(agentReportOf('RESULT: {not json}'), null);
+});
+
+test('elapsedMinutes reports real elapsed time (the alert used to send the BUDGET as elapsed)', () => {
+  assert.equal(elapsedMinutes(0, 7 * 60_000 + 20_000), 7);
+  assert.equal(elapsedMinutes(1_000_000, 1_000_000), 0);
+  assert.equal(elapsedMinutes(5000, 0), 0, 'never negative');
+});
+
+// The $ ceiling: a replayed stream drives the real handler and its stop callback.
+test('stream handler: the streamed backstop stops an agent that ignores the native cap; the native stop is recorded', () => {
+  let stops = 0;
+  const h = createStreamHandler({ costMeter: createCostMeter('claude-sonnet-5-5'), budgetUsd: 8.1, stop: () => { stops++; } });
+  const line = (id) => JSON.stringify(asst(id, { input_tokens: 100_000, output_tokens: 20_000 })) + '\n'; // $0.40 per message
+  for (let i = 1; i <= 25; i++) h.feed(line(`m${i}`));
+  assert.equal(stops, 0, 'turn 25 = $10.00, under the $10.125 backstop');
+  assert.equal(h.state.killedForUsd, null);
+  h.feed(line('m26'));
+  assert.equal(h.state.killedForUsd, 'backstop');
+  assert.equal(stops, 1);
+  h.feed(line('m27'));
+  assert.equal(stops, 1, 'the stop fires once');
+
+  const n = createStreamHandler({ costMeter: createCostMeter('claude-sonnet-5-5'), budgetUsd: 8 });
+  n.feed(JSON.stringify({ type: 'result', subtype: 'error_max_budget_usd', is_error: true, total_cost_usd: 8.3, result: 'stopped' }) + '\n');
+  assert.equal(n.state.killedForUsd, 'native');
+  assert.equal(n.state.totalCostUsd, 8.3);
+  assert.equal(n.state.sawResultEvent, true);
+});
+
+test('stream handler: lines split across chunks reassemble, junk lines are skipped, tool calls surface', () => {
+  const tools = [];
+  const h = createStreamHandler({ costMeter: createCostMeter('claude-sonnet-5-5'), budgetUsd: 8, onToolUse: (b) => tools.push(b.name) });
+  const evt = JSON.stringify({ type: 'assistant', message: { id: 'a', content: [{ type: 'tool_use', name: 'Bash', input: { command: 'ls' } }], usage: {} } });
+  h.feed('not json at all\n' + evt.slice(0, 20));
+  h.feed(evt.slice(20) + '\n');
+  assert.deepEqual(tools, ['Bash']);
+  h.feed(JSON.stringify({ type: 'result', result: 'RESULT: {"ok":true}', total_cost_usd: 1.5 }) + '\n');
+  assert.equal(h.state.finalResultText, 'RESULT: {"ok":true}');
+  assert.equal(h.state.totalCostUsd, 1.5);
+});
+
+// ── the receipt that travels with the build ─────────────────────────────────────────────────────────
+test('ADR-0011 D4 / 0012 D4: the receipt records the below-bar disclosure and the FORM each diagram took', () => {
+  const ctx = {
+    publish: { belowBar: true, weakest: 'the diagrams and imagery' },
+    visuals: { architectureDiagram: { form: 'radial', formVariant: 'orbit' }, flowDiagram: { form: 'flow' } },
+    quality: { passed: false, exemplary: false, iterations: 3, scorecard: [device('mobile', { a: 88, b: 64 })] },
+  };
+  const d = disclosureOf(ctx);
+  assert.deepEqual(d.publishDisclosure, { belowBar: true, graderUnavailable: false, weakest: 'the diagrams and imagery' });
+  assert.deepEqual(d.diagramForms, { architectureDiagram: { form: 'radial', variant: 'orbit' }, flowDiagram: { form: 'flow', variant: null } });
+  const sc = scorecardOf(ctx, 'openrouter');
+  assert.equal(sc.executor, 'openrouter');
+  assert.equal(sc.iterations, 3);
+  assert.deepEqual(sc.devices[0].gateA, { a: 88, b: 64 });
+  assert.deepEqual(sc.belowBarDelivery, d.publishDisclosure);
+  assert.equal(scorecardOf({ quality: { scorecard: [] } }, 'anthropic'), null, 'nothing graded, no scorecard');
+});
+
+// ── the brief the hosted agent runs on ──────────────────────────────────────────────────────────────
+test('the agent brief: refine cap equals the tool\'s MAX_QUALITY_ITERATIONS, deploy at the cap, scorecard is disclosure, no retired protocol', () => {
+  const p = buildAgentPrompt({ repoUrl: 'https://github.com/a/b', buildDir: '/tmp/b', budgetMin: 17, budgetUsd: 6 });
+  assert.match(p, new RegExp(`capped at ${MAX_QUALITY_ITERATIONS} total quality-grade calls \\(1 initial \\+ ${MAX_QUALITY_ITERATIONS - 1} refines\\)`));
+  assert.match(p, /RUN DEPLOY AND YOU ARE DONE/);
+  assert.match(p, /ADR-0011/);
+  assert.match(p, /DISCLOSURE/);
+  assert.match(p, /approximate budget of 17 minutes and \$6/);
+  assert.doesNotMatch(p, /postCapManualFix|ship-best-effort|capReached, ship immediately/);
+});
+
+// ── advisory claims check ───────────────────────────────────────────────────────────────────────────
+test('recordClaims writes the advisory result into build.json `claims` and never touches the other slots', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'claims-'));
+  fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify({
+    repo: { url: 'https://github.com/a/b' }, kb: {},
+    content: { citations: [{ claim: 'it is fast', passageId: 'p-missing' }] },
+    quality: { passed: true },
+  }));
+  const res = recordClaims(dir, { root: ROOT, log: () => {} });
+  const ctx = JSON.parse(fs.readFileSync(path.join(dir, 'build.json'), 'utf8'));
+  assert.equal(ctx.claims.advisory, true);
+  assert.equal(ctx.claims.citations.total, 1);
+  assert.equal(ctx.claims.citations.missing.length, 1, 'a citation with no passage in the KB is reported');
+  assert.equal(ctx.claims.ok, false);
+  assert.equal(res.findings, ctx.claims.findings);
+  assert.equal(ctx.claims.commands.checked, undefined, 'the bulky checked list is not persisted');
+  assert.deepEqual(ctx.quality, { passed: true });
+  fs.rmSync(dir, { recursive: true, force: true });
 });

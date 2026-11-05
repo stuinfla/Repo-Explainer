@@ -1,13 +1,17 @@
 // tests/review-b-refine.test.mjs — review 3.0.1 findings #3 and #9b, plus the live ruvllm 3.0.0 build.
 // refineLoop runs against a temp build dir with the brain and the station tools stubbed: the stub
-// quality-grade mimics the real one's contract (writes the quality slot; at the 3-grade cap it returns
-// ok WITHOUT writing). No model, image or vision API is called.
+// quality-grade mimics the real one's contract (writes the quality slot; at the grade cap,
+// MAX_QUALITY_ITERATIONS, it returns ok WITHOUT writing). No model, image or vision API is called.
+// The scenarios below are written for the current cap of 3 grades (1 initial + 2 refines): if that cap
+// moves, they must be re-derived rather than silently pass.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { refineLoop, stationTimingTable, formatImagesCost } from '../src/orchestrator.mjs';
+import { MAX_QUALITY_ITERATIONS } from '../tools/quality-grade.mjs';
+import { brainBasis } from '../src/receipt.mjs';
 
 const card = (device, mean) => ({ device, meanScore: mean, passed: false, inv18: { passed: true } });
 const graded = (iterations, mean, extra = {}) => ({
@@ -39,7 +43,7 @@ function stubs(dir, grades) {
         if (name !== 'quality-grade') return { ok: true };
         const q = read(dir).quality;
         const n = calls.grade++;
-        if ((q?.iterations ?? 0) >= 3) return { ok: true }; // the real cap: no write
+        if ((q?.iterations ?? 0) >= MAX_QUALITY_ITERATIONS) return { ok: true }; // the real cap: no write
         const r = grades[n](read(dir).content.v);
         if (r.quality) write(dir, r.quality);
         return { ok: r.ok, error: r.ok ? null : 'quality grading failed' };
@@ -131,4 +135,25 @@ test('receipt: unpriced images print UNPRICED, never $0.0000', () => {
   assert.equal(formatImagesCost({ usd: null, images: 3 }), 'images UNPRICED (3)');
   assert.equal(formatImagesCost({ usd: 0.12, images: 3 }), 'images $0.1200 (3, derived)');
   assert.equal(formatImagesCost({ usd: 0, images: 0 }), 'images $0.0000 (0, derived)');
+});
+
+// ── refine passes must carry the merged env (R3 defect 3) ─────────────────────────────────────────────
+test('a refine pass hands the brain the MERGED env, so a key that exists only in .env reaches it', async () => {
+  const dir = setup(graded(1, 80));
+  const { deps } = stubs(dir, [() => ({ ok: true, quality: graded(2, 81) }), () => ({ ok: true, quality: graded(3, 82) })]);
+  const seen = [];
+  const inner = deps.authorContent;
+  deps.authorContent = async (ctx, o) => { seen.push(ctx._env); return inner(ctx, o); };
+  await refineLoop({ buildDir: dir, env: { OPENROUTER_API_KEY: 'only-in-the-env-map' }, model: 'm', apiKey: null, opts: {} }, deps);
+  assert.equal(seen.length, 2, 'both refine passes ran');
+  for (const e of seen) assert.equal(e?.OPENROUTER_API_KEY, 'only-in-the-env-map');
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+// ── the receipt's brain basis reflects the lane that ran ──────────────────────────────────────────────
+test('brainBasis: says which lane produced the brain figure, and never calls an unrecorded spend measured', () => {
+  assert.match(brainBasis({ calls: 0, usd: 0, byModel: {} }), /none recorded/);
+  assert.equal(brainBasis({ calls: 2, byModel: { 'z-ai/glm-5.3': {} } }), 'measured (OpenRouter usage.cost)');
+  assert.equal(brainBasis({ calls: 2, byModel: { 'claude-sonnet-5-5': {} } }), 'derived from rates');
+  assert.match(brainBasis({ calls: 3, byModel: { 'z-ai/glm-5.3': {}, 'claude-sonnet-5-5': {} } }), /^mixed/);
 });

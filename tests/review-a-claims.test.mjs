@@ -1,5 +1,5 @@
-// tests/review-a-claims.test.mjs — review 3.0.1 finding #5: nothing checked the page against the repo.
-// tools/check-claims.mjs is ADVISORY: it reports bad citations + ungrounded commands, never fails.
+// tests/review-a-claims.test.mjs — tools/check-claims.mjs is ADVISORY: it reports bad citations and
+// ungrounded commands against the KB, and never fails the build.
 // Shapes mirror real builds (explainer-builds/*/build.json: content.citations[{claim,passageId}] with
 // string OR number ids; kb/stores/*/<slug>-entrypoints.json install/quickstart/commands[{cmd,raw}]).
 import { test } from 'node:test';
@@ -11,7 +11,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const { checkClaims, splitCommands, extractStepCommands } = await import('../tools/check-claims.mjs');
+const { checkClaims, checkBuild, splitCommands, extractStepCommands } = await import('../tools/check-claims.mjs');
 
 const passages = [
   { id: '1', path: 'README.md', text: 'Install with `npm install widgetco` then run `npx widgetco scan ./receipts`.' },
@@ -65,5 +65,20 @@ test('#5 — CLI is advisory: findings present, exit code 0, structured JSON out
     const out = JSON.parse(run.stdout);
     assert.equal(out.findings, 1);
     assert.equal(out.commands.ungrounded[0].cmd, 'npm install not-real');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('#5 — checkBuild grounds a command in the clone\'s README, and the module exports no second readPassages', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'claims-'));
+  try {
+    fs.mkdirSync(path.join(dir, 'repo'));
+    fs.writeFileSync(path.join(dir, 'repo', 'README.md'), 'Install: `npm install only-in-readme`');
+    fs.writeFileSync(path.join(dir, 'p.jsonl'), passages.map((p) => JSON.stringify(p)).join('\n'));
+    const mk = (install) => { fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify({ content: content({ install }), repo: { clonePath: 'repo' }, kb: { passagesPath: 'p.jsonl' } })); return checkBuild(path.join(dir, 'build.json'), { root: dir }); };
+    const grounded = mk('npm install only-in-readme');
+    assert.deepEqual(grounded.commands.ungrounded, []);
+    assert.equal(grounded.commands.checked.find((c) => c.cmd === 'npm install only-in-readme').groundedIn, 'text');
+    assert.deepEqual(mk('npm install nowhere').commands.ungrounded.map((u) => u.cmd), ['npm install nowhere']);
+    assert.equal((await import('../tools/check-claims.mjs')).readPassages, undefined);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });

@@ -1,59 +1,37 @@
-// src/orchestrator.mjs — run the explainer pipeline in CONTRACT order, with Claude in the loop.
+// src/orchestrator.mjs — the LOCAL door: run the explainer pipeline in order, with Claude in the loop.
 //
-// The deterministic stations are the EXISTING tools/*.mjs, invoked as child processes (never
-// re-implemented — src/run-tool.mjs). Between them, the brain (src/brain.mjs → Claude) authors the
-// judgment slots the e2e run proved cannot be deterministic: the primer, concept, content, and the
-// Station-4 image briefs + diagram ASCII. The whole run is one BuildContext / build.json (CONTRACT §a).
-//
-// Station map (CONTRACT §d roster + §a "brain — no tool" rows):
-//   0  clone-repo .............. tool   (Station 0–1)
-//   1  kb:register ............. brain  GATED — only if the repo isn't in kb/kb.config.mjs
-//   2  build-kb ................ tool   (Station 1)
-//   3  primer .................. brain  (Station 1 brain deliverable; make-pack needs it)
-//   4  concept ................. brain  (Station 2)
-//   5  content ................. brain  (Station 3)
-//   6  visual-brief ........... brain  (Station 4 brain half: image prompts + diagram ASCII)
-//   7  generate-image ......... tool   (Station 4 raster)
-//   8  make-favicon ........... tool   (Station 5 — reads the hero)
-//   9  make-social-card ....... tool   (Station 5)
-//   10 make-diagrams .......... tool   (Station 4 structural SVGs)
-//   11 assemble-page .......... tool   (Station 6 — the single render)
-//   12 make-pack .............. tool   (Station 6)
-//   13 quality-grade .......... tool   (Station 7 — the completion gate)
-//   14 deploy ................. tool   (Station 8 — skip with --no-deploy)
-//   15 publish-repo ........... tool   (Station 8 — skip with --no-publish)
-//   16 repo-seo .............. tool   (Station 8 — skip with --no-publish)
-//   13c make-ask ............. tool   (Station 6c — adds the Ask box; NON-BLOCKING; the signed credential is added by deploy)
-//   17 readme-enhance ......... tool   (Station 8b — ON by default, skip with --no-readme-pr / README_ENHANCE=0, NON-BLOCKING)
-//   18 notify ................. tool   (Station 9 — NON-BLOCKING)
+// Station order, kinds and flags live in ONE table: src/stations.mjs. This file selects the slice to run,
+// seeds the build dir (one build.json per build, CONTRACT §a), runs the stations, refines a below-bar page,
+// then ships. The pieces: station-runners.mjs (what each station does), preflight.mjs (credentials),
+// refine.mjs (the below-bar loop), receipt.mjs (cost and timing).
 
 import fs from 'node:fs';
 import path from 'node:path';
-import readline from 'node:readline';
-import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadEnv, getSecret, redact } from './env.mjs';
-import { initBuildDir, readContext, mergeSlot } from './build-context.mjs';
-import { runTool } from './run-tool.mjs';
-import { resolveModel, resolveBrainLane, getBrainSpend } from './claude.mjs';
-import {
-  authorConcept, authorContent, authorVisualBrief, visualsSlotFromBrief,
-  authorPrimer, authorKbTarget,
-} from './brain.mjs';
+import { initBuildDir, readContext } from './build-context.mjs';
+import { resolveModel } from './claude.mjs';
+import { selectStations } from './stations.mjs';
+import { buildStations } from './station-runners.mjs';
+import { recordClaims } from './claims-record.mjs';
+import { preflight } from './preflight.mjs';
+import { refineLoop, belowBarVerdict, readQuality } from './refine.mjs';
+import { printReceipt, printTiming, finalSummary, reportQualityGap } from './receipt.mjs';
+import { REPO_ROOT, C, log, step } from './runtime.mjs';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const C = { dim: '\x1b[2m', red: '\x1b[31m', green: '\x1b[32m', yellow: '\x1b[33m', cyan: '\x1b[36m', bold: '\x1b[1m', reset: '\x1b[0m' };
-const log = (s = '') => process.stderr.write(s + '\n');
-const step = (n, total, label, kind) => log(`\n${C.bold}${C.cyan}[${n}/${total}] ${label}${C.reset} ${C.dim}(${kind})${C.reset}`);
+export { brainRun } from './station-runners.mjs';
+export { upsertEnvFile, promptForMissingKeys } from './preflight.mjs';
+export { refineBudget, iterationRank, contentFixable, refineLoop, belowBarVerdict } from './refine.mjs';
+export { stationTimingTable, formatImagesCost, formatGradingCost } from './receipt.mjs';
 
-// Reuse clone-repo's URL grammar (https | git@host:owner/name | bare host/owner/name) just enough to
-// derive a default out-dir name before clone-repo runs.
+// clone-repo's URL grammar (https | git@host:owner/name | bare host/owner/name), just enough to derive a
+// default out-dir name before clone-repo runs.
 export function parseRepoUrl(raw) {
   let s = String(raw || '').trim();
   if (!s) return null;
   const scp = s.match(/^git@([^:]+):(.+)$/);
   if (scp) s = `https://${scp[1]}/${scp[2]}`;
   if (!/^[a-z]+:\/\//i.test(s)) {
-    // bare "owner/name" (no host) → assume github.com; "host/owner/name" keeps its host
+    // bare "owner/name" (no host) → github.com; "host/owner/name" keeps its host
     s = /^[^/]+\.[^/]+\//.test(s) ? `https://${s}` : `https://github.com/${s}`;
   }
   s = s.replace(/\/+$/, '');
@@ -67,186 +45,7 @@ export function parseRepoUrl(raw) {
 
 const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
 
-// ── the gated KB-registration station ──────────────────────────────────────────────────────────
-async function kbRegisterStation({ buildDir, env, model, apiKey, opts }) {
-  const ctx = readContext(buildDir);
-  ctx._repoRoot = REPO_ROOT;
-  const slug = ctx.repo?.slug;
-  if (!slug) throw new Error('kb:register — no repo.slug yet (clone-repo must run first)');
-
-  const cfgPath = path.join(REPO_ROOT, 'kb', 'kb.config.mjs');
-  const importCfg = async () => import(pathToFileURL(cfgPath).href + `?t=${Date.now()}`);
-  let registered = false;
-  try { const m = await importCfg(); m.getTarget(slug); registered = true; } catch { registered = false; }
-  if (registered) { log(`${C.dim}kb target "${slug}" already registered in kb/kb.config.mjs — using it.${C.reset}`); return { ok: true, skipped: 'already-registered' }; }
-
-  log(`${C.yellow}kb target "${slug}" is NOT registered in kb/kb.config.mjs.${C.reset}`);
-  const entry = await authorKbTarget(ctx, { apiKey, model });
-  const genPath = path.join(buildDir, `kb-target.${slug}.generated.mjs`);
-  fs.writeFileSync(genPath, `// GENERATED kb.config target entry for "${slug}" — paste into kb/kb.config.mjs targets{}.\nexport default ${JSON.stringify({ [slug]: entry }, null, 2)};\n`);
-  log(`${C.dim}wrote generated entry → ${path.relative(process.cwd(), genPath)}${C.reset}`);
-
-  // Auto-register (no flag needed) so ANY repo just works. Inject the AI-authored entry into THIS
-  // build's kb.config copy. In real use that copy is ephemeral — a fresh CI checkout on the hosted
-  // path, or the throwaway npx install locally — so this never mutates a shared/committed registry.
-  // (--register-kb is now a no-op alias, kept for backward compatibility.)
-  let src = fs.readFileSync(cfgPath, 'utf8');
-  const anchor = 'export const targets = {';
-  const at = src.indexOf(anchor);
-  if (at === -1) throw new Error('kb:register — could not find "export const targets = {" in kb/kb.config.mjs to inject into');
-  const inject = `\n  ${JSON.stringify(slug)}: ${JSON.stringify(entry, null, 2).replace(/\n/g, '\n  ')},`;
-  src = src.slice(0, at + anchor.length) + inject + src.slice(at + anchor.length);
-  fs.writeFileSync(cfgPath, src);
-  log(`${C.yellow}auto-registered "${slug}" into this build's kb.config.${C.reset}`);
-  const m2 = await importCfg();
-  try { m2.getTarget(slug); } catch (e) { throw new Error(`kb:register — injection did not take: ${e.message}`); }
-  return { ok: true, registered: true };
-}
-
-// ── brain station runners (each reads fresh ctx, authors, merges its slot) ──────────────────────
-export function brainRun(fn) {
-  return async ({ buildDir, env, apiKey, model }) => {
-    const ctx = readContext(buildDir);
-    ctx._repoRoot = REPO_ROOT;
-    ctx._env = env;   // the MERGED env — .env-only keys must survive to the brain client (Sol #6)
-    await fn(ctx, { buildDir, apiKey, model });
-    return { ok: true };
-  };
-}
-
-// ── the station table ───────────────────────────────────────────────────────────────────────────
-function stations(opts) {
-  const tool = (id, name, { fatal = true } = {}) => ({ id, name, kind: 'tool', fatal, run: ({ buildDir, env }) => runTool(name, buildDir, { repoRoot: REPO_ROOT, env }) });
-  const brain = (id, fn) => ({ id, kind: 'brain', fatal: true, run: brainRun(fn) });
-
-  const all = [
-    tool('clone-repo', 'clone-repo'),
-    { id: 'kb:register', kind: 'brain', fatal: true, run: kbRegisterStation },
-    tool('build-kb', 'build-kb'),
-    brain('primer', async (ctx, { apiKey, model }) => { await authorPrimer(ctx, { apiKey, model, repoRoot: REPO_ROOT }); }),
-    brain('concept', async (ctx, { buildDir, apiKey, model }) => { mergeSlot(buildDir, 'concept', await authorConcept(ctx, { apiKey, model })); }),
-    brain('content', async (ctx, { buildDir, apiKey, model }) => { mergeSlot(buildDir, 'content', await authorContent(ctx, { apiKey, model })); }),
-    brain('visual-brief', async (ctx, { buildDir, apiKey, model }) => { mergeSlot(buildDir, 'visuals', visualsSlotFromBrief(await authorVisualBrief(ctx, { apiKey, model }))); }),
-    tool('generate-image', 'generate-image'),
-    tool('make-favicon', 'make-favicon'),
-    tool('make-social-card', 'make-social-card'),
-    tool('make-diagrams', 'make-diagrams'),
-    tool('assemble-page', 'assemble-page'),
-    tool('make-pack', 'make-pack'),
-    tool('make-ask', 'make-ask', { fatal: false }),               // Station 6c — "Ask this project" box (non-blocking; skipped with ASK_DISABLE=1)
-    tool('make-overview', 'make-overview', { fatal: false }),     // Station 6b — NotebookLM video + infographic, local door only, non-blocking
-    tool('quality-grade', 'quality-grade'),
-    tool('deploy', 'deploy'),
-    tool('publish-repo', 'publish-repo'),
-    tool('repo-seo', 'repo-seo'),
-    tool('readme-enhance', 'readme-enhance', { fatal: false }),   // Station 8b — non-blocking
-    tool('notify', 'notify', { fatal: false }),                   // Station 9  — non-blocking
-  ];
-
-  // apply skip flags
-  return all.filter((s) => {
-    if (opts.noQuality && s.id === 'quality-grade') return false;
-    if (opts.noDeploy && s.id === 'deploy') return false;
-    if (opts.noPublish && (s.id === 'publish-repo' || s.id === 'repo-seo')) return false;
-    if (opts.noNotify && s.id === 'notify') return false;
-    if (opts.noReadmePr && s.id === 'readme-enhance') return false;
-    return true;
-  });
-}
-
-// ── preflight: fail fast with ACTIONABLE guidance when a station in the slice lacks its credential ──
-// "If something's not there, tell them I need this key, and how to set it — don't work around it and
-// ship a degraded result." Required keys (brain, OpenAI) are FATAL; ship-step keys are heads-up + a skip flag.
-async function preflight(list, env, repoRoot) {
-  const has = (names) => names.some((n) => env[n] && String(env[n]).trim());
-  const ids = new Set(list.map((s) => s.id));
-  const brainIds = ['kb:register', 'primer', 'concept', 'content', 'visual-brief'];
-  const problems = [];
-  // Issue #16: the brain runs on EITHER an API key OR a logged-in Claude Code CLI (the user's
-  // subscription). This check used to demand the key alone, so a subscription user was refused
-  // before any station ran — while callClaude, one layer down, would have used their CLI happily.
-  // Both callers now ask the SAME predicate, so this cannot drift apart again.
-  const brainLane = resolveBrainLane({ apiKey: env.ANTHROPIC_API_KEY || env.CLAUDE_API_KEY, env });
-  if (brainIds.some((id) => ids.has(id)) && !brainLane.ok) {
-    problems.push({ fatal: true, need: 'ANTHROPIC_API_KEY (or CLAUDE_API_KEY), or a logged-in Claude Code CLI', why: 'the brain stations (concept/content/visual-brief/primer) author the page',
-      how: 'either add ANTHROPIC_API_KEY=sk-ant-… to .env (create one at https://console.anthropic.com/settings/keys), OR install Claude Code and log in — the brain then runs on your Claude subscription with no API key at all',
-      envKey: 'ANTHROPIC_API_KEY', aliases: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'] });
-  }
-  if ((ids.has('generate-image') || ids.has('quality-grade')) && !has(['OPENAI_API_KEY', 'OPEN_AI_KEY'])) {
-    problems.push({ fatal: true, need: 'OPENAI_API_KEY (or OPEN_AI_KEY)', why: 'the atmospheric images (gpt-image-2) and the visual quality grade (gpt-5.6-sol) need it',
-      how: 'add OPENAI_API_KEY=sk-… to .env — create one at https://platform.openai.com/api-keys',
-      envKey: 'OPENAI_API_KEY', aliases: ['OPENAI_API_KEY', 'OPEN_AI_KEY'] });
-  }
-  if (ids.has('deploy')) {
-    // Deploy goes to NETLIFY ONLY now — each explainer to its own {slug}-explainer.netlify.app site.
-    // (Vercel was removed after it overwrote a live site; the legacy Vercel explainers are untouched and
-    // not managed by this pipeline.) A missing Netlify token is FATAL: we refuse to start a deploy run
-    // rather than guess a target or fall back to another account.
-    if (!has(['NETLIFY_AUTH_TOKEN'])) {
-      problems.push({ fatal: true, need: 'NETLIFY_AUTH_TOKEN', why: 'the deploy station publishes each explainer to its own {slug}-explainer.netlify.app site',
-        how: 'create a token at https://app.netlify.com/user/applications#personal-access-tokens and add NETLIFY_AUTH_TOKEN=… to .env, or re-run with --no-deploy to build locally only',
-        envKey: 'NETLIFY_AUTH_TOKEN', aliases: ['NETLIFY_AUTH_TOKEN'] });
-    }
-  }
-  if ((ids.has('publish-repo') || ids.has('repo-seo')) && !has(['GITHUB_TOKEN', 'GH_TOKEN'])) {
-    problems.push({ fatal: false, need: 'GITHUB_TOKEN / GH_TOKEN (or `gh auth login`)', why: 'publish-repo creates the editable explainer repo on GitHub',
-      how: 'run `gh auth login`, or add GITHUB_TOKEN=ghp_… to .env, or re-run with --no-publish' });
-  }
-  if (!problems.length) return;
-  log(`\n${C.bold}Preflight — credentials${C.reset}`);
-  for (const p of problems) {
-    const tag = p.fatal ? `${C.red}MISSING${C.reset}` : `${C.yellow}heads-up${C.reset}`;
-    log(`  ${tag} ${C.bold}${p.need}${C.reset} ${C.dim}— ${p.why}${C.reset}\n      → ${p.how}`);
-  }
-  const fatal = problems.filter((p) => p.fatal);
-  if (fatal.length) {
-    // DROP-IN UX: on an interactive terminal, offer to paste the missing key(s) right now and save
-    // them to .env — so a developer using their own keys doesn't have to stop, edit a file, and re-run.
-    // Off a TTY (CI / hosted runner / piped), we keep the strict fail-loud behavior below.
-    await promptForMissingKeys(fatal, env, repoRoot);
-    const stillMissing = fatal.filter((p) => !(p.aliases || []).some((n) => env[n] && String(env[n]).trim()));
-    if (stillMissing.length) {
-      throw new Error(`preflight: ${stillMissing.length} required credential(s) missing (see above). Set them in .env and re-run — nothing was built; refusing to produce a degraded result silently.`);
-    }
-    log(`${C.green}✓ all required credentials present — continuing.${C.reset}`);
-  }
-  log(`${C.dim}(non-fatal — continuing; the affected ship steps will be skipped or fail loudly if reached)${C.reset}`);
-}
-
-// ── interactive key capture (drop-in mode) ──────────────────────────────────────────────────────
-// Prompt for each still-missing FATAL key, but ONLY on a real interactive terminal. A provided value
-// is set for this run AND persisted to .env (mode 0600). Values are NEVER printed or logged.
-function promptSecret(question) {
-  return new Promise((resolve) => {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    rl.question(question, (ans) => { rl.close(); resolve((ans || '').trim()); });
-  });
-}
-export function upsertEnvFile(envPath, key, value) {
-  let text = '';
-  try { text = fs.readFileSync(envPath, 'utf8'); } catch { /* new .env */ }
-  const line = `${key}=${value}`;
-  const re = new RegExp(`^\\s*(?:export\\s+)?${key}=.*$`, 'm');
-  text = re.test(text) ? text.replace(re, line) : text + (text && !text.endsWith('\n') ? '\n' : '') + line + '\n';
-  fs.writeFileSync(envPath, text, { mode: 0o600 });
-}
-export async function promptForMissingKeys(fatal, env, repoRoot) {
-  const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY) && !process.env.EXPLAINER_NONINTERACTIVE;
-  if (!interactive) return; // CI / hosted / piped → leave gaps; the caller throws with guidance
-  const envPath = path.join(repoRoot, '.env');
-  log(`\n${C.bold}Paste the missing key(s) to continue${C.reset} ${C.dim}— saved to .env (chmod 600), never printed, never committed. Press Enter to skip any.${C.reset}`);
-  for (const p of fatal) {
-    if (!p.envKey) continue;
-    if ((p.aliases || []).some((n) => env[n] && String(env[n]).trim())) continue; // already satisfied
-    const val = await promptSecret(`  ${p.envKey}: `);
-    if (!val) continue;
-    env[p.envKey] = val; // in-memory for this run
-    try { upsertEnvFile(envPath, p.envKey, val); log(`  ${C.green}✓ saved ${p.envKey} → ${envPath}${C.reset}`); }
-    catch (e) { log(`  ${C.yellow}kept ${p.envKey} for this run, but couldn't write .env: ${e.message}${C.reset}`); }
-  }
-}
-
-// run a sub-list of stations linearly; stop on the first FATAL failure (non-fatal ones warn + continue).
+// Run a sub-list of stations in order; stop on the first FATAL failure (non-fatal ones warn and continue).
 async function runStations(subList, baseArgs, total, startIdx) {
   const results = [];
   let i = startIdx;
@@ -270,247 +69,16 @@ async function runStations(subList, baseArgs, total, startIdx) {
   return { ok: true, results };
 }
 
-// Per-station wall-clock table for the receipt. PURE (unit-tested): rows = runStations results.
-export function stationTimingTable(rows = []) {
-  const list = (rows || []).filter((r) => r && r.id);
-  const w = Math.max('station'.length, 'total'.length, ...list.map((r) => String(r.id).length));
-  const fmt = (n) => (typeof n === 'number' && Number.isFinite(n) ? n : 0).toFixed(1);
-  const lines = [`${'station'.padEnd(w)}  seconds`];
-  for (const r of list) lines.push(`${String(r.id).padEnd(w)}  ${fmt(r.sec)}${r.ok ? '' : '  (failed)'}`);
-  const total = Math.round(list.reduce((t, r) => t + (Number.isFinite(r.sec) ? r.sec : 0), 0) * 10) / 10;
-  lines.push(`${'total'.padEnd(w)}  ${fmt(total)}`);
-  return lines;
-}
-
-const sumMean = (q) => (Array.isArray(q?.scorecard) ? q.scorecard.reduce((s, c) => s + (c.meanScore || 0), 0) : 0);
-function readQuality(buildDir) { try { return readContext(buildDir).quality; } catch { return null; } }
-
-// The self-correcting loop: while the page is below the bar, hand the harsh critic's CONTENT-actionable
-// findings (A* substance axes + operator questions) back to the brain, re-author the copy, re-assemble,
-// re-grade — keeping the BEST iteration. Craft (B*) and diagram (INV-18) notes are not content-fixable so
-// they're left for the design system / make-diagrams, not looped on here.
-// How many content re-authors can still be GRADED. quality-grade refuses a grade past its cap (3: one
-// initial + two refines) and hands back the old scorecard unchanged, so a pass beyond that is a full
-// brain call whose result nobody reads — it cost two paid rewrites on the ruvnet/ruos build.
-const GRADER_MAX_GRADES = 3;                 // = MAX_QUALITY_ITERATIONS in tools/quality-grade.mjs
-export function refineBudget(asked, gradesUsed = 1) {
-  return Math.max(0, Math.min(asked, GRADER_MAX_GRADES - 1, GRADER_MAX_GRADES - gradesUsed));
-}
-
-// Which iteration is "best" (review 3.0.1 #3 + the live ruvllm 3.0.0 build). A real scorecard for THIS
-// copy beats an ungraded copy that cleared the deterministic pre-checks, which beats a copy the
-// pre-checks refused (fewer violations first). The old rule compared sumMean alone, so an ungraded
-// pass (mean 0) could never win, and a pre-check refusal (which keeps the PREVIOUS copy's scorecard)
-// was ranked by grades it never earned.
-export function iterationRank(q) {
-  if (!q) return { tier: -1, score: 0 };
-  const scored = Array.isArray(q.scorecard) && q.scorecard.length > 0;
-  if (q.gateRefusal) {
-    const n = (k) => (Array.isArray(q[k]?.violations) ? q[k].violations.length : 0);
-    return { tier: 0, score: -(n('inv20') + n('inv24')) };
-  }
-  if (scored && q.graderUnavailable !== true) return { tier: 2, score: sumMean(q) };
-  if (q.graderUnavailable === true) return { tier: 1, score: 0 };
-  return { tier: -1, score: 0 };
-}
-const rankBetter = (a, b) => a.tier > b.tier || (a.tier === b.tier && a.score > b.score);
-
-// The full-page screenshots are re-written in place by every grade, so the best iteration's files
-// would be overwritten by later (worse) passes. Keep a copy and point the saved slot at it.
-function snapshotBest(q) {
-  const copy = JSON.parse(JSON.stringify(q || {}));
-  const keep = (p) => {
-    if (typeof p !== 'string' || !fs.existsSync(p)) return p;
-    const dest = path.join(path.dirname(p), `best-${path.basename(p)}`);
-    try { fs.copyFileSync(p, dest); return dest; } catch { return p; }
-  };
-  if (copy.screenshots && typeof copy.screenshots === 'object') {
-    for (const k of Object.keys(copy.screenshots)) copy.screenshots[k] = keep(copy.screenshots[k]);
-  }
-  for (const c of (Array.isArray(copy.scorecard) ? copy.scorecard : [])) if (c.screenshot) c.screenshot = keep(c.screenshot);
-  return copy;
-}
-
-// A refine pass only re-authors COPY, so it can only help when a copy-addressable weakness exists:
-// a substance axis (A*) or a reader/operator question. The overall-MEAN note alone is a consequence,
-// not a cause — with only design/imagery/diagram (B*, INV-18) failures a rewrite is a full 8-section
-// brain call plus a vision grade that cannot move them (review 3.0.1 #9b).
-export function contentFixable(notes) {
-  return (notes || []).some((n) => /^A\d|^operator:/.test(String(n?.criterion || '')));
-}
-
-export async function refineLoop({ buildDir, env, model, apiKey, opts }, deps = {}) {
-  const author = deps.authorContent || authorContent;
-  const tool = deps.runTool || runTool;
-  // ── #17.7 (pacphi): --max-refine must not promise passes the grader will refuse ────────────────
-  // tools/quality-grade.mjs enforces its own hard MAX_QUALITY_ITERATIONS = 3 (1 initial grade + 2
-  // refines) and, past it, returns the PRIOR scorecard unchanged at zero cost rather than re-grading.
-  // This loop never knew that. So `--max-refine 5` re-authored content for real money on passes
-  // 3, 4 and 5 — full brain calls — and every one of them was then graded by a tool that had already
-  // stopped looking. Silently wasted spend, invisible unless you read both files side by side.
-  // Clamp, and SAY SO, rather than quietly honouring a number we cannot deliver.
-  const asked = opts.maxRefine != null ? Math.max(0, parseInt(opts.maxRefine, 10) || 0) : 2;
-  let q = readQuality(buildDir);
-  const MAX = refineBudget(asked, q?.iterations);
-  if (asked > GRADER_MAX_GRADES - 1) {
-    log(`${C.yellow}--max-refine ${asked} clamped to ${GRADER_MAX_GRADES - 1}${C.reset} ${C.dim}— quality-grade enforces a hard cap of `
-      + `${GRADER_MAX_GRADES} total grades, so further passes would re-author content (real cost) and then be handed `
-      + `the previous scorecard unchanged. Raising it buys nothing but spend.${C.reset}`);
-  }
-  if (MAX < Math.min(asked, GRADER_MAX_GRADES - 1)) {
-    log(`${C.yellow}grader cap already spent (${q?.iterations}/${GRADER_MAX_GRADES} grades)${C.reset} ${C.dim}— skipping refine passes: a re-author now `
-      + `would be a full brain call whose result the grader refuses to read.${C.reset}`);
-  }
-  const contentNow = () => { try { return readContext(buildDir).content; } catch { return null; } };
-  let best = { rank: iterationRank(q), content: contentNow(), quality: snapshotBest(q) };
-  let pass = 0;
-  while (q && !q.passed && pass < MAX) {
-    const fb = (q.refineNotes || []).filter((n) => /^A\d|^operator:|^MEAN$/.test(n.criterion));
-    if (!contentFixable(fb)) {
-      log(`${C.dim}refine skipped — every remaining weakness is design, imagery or diagrams; rewriting the copy cannot move those.${C.reset}`);
-      break;
-    }
-    pass++;
-    const axes = [...new Set(fb.map((f) => f.criterion))].join(', ') || 'the weak axes';
-    log(`\n${C.bold}${C.cyan}Refine pass ${pass}/${MAX}${C.reset} ${C.dim}(re-authoring content to lift ${axes})${C.reset}`);
-    const ctx = readContext(buildDir); ctx._repoRoot = REPO_ROOT;
-    try { mergeSlot(buildDir, 'content', await author(ctx, { apiKey, model, feedback: fb })); }
-    catch (e) { log(`${C.yellow}refine: content re-author failed (${e.message}) — stopping refine${C.reset}`); break; }
-    const a = tool('assemble-page', buildDir, { repoRoot: REPO_ROOT, env });
-    if (!a.ok) { log(`${C.yellow}refine: assemble-page failed (${a.error}) — stopping refine${C.reset}`); break; }
-    const before = JSON.stringify(readQuality(buildDir));
-    const g = tool('quality-grade', buildDir, { repoRoot: REPO_ROOT, env });
-    q = readQuality(buildDir);
-    // A grader outage that quality-grade RECORDED for this copy still describes this copy (pre-checks
-    // passed, ungraded) and is a candidate; any other failure leaves a slot about an older copy.
-    const freshOutage = !g.ok && q?.graderUnavailable === true && JSON.stringify(q) !== before;
-    if (g.ok || freshOutage) {
-      const rank = iterationRank(q);
-      if (rankBetter(rank, best.rank)) best = { rank, content: contentNow(), quality: snapshotBest(q) };
-    }
-    if (!g.ok) { log(`${C.yellow}refine: quality-grade failed (${g.error}) — stopping refine${C.reset}`); break; }
-    log(`${C.dim}refine pass ${pass}: mean(sum of devices)=${sumMean(q)}  passed=${q?.passed}${C.reset}`);
-  }
-  // not passing → restore the BEST iteration's content AND its quality slot. Re-grading here is what
-  // went wrong before: at the cap quality-grade refuses and leaves the LAST pass's scorecard beside the
-  // best pass's content, and a pre-check failure on the restored copy re-wrote the slot as a refusal.
-  if (q && !q.passed && best.content) {
-    const cur = readContext(buildDir);
-    if (JSON.stringify(cur.content) !== JSON.stringify(best.content)) {
-      log(`${C.dim}restoring the best iteration (tier ${best.rank.tier}, score ${best.rank.score}) — its content and its own grade${C.reset}`);
-      mergeSlot(buildDir, 'content', best.content);
-      tool('assemble-page', buildDir, { repoRoot: REPO_ROOT, env });
-      const ctx2 = readContext(buildDir);
-      ctx2.quality = {
-        ...best.quality,
-        // spend and the grade budget are cumulative facts about the BUILD, not about one iteration
-        ...(Number.isInteger(cur.quality?.iterations) ? { iterations: cur.quality.iterations } : {}),
-        ...(cur.quality?.cost ? { cost: cur.quality.cost } : {}),
-        restoredBest: true,
-      };
-      fs.writeFileSync(path.join(buildDir, 'build.json'), JSON.stringify(ctx2, null, 2) + '\n');
-      q = readQuality(buildDir);
-    }
-  }
-  return q;
-}
-
-// What a BELOW-BAR local build does next (pure, unit-tested). An empty scorecard with a RECORDED reason
-// is not a diagram failure (review 3.0.1 #2, and the live ruvllm 3.0.0 build held as "the mandatory
-// diagrams did not render" while both diagrams rendered): a deterministic pre-check refusal
-// (quality.gateRefusal) or a grader outage (quality.graderUnavailable) means no vision verdict exists for
-// this copy, and tools/deploy.mjs delivers both with that disclosed.
-export function belowBarVerdict(quality) {
-  const scored = !!(quality && Array.isArray(quality.scorecard) && quality.scorecard.length);
-  if (!scored && quality?.gateRefusal) {
-    return { action: 'deliver-ungraded', why: `the copy failed a deterministic reader check before the vision grade (${quality.gateRefusal})` };
-  }
-  if (!scored && quality?.graderUnavailable === true) {
-    return { action: 'deliver-ungraded', why: `the vision grader was unavailable (${String(quality.graderError || 'no detail recorded').slice(0, 160)})` };
-  }
-  if (!scored) return { action: 'hold', why: 'no quality scorecard was produced and no reason was recorded' };
-  if (!quality.scorecard.some((c) => c.inv18?.passed)) return { action: 'hold', why: 'the mandatory diagrams did not render' };
-  return { action: 'deliver', why: 'below the bar, structurally sound' };
-}
-
-function finalSummary(outDir) {
-  log(`\n${C.green}${C.bold}Done.${C.reset} build dir: ${outDir}`);
-  try {
-    const ctx = readContext(outDir);
-    if (ctx.publish?.liveUrl) log(`${C.green}live: ${ctx.publish.liveUrl}${C.reset}`);
-    if (ctx.publish?.explainerRepoUrl) log(`${C.dim}repo: ${ctx.publish.explainerRepoUrl}${C.reset}`);
-    if (ctx.quality?.passed != null) log(`${C.dim}quality passed: ${ctx.quality.passed}${C.reset}`);
-    // The one ask, at the one moment it's earned. Most npx users never see the GitHub repo
-    // page (npm clones outnumber repo views 4:1) — this line is the only star prompt they get.
-    log(`\n${C.dim}If this was worth your time, a star helps others find it: ${C.reset}https://github.com/stuinfla/Repo-Explainer`);
-  } catch { /* best-effort summary */ }
-}
-
-function reportQualityGap(quality) {
-  if (!quality || !Array.isArray(quality.scorecard)) { log(`${C.red}quality gate: no scorecard available${C.reset}`); return; }
-  log(`\n${C.bold}Quality scorecard — HELD below the SHIP bar (need, on both devices: mean ≥ 82, worst axis ≥ 70, real legible architecture+flow diagrams, and the comprehension operators YES). World-class target is mean ≥ 90 / worst ≥ 85 / all 5 operators.${C.reset}`);
-  for (const c of quality.scorecard) {
-    log(`  ${C.bold}${c.device}${C.reset}: mean ${c.meanScore}, worst axis ${c.headlineScore}, diagrams ${c.inv18?.passed ? 'ok' : 'FAIL'}, passed ${c.passed ? C.green + 'yes' + C.reset : C.red + 'no' + C.reset}`);
-  }
-  const seen = new Set();
-  for (const n of (quality.refineNotes || [])) {
-    const k = n.device + n.criterion;
-    if (seen.has(k)) continue; seen.add(k);
-    log(`   ${C.yellow}• [${n.device}] ${n.criterion} (${n.score})${C.reset} ${C.dim}${String(n.saw || n.note || '').replace(/\s+/g, ' ').slice(0, 150)}${C.reset}`);
-  }
-}
-
-// ── the run ───────────────────────────────────────────────────────────────────────────────────
-// THE RECEIPT. Printed on EVERY exit path, including the held one — a build that stopped still spent
-// money, and "what did that cost me?" is exactly the question a failed run provokes. The first
-// version lived inline before the final return and silently never fired on the hold path, which is
-// how a real p-map build finished with no cost line at all.
-// Three ledgers: the brain is MEASURED (OpenRouter reports a real per-call charge); rasters and the
-// vision grade are DERIVED from published rates, because those APIs return none. The split is
-// printed rather than hidden — a derived number must never be mistaken for a measured one.
-// Partial (--from/--only) runs print only timing: rewriting the cost slot from a slice's spend would
-// understate the build's real total.
-function printTiming(outDir, stations) {
-  if (!Array.isArray(stations) || !stations.length) return;
-  try { mergeSlot(outDir, 'timing', { stations: stations.map((r) => ({ id: r.id, ok: r.ok, sec: r.sec })) }); } catch { /* best-effort */ }
-  for (const line of stationTimingTable(stations)) log(`${C.dim}${line}${C.reset}`);
-}
-export function formatImagesCost(images = {}) {
-  if (images && images.usd === null) return `images UNPRICED (${images.images || 0})`;
-  return `images $${((images && images.usd) || 0).toFixed(4)} (${(images && images.images) || 0}, derived)`;
-}
-function printReceipt(outDir, startedAt, stations = null) {
-  try {
-    const ctx = readContext(outDir);
-    const brain = getBrainSpend();
-    const images = ctx.visuals?.cost || { usd: 0, images: 0 };
-    const grading = ctx.quality?.cost || { usd: 0, calls: 0 };
-    // generate-image records usd:null when any image has no known price — never print that as $0.
-    const imagesUnpriced = images.usd === null;
-    const total = Math.round((brain.usd + (images.usd || 0) + (grading.usd || 0)) * 1e4) / 1e4;
-    const elapsedSec = Math.round((Date.now() - startedAt) / 1000);
-    mergeSlot(outDir, 'cost', {
-      totalUsd: total,
-      brain: { ...brain, basis: 'measured (OpenRouter reports the charge)' },
-      images, grading, elapsedSec,
-    });
-    log('');
-    log(`${C.bold}Cost:${C.reset} ${C.green}$${total.toFixed(4)}${imagesUnpriced ? ' + unpriced images' : ''}${C.reset}  ${C.dim}= brain $${brain.usd.toFixed(4)} (${brain.calls} calls, measured)`
-      + ` + ${formatImagesCost(images)}`
-      + ` + grading $${(grading.usd || 0).toFixed(4)} (${grading.calls || 0} calls, derived)${C.reset}`);
-    log(`${C.bold}Time:${C.reset} ${elapsedSec}s`);
-    printTiming(outDir, stations);
-  } catch { /* a receipt must never be the thing that fails a good build */ }
-}
+const stopped = (id, outDir) => log(`\n${C.red}${C.bold}Build stopped at "${id}".${C.reset} Resume: ${C.cyan}--from ${id} --out ${outDir}${C.reset}`);
+const meanPair = (q) => q.scorecard.map((c) => `${String(c.device).replace(/\(.*/, '')} ${c.meanScore}`).join(' / ');
 
 export async function run(repoUrl, opts = {}) {
-  const startedAt = Date.now();   // for the cost/time receipt at the end
+  const startedAt = Date.now();
   const parsed = parseRepoUrl(repoUrl);
   if (!parsed) throw new Error(`not a parseable GitHub repo URL: "${repoUrl}"`);
-  // Slug is name-based, but a slug is an IDENTITY (build dir, kb store, kb.config target,
-  // {slug}-explainer.netlify.app). If a prior build already owns this slug for a DIFFERENT
-  // owner's repo, silently reusing it would cross-contaminate stores and deploy over the other
-  // repo's site (ADR-0007's incident, one level up). Disambiguate to owner-name in that case.
+  // A slug is an IDENTITY (build dir, kb store, kb.config target, {slug}-explainer.netlify.app). If a prior
+  // build already owns this slug for a DIFFERENT owner's repo, reusing it would cross-contaminate stores and
+  // deploy over the other repo's site (ADR-0007), so disambiguate to owner-name.
   let slug = slugify(parsed.name);
   const priorBuildJson = path.join(process.cwd(), 'explainer-builds', slug, 'build.json');
   try {
@@ -527,14 +95,7 @@ export async function run(repoUrl, opts = {}) {
   const model = resolveModel(env, opts.model);
 
   const outDir = path.resolve(opts.out || path.join(process.cwd(), 'explainer-builds', slug));
-  let list = stations(opts);
-
-  // --from / --to / --only slicing (resume a long build)
-  if (opts.only) list = list.filter((s) => s.id === opts.only);
-  else {
-    if (opts.from) { const i = list.findIndex((s) => s.id === opts.from); if (i === -1) throw new Error(`--from: unknown station "${opts.from}"`); list = list.slice(i); }
-    if (opts.to) { const i = list.findIndex((s) => s.id === opts.to); if (i === -1) throw new Error(`--to: unknown station "${opts.to}"`); list = list.slice(0, i + 1); }
-  }
+  const list = selectStations(buildStations(opts), { from: opts.from, to: opts.to, only: opts.only });
 
   log(`${C.bold}explainmyrepo${C.reset} — ${C.cyan}${parsed.owner}/${parsed.name}${C.reset}`);
   log(`${C.dim}build dir : ${outDir}${C.reset}`);
@@ -543,16 +104,11 @@ export async function run(repoUrl, opts = {}) {
 
   if (opts.dryRun) { log(`\n${C.yellow}--dry-run: plan only, nothing executed.${C.reset}`); return { ok: true, dryRun: true, outDir, stations: list.map((s) => s.id) }; }
 
-  // Preflight: name any missing credential for the stations in this slice + how to set it. On a TTY it
-  // offers to capture the key(s) now and save them to .env (drop-in mode); off a TTY it refuses to start
-  // on a fatal gap rather than build a degraded result. (The brain key is among the fatal checks.)
   await preflight(list, env, REPO_ROOT);
   apiKey = getSecret(env, ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY']); // may have just been entered + saved
 
-  // Seed the build dir + build.json (idempotent; resumes if it already exists). If the slice starts
-  // at clone-repo we seed; if it starts later (a resume) we require an existing build.
-  const startsAtCloneRepo = list.length > 0 && list[0].id === 'clone-repo';
-  if (startsAtCloneRepo) {
+  // Seed the build dir + build.json (idempotent). A slice that starts after clone-repo resumes an existing build.
+  if (list.length > 0 && list[0].id === 'clone-repo') {
     initBuildDir(outDir, parsed.url || repoUrl);
   } else if (!fs.existsSync(path.join(outDir, 'build.json'))) {
     throw new Error(`--from/--only "${list[0]?.id}" needs an existing build at ${outDir} — start with clone-repo first`);
@@ -563,53 +119,38 @@ export async function run(repoUrl, opts = {}) {
   }
 
   const total = list.length;
-  const baseArgs = { buildDir: outDir, env, model, apiKey, opts };
+  const baseArgs = { buildDir: outDir, env, model, apiKey, opts, startedAt };
   const qIdx = list.findIndex((s) => s.id === 'quality-grade');
 
-  // No quality gate in this slice (--no-quality, or a partial --only/--from run) → run linearly.
+  // No quality gate in this slice (--no-quality, or a partial --only/--from run): run linearly.
   if (qIdx === -1) {
     const r = await runStations(list, baseArgs, total, 0);
-    if (!r.ok) { log(`\n${C.red}${C.bold}Build stopped at "${r.failedAt}".${C.reset} Resume: ${C.cyan}--from ${r.failedAt} --out ${outDir}${C.reset}`); printTiming(outDir, r.results); return { ok: false, failedAt: r.failedAt, error: r.error, outDir, results: r.results }; }
+    if (!r.ok) { stopped(r.failedAt, outDir); printTiming(outDir, r.results); return { ok: false, failedAt: r.failedAt, error: r.error, outDir, results: r.results }; }
     finalSummary(outDir);
     printTiming(outDir, r.results);
     return { ok: true, outDir, results: r.results };
   }
 
-  // Gated run: build through quality-grade, refine-until-pass, and ONLY ship (deploy/publish/…) on pass.
+  // Gated run: build through quality-grade, refine while below the bar, then ship what integrity allows.
   const pre = list.slice(0, qIdx + 1);
   const post = list.slice(qIdx + 1);
   const preR = await runStations(pre, baseArgs, total, 0);
-  // A grader OUTAGE on the first grade is recorded by quality-grade (quality.graderUnavailable) and
-  // ADR-0011 delivers such a page ungraded with that said plainly — it is not a reason to stop here.
+  // A grader OUTAGE on the first grade is recorded (quality.graderUnavailable); ADR-0011 delivers such a
+  // page ungraded with that said plainly.
   const outageOnly = !preR.ok && preR.failedAt === 'quality-grade' && readQuality(outDir)?.graderUnavailable === true;
   if (outageOnly) log(`${C.yellow}quality-grade: the grader was unavailable — continuing; the page is delivered ungraded and says so (ADR-0011).${C.reset}`);
-  if (!preR.ok && !outageOnly) { log(`\n${C.red}${C.bold}Build stopped at "${preR.failedAt}".${C.reset} Resume: ${C.cyan}--from ${preR.failedAt} --out ${outDir}${C.reset}`); printReceipt(outDir, startedAt, preR.results); return { ok: false, failedAt: preR.failedAt, error: preR.error, outDir, results: preR.results }; }
+  if (!preR.ok && !outageOnly) { stopped(preR.failedAt, outDir); printReceipt(outDir, startedAt, preR.results); return { ok: false, failedAt: preR.failedAt, error: preR.error, outDir, results: preR.results }; }
 
   let quality = readQuality(outDir);
   if (quality && !quality.passed && !opts.noRefine) {
     quality = await refineLoop({ buildDir: outDir, env, model, apiKey, opts });
+    recordClaims(outDir); // the refine passes re-authored the copy; the claims slot must describe the final one
   }
 
   if (!(quality && quality.passed)) {
-    // Below the world-class bar. DEFAULT: hold — never ship slop (the whole point). With
-    // --ship-best-effort: deliver the best version anyway so a stranger ALWAYS gets a URL, with the
-    // honest scorecard travelling alongside — UNLESS it's genuinely broken (no device rendered the
-    // mandatory diagrams), which always holds.
+    // Delivery is gated on integrity, not score (ADR-0011); see belowBarVerdict.
     reportQualityGap(quality);
-    // ── ADR-0011 ALIGNMENT (2026-08-09) ─────────────────────────────────────────────────────────
-    // ADR-0011 ("the gate ADVISES — it never destroys a paid-for build") was implemented at the
-    // HOSTED boundary in tools/deploy.mjs and this local path was never reconciled, so the two doors
-    // disagreed: hosted delivered a below-bar page with an honest note while local printed "Held at
-    // the quality gate — did NOT deploy or publish" and returned ok:false. Caught by running a real
-    // local build of sindresorhus/p-map, whose page scored mean 93 on mobile and was held anyway.
-    // The ADR's D1 is explicit that delivery is gated on INTEGRITY, not on quality — and the
-    // integrity condition is already computed right here as `diagramsOk`.
-    // An empty scorecard with a RECORDED reason is not a diagram failure (review 3.0.1 #2, and the live
-    // ruvllm 3.0.0 build that was held as "diagrams did not render" while both diagrams rendered): a
-    // deterministic pre-check refusal (quality.gateRefusal) or a grader outage (quality.graderUnavailable)
-    // means no vision verdict exists for this copy. tools/deploy.mjs delivers both with that disclosed.
     const verdict = belowBarVerdict(quality);
-    if (opts.shipBestEffort) log(`${C.dim}--ship-best-effort is now the default (ADR-0011) and no longer changes anything.${C.reset}`);
     if (verdict.action === 'deliver-ungraded') {
       log(`\n${C.yellow}${C.bold}Not vision-graded — ${verdict.why}. Delivering anyway, with that stated plainly (ADR-0011).${C.reset}`);
       log(`${C.dim}No scorecard exists for this copy, so diagram legibility was not judged by the grader. Best local build: ${outDir}/site${C.reset}`);
@@ -619,29 +160,29 @@ export async function run(repoUrl, opts = {}) {
       printReceipt(outDir, startedAt, preR.results);
       return { ok: false, gated: true, quality, outDir, results: preR.results };
     } else {
-      const meanBE = quality.scorecard.map((c) => `${String(c.device).replace(/\(.*/, '')} ${c.meanScore}`).join(' / ');
-      log(`\n${C.yellow}${C.bold}Below the bar (mean ${meanBE}) — delivering anyway, with the scorecard attached (ADR-0011).${C.reset}`);
+      log(`\n${C.yellow}${C.bold}Below the bar (mean ${meanPair(quality)}) — delivering anyway, with the scorecard attached (ADR-0011).${C.reset}`);
       log(`${C.dim}Structurally sound (mandatory diagrams present). The per-axis gaps above are recorded in the scorecard and delivered honestly, not hidden. A stranger always gets a real page.${C.reset}`);
     }
+  } else if (quality.exemplary) {
+    log(`\n${C.green}${C.bold}Quality gate PASSED — world-class (mean ${meanPair(quality)}).${C.reset} Shipping.`);
   } else {
-    const meanPair = quality.scorecard.map((c) => `${String(c.device).replace(/\(.*/, '')} ${c.meanScore}`).join(' / ');
-    if (quality.exemplary) {
-      log(`\n${C.green}${C.bold}Quality gate PASSED — world-class (mean ${meanPair}).${C.reset} Shipping.`);
-    } else {
-      log(`\n${C.green}${C.bold}Quality gate PASSED — ship-worthy (mean ${meanPair}).${C.reset} Shipping.`);
-      log(`${C.dim}Genuinely good + no slop + real legible diagrams (INV-18). The world-class target (mean ≥ 90 / worst axis ≥ 85 / all 5 operators) is not fully reached — the per-axis gap is recorded in build.json refineNotes and travels with the scorecard.${C.reset}`);
-    }
+    log(`\n${C.green}${C.bold}Quality gate PASSED — ship-worthy (mean ${meanPair(quality)}).${C.reset} Shipping.`);
+    log(`${C.dim}Genuinely good + no slop + real legible diagrams (INV-18). The world-class target (mean ≥ 90 / worst axis ≥ 85 / all 6 operators) is not fully reached — the per-axis gap is recorded in build.json refineNotes and travels with the scorecard.${C.reset}`);
   }
   const postR = post.length ? await runStations(post, baseArgs, total, qIdx + 1) : { ok: true, results: [] };
-  finalSummary(outDir);
-  // ── THE RECEIPT (2026-08-09) ────────────────────────────────────────────────────────────────────
-  // The hosted lane has always reported what a build cost; the local lane reported nothing, so the
-  // simple question "what does this cost to run?" could only be answered by estimating — and an
-  // estimate is what got it wrong twice. Three ledgers feed this: the brain (MEASURED, OpenRouter
-  // returns a real per-call charge), the rasters and the vision grade (both DERIVED from published
-  // rates, because those APIs return no charge). The split is printed, not hidden, so nobody mistakes
-  // a derived figure for a measured one.
-  printReceipt(outDir, startedAt, [...preR.results, ...postR.results]);
+  return concludeShip({ outDir, startedAt, preResults: preR.results, postR });
+}
 
-  return { ok: postR.ok !== false, outDir, results: [...preR.results, ...postR.results] };
+// A fatal failure AFTER the grade (deploy, publish-repo, repo-seo) is a stopped build: say how to resume and
+// never print the green "Done." summary over it.
+export function concludeShip({ outDir, startedAt, preResults, postR }) {
+  const results = [...preResults, ...postR.results];
+  if (postR.ok === false) {
+    stopped(postR.failedAt, outDir);
+    printReceipt(outDir, startedAt, results);
+    return { ok: false, failedAt: postR.failedAt, error: postR.error, outDir, results };
+  }
+  finalSummary(outDir);
+  printReceipt(outDir, startedAt, results);
+  return { ok: true, outDir, results };
 }

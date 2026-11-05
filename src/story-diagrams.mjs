@@ -10,15 +10,19 @@
 //                             handoff animated. Shows a choice being made, not a list of steps.
 //
 // PURE: no I/O, no network. validate*() enforce grounding BEFORE anything is drawn; render*() never
-// emit a label wider than its box (fit() truncates with an ellipsis), so output is always legible.
-// Motion is gated on prefers-reduced-motion, and the static (reduced-motion) state is the END of the
-// story, so a still image still tells all of it. No scripts, no foreignObject, no external refs.
+// emit a label wider than its box (fit() truncates with an ellipsis). These are the WIDE canvases
+// (system map 1110px, decision >=1000px); the phone-width twins drawn from the SAME verified model live in
+// story-diagrams-mobile.mjs, and make-diagrams requires those to clear the 11px mobile floor.
+// Motion is CSS keyframes on opacity/transform only, scoped under the SVG's own id, gated on
+// prefers-reduced-motion; the static (reduced-motion) state is the END of the story, so a still image still
+// tells all of it. No scripts, no foreignObject, no external refs.
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+export const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const num = (n) => Number(Number(n).toFixed(1));
 
 // Average advance widths (px per char) for the fonts the SVG asks for — deliberately a touch wide.
-const W_BOLD16 = 8.2, W_REG13 = 6.1, W_CODE13 = 7.9, W_BOLD14 = 7.8;
+const W_BOLD16 = 8.2, W_REG13 = 6.1, W_CODE13 = 7.9;
+const W_BOLD14 = 7.8;
 
 /** Truncate `text` with an ellipsis so it fits `maxPx` at `perChar` px per character. */
 export function fit(text, maxPx, perChar) {
@@ -45,6 +49,32 @@ export function wrap(text, maxPx, perChar, maxLines = 2) {
   return [...head, fit(lines.slice(maxLines - 1).join(' '), maxPx, perChar)];
 }
 
+/** Word-wrap with NO truncation: a token longer than a line is broken at - _ / . first, then hard. For the phone layouts. */
+export function wrapAll(text, maxPx, perChar) {
+  const cap = Math.max(4, Math.floor(maxPx / perChar));
+  const lines = [];
+  let cur = '';
+  for (const w of String(text == null ? '' : text).replace(/\s+/g, ' ').trim().split(' ').filter(Boolean)) {
+    if (w.length > cap) {                               // an over-long token owns its lines: pack its pieces, never join across a space
+      if (cur) { lines.push(cur); cur = ''; }
+      let chunk = '';
+      for (const piece of w.match(/[^-_/.]+[-_/.]?|[-_/.]+/g) || [w]) {
+        if ((chunk + piece).length <= cap) { chunk += piece; continue; }
+        if (chunk) lines.push(chunk);
+        let rest = piece;
+        while (rest.length > cap) { lines.push(rest.slice(0, cap)); rest = rest.slice(cap); }
+        chunk = rest;
+      }
+      cur = chunk;
+    } else if (!cur) cur = w;
+    else if (cur.length + 1 + w.length <= cap) cur += ` ${w}`;
+    else { lines.push(cur); cur = w; }
+  }
+  if (cur) lines.push(cur);
+  return lines.length ? lines : [''];
+}
+
+const HEAD_MAX = 30;
 const isStr = (v, max = 160) => typeof v === 'string' && v.trim() !== '' && v.length <= max;
 
 // ── validation (grounding gate) ────────────────────────────────────────────────────────────────────
@@ -67,6 +97,11 @@ export function validateSystemMap(m) {
     if (!isStr(it && it.name, 40)) e.push(`outputs.items[${i}].name required`);
     if (it && it.cmd != null && !isStr(it.cmd, 40)) e.push(`outputs.items[${i}].cmd too long`);
   });
+  // the head labels are single-line on both canvases; a longer one cannot fit a 360-unit phone canvas, so it is refused here
+  if (m.inputs && m.inputs.label != null && !isStr(m.inputs.label, HEAD_MAX)) e.push(`inputs.label must be 1–${HEAD_MAX} chars`);
+  if (m.outputs && m.outputs.label != null && !isStr(m.outputs.label, HEAD_MAX)) e.push(`outputs.label must be 1–${HEAD_MAX} chars`);
+  const ro = m.worksWith && m.worksWith.runsOn;
+  if (ro != null && (!Array.isArray(ro) || ro.length < 1 || ro.length > 5 || !ro.every((x) => isStr(x, 30)))) e.push('worksWith.runsOn must be 1–5 strings of ≤30 chars (or omit it)');
   const ww = list(m.worksWith && m.worksWith.items, 1, 6, 'worksWith.items');
   ww.forEach((it, i) => {
     if (!isStr(it && it.name, 28)) e.push(`worksWith.items[${i}].name required`);
@@ -95,7 +130,10 @@ export function validateDecision(m) {
   });
   if (c.filter((x) => x && x.status === 'picked').length > 1) e.push('candidates: at most one picked');
   if (c.filter((x) => x && x.status === 'active').length > 1) e.push('candidates: at most one active');
-  if (!m.threshold || typeof m.threshold.value !== 'number' || !isStr(m.threshold.label, 60)) e.push('threshold: {value, label} required');
+  const pct = (v) => typeof v === 'number' && v >= 0 && v <= 100;   // the chart's y axis is 0-100; outside it a line is drawn off the gauge
+  if (m.panelLabel != null && !isStr(m.panelLabel, HEAD_MAX)) e.push(`panelLabel must be 1–${HEAD_MAX} chars`);
+  if (!m.threshold || !pct(m.threshold.value) || !isStr(m.threshold.label, 60)) e.push('threshold: {value 0–100, label} required');
+  if (m.qualify != null && !pct(m.qualify.value)) e.push('qualify.value must be 0–100 (or omit qualify)');
   const steps = Array.isArray(m.steps) ? m.steps : [];
   if (steps.length < 2 || steps.length > 4) e.push('steps: need 2–4');
   steps.forEach((s, i) => { if (!isStr(s && s.title, 40) || !isStr(s && s.sub, 60)) e.push(`steps[${i}] needs title ≤40 and sub ≤60`); });
@@ -106,23 +144,27 @@ export function validateDecision(m) {
 // ── shared style ───────────────────────────────────────────────────────────────────────────────────
 const FONT = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-const C = { bg: '#0d1117', card: '#161b22', line: '#30363d', fg: '#f0f6fc', mute: '#8b949e', red: '#f85149', amber: '#d29922', green: '#3fb950', blue: '#4493c9', code: '#79c0ff' };
+export const C = { bg: '#0d1117', card: '#161b22', line: '#30363d', fg: '#f0f6fc', mute: '#8b949e', red: '#f85149', amber: '#d29922', green: '#3fb950', blue: '#4493c9', code: '#79c0ff' };
 
-function style(extra = '') {
+/** Shared CSS, every selector and keyframe scoped under the SVG's own `id` so nothing can leak to a host page. */
+export function style(id, extra = '', { mobile = false } = {}) {
+  const S = `#${id}`;
+  // the phone layout declares NO text below 13px (13 x 312/360 = 11.3px on a 390px viewport)
+  const sz = mobile ? { sub: 13, head: 13, num: 13, pill: 14, code: 13 } : { sub: 13, head: 11, num: 12, pill: 14, code: 13 };
   return `<style>
-    svg text { font-family: ${FONT}; }
-    .sd-ttl { font-size: 24px; font-weight: 700; fill: ${C.fg}; }
-    .sd-sub { font-size: 13px; fill: ${C.mute}; }
-    .sd-h { font-size: 16px; font-weight: 700; fill: ${C.fg}; }
-    .sd-s { font-size: 13px; fill: ${C.mute}; }
-    .sd-head { font-size: 11px; letter-spacing: 1.6px; fill: ${C.mute}; font-weight: 700; }
-    .sd-pill { font-size: 14px; font-weight: 700; }
-    .sd-code { font: 13px ${MONO}; fill: ${C.code}; }
-    .sd-num { font-size: 12px; font-weight: 700; fill: ${C.bg}; }
-    .sd-flow { fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 6 9; }
+    ${S} text { font-family: ${FONT}; }
+    ${S} .sd-ttl { font-size: ${mobile ? 21 : 24}px; font-weight: 700; fill: ${C.fg}; }
+    ${S} .sd-sub { font-size: ${sz.sub}px; fill: ${C.mute}; }
+    ${S} .sd-h { font-size: ${mobile ? 15 : 16}px; font-weight: 700; fill: ${C.fg}; }
+    ${S} .sd-s { font-size: ${sz.sub}px; fill: ${C.mute}; }
+    ${S} .sd-head { font-size: ${sz.head}px; letter-spacing: ${mobile ? 1 : 1.6}px; fill: ${C.mute}; font-weight: 700; }
+    ${S} .sd-pill { font-size: ${sz.pill}px; font-weight: 700; }
+    ${S} .sd-code { font: ${sz.code}px ${MONO}; fill: ${C.code}; }
+    ${S} .sd-num { font-size: ${sz.num}px; font-weight: 700; fill: ${C.bg}; }
+    ${S} .sd-flow { fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 6 9; }
     ${extra}
-    @media (prefers-reduced-motion: no-preference) { .sd-flow { animation: sd-dash 1.3s linear infinite; } }
-    @keyframes sd-dash { to { stroke-dashoffset: -30; } }
+    @media (prefers-reduced-motion: no-preference) { ${S} .sd-flow { animation: ${id}-flowk 2.6s ease-in-out infinite; } }
+    @keyframes ${id}-flowk { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
   </style>`;
 }
 
@@ -177,8 +219,8 @@ export function describeDecision(m) {
 }
 
 // ── SYSTEM MAP ─────────────────────────────────────────────────────────────────────────────────────
-const SW = { yes: [C.green, '#12261a', '✓'], partial: [C.amber, '#2a2412', '~'], no: [C.amber, '#2a1a12', '✕'] };
-const DOTS = [C.red, C.amber, C.green, C.blue, '#a371f7'];
+export const SW = { yes: [C.green, '#12261a', '✓'], partial: [C.amber, '#2a2412', '~'], no: [C.amber, '#2a1a12', '✕'] };
+export const DOTS = [C.red, C.amber, C.green, C.blue, '#a371f7'];
 
 export function renderSystemMap(m) {
   const problems = validateSystemMap(m);
@@ -218,10 +260,10 @@ export function renderSystemMap(m) {
   const engMid = (TOP + engBottom) / 2;
 
   const o = [];
-  o.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="sd-t sd-d">`);
+  o.push(`<svg id="sd-map" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="sd-t sd-d">`);
   o.push(`<title id="sd-t">${esc(m.title)}</title>`);
   o.push(`<desc id="sd-d">${esc(describeSystemMap(m))}</desc>`);
-  o.push(style());
+  o.push(style('sd-map'));
   o.push(`<rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="16" fill="${C.bg}" stroke="${C.line}"/>`);
   o.push(`<text class="sd-ttl" x="40" y="48">${esc(fit(m.title, 1000, 13.5))}</text>`);
   if (m.subtitle) o.push(`<text class="sd-sub" x="40" y="72">${esc(fit(m.subtitle, 1000, 7))}</text>`);
@@ -303,8 +345,38 @@ export function renderSystemMap(m) {
   return `${o.join('\n')}\n`;
 }
 
+
+/**
+ * The decision's motion, scoped under `id`: opacity and transform only. The static (reduced-motion) state is the END of
+ * the story: the picked ring and arc shown, the ACTIVE overlay hidden. `axis` is the direction the active gauge grows.
+ */
+export function decisionMotion(id, { axis = 'Y' } = {}) {
+  const S = `#${id}`;
+  return `
+    ${S} .sd-ring { opacity: 1; } ${S} .sd-act, ${S} .sd-actC { opacity: 0; }
+    ${S} .sd-fillA { transform-box: fill-box; transform-origin: ${axis === 'Y' ? 'bottom' : 'left'}; }
+    @media (prefers-reduced-motion: no-preference) {
+      ${S} .sd-fillA { animation: ${id}-grow 10s ease-in-out infinite; }
+      ${S} .sd-alert { animation: ${id}-alert 10s ease-in-out infinite; }
+      ${S} .sd-mk    { animation: ${id}-mark 10s ease-out infinite; }
+      ${S} .sd-pk    { animation: ${id}-pick 10s ease-out infinite; }
+      ${S} .sd-ring  { animation: ${id}-ringk 10s ease-in-out infinite; }
+      ${S} .sd-arc   { animation: ${id}-arck 10s ease-in-out infinite; }
+      ${S} .sd-act   { animation: ${id}-leave 10s ease-in-out infinite; }
+      ${S} .sd-actC  { animation: ${id}-enter 10s ease-in-out infinite; }
+    }
+    @keyframes ${id}-grow  { 0% { transform: scale${axis}(.84); } 26%, 100% { transform: scale${axis}(1); } }
+    @keyframes ${id}-alert { 0%, 24% { opacity: 0; } 30% { opacity: 1; } 38% { opacity: .35; } 46%, 94% { opacity: 1; } 100% { opacity: 0; } }
+    @keyframes ${id}-mark  { 0%, 44% { opacity: 0; } 50%, 94% { opacity: 1; } 100% { opacity: 0; } }
+    @keyframes ${id}-pick  { 0%, 56% { opacity: 0; } 62%, 82% { opacity: 1; } 86%, 100% { opacity: 0; } }
+    @keyframes ${id}-ringk { 0%, 56% { opacity: 0; } 64% { opacity: 1; } 72% { opacity: .55; } 80%, 94% { opacity: 1; } 100% { opacity: 0; } }
+    @keyframes ${id}-arck  { 0%, 62% { opacity: 0; } 78%, 94% { opacity: 1; } 100% { opacity: 0; } }
+    @keyframes ${id}-leave { 0%, 78% { opacity: 1; } 84%, 100% { opacity: 0; } }
+    @keyframes ${id}-enter { 0%, 84% { opacity: 0; } 90%, 94% { opacity: 1; } 100% { opacity: 0; } }`;
+}
+
 // ── DECISION ───────────────────────────────────────────────────────────────────────────────────────
-const ST = { active: C.red, skipped: C.amber, picked: C.green, eligible: C.blue };
+export const ST = { active: C.red, skipped: C.amber, picked: C.green, eligible: C.blue };
 
 export function renderDecision(m) {
   const problems = validateDecision(m);
@@ -322,31 +394,10 @@ export function renderDecision(m) {
   const q = m.qualify && typeof m.qualify.value === 'number' ? m.qualify : null;
 
   const o = [];
-  o.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="sd-t sd-d">`);
+  o.push(`<svg id="sd-decision" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="sd-t sd-d">`);
   o.push(`<title id="sd-t">${esc(m.title)}</title>`);
   o.push(`<desc id="sd-d">${esc(describeDecision(m))}</desc>`);
-  o.push(style(`
-    .sd-ring { opacity: 1; } .sd-act, .sd-actC { opacity: 0; }
-    .sd-fillA { transform-box: fill-box; transform-origin: bottom; }
-    .sd-arc { stroke-dasharray: 1; stroke-dashoffset: 0; }
-    @media (prefers-reduced-motion: no-preference) {
-      .sd-fillA { animation: sd-grow 10s ease-in-out infinite; }
-      .sd-alert { animation: sd-alert 10s ease-in-out infinite; }
-      .sd-mk    { animation: sd-mark 10s ease-out infinite; }
-      .sd-pk    { animation: sd-pick 10s ease-out infinite; }
-      .sd-ring  { animation: sd-ringk 10s ease-in-out infinite; }
-      .sd-arc   { animation: sd-arck 10s ease-in-out infinite; }
-      .sd-act   { animation: sd-leave 10s ease-in-out infinite; }
-      .sd-actC  { animation: sd-enter 10s ease-in-out infinite; }
-    }
-    @keyframes sd-grow  { 0% { transform: scaleY(.84); } 26%, 100% { transform: scaleY(1); } }
-    @keyframes sd-alert { 0%, 24% { opacity: 0; } 30% { opacity: 1; } 38% { opacity: .35; } 46%, 94% { opacity: 1; } 100% { opacity: 0; } }
-    @keyframes sd-mark  { 0%, 44% { opacity: 0; } 50%, 94% { opacity: 1; } 100% { opacity: 0; } }
-    @keyframes sd-pick  { 0%, 56% { opacity: 0; } 62%, 82% { opacity: 1; } 86%, 100% { opacity: 0; } }
-    @keyframes sd-ringk { 0%, 56% { opacity: 0; } 64% { opacity: 1; } 72% { opacity: .55; } 80%, 94% { opacity: 1; } 100% { opacity: 0; } }
-    @keyframes sd-arck  { 0%, 62% { stroke-dashoffset: 1; opacity: 1; } 78%, 94% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
-    @keyframes sd-leave { 0%, 78% { opacity: 1; } 84%, 100% { opacity: 0; } }
-    @keyframes sd-enter { 0%, 84% { opacity: 0; } 90%, 94% { opacity: 1; } 100% { opacity: 0; } }`));
+  o.push(style('sd-decision', decisionMotion('sd-decision', { axis: 'Y' })));
   o.push(`<defs><marker id="sd-ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${C.green}"/></marker></defs>`);
   o.push(`<rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="16" fill="${C.bg}" stroke="${C.line}"/>`);
   o.push(`<text class="sd-ttl" x="40" y="48">${esc(fit(m.title, W - 80, 13.5))}</text>`);
@@ -369,7 +420,7 @@ export function renderDecision(m) {
   if (pick >= 0) o.push(`<rect class="sd-ring" x="${X0 + pick * PITCH - 3}" y="${TOPY - 3}" width="${TW + 6}" height="${BASE - TOPY + 6}" rx="12" fill="none" stroke="${C.green}" stroke-width="3.5"/>`);
   if (act >= 0 && pick >= 0) {
     const a = cx(act) + 33, b = cx(pick);
-    o.push(`<path class="sd-arc" pathLength="1" d="M ${a} 120 C ${a + 52} 66, ${b - 55} 62, ${b} 106" fill="none" stroke="${C.green}" stroke-width="3" stroke-linecap="round" marker-end="url(#sd-ah)"/>`);
+    o.push(`<path class="sd-arc" d="M ${a} 120 C ${a + 52} 66, ${b - 55} 62, ${b} 106" fill="none" stroke="${C.green}" stroke-width="3" stroke-linecap="round" marker-end="url(#sd-ah)"/>`);
   }
   cs.forEach((c, i) => {
     const mid = cx(i);

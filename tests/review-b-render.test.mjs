@@ -92,7 +92,11 @@ test('#10b both devices render CONCURRENTLY, with the same screenshots and score
     assert.deepEqual(q.scorecard.map((c) => c.device), ['mobile(390)', 'desktop(1440)'], 'device order is unchanged');
     assert.equal(q.passed, true);
     assert.equal(q.iterations, 1);
-    assert.equal(mock.calls(), 2, 'one grade per device');
+    assert.equal(mock.calls(), 2, 'one grade per device: a mean of 90 is not borderline, so no second sample');
+    assert.equal(q.scorecard[0].samples, 1);
+    assert.equal(q.cost.usd, null, 'mock-model has no known rate: UNPRICED, never $0');
+    assert.match(q.cost.basis, /UNPRICED/);
+    assert.equal(q.cost.calls, 2);
     assert.equal(pngWidth(q.screenshots.mobile), 780, 'mobile full page at 390 CSS px x dsf 2');
     assert.equal(pngWidth(q.screenshots.desktop), 1440);
     for (const c of q.scorecard) assert.ok(c.gradedCrops.length >= 8, `${c.device}: hero, 3 anim beats, 2 diagrams, sections`);
@@ -102,6 +106,41 @@ test('#10b both devices render CONCURRENTLY, with the same screenshots and score
     const d1 = mtime(dir, 'grade-desktop-1440-heroAnim-beat1.png'), d3 = mtime(dir, 'grade-desktop-1440-heroAnim-beat3.png');
     assert.ok(m3 - m1 >= 6000 && d3 - d1 >= 6000, 'the worst-frame sampling still spans ~6s per device');
     assert.ok(m1 < d3 && d1 < m3, `sampling windows must overlap (mobile ${m1}-${m3}, desktop ${d1}-${d3})`);
+  } finally { mock.server.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+const scored = (score, over = {}) => JSON.stringify({ ...JSON.parse(GRADE),
+  gateA: Object.fromEntries(['A1', 'A2', 'A3', 'A4', 'A5', 'A6'].map((k) => [k, score])),
+  gateB: Object.fromEntries(['B1', 'B2', 'B3', 'B4', 'B5'].map((k) => [k, score])), ...over });
+
+test('D1 the INV-22 raster cap runs in the REAL tool: a both-FAIL raster in the grader reply caps B5 at 55 on both devices', { skip: !haveBrowser && 'playwright chromium not installed', timeout: 120000 }, async () => {
+  const mock = await mockGrader(scored(95, { rasters: [{ what: 'hero', takeaway: 'FAIL', swappable: 'FAIL', why: 'generic' }] }));
+  const dir = buildDir();
+  try {
+    const r = await runQG(dir, mock.url);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const q = read(dir).quality;
+    for (const c of q.scorecard) {
+      assert.equal(c.gateB.B5, 55, `${c.device}: capped, not the 95 the grader reported`);
+      assert.equal(c.headlineScore, 55);
+      assert.equal(c.passed, false);
+    }
+    assert.equal(q.passed, false);
+    assert.match(r.stderr, /INV-22 cap applied by arithmetic/);
+  } finally { mock.server.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('a borderline page (mean 82) is graded twice per device: 4 calls, samples=2, cost counts all four', { skip: !haveBrowser && 'playwright chromium not installed', timeout: 120000 }, async () => {
+  const mock = await mockGrader(scored(82));
+  const dir = buildDir();
+  try {
+    const r = await runQG(dir, mock.url);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const q = read(dir).quality;
+    assert.equal(mock.calls(), 4);
+    assert.deepEqual(q.scorecard.map((c) => c.samples), [2, 2]);
+    assert.equal(q.cost.calls, 4);
+    assert.equal(q.passed, true, 'mean 82, min 82: ships');
   } finally { mock.server.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 

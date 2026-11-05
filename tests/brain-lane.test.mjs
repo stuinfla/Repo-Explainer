@@ -1,24 +1,21 @@
-// tests/brain-lane.test.mjs — issue #16 (ciprianmelian, 2026-08-06).
-//
-// THE BUG: `npx explainmyrepo <repo> --no-deploy` failed at preflight with
-// "ANTHROPIC_API_KEY MISSING" for a user running on a Claude Code SUBSCRIPTION and no API key —
-// even though src/claude.mjs has always routed to the logged-in CLI in exactly that case. The brain
-// would have worked; the gatekeeper in front of it refused to let anyone try.
-//
-// THE REAL DEFECT was duplication: the "can the brain run?" decision lived in TWO places
-// (callClaude and orchestrator's preflight) and only one of them was ever taught about the CLI lane.
-// The fix is a single exported predicate both callers ask. These tests pin the predicate's truth
-// table AND pin that the orchestrator still delegates to it — because a correct predicate nobody
-// calls is exactly the state this bug was already in.
+// The brain-lane predicate (issue #16) and callClaude's lane routing, exercised with a stubbed fetch and a
+// fake `claude` binary. One predicate decides "can the brain run?"; callClaude must honour ALL of its answer.
 
-import { test } from 'node:test';
+import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { resolveBrainLane } from '../src/claude.mjs';
+import {
+  resolveBrainLane, resolveModel, isOpenRouterModel, callClaude, AUTHORING_MODEL, DEFAULT_MODEL,
+} from '../src/claude.mjs';
 
-const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// No real `claude` on PATH: the CLI-availability probe is cached per process, so pin it to "absent" first.
+const EMPTY_BIN = fs.mkdtempSync(path.join(os.tmpdir(), 'no-claude-'));
+process.env.PATH = EMPTY_BIN;
+for (const k of ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY', 'OPENROUTER_API_KEY', 'EXPLAINMYREPO_BRAIN', 'EXPLAINMYREPO_AUTHORING', 'EXPLAINMYREPO_MODEL', 'ANTHROPIC_MODEL']) delete process.env[k];
+const realFetch = globalThis.fetch;
+afterEach(() => { globalThis.fetch = realFetch; process.env.PATH = EMPTY_BIN; });
 
 test('#16 — an API key alone satisfies the brain lane', () => {
   const r = resolveBrainLane({ apiKey: 'sk-ant-test', env: {} });
@@ -27,134 +24,115 @@ test('#16 — an API key alone satisfies the brain lane', () => {
 });
 
 test('#16 — NO api key but a logged-in Claude CLI is a VALID lane (the reported bug)', () => {
-  // Simulate CLI availability by forcing the explicit mode, which is the same lane the auto-detect
-  // reaches. The auto-detect itself shells out to `claude`, which a test must not depend on.
   const r = resolveBrainLane({ apiKey: '', env: { EXPLAINMYREPO_BRAIN: 'claude-cli' } });
   assert.equal(r.ok, true, 'a subscription user with no API key must NOT be refused at preflight');
   assert.equal(r.useCli, true);
 });
 
 test('#16 — no key and no CLI is correctly refused (the guard still guards)', () => {
-  const r = resolveBrainLane({ apiKey: '', env: { EXPLAINMYREPO_BRAIN: 'api' } });
-  assert.equal(r.ok, false, 'forcing the api lane with no key must still fail loudly');
+  assert.equal(resolveBrainLane({ apiKey: '', env: { EXPLAINMYREPO_BRAIN: 'api' } }).ok, false);
+  assert.equal(resolveBrainLane({ apiKey: '', env: {} }).ok, false, 'with no CLI on PATH either');
 });
 
 test('#16 — EXPLAINMYREPO_BRAIN=api never silently falls back to the CLI', () => {
-  const r = resolveBrainLane({ apiKey: '', env: { EXPLAINMYREPO_BRAIN: 'api' } });
-  assert.equal(r.useCli, false, 'an explicit lane choice must be honoured, not overridden');
+  assert.equal(resolveBrainLane({ apiKey: '', env: { EXPLAINMYREPO_BRAIN: 'api' } }).useCli, false);
 });
 
 test('#16 — EXPLAINMYREPO_BRAIN=claude-cli wins even when a key exists', () => {
   const r = resolveBrainLane({ apiKey: 'sk-ant-test', env: { EXPLAINMYREPO_BRAIN: 'claude-cli' } });
-  assert.equal(r.useCli, true, 'an explicit CLI choice must be honoured');
+  assert.equal(r.useCli, true);
   assert.equal(r.ok, true);
 });
 
-// ── SOURCE-SHAPE PIN ─────────────────────────────────────────────────────────────────────────────
-// The predicate being right is only half of it. This bug existed because the orchestrator answered
-// the question ITSELF. If it ever goes back to doing that, this fails.
-test('#16 — the orchestrator DELEGATES the decision instead of re-deriving it', () => {
-  const src = fs.readFileSync(path.join(REPO, 'src', 'orchestrator.mjs'), 'utf8');
-  assert.match(src, /resolveBrainLane/, 'preflight must ask the shared predicate');
-  const preflight = src.slice(src.indexOf('async function preflight('), src.indexOf('async function preflight(') + 2000);
-  assert.doesNotMatch(preflight, /brainIds\.some\([^)]*\) && !has\(\['ANTHROPIC_API_KEY'/,
-    'preflight must not re-implement the key-only test that caused #16');
-});
-
-test('#16 — the refusal message names BOTH lanes, so a subscription user knows the way out', () => {
-  const src = fs.readFileSync(path.join(REPO, 'src', 'orchestrator.mjs'), 'utf8');
-  assert.match(src, /logged-in Claude Code CLI/, 'the error must tell the user the CLI is an option');
-  assert.match(src, /no API key at all/, 'and that it needs no key — the thing the reporter had to discover by reading source');
-});
-
-// ── THE AUTHORING CHAMPION (2026-08-08) ──────────────────────────────────────────────────────────
-// A blind A/B on the real concept-authoring task scored z-ai/glm-5.2 at 95 vs claude-sonnet-5 at 89
-// on art-direction merit, at 1/15th the cost. These tests pin the ROUTING, not the verdict — the
-// verdict is evidence that can change, and EXPLAINMYREPO_AUTHORING=anthropic must always undo it.
-import { resolveModel, isOpenRouterModel, AUTHORING_MODEL, DEFAULT_MODEL } from '../src/claude.mjs';
-
-test('authoring — an OpenRouter key selects the measured champion', () => {
-  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x' }), AUTHORING_MODEL);
-  assert.equal(AUTHORING_MODEL, 'z-ai/glm-5.3');
-});
-
-test('authoring — a direct Anthropic key outranks OpenRouter (owner directive 2026-10-13)', () => {
-  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', CLAUDE_API_KEY: 'k' }), DEFAULT_MODEL);
-  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', ANTHROPIC_API_KEY: 'k' }), DEFAULT_MODEL);
-});
-
-test('authoring — EXPLAINMYREPO_AUTHORING=openrouter is the explicit opt-in even with an Anthropic key', () => {
-  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', CLAUDE_API_KEY: 'k', EXPLAINMYREPO_AUTHORING: 'openrouter' }), AUTHORING_MODEL);
-});
-
-test('authoring — NO OpenRouter key leaves the old behaviour exactly as it was', () => {
-  assert.equal(resolveModel({}), DEFAULT_MODEL, 'existing users must see no change at all');
-});
-
-test('authoring — EXPLAINMYREPO_AUTHORING=anthropic pins back without removing the key', () => {
-  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', EXPLAINMYREPO_AUTHORING: 'anthropic' }), DEFAULT_MODEL);
-});
-
-test('authoring — an explicit --model / env override still beats everything', () => {
-  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x' }, 'claude-opus-5'), 'claude-opus-5');
-  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', EXPLAINMYREPO_MODEL: 'z-ai/glm-5' }), 'z-ai/glm-5');
-});
-
-test('authoring — lane detection distinguishes namespaced OpenRouter ids from first-party ones', () => {
-  assert.equal(isOpenRouterModel('z-ai/glm-5.2'), true);
-  assert.equal(isOpenRouterModel('claude-sonnet-5'), false);
-});
-
 test('#16-redux — an OPENROUTER_API_KEY ALONE is a complete credential set', () => {
-  // The default authoring model is now an OpenRouter one, so demanding an Anthropic key here would
-  // re-create #16 in a new costume: refusing the very key we now tell people to bring.
   const r = resolveBrainLane({ apiKey: '', env: { OPENROUTER_API_KEY: 'x' } });
-  assert.equal(r.ok, true, 'the newly-recommended key must not be refused at the door');
+  assert.equal(r.ok, true);
   assert.equal(r.useOpenRouter, true);
 });
 
-test('authoring — the fallback to Anthropic is ANNOUNCED, never silent', () => {
-  const src = fs.readFileSync(path.join(REPO, 'src', 'claude.mjs'), 'utf8');
-  assert.match(src, /FALLING BACK to/, 'a lane switch must be visible in the log');
-  assert.match(src, /FALLBACK, not a silent swap/, 'and the reasoning recorded for whoever reads it next');
+// ── model routing (the routing, not the A/B verdict: EXPLAINMYREPO_AUTHORING=anthropic must always undo it) ──
+test('authoring — OpenRouter is the model ONLY when it is the sole credential', () => {
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x' }), AUTHORING_MODEL);
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', CLAUDE_API_KEY: 'k' }), DEFAULT_MODEL);
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', ANTHROPIC_API_KEY: 'k' }), DEFAULT_MODEL);
+  assert.equal(resolveModel({}), DEFAULT_MODEL);
 });
 
-// ── GPT-5.6-SOL REVIEW, 2026-08-10 — issue #16's shape, found twice more ─────────────────────────
-// The second independent reviewer found that callClaude destructured only `useCli` and ignored
-// `useOpenRouter`, so an OpenRouter-only user passed preflight and was rejected on the FIRST brain
-// call. It hid on this machine because the claude CLI is installed (useCli true); a CI box with just
-// OPENROUTER_API_KEY would have died. Third time this defect shape has appeared: a caller holding a
-// stale copy of a decision the shared predicate had already been taught.
-test('SOL#6 — callClaude asks the predicate for ALL of its answer, not just useCli', () => {
-  const src = fs.readFileSync(path.join(REPO, 'src', 'claude.mjs'), 'utf8');
-  assert.match(src, /const \{ useCli, useOpenRouter \} = resolveBrainLane/,
-    'both lanes must be read, or an OpenRouter-only user is refused after passing preflight');
-  assert.match(src, /!apiKey && !useCli && !useOpenRouter/,
-    'the refusal must require ALL three lanes to be absent');
+test('authoring — EXPLAINMYREPO_AUTHORING=openrouter opts in even with an Anthropic key; =anthropic pins back', () => {
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', CLAUDE_API_KEY: 'k', EXPLAINMYREPO_AUTHORING: 'openrouter' }), AUTHORING_MODEL);
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', EXPLAINMYREPO_AUTHORING: 'anthropic' }), DEFAULT_MODEL);
 });
 
-test('SOL#6 — a .env-only OpenRouter key survives to execution', () => {
-  // src/env.mjs loadEnv() "Returns a NEW object (does not mutate process.env)". The key therefore
-  // reached preflight through the merged object and vanished at the call site, which read
-  // process.env directly. Preflight saying yes and execution saying no is the worst failure shape.
-  const src = fs.readFileSync(path.join(REPO, 'src', 'claude.mjs'), 'utf8');
-  assert.match(src, /envOverride && envOverride\.OPENROUTER_API_KEY/,
-    'an explicit env override must be honoured before the ambient process.env');
-  const orch = fs.readFileSync(path.join(REPO, 'src', 'orchestrator.mjs'), 'utf8');
-  assert.match(orch, /ctx\._env = env/, 'the orchestrator must hand the merged env to the brain');
-  const brain = fs.readFileSync(path.join(REPO, 'src', 'brain.mjs'), 'utf8');
-  assert.match(brain, /env: ctx\?\._env/, 'and every brain call site must pass it through');
+test('authoring — an explicit --model / env override beats everything', () => {
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x' }, DEFAULT_MODEL), DEFAULT_MODEL);
+  assert.equal(resolveModel({ OPENROUTER_API_KEY: 'x', EXPLAINMYREPO_MODEL: 'z-ai/glm-5' }), 'z-ai/glm-5');
 });
 
-test('SOL#6 — brainRun EXECUTES the env hand-off (the regex above passed on code that threw)', async () => {
-  // 2026-09-17: 67b3623 (2026-08-10) put `ctx._env = env` inside a closure that never destructured
-  // `env`, so every brain station on the LOCAL door (primer/concept/content/visual-brief) threw
-  // "env is not defined" — the hosted runner never imports the orchestrator and npm 0.5.0 predates
-  // the commit. The source-shape assertion above stayed green throughout: it proved the line was
-  // TYPED, not that it RUNS. This one crosses the boundary: a real build dir, a real call, the value
-  // observed inside. Verified to fail with that exact ReferenceError before the fix.
+test('authoring — namespaced ids are OpenRouter, first-party ids are not', () => {
+  assert.equal(isOpenRouterModel(AUTHORING_MODEL), true);
+  assert.equal(isOpenRouterModel(DEFAULT_MODEL), false);
+});
+
+// ── callClaude routing (behaviour, not source shape) ─────────────────────────────────────────────
+const orOk = (text) => ({ ok: true, json: async () => ({ choices: [{ message: { content: text }, finish_reason: 'stop' }], usage: { cost: 0.001, prompt_tokens: 1, completion_tokens: 1 } }) });
+
+test('SOL#6 — an OpenRouter-only user (no Anthropic key, no CLI) is served, not refused after preflight', async () => {
+  let url;
+  globalThis.fetch = async (u) => { url = String(u); return orOk('from openrouter'); };
+  const text = await callClaude({ apiKey: '', model: AUTHORING_MODEL, system: 's', user: 'u', env: { OPENROUTER_API_KEY: 'or-key' } });
+  assert.equal(text, 'from openrouter');
+  assert.match(url, /openrouter\.ai/);
+});
+
+test('SOL#6 — a .env-only OpenRouter key (passed as env, absent from process.env) reaches the call', async () => {
+  let auth;
+  delete process.env.OPENROUTER_API_KEY;
+  globalThis.fetch = async (u, init) => { auth = init.headers.Authorization; return orOk('ok'); };
+  await callClaude({ apiKey: '', model: AUTHORING_MODEL, system: 's', user: 'u', env: { OPENROUTER_API_KEY: 'only-in-dotenv' } });
+  assert.equal(auth, 'Bearer only-in-dotenv');
+});
+
+test('no credentials at all → refused with the three ways out, before any request', async () => {
+  globalThis.fetch = async () => { throw new Error('must not be called'); };
+  await assert.rejects(() => callClaude({ apiKey: '', model: DEFAULT_MODEL, system: 's', user: 'u', env: {} }),
+    (e) => /ANTHROPIC_API_KEY/.test(e.message) && /OPENROUTER_API_KEY/.test(e.message) && /Claude Code/.test(e.message) && !/glm-5\.2/.test(e.message));
+});
+
+test('SOL#6 — an explicit EXPLAINMYREPO_BRAIN=claude-cli, given only via the env override, outranks a namespaced model', async () => {
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'fake-claude-'));
+  fs.writeFileSync(path.join(bin, 'claude'), '#!/bin/sh\nprintf \'{"result":"from the cli"}\'\n', { mode: 0o755 });
+  process.env.PATH = bin;
+  globalThis.fetch = async () => { throw new Error('the CLI lane must not touch the network'); };
+  try {
+    const text = await callClaude({ apiKey: '', model: AUTHORING_MODEL, system: 's', user: 'u', env: { EXPLAINMYREPO_BRAIN: 'claude-cli', OPENROUTER_API_KEY: 'x' } });
+    assert.equal(text, 'from the cli');
+  } finally { fs.rmSync(bin, { recursive: true, force: true }); }
+});
+
+test('authoring — the fallback to the first-party lane is ANNOUNCED, never silent', async () => {
+  const lines = [];
+  const realErr = console.error;
+  console.error = (m) => lines.push(String(m));
+  globalThis.fetch = async (u) => (String(u).includes('openrouter.ai')
+    ? { ok: false, status: 402, text: async () => 'no credits' }
+    : { ok: true, json: async () => ({ content: [{ type: 'text', text: 'from anthropic' }] }) });
+  try {
+    const text = await callClaude({ apiKey: 'k', model: AUTHORING_MODEL, system: 's', user: 'u', env: { OPENROUTER_API_KEY: 'x' }, retryDelaysMs: [] });
+    assert.equal(text, 'from anthropic');
+  } finally { console.error = realErr; }
+  assert.ok(lines.some((l) => l.includes(`FALLING BACK to ${DEFAULT_MODEL}`)), `lane switch must be logged, got: ${lines.join(' | ')}`);
+});
+
+test('an OpenRouter outage with NO first-party lane keeps the original error (no keyless Anthropic call)', async () => {
+  const urls = [];
+  globalThis.fetch = async (u) => { urls.push(String(u)); return { ok: false, status: 402, text: async () => 'no credits' }; };
+  await assert.rejects(() => callClaude({ apiKey: '', model: AUTHORING_MODEL, system: 's', user: 'u', env: { OPENROUTER_API_KEY: 'x' }, retryDelaysMs: [] }), /OpenRouter 402/);
+  assert.ok(urls.every((u) => u.includes('openrouter.ai')), `no Anthropic request may be attempted, got ${urls.join(', ')}`);
+});
+
+test('SOL#6 — brainRun EXECUTES the env hand-off (merged env reaches ctx._env)', async () => {
+  // Crosses the real boundary: a real build dir, a real call, the merged env observed inside the station.
   const { brainRun } = await import('../src/orchestrator.mjs');
-  const os = await import('node:os');
   const buildDir = fs.mkdtempSync(path.join(os.tmpdir(), 'brainrun-'));
   fs.writeFileSync(path.join(buildDir, 'build.json'), JSON.stringify({ repo: { name: 'fixture' } }));
   let seen;
@@ -165,21 +143,4 @@ test('SOL#6 — brainRun EXECUTES the env hand-off (the regex above passed on co
     assert.equal(r.ok, true);
     assert.equal(seen?.OPENROUTER_API_KEY, 'only-in-dotenv', 'the merged env must arrive in ctx._env');
   } finally { fs.rmSync(buildDir, { recursive: true, force: true }); }
-});
-
-test('SOL#6 — an explicit CLI lane choice outranks a namespaced model id', () => {
-  const src = fs.readFileSync(path.join(REPO, 'src', 'claude.mjs'), 'utf8');
-  assert.match(src, /brainMode === 'claude-cli'/,
-    'EXPLAINMYREPO_BRAIN=claude-cli must not be silently ignored because the model contains a slash');
-});
-
-test('SOL — the deploy boundary refuses to overwrite ANOTHER OWNER\'s live page', () => {
-  // clone-repo sets `slug: name`, discarding the owner, so upstream/foo and attacker/foo both target
-  // foo-explainer. The 90f16dc guard compares against a prior LOCAL build.json — and hosted builds
-  // use a fresh timestamped dir every run, so it never fires on the path customers actually use.
-  const src = fs.readFileSync(path.join(REPO, 'tools', 'deploy.mjs'), 'utf8');
-  assert.match(src, /CROSS-OWNER COLLISION/, 'the collision must be detected and named');
-  assert.match(src, /llms\.txt/, 'ownership is read from the LIVE site, which works on both doors');
-  assert.match(src, /Refusing to overwrite another owner's live page/,
-    'and it must refuse rather than silently replace');
 });

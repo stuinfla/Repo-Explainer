@@ -1,17 +1,14 @@
-// kb.config.mjs — Config registry for the generic, config-driven KB pipeline.
-// P0 scaffold: the `agent-harness-generator` ("MetaHarness") target entry only.
-// Binding: build-plan-metaharness.md §2a [D10, A]. ONE target until ≥98 + sign-off [L].
-//
-// Mechanics are preserved from the proven Cognitum prototype; repo-shape becomes DATA here.
-// All on-page commands + KB `mustContain` facts use `metaharness` as PRIMARY,
-// note `create-agent-harness` as the ALIAS (same tool; reconciliation note in the plan §0).
+// kb.config.mjs — registry of KB targets for the config-driven KB engine (repo shape is DATA here).
+// A target missing from this file is registered per build, not by editing it: src/station-runners.mjs
+// (kbRegister) writes {slug: entry} JSON to the file named by KB_TARGET_OVERLAY, merged into `targets` below.
+// repoDir values are relative; KB_REPO_DIR (set by tools/build-kb.mjs) overrides them for a real build.
+// Fields every reader consumes: slug, metaName, embed (REQUIRED), productNames, repoDir, scopeExclude,
+// codeExt, componentRoots, componentWord, include; ask-kb also reads primerSlugs, disambiguation and
+// offtopicMagnets; kb-mcp-server reads bundle.blurb.
 
-/**
- * componentWord synonym group — first-class config knob injected into every intent regex
- * in ask-kb.mjs. AHG is npm-package-based (`packages/<name>`), NOT crate-based, so the
- * hard-coded "crate" token in the prototype must be widened or Stage-3/4 retrieval under-fires.
- * (Top risk #1 in the plan.)
- */
+import fs from 'node:fs';
+
+/** Generic component synonym group, injected into ask-kb's intent regexes. */
 const componentWord = ['crate', 'package', 'module', 'component'];
 
 /** @type {Record<string, object>} keyed by target slug. */
@@ -28,7 +25,7 @@ export const targets = {
       "rvfSuffix": ".rvf"
     },
     "productNames": [],
-    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/mcp-studio/repo",
+    "repoDir": "../.targets/mcp-studio",
     "scopeExclude": [
       "node_modules",
       "dist",
@@ -50,12 +47,6 @@ export const targets = {
       ".mjs",
       ".js"
     ],
-    "fullTextExt": [
-      ".md",
-      ".mdx",
-      ".txt"
-    ],
-    "templateExt": [],
     "componentRoots": [
       "app",
       "lib",
@@ -113,7 +104,7 @@ export const targets = {
       "rvfSuffix": ".rvf"
     },
     "productNames": [],
-    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/ruos/repo",
+    "repoDir": "../.targets/ruos",
     "scopeExclude": [
       "node_modules",
       "dist",
@@ -130,12 +121,6 @@ export const targets = {
       ".mjs",
       ".json"
     ],
-    "fullTextExt": [
-      ".md",
-      ".mdx",
-      ".txt"
-    ],
-    "templateExt": [],
     "componentRoots": [
       "mcp",
       "src",
@@ -192,7 +177,7 @@ export const targets = {
     "productNames": [
       "ternlight"
     ],
-    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/ternlight/repo",
+    "repoDir": "../.targets/ternlight",
     "scopeExclude": [
       "node_modules",
       "dist",
@@ -216,12 +201,6 @@ export const targets = {
       ".cpp",
       ".h"
     ],
-    "fullTextExt": [
-      ".md",
-      ".mdx",
-      ".txt"
-    ],
-    "templateExt": [],
     "componentRoots": [
       "src"
     ],
@@ -282,7 +261,7 @@ export const targets = {
       "MTWM",
       "gateway-v2"
     ],
-    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/autonomous-wealth-builder/repo",
+    "repoDir": "../.targets/autonomous-wealth-builder",
     "scopeExclude": [
       "node_modules",
       "dist",
@@ -305,12 +284,6 @@ export const targets = {
       ".sh",
       ".sql"
     ],
-    "fullTextExt": [
-      ".md",
-      ".mdx",
-      ".txt"
-    ],
-    "templateExt": [],
     "componentRoots": [
       "services",
       "mtwm-ui",
@@ -374,7 +347,7 @@ export const targets = {
     "productNames": [
       "AgentBBS"
     ],
-    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/agentbbs/repo",
+    "repoDir": "../.targets/AgentBBS",
     "scopeExclude": [
       "node_modules",
       "dist",
@@ -395,13 +368,6 @@ export const targets = {
       ".rb",
       ".sh"
     ],
-    "fullTextExt": [
-      ".md",
-      ".mdx",
-      ".txt",
-      ".rst"
-    ],
-    "templateExt": [],
     "componentRoots": [
       "src",
       "lib",
@@ -471,7 +437,7 @@ export const targets = {
     "productNames": [
       "chalk"
     ],
-    "repoDir": "/tmp/agentic-smoke-chalk2/repo",
+    "repoDir": "../.targets/chalk",
     "scopeExclude": [
       "node_modules",
       "dist",
@@ -487,12 +453,6 @@ export const targets = {
       ".mjs",
       ".cjs"
     ],
-    "fullTextExt": [
-      ".md",
-      ".mdx",
-      ".txt"
-    ],
-    "templateExt": [],
     "componentRoots": [
       "source",
       "src",
@@ -551,7 +511,7 @@ export const targets = {
     "productNames": [
       "helix"
     ],
-    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/helix/repo",
+    "repoDir": "../.targets/helix",
     "scopeExclude": [
       "node_modules",
       "dist",
@@ -575,13 +535,6 @@ export const targets = {
       ".yml",
       ".json"
     ],
-    "fullTextExt": [
-      ".md",
-      ".mdx",
-      ".txt",
-      ".rst"
-    ],
-    "templateExt": [],
     "componentRoots": [
       "src",
       "lib",
@@ -646,7 +599,7 @@ export const targets = {
   // public API in src/index.js (open/openBase/branch/fork/checkpoint/rollback/diff/
   // promote/query), the CLI in bin/agenticow.js, and the runnable use-case scripts
   // in examples/. repoDir points at the live build-dir clone. Registered for the
-  // explainmyrepo recipe acceptance run (2026-06-28).
+  // explainmyrepo recipe acceptance run.
   // ──────────────────────────────────────────────────────────────────────────
   agenticow: {
     slug: 'agenticow',
@@ -672,24 +625,6 @@ export const targets = {
       docs:          'PRIMER#6-where-do-i-read-more-the-docs-map',
       adr:           'PRIMER#6-where-do-i-read-more-the-docs-map',
       playbook:      'PRIMER#7-how-do-i-install-and-use-it-end-to-end',
-      extensibility: 'PRIMER#8-how-do-i-extend-agenticow',
-      gotchas:       'PRIMER#9-cost-latency-and-gotchas',
-    },
-    extensionFiles: {
-      'verb':   ['src/index.js', 'src/index.d.ts'],
-      'branch': ['src/index.js', 'examples/git-workflow.mjs'],
-      'cli':    ['bin/agenticow.js'],
-      'command':['bin/agenticow.js'],
-      'example':['examples/red-team-sandbox.mjs', 'examples/parallel-agents.mjs'],
-    },
-    docFiles: {
-      cli:   ['README.md', 'bin/agenticow.js'],
-      usage: ['README.md', 'examples/README.md'],
-    },
-    typeAliases: {
-      'memory': 'AgenticMemory',
-      'open':   'open',
-      'fork':   'fork',
     },
 
     // ── Source scope (force-walk; clone has no .gitmodules) ──
@@ -697,8 +632,6 @@ export const targets = {
     scopeExclude: ['node_modules', 'dist', 'target', '.git', 'coverage', 'pkg', '.next', 'docs'],
 
     codeExt: ['.ts', '.tsx', '.js', '.mjs', '.cjs'],
-    fullTextExt: ['.md', '.mdx', '.txt'],
-    templateExt: [],
 
     componentRoots: ['src', 'bin', 'examples'],
     componentWord: ['verb', 'method', 'api', 'module', 'component', 'example'],
@@ -717,12 +650,12 @@ export const targets = {
     // ── Identity ────────────────────────────────────────────────────────────
     slug: 'agent-harness-generator',
     metaName: 'MetaHarness',
-    // ── Embedder (ADR-0001 v1.3.1: SINGLE 384-dim desktop variant) ────────────
+    // ── Embedder (single 384-dim variant) ─────────────────────────────────────
     // bge-small-en-v1.5 (cls-pooled, normalized, asymmetric query prefix) — the SAME embedder
     // proven on ruqu/ruvn. build-kb.mjs writes the canonical un-suffixed
     // stores/agent-harness-generator/agent-harness-generator-kb.rvf + a .embed.json sidecar that
     // ask-kb + index-primer read (so query + primer use the SAME model). Model is cached offline at
-    // kb/models-cache/Xenova/bge-small-en-v1.5 (HF_HUB_OFFLINE=1) for fast deterministic builds.
+    // kb/models-cache/Xenova/bge-small-en-v1.5 for fast deterministic builds.
     embed: {
       model: 'Xenova/bge-small-en-v1.5',
       dim: 384,
@@ -756,67 +689,6 @@ export const targets = {
       docs:         'PRIMER#6-where-do-i-read-about-the-architecture',
       adr:          'PRIMER#6-where-do-i-read-about-the-architecture',
       playbook:     'PRIMER#7-how-do-i-start-the-fastest-end-to-end',
-      // §8/§9 added for the AI-comprehension gate (extensibility + gotchas dimensions).
-      extensibility: 'PRIMER#8-how-do-i-extend-metaharness-safely-the-extension-points',
-      gotchas:       'PRIMER#9-performance-and-gotchas-running-the-generator',
-    },
-
-    // extensionFiles — concept word -> the real extension-point file(s) it touches. Consumed by the
-    // AI-comprehension grader (and a useful map for any AI): "add a host" -> the kernel HostAdapter
-    // contract + a reference adapter, etc. Every file below IS indexed (in passages.jsonl); PRIMER#8
-    // names them in prose. Paths verified against .targets/agent-harness-generator 2026-06-19.
-    extensionFiles: {
-      'host':       ['packages/kernel-js/src/types.ts', 'packages/host-claude-code/src/index.ts', 'docs/adrs/ADR-004-host-integration-model.md'],
-      'adapter':    ['packages/host-claude-code/src/index.ts', 'packages/kernel-js/src/types.ts', 'docs/adrs/ADR-004-host-integration-model.md'],
-      'vertical':   ['packages/vertical-base/src/index.ts', 'packages/create-agent-harness/src/registry.ts', 'docs/adrs/ADR-013-vertical-packs-publishing.md'],
-      'template':   ['packages/create-agent-harness/src/walker.ts', 'packages/create-agent-harness/src/renderer.ts', 'docs/adrs/ADR-003-generator-architecture.md'],
-      'composer':   ['packages/create-agent-harness/src/index.ts', 'packages/create-agent-harness/src/wizard.ts', 'docs/adrs/ADR-003-generator-architecture.md'],
-      'scaffold':   ['packages/create-agent-harness/src/index.ts', 'packages/create-agent-harness/src/walker.ts'],
-      'generator':  ['packages/create-agent-harness/src/index.ts', 'docs/adrs/ADR-003-generator-architecture.md'],
-      'wizard':     ['packages/create-agent-harness/src/wizard.ts'],
-      'render':     ['packages/create-agent-harness/src/renderer.ts', 'packages/create-agent-harness/src/walker.ts'],
-      'rename':     ['packages/create-agent-harness/src/rename.ts'],
-      'plugin':     ['packages/create-agent-harness/src/plugin-init-cmd.ts', 'packages/create-agent-harness/src/registry.ts', 'docs/adrs/ADR-005-marketplace-plugin-design.md'],
-      'marketplace':['docs/adrs/ADR-005-marketplace-plugin-design.md', 'packages/create-agent-harness/src/registry.ts'],
-      'kernel':     ['packages/kernel-js/src/index.ts', 'packages/kernel-js/src/types.ts', 'docs/adrs/ADR-002-kernel-boundary.md'],
-      'router':     ['packages/router/src/index.ts'],
-      'agent':      ['packages/sdk/src/index.ts'],
-      'skill':      ['packages/sdk/src/index.ts'],
-      'tool':       ['packages/sdk/src/index.ts'],
-      'sdk':        ['packages/sdk/src/index.ts'],
-      'subcommand': ['packages/create-agent-harness/src/subcommands.ts', 'packages/create-agent-harness/src/index.ts'],
-      'command':    ['packages/create-agent-harness/src/subcommands.ts', 'packages/create-agent-harness/src/index.ts'],
-      'manifest':   ['packages/create-agent-harness/src/manifest.ts', 'docs/adrs/ADR-003-generator-architecture.md'],
-      'upgrade':    ['packages/create-agent-harness/src/upgrade.ts', 'docs/adrs/ADR-008-drift-detection.md'],
-      'drift':      ['packages/create-agent-harness/src/upgrade.ts', 'docs/adrs/ADR-008-drift-detection.md'],
-    },
-    // docFiles — per-dimension authoritative docs the grader injects (the AI reads these for the
-    // dimension). CLI per-command table lives in docs/USAGE.md; usage examples in the package READMEs.
-    docFiles: {
-      cli:   ['docs/USAGE.md', 'packages/create-agent-harness/src/index.ts', 'packages/create-agent-harness/src/subcommands.ts'],
-      // usage: the SDK builders + Router API + the shared kernel TYPE definitions (types.ts holds the
-      // full HostAdapter / HarnessSpec / HookSpec / McpServerSpec interface bodies — TS interface
-      // MEMBERS aren't captured as method symbols, so the grader needs the file body to show the
-      // generateConfig(spec: HarnessSpec) signature) + a reference host adapter implementation.
-      usage: ['packages/sdk/src/index.ts', 'packages/router/src/index.ts', 'packages/kernel-js/src/types.ts', 'packages/host-claude-code/src/index.ts', 'docs/USAGE.md'],
-    },
-    // typeAliases — concept word in a question -> the public TS type/class whose definition + members
-    // answer it (the AI reads symbols.json + the file body). Names verified to exist in symbols.json.
-    typeAliases: {
-      'host':       'HostAdapter',
-      'adapter':    'HostAdapter',
-      'harness spec':'HarnessSpec',
-      'spec':       'HarnessSpec',
-      'router':     'Router',
-      'route':      'RouteResult',
-      'vertical':   'VerticalPack',
-      'manifest':   'HarnessManifest',
-      'agent':      'AgentDef',
-      'skill':      'SkillDef',
-      'tool':       'ToolDef',
-      'genome':     'HarnessPlan',
-      'plan':       'HarnessPlan',
-      'settings':   'ClaudeCodeSettings',
     },
 
     // ── Source scope (force-walk; NO .gitmodules in this repo → walk no-op) ──
@@ -850,24 +722,17 @@ export const targets = {
     // ── Extension classes (what each file is, by suffix) ─────────────────────
     // code: bodies swept via sourceBodies / docCommentSweep rule types.
     codeExt: ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.rs'],
-    // fullText: prose swept verbatim (untruncated) via mdSweepFullText.
-    fullTextExt: ['.md', '.mdx', '.txt'],
-    // template: the .tmpl/.hbs harness scaffolding (294 files) — first-N-lines + path,
-    // kind:'template'. Stage-4/7 "what does a generated harness contain" depends on these.
-    templateExt: ['.tmpl', '.hbs', '.handlebars'],
 
     // ── Component model ──────────────────────────────────────────────────────
-    // componentRoots per plan §2a. NOTE: repo ALSO has crates/, apps/, examples-packages/;
-    // plan specifies ["packages"] only for P0 — see deviation note in the P0 report.
+    // The repo also has crates/, apps/, examples-packages/; only packages/ are components.
     componentRoots: ['packages'],
     componentWord, // ['crate','package','module','component'] synonym group
 
-    // ── Disambiguation / off-topic magnets (filled during gate-A tuning, P6a) ──
+    // ── Disambiguation / off-topic magnets ──
     disambiguation: [],
     offtopicMagnets: [],
 
-    // ── Corpus include rules (consumed by build-kb.mjs / corpus-rules.mjs in P1) ──
-    // P0 lays the intent; rule-type implementations land in P1 (corpus-rules.mjs).
+    // ── Corpus include rules (corpus-rules.mjs) ──
     include: [
       { rule: 'mdSweepFullText', roots: ['docs', 'docs/adrs', '.'] }, // README + docs + ADRs, verbatim
       { rule: 'componentManifests', roots: ['packages', 'examples-packages'] }, // package.json per component
@@ -884,75 +749,12 @@ export const targets = {
       { rule: 'templates', roots: ['packages'], ext: ['.tmpl', '.hbs', '.handlebars'], headLines: 40 },
     ],
 
-    // ── Verification queries: ONE per arc stage (7 total) ─────────────────────
-    // Arc: why-built → what-problem/capabilities → inventory → how-each-works(composer)
-    //      → maturity → docs-where → end-to-end-usage. Facts verified against source 2026-06-19.
-    verificationQueries: [
-      {
-        stage: 1,
-        arc: 'what-is-it',
-        query: 'What is metaharness?',
-        wantPaths: ['README.md', 'docs/OVERVIEW.md'],
-        mustContain: ['factory for agent frameworks', 'harness is the product', 'npx metaharness'],
-      },
-      {
-        stage: 2,
-        arc: 'capabilities',
-        query: 'What can the tool do to a repo?',
-        wantPaths: ['README.md', 'docs/USAGE.md'],
-        mustContain: ['score', 'genome', 'mcp-scan', 'threat-model', 'router', 'Darwin'],
-      },
-      {
-        stage: 3,
-        arc: 'inventory-components',
-        query: 'What packages make up metaharness?',
-        wantPaths: ['packages', 'docs/ARCHITECTURE.md'],
-        mustContain: ['kernel', 'host-claude-code', 'router', 'darwin', 'three-layer'],
-      },
-      {
-        stage: 4,
-        arc: 'how-each-works-composer',
-        query: 'How does the composer scaffold a harness?',
-        wantPaths: ['docs/adrs/ADR-003-generator-architecture.md', 'docs/ARCHITECTURE.md'],
-        // Composer 7 stages, verified ADR-003 lines 104–110.
-        mustContain: ['Identity', 'Hosts', 'Primitives', 'Agents', 'Skills', 'Plugins', 'Features', 'mcp'],
-      },
-      {
-        stage: 5,
-        arc: 'maturity',
-        query: 'Is this production-ready?',
-        wantPaths: ['README.md', 'docs/USERGUIDE.md'],
-        mustContain: ['v0.1.x beta', '568', 'never'],
-      },
-      {
-        stage: 6,
-        arc: 'docs-where-things-live',
-        query: 'Where do I read about the architecture?',
-        wantPaths: ['docs/ARCHITECTURE.md', 'docs/adrs'],
-        mustContain: ['ARCHITECTURE.md', 'OVERVIEW.md', 'USERGUIDE.md', 'INDEX.md'],
-      },
-      {
-        stage: 7,
-        arc: 'end-to-end-usage',
-        query: 'How do I start the fastest?',
-        wantPaths: ['README.md', 'docs/USAGE.md'],
-        mustContain: ['npx metaharness --wizard', '--template', '--host', 'npm install'],
-      },
-    ],
-
-    // ── Bundle metadata (consumed by make-bundles.mjs in P1/P7) ───────────────
+    // ── Bundle metadata (kb-mcp-server reads blurb) ───────────────────────────
     bundle: {
       blurb:
         'MetaHarness drop-in knowledge base — mint a custom AI agent harness from any repo. ' +
         'Two halves: for-ai/ (RVF + retrieval brain + MCP server) and for-humans/ (the primer). ' +
         'Canonical CLI `npx metaharness` (alias `create-agent-harness`).',
-      questions: [
-        'What is metaharness and what does it produce?',
-        'What can the tool do to a repo before I build?',
-        'How does the composer scaffold a harness end-to-end?',
-        'Is this production-ready and what are its honest limits?',
-        'How do I start the fastest?',
-      ],
     },
   },
 
@@ -962,13 +764,13 @@ export const targets = {
   // metaharness (vertical:research). NOT crate-based: its "components" are the
   // six pipeline AGENTS in src/agents/ (scout → web-searcher → source-grader →
   // synthesizer → fact-checker → citer). No .gitmodules → force-walk own tree.
-  // Facts verified against .targets/ruvn 2026-06-19 (README/CLAUDE.md/package.json
+  // Facts verified against .targets/ruvn (README/CLAUDE.md/package.json
   // /src/agents/*/bin/cli.js/scripts/openrouter-validate.mjs/.harness/manifest.json).
   // ──────────────────────────────────────────────────────────────────────────
   ruvn: {
     slug: 'ruvn',
     metaName: 'ruvn',
-    // ── Embedder (ADR-0001 v1.3.1: SINGLE 384-dim desktop variant) ────────────
+    // ── Embedder (single 384-dim variant) ─────────────────────────────────────
     // bge-small-en-v1.5 — a strong retrieval model (beats all-MiniLM); mean-pooled,
     // normalized, with the BGE asymmetric query prefix. build-kb.mjs writes the
     // canonical un-suffixed stores/ruvn/ruvn-kb.rvf + a .embed.json sidecar that
@@ -1005,46 +807,6 @@ export const targets = {
       docs:         'PRIMER#6-where-do-i-read-more-the-docs-map',
       adr:          'PRIMER#6-where-do-i-read-more-the-docs-map',
       playbook:     'PRIMER#7-how-do-i-install-and-use-it-end-to-end',
-      // §8/§9 added for the AI-comprehension gate (extensibility + gotchas dimensions).
-      extensibility: 'PRIMER#8-how-do-i-extend-ruvn-safely-the-extension-points',
-      gotchas:       'PRIMER#9-cost-latency-and-gotchas-running-the-pipeline',
-    },
-    // extensionFiles — concept word -> the real extension-point file(s) it touches. Consumed by the
-    // AI-comprehension grader (and a useful map for any AI): "add a new agent" -> src/agents/*.ts +
-    // the validate script that discovers agents, "add a CLI command" -> bin/cli.js, "add a host" ->
-    // package.json. These files ARE indexed (in passages.jsonl); PRIMER#8 names them in prose.
-    extensionFiles: {
-      'agent': ['src/agents/scout.ts', 'src/agents/synthesizer.ts', 'scripts/openrouter-validate.mjs'],
-      'prompt': ['src/agents/scout.ts', 'src/agents/source-grader.ts'],
-      'system_prompt': ['src/agents/scout.ts', 'src/agents/synthesizer.ts'],
-      'pipeline': ['src/agents/scout.ts', 'src/agents/citer.ts', 'CLAUDE.md'],
-      'grade': ['src/agents/source-grader.ts', 'src/agents/synthesizer.ts'],
-      'grading': ['src/agents/source-grader.ts'],
-      'rubric': ['src/agents/source-grader.ts', 'CLAUDE.md'],
-      'tier': ['src/agents/web-searcher.ts', 'scripts/openrouter-validate.mjs'],
-      'model': ['scripts/openrouter-validate.mjs', 'src/agents/web-searcher.ts'],
-      'cli': ['bin/cli.js'],
-      'command': ['bin/cli.js'],
-      'subcommand': ['bin/cli.js'],
-      'host': ['package.json', 'README.md', 'install.md'],
-      'adapter': ['package.json', 'bin/cli.js'],
-      'validate': ['scripts/openrouter-validate.mjs', '__tests__/openrouter.integration.test.ts'],
-      'test': ['__tests__/smoke.test.ts', '__tests__/openrouter.integration.test.ts'],
-    },
-    // docFiles — per-dimension authoritative docs the grader injects (the AI reads these for the
-    // dimension). ruvn has no cli/README.md: the CLI is bin/cli.js + the README "Install & use"
-    // section; usage examples live in the README + the agent prompt files + the validate script.
-    docFiles: {
-      cli: ['README.md', 'bin/cli.js'],
-      usage: ['README.md', 'CLAUDE.md'],
-    },
-    // typeAliases — concept word in a question -> the public symbol whose signature answers it.
-    // ruvn's "API" is the agent prompt modules (each exports SYSTEM_PROMPT/NAME/TIER) + the CLI
-    // `run(argv)` dispatcher. The grader's usage-injector matches struct/enum names; ruvn has none,
-    // so this map mainly documents intent (the agent modules + run are surfaced by name match).
-    typeAliases: {
-      'dispatch': 'run',
-      'cli': 'run',
     },
 
     // ── Source scope (force-walk; NO .gitmodules in this repo → walk no-op) ──
@@ -1061,8 +823,6 @@ export const targets = {
 
     // ── Extension classes ────────────────────────────────────────────────────
     codeExt: ['.ts', '.tsx', '.js', '.mjs', '.cjs'],
-    fullTextExt: ['.md', '.mdx', '.txt'],
-    templateExt: [],
 
     // ── Component model: the six agents live under src/agents/ ────────────────
     // componentWord widened with 'agent' so the inventory archetype fires for
@@ -1070,7 +830,7 @@ export const targets = {
     componentRoots: ['src/agents'],
     componentWord: ['agent', 'host', 'crate', 'package', 'module', 'component'],
 
-    // ── Disambiguation / off-topic magnets (filled during gate-A tuning) ──────
+    // ── Disambiguation / off-topic magnets ────────────────────────────────────
     // ruvn is a SMALL corpus (16 source chunks + 7 primer sections). A few one-/two-line
     // host stub files (AGENTS.md, SYSTEM.md, install.md) and the single-prompt agent .ts
     // files are vector-close to orientation queries and out-rank the rich PRIMER/README.
@@ -1080,7 +840,7 @@ export const targets = {
     disambiguation: [
       // capabilities: "what can ruvn do / give me / value / final dossier / synthesizer allowed /
       // live-model validation" -> PRIMER#2 + README, not the maturity/scope section, the inventory
-      // section, a single agent .ts, or a host stub. (Widened during gate-A re-tune on bge-small.)
+      // section, a single agent .ts, or a host stub.
       { whenSource: '\\b(what can|what does ruvn do|do for me|give me|value of ruvn|value|capabilit|in the (final )?dossier|what is in the|synthesizer (allowed|use)|allowed to use|live model|end-?to-?end|validate ruvn|run ruvn end)\\b',
         goodSource: 'PRIMER#2-what-can-ruvn-do-for-you|README\\.md',
         badSource: 'PRIMER#5|PRIMER#3|PRIMER#7|src/agents/|AGENTS\\.md|SYSTEM\\.md', goodBoost: 0.34, badPenalty: 0.32 },
@@ -1133,7 +893,7 @@ export const targets = {
       // (carries six-pass cost, sonnet/haiku tiers, no ruvn-research-command, host-owns-web-search,
       // grade-A/B caps coverage, starting-dossier-not-verdict). Fires on cost/perf/empty phrasings.
       // Deliberately does NOT match "grading rubric" or a bare "run a research pipeline" (those are
-      // the docs / install+pipeline questions Gate A owns); it owns cost/latency/empty-result/gotcha.
+      // the docs / install+pipeline questions); it owns cost/latency/empty-result/gotcha.
       { whenSource: '\\b(cost|how much|expensive|token|slow|latency|how (many|long).{0,20}(model|call|pass|run)|six (model )?passes|why is.{0,12}(it|ruvn|my run).{0,8}slow|(dossier|it|results?) (come|comes|came) back (empty|thin)|(empty|thin) (dossier|result)|dossier (be|is|come).{0,12}(empty|thin)|gotcha|footgun|pitfall|does ruvn (do|run|have).{0,14}(its own )?(web )?search|(own|bundle).{0,8}(web )?search|no (ruvn )?(research|dossier) command|is there a (research|dossier) command|prompts? not (an )?engine|engine or prompts|build step|need to build before)\\b',
         goodSource: 'PRIMER#9-cost-latency-and-gotchas|README\\.md',
         badSource: 'PRIMER#(1|2|3|5|6|7)|AGENTS\\.md|SYSTEM\\.md', goodBoost: 0.46, badPenalty: 0.36 },
@@ -1181,72 +941,12 @@ export const targets = {
       { rule: 'docCommentSweep', roots: ['src', 'bin', 'scripts', '__tests__'] }, // leading doc comments across tree
     ],
 
-    // ── Verification queries: ONE per arc stage (7 total). Facts verified 2026-06-19.
-    verificationQueries: [
-      {
-        stage: 1,
-        arc: 'what-is-it',
-        query: 'What is ruvn?',
-        wantPaths: ['PRIMER#1-what-is-ruvn', 'README.md', 'CLAUDE.md'],
-        mustContain: ['graded, cited evidence dossier', 'research', 'every claim is cited'],
-      },
-      {
-        stage: 2,
-        arc: 'capabilities',
-        query: 'What can ruvn do for me?',
-        wantPaths: ['PRIMER#2-what-can-ruvn-do-for-you', 'README.md'],
-        mustContain: ['grades every source', 'adversarially fact-checks', 'bibliography'],
-      },
-      {
-        stage: 3,
-        arc: 'inventory-components',
-        query: 'What agents and hosts make up ruvn?',
-        wantPaths: ['PRIMER#3-what-is-ruvn-made-of-the-six-agents-and-nine-hosts', 'README.md', 'CLAUDE.md'],
-        mustContain: ['scout', 'web-searcher', 'source-grader', 'synthesizer', 'fact-checker', 'citer', '9 hosts'],
-      },
-      {
-        stage: 4,
-        arc: 'how-it-works-pipeline',
-        query: 'How does the ruvn pipeline work step by step?',
-        wantPaths: ['PRIMER#4-how-the-pipeline-works-step-by-step', 'CLAUDE.md', 'README.md'],
-        mustContain: ['each agent only sees', 'A/B/C/D', 'grade A and B', 'six agents in a line'],
-      },
-      {
-        stage: 5,
-        arc: 'maturity',
-        query: 'Is ruvn production-ready and what are its limits?',
-        wantPaths: ['PRIMER#5-is-it-production-ready-scope-and-honest-limits', 'README.md'],
-        mustContain: ['v0.1.1', 'research tool', 'does not give medical advice', 'starting dossier'],
-      },
-      {
-        stage: 6,
-        arc: 'docs-where-things-live',
-        query: 'Where do I read more about ruvn?',
-        wantPaths: ['PRIMER#6-where-do-i-read-more-the-docs-map', 'README.md', 'install.md'],
-        mustContain: ['README.md', 'CLAUDE.md', 'install.md'],
-      },
-      {
-        stage: 7,
-        arc: 'end-to-end-usage',
-        query: 'How do I install and use ruvn?',
-        wantPaths: ['PRIMER#7-how-do-i-install-and-use-it-end-to-end', 'README.md'],
-        mustContain: ['npm i -g @ruvnet/ruvn', 'ruvn init', 'ruvn doctor', 'validate:openrouter'],
-      },
-    ],
-
     bundle: {
       blurb:
         'ruvn drop-in knowledge base — an AI research harness that turns a question into a graded, ' +
         'cited evidence dossier. Six agents in a line (scout → web-searcher → source-grader → ' +
         'synthesizer → fact-checker → citer), A/B/C/D source grading, every claim cited. ' +
         'Ships adapters for 9 hosts; OpenRouter-validated. Install: npm i -g @ruvnet/ruvn.',
-      questions: [
-        'What is ruvn and what does it give me back?',
-        'What does a graded, cited evidence dossier mean here?',
-        'What are the six agents and the nine hosts?',
-        'How does the grading + fact-checking pipeline work?',
-        'How do I install ruvn and validate it against a real model?',
-      ],
     },
   },
 
@@ -1256,19 +956,19 @@ export const targets = {
   // compressed task-useful MEASUREMENT (a few numbers) instead of a full image;
   // a small digital decoder reads the answer; every run emits a BLAKE3 receipt.
   // Rust workspace of 4 crates (core / bench / wasm / cli). No .gitmodules →
-  // force-walk own tree. Single 768-dim bge variant (recipe v1.3.0).
-  // Facts verified against .targets/photonlayer @ fe86c9f, 2026-06-19
+  // force-walk own tree.
+  // Facts verified against .targets/photonlayer @ fe86c9f.
   // (README.md / crates/*/src/*.rs / crates/*/README.md / docs/README.md /
   //  examples/README.md / crates/photonlayer-core/src/lib.rs).
   // ──────────────────────────────────────────────────────────────────────────
   photonlayer: {
     slug: 'photonlayer',
     metaName: 'PhotonLayer',
-    // ── Embedder (ADR-0001 v1.3.1: SINGLE 384-dim desktop variant) ────────────
+    // ── Embedder (single 384-dim variant) ─────────────────────────────────────
     // bge-small-en-v1.5 (cls-pooled, normalized, asymmetric query prefix). build-kb.mjs writes the
     // canonical un-suffixed stores/photonlayer/photonlayer-kb.rvf + a .embed.json sidecar that
-    // ask-kb + index-primer read (so query + primer use the SAME model). Gate-A tuned at
-    // rankScale 0.6 (trust bge's raw order gently). Matches the existing .embed.json sidecar.
+    // ask-kb + index-primer read (so query + primer use the SAME model). rankScale 0.6 trusts
+    // bge's raw order gently.
     // Model cached offline at kb/models-cache/Xenova/bge-small-en-v1.5 for fast builds.
     embed: {
       model: 'Xenova/bge-small-en-v1.5',
@@ -1303,62 +1003,6 @@ export const targets = {
       docs:         'PRIMER#6-where-do-i-read-more-the-docs-map',
       adr:          'PRIMER#6-where-do-i-read-more-the-docs-map',
       playbook:     'PRIMER#7-how-do-i-install-and-run-it-end-to-end',
-      // §8/§9 added for the AI-comprehension gate (extensibility + gotchas dimensions).
-      extensibility: 'PRIMER#8-how-do-i-extend-photonlayer-safely-the-extension-points',
-      gotchas:       'PRIMER#9-performance-determinism-and-gotchas',
-    },
-    // extensionFiles — concept word -> the real extension-point file(s) it touches. Consumed by the
-    // AI-comprehension grader (and a useful map for any AI). Files verified present in source +
-    // indexed in passages.jsonl; PRIMER#8 names them in prose. (Facts checked against source.)
-    extensionFiles: {
-      'propagation': ['crates/photonlayer-core/src/propagate.rs', 'crates/photonlayer-core/src/config.rs'],
-      'diffraction': ['crates/photonlayer-core/src/propagate.rs', 'crates/photonlayer-core/src/config.rs'],
-      'propagation mode': ['crates/photonlayer-core/src/config.rs', 'crates/photonlayer-core/src/propagate.rs'],
-      'adjoint': ['crates/photonlayer-core/src/propagate.rs', 'crates/photonlayer-core/tests/gradient_check.rs'],
-      'mask': ['crates/photonlayer-core/src/mask.rs'],
-      'phase mask': ['crates/photonlayer-core/src/mask.rs'],
-      'detector': ['crates/photonlayer-core/src/detector.rs', 'crates/photonlayer-core/src/config.rs'],
-      'sensor': ['crates/photonlayer-core/src/detector.rs', 'crates/photonlayer-core/src/config.rs'],
-      'differential': ['crates/photonlayer-bench/src/diffdetect.rs', 'crates/photonlayer-core/src/detector.rs'],
-      'decoder': ['crates/photonlayer-bench/src/decoder.rs'],
-      'training': ['crates/photonlayer-bench/src/grad_train.rs', 'crates/photonlayer-bench/src/learn.rs'],
-      'train': ['crates/photonlayer-bench/src/grad_train.rs', 'crates/photonlayer-bench/src/learn.rs'],
-      'gradient': ['crates/photonlayer-bench/src/grad_train.rs', 'crates/photonlayer-core/src/propagate.rs'],
-      'optimizer': ['crates/photonlayer-bench/src/grad_adam.rs', 'crates/photonlayer-bench/src/grad_train.rs'],
-      'cascade': ['crates/photonlayer-bench/src/grad_cascade.rs'],
-      'multiplane': ['crates/photonlayer-bench/src/grad_cascade.rs'],
-      'cli': ['crates/photonlayer-cli/src/main.rs'],
-      'subcommand': ['crates/photonlayer-cli/src/main.rs'],
-      'command': ['crates/photonlayer-cli/src/main.rs'],
-      'wasm': ['crates/photonlayer-wasm/src/lib.rs'],
-      'binding': ['crates/photonlayer-wasm/src/lib.rs'],
-      'javascript': ['crates/photonlayer-wasm/src/lib.rs'],
-      'receipt': ['crates/photonlayer-core/src/receipt.rs'],
-      'simulator': ['crates/photonlayer-core/src/simulator.rs'],
-      'metric': ['crates/photonlayer-core/src/metrics.rs'],
-    },
-    // docFiles — per-dimension authoritative docs the grader injects. CLI usage lives in the CLI
-    // README + main.rs; runnable usage examples live in the crate READMEs + examples/.
-    docFiles: {
-      cli: ['crates/photonlayer-cli/src/main.rs', 'README.md'],
-      usage: ['crates/photonlayer-core/README.md', 'README.md'],
-    },
-    // typeAliases — concept word in a question -> the public type whose method signatures answer it.
-    // Lets "run the optical simulator" surface ScalarSimulator's simulate/trace from symbols.json.
-    // All type names verified against crates/photonlayer-core/src/*.rs.
-    typeAliases: {
-      'simulator': 'ScalarSimulator',
-      'simulation': 'ScalarSimulator',
-      'mask': 'PhaseMask',
-      'config': 'OpticalConfig',
-      'field': 'OpticalField',
-      'image': 'InputImage',
-      'frame': 'OpticalFrame',
-      'propagator': 'Propagator',
-      'propagation': 'PropagationMode',
-      'complex': 'Complex',
-      'detector': 'DetectorConfig',
-      'receipt': 'ExperimentReceipt',
     },
 
     // ── Source scope (force-walk; NO .gitmodules in this repo → walk own tree) ──
@@ -1377,14 +1021,12 @@ export const targets = {
 
     // ── Extension classes ────────────────────────────────────────────────────
     codeExt: ['.rs'],
-    fullTextExt: ['.md', '.mdx', '.txt'],
-    templateExt: [],
 
     // ── Component model: the four crates live under crates/ ────────────────────
     componentRoots: ['crates'],
     componentWord: ['crate', 'module', 'component', 'package'],
 
-    // ── Disambiguation / off-topic magnets (gate-A tuned + AI-comprehension §8/§9) ──
+    // ── Disambiguation / off-topic magnets  ──
     // photonlayer's Rust source is heavily doc-commented and vector-close to orientation queries,
     // so raw .rs files out-rank the synthesized PRIMER sections for architecture/extensibility/
     // gotchas archetypes. These rules route each comprehension archetype to its PRIMER section +
@@ -1444,59 +1086,6 @@ export const targets = {
       { rule: 'docCommentSweep', roots: ['crates'] },                    // leading doc comments across tree
     ],
 
-    // ── Verification queries: ONE per arc stage (7 total). Facts verified 2026-06-19.
-    verificationQueries: [
-      {
-        stage: 1,
-        arc: 'what-is-it',
-        query: 'What is PhotonLayer?',
-        wantPaths: ['PRIMER#1-what-is-photonlayer', 'README.md', 'crates/photonlayer-core/src/lib.rs'],
-        mustContain: ['phase mask', 'sensor', 'deterministic'],
-      },
-      {
-        stage: 2,
-        arc: 'capabilities',
-        query: 'What can PhotonLayer do?',
-        wantPaths: ['PRIMER#2-what-can-photonlayer-do', 'README.md'],
-        mustContain: ['compress', 'sensor pixels', 'receipt'],
-      },
-      {
-        stage: 3,
-        arc: 'inventory-components',
-        query: 'What crates make up PhotonLayer?',
-        wantPaths: ['PRIMER#3-what-is-photonlayer-made-of-the-four-crates', 'README.md'],
-        mustContain: ['photonlayer-core', 'photonlayer-bench', 'photonlayer-wasm', 'photonlayer-cli'],
-      },
-      {
-        stage: 4,
-        arc: 'how-it-works-pipeline',
-        query: 'How does the optical pipeline work step by step?',
-        wantPaths: ['PRIMER#4-how-the-optical-pipeline-works-step-by-step', 'crates/photonlayer-core/src/lib.rs', 'README.md'],
-        mustContain: ['phase mask', 'propagat', 'sensor', 'decoder'],
-      },
-      {
-        stage: 5,
-        arc: 'maturity',
-        query: 'Is PhotonLayer production-ready and what are its limits?',
-        wantPaths: ['PRIMER#5-is-it-production-ready-scope-and-honest-limits', 'README.md'],
-        mustContain: ['simulator', 'No privacy', 'single', 'not'],
-      },
-      {
-        stage: 6,
-        arc: 'docs-where-things-live',
-        query: 'Where do I read more about PhotonLayer?',
-        wantPaths: ['PRIMER#6-where-do-i-read-more-the-docs-map', 'README.md', 'examples/README.md'],
-        mustContain: ['README', 'examples', 'crates'],
-      },
-      {
-        stage: 7,
-        arc: 'end-to-end-usage',
-        query: 'How do I install and run PhotonLayer?',
-        wantPaths: ['PRIMER#7-how-do-i-install-and-run-it-end-to-end', 'README.md'],
-        mustContain: ['cargo add photonlayer-core', 'cargo run', 'hello_optics'],
-      },
-    ],
-
     bundle: {
       blurb:
         'PhotonLayer drop-in knowledge base — a deterministic optical-AI front end in pure Rust. ' +
@@ -1504,13 +1093,6 @@ export const targets = {
         'task-useful measurement (a few numbers) instead of a full image; a small decoder reads ' +
         'the answer; every run emits a BLAKE3 receipt. Four crates (core / bench / wasm / cli). ' +
         'Live demo runs in-browser via WASM. Today a Rust simulator; hardware is on the roadmap.',
-      questions: [
-        'What is PhotonLayer and what does it actually capture?',
-        'What does a learned phase mask do, and how is it different from a normal camera + model?',
-        'What are the four crates and what does each one do?',
-        'How does the optical pipeline work end to end (image → mask → sensor → decoder → receipt)?',
-        'How do I install photonlayer-core and run the first example?',
-      ],
     },
   },
 
@@ -1521,18 +1103,16 @@ export const targets = {
   // engine, and WASM bindings that run ~25-qubit circuits in the browser. Crate-based:
   // its "components" are the five crates under crates/ (ruqu-core, ruqu-algorithms,
   // ruqu-exotic, ruqu-wasm, ruQu coherence engine) plus the npx CLI (cli/).
-  // Single 768-dim bge variant (recipe v1.3.0). Facts verified against
-  // .targets/ruqu @026d63ef 2026-06-19 (README + each crate README + lib.rs
+  // Facts verified against .targets/ruqu @026d63ef (README + each crate README + lib.rs
   // doc-comments + cli/README + cli/package.json).
   // ──────────────────────────────────────────────────────────────────────────
   ruqu: {
     slug: 'ruqu',
     metaName: 'ruqu',
-    // ── Embedder (ADR-0001 v1.3.1: SINGLE 384-dim desktop variant) ────────────
+    // ── Embedder (single 384-dim variant) ─────────────────────────────────────
     // bge-small-en-v1.5 (cls-pooled, normalized, asymmetric query prefix). build-kb.mjs writes the
     // canonical un-suffixed stores/ruqu/ruqu-kb.rvf + a .embed.json sidecar that ask-kb +
-    // index-primer read (so query + primer use the SAME model). The 1035-chunk ruqu corpus cleared
-    // Gate A at 384 — no step-up to 768 needed (memory: embedding-final-768-plus-chunking).
+    // index-primer read (so query + primer use the SAME model).
     embed: {
       model: 'Xenova/bge-small-en-v1.5',
       dim: 384,
@@ -1560,43 +1140,6 @@ export const targets = {
       docs:         'PRIMER#6-where-do-i-read-more-the-docs-map',
       adr:          'PRIMER#6-where-do-i-read-more-the-docs-map',
       playbook:     'PRIMER#7-how-do-i-install-and-run-it-end-to-end',
-      // §8/§9 added for the AI-comprehension gate (extensibility + gotchas dimensions).
-      extensibility: 'PRIMER#8-how-do-i-extend-ruqu-safely-the-extension-points',
-      gotchas:       'PRIMER#9-performance-memory-and-gotchas-running-large-circuits',
-    },
-    // extensionFiles — concept word -> the real extension-point file(s) it touches. Consumed by the
-    // AI-comprehension grader (and a useful map for any AI): "add a CLI subcommand" -> cli/bin/cli.js,
-    // etc. These files ARE indexed (in passages.jsonl); PRIMER#8 names them in prose.
-    extensionFiles: {
-      'gate': ['crates/ruqu-core/src/gate.rs', 'crates/ruqu-core/src/clifford_t.rs'],
-      'backend': ['crates/ruqu-core/src/backend.rs', 'crates/ruqu-core/src/simulator.rs'],
-      'decoder': ['crates/ruqu-core/src/decoder.rs'],
-      'provider': ['crates/ruqu-core/src/hardware.rs'],
-      'hardware': ['crates/ruqu-core/src/hardware.rs'],
-      'algorithm': ['crates/ruqu-algorithms/src/lib.rs', 'crates/ruqu-algorithms/src/grover.rs'],
-      'cli': ['cli/bin/cli.js'],
-      'subcommand': ['cli/bin/cli.js'],
-      'command': ['cli/bin/cli.js'],
-      'wasm': ['crates/ruqu-wasm/src/lib.rs'],
-      'binding': ['crates/ruqu-wasm/src/lib.rs'],
-      'javascript': ['crates/ruqu-wasm/src/lib.rs'],
-      'coherence': ['crates/ruQu/src/lib.rs'],
-    },
-    // docFiles — per-dimension authoritative docs the grader injects (the AI reads these for the
-    // dimension). CLI per-command table lives in cli/README.md; usage gate examples in the crate READMEs.
-    docFiles: {
-      cli: ['cli/README.md', 'cli/bin/cli.js'],
-      usage: ['crates/ruqu-core/README.md', 'crates/ruqu-algorithms/README.md'],
-    },
-    // typeAliases — concept word in a question -> the public type whose method signatures answer it.
-    // Lets "build and run a circuit" surface QuantumCircuit's gate methods (h/cnot/…) from symbols.json.
-    typeAliases: {
-      'circuit': 'QuantumCircuit',
-      'simulator': 'Simulator',
-      'simulation': 'Simulator',
-      'grover': 'GroverConfig',
-      'backend': 'BackendType',
-      'analyze': 'CircuitAnalysis',
     },
 
     repoDir: '../.targets/ruqu',
@@ -1612,15 +1155,13 @@ export const targets = {
     ],
 
     codeExt: ['.rs', '.ts', '.tsx', '.js', '.mjs', '.cjs'],
-    fullTextExt: ['.md', '.mdx', '.txt'],
-    templateExt: [],
 
     // Five crates live under crates/ (+ the npx CLI in cli/). componentWord widened
     // with 'engine' so "the coherence engine" matches the product/inventory matchers.
     componentRoots: ['crates'],
     componentWord: ['crate', 'engine', 'package', 'module', 'component'],
 
-    // ── Disambiguation (gate-A tuning, 384 bge-small) ─────────────────────────
+    // ── Disambiguation ────────────────────────────────────────────────────────
     // ruqu is a DENSE corpus (1035 chunks): every crate's full Rust source + ADRs + DDDs
     // are indexed, and many low-level files (noise.rs, backend.rs, simulator.rs, Cargo.toml,
     // ADR/DDD design docs) are vector-close to orientation queries but DON'T carry the plain
@@ -1710,58 +1251,6 @@ export const targets = {
       { rule: 'literalFiles', files: ['README.md', 'cli/README.md', 'cli/package.json', 'cli/bin/cli.js', 'crates/ruqu-core/README.md', 'crates/ruqu-algorithms/README.md', 'crates/ruqu-wasm/README.md', 'crates/ruqu-exotic/README.md', 'crates/ruQu/README.md'] },
     ],
 
-    verificationQueries: [
-      {
-        stage: 1,
-        arc: 'what-is-it',
-        query: 'What is ruqu?',
-        wantPaths: ['PRIMER#1-what-is-ruqu', 'README.md'],
-        mustContain: ['quantum', 'pure Rust', 'state-vector', 'WebAssembly'],
-      },
-      {
-        stage: 2,
-        arc: 'capabilities',
-        query: 'What can ruqu do for me?',
-        wantPaths: ['PRIMER#2-what-can-ruqu-do-for-you', 'README.md', 'crates/ruqu-algorithms/README.md'],
-        mustContain: ['VQE', 'Grover', 'QAOA', 'Surface Code'],
-      },
-      {
-        stage: 3,
-        arc: 'inventory-components',
-        query: 'What crates make up ruqu?',
-        wantPaths: ['PRIMER#3-what-is-ruqu-made-of-the-five-crates', 'README.md'],
-        mustContain: ['ruqu-core', 'ruqu-algorithms', 'ruqu-exotic', 'ruqu-wasm', 'coherence'],
-      },
-      {
-        stage: 4,
-        arc: 'how-it-works-pipeline',
-        query: 'How does a quantum circuit run on the simulator?',
-        wantPaths: ['PRIMER#4-how-a-circuit-runs-the-simulation-pipeline', 'crates/ruqu-core/README.md'],
-        mustContain: ['StateVector', 'planner', 'backend', 'noise'],
-      },
-      {
-        stage: 5,
-        arc: 'maturity',
-        query: 'Is ruqu production-ready and what are its limits?',
-        wantPaths: ['PRIMER#5-is-it-production-ready-scope-and-honest-limits', 'README.md'],
-        mustContain: ['25', 'simulator', 'MIT'],
-      },
-      {
-        stage: 6,
-        arc: 'docs-where-things-live',
-        query: 'Where do I read more about ruqu?',
-        wantPaths: ['PRIMER#6-where-do-i-read-more-the-docs-map', 'README.md'],
-        mustContain: ['ruqu-core', 'ruqu-algorithms', 'README'],
-      },
-      {
-        stage: 7,
-        arc: 'end-to-end-usage',
-        query: 'How do I install and run ruqu?',
-        wantPaths: ['PRIMER#7-how-do-i-install-and-run-it-end-to-end', 'README.md', 'cli/README.md'],
-        mustContain: ['cargo add ruqu-core', 'npx @ruvector/ruqu', 'wasm-pack', 'simulate'],
-      },
-    ],
-
     bundle: {
       blurb:
         'ruqu drop-in knowledge base — a quantum computing simulator in pure Rust + WebAssembly. ' +
@@ -1769,13 +1258,6 @@ export const targets = {
         'quantum algorithms (VQE, Grover, QAOA, surface-code error correction), and ~25-qubit ' +
         'in-browser WASM. Run circuits with no quantum hardware, even in a browser tab. ' +
         'Install: cargo add ruqu-core ruqu-algorithms · or npx @ruvector/ruqu simulate.',
-      questions: [
-        'What is ruqu and what does it let me do without quantum hardware?',
-        'What is a state-vector simulator and what are VQE / Grover / QAOA?',
-        'What are the five crates that make up ruqu?',
-        'How does a circuit run — backends, noise, the cost-model planner?',
-        'How do I install ruqu or run it from the terminal with npx?',
-      ],
     },
   },
 
@@ -1788,7 +1270,7 @@ export const targets = {
   // Rust core + Python library (PyPI: ruview / wifi-densepose) + JavaScript UI
   // + ESP32 C/Rust firmware. Pretrained weights on Hugging Face. Docker image.
   // Works with Home Assistant, Apple Home, Google Home, Alexa, Matter.
-  // Registered for the explainmyrepo recipe run (2026-07-04).
+  // Registered for the explainmyrepo recipe run.
   // ──────────────────────────────────────────────────────────────────────────
   RuView: {
     slug: 'RuView',
@@ -1822,13 +1304,10 @@ export const targets = {
       docs:          'PRIMER#6-where-do-i-read-more-the-docs-map',
       adr:           'PRIMER#6-where-do-i-read-more-the-docs-map',
       playbook:      'PRIMER#7-how-do-i-install-and-use-it-end-to-end',
-      extensibility: 'PRIMER#8-how-do-i-extend-ruview',
-      gotchas:       'PRIMER#9-hardware-limits-and-gotchas',
     },
 
-    // 2026-09-17: repoDir pointed at a hosted proof run's scratch clone (/tmp/agentic-proof-ruview),
-    // which no longer exists; the local door clones into explainer-builds/<slug>/repo.
-    repoDir: '/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/ruview/repo',
+    // The local door clones into explainer-builds/<slug>/repo.
+    repoDir: '../.targets/RuView',
     scopeExclude: [
       'node_modules',
       'dist',
@@ -1862,8 +1341,6 @@ export const targets = {
     ],
 
     codeExt: ['.rs', '.py', '.js', '.ts', '.mjs', '.sh', '.toml'],
-    fullTextExt: ['.md', '.mdx', '.txt', '.rst'],
-    templateExt: [],
 
     componentRoots: [
       'wifi_densepose',
@@ -1901,7 +1378,7 @@ export const targets = {
   // gatherings that actually connect people. Pure-markdown skill (SKILL.md +
   // 5 reference libraries + 5 workshop templates), Claude Code / Cowork plugin.
   // Created by Klara Hermesz (AI Enablement Academy). v3.0.0, CC BY 4.0.
-  // Registered for the explainmyrepo recipe 2026-07-04.
+  // Registered for the explainmyrepo recipe.
   // ──────────────────────────────────────────────────────────────────────────
   'gathering-architect': {
     slug: 'gathering-architect',
@@ -1919,7 +1396,7 @@ export const targets = {
       'Gathering Architect',
       'gathering architect',
     ],
-    repoDir: '/tmp/agentic-proof-gathering-architect/repo',
+    repoDir: '../.targets/gathering-architect',
     scopeExclude: [
       'node_modules',
       '.git',
@@ -1928,8 +1405,6 @@ export const targets = {
       'coverage',
     ],
     codeExt: [],
-    fullTextExt: ['.md', '.mdx', '.txt'],
-    templateExt: [],
     componentRoots: [
       'plugins/gathering-architect/skills/gathering-architect',
     ],
@@ -1967,14 +1442,12 @@ export const targets = {
       "rvfSuffix": ".rvf"
     },
     "productNames": ["OpenConnector", "open-connector"],
-    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/open-connector/repo",
+    "repoDir": "../.targets/open-connector",
     "scopeExclude": [
       "node_modules", "dist", "target", ".git", "coverage", "pkg", ".next",
       "__pycache__", ".venv", "venv", "providers", "public", "assets", ".wrangler"
     ],
     "codeExt": [".ts", ".tsx", ".js", ".mjs"],
-    "fullTextExt": [".md", ".mdx", ".txt"],
-    "templateExt": [],
     "componentRoots": ["src", "web/src", "scripts", "docs"],
     "componentWord": ["module", "service", "gateway", "provider"],
     "include": [
@@ -1995,14 +1468,12 @@ export const targets = {
       "rvfSuffix": ".rvf"
     },
     "productNames": ["agentic-kit", "@pacphi/agentic-kit", "ak"],
-    "repoDir": "/Users/stuartkerr/Code/Ruv-Explainer/explainer-builds/agentic-kit/repo",
+    "repoDir": "../.targets/agentic-kit",
     "scopeExclude": [
       "node_modules", "dist", "target", ".git", "coverage", "pkg", ".next",
       "__pycache__", ".venv", "venv"
     ],
     "codeExt": [".mjs", ".js", ".cjs"],
-    "fullTextExt": [".md", ".mdx", ".txt"],
-    "templateExt": [],
     "componentRoots": ["src", "src/commands", "src/lib", "src/tools", "bin", "claude"],
     "componentWord": ["module", "command", "guard", "healer"],
     "include": [
@@ -2013,10 +1484,16 @@ export const targets = {
   },
 };
 
-/** Default target for CLI scripts that omit --target while only one repo is in scope [L]. */
+// Per-build overlay (see header): entries here extend or replace the registry for THIS process only.
+if (process.env.KB_TARGET_OVERLAY) {
+  const extra = JSON.parse(fs.readFileSync(process.env.KB_TARGET_OVERLAY, 'utf8'));
+  for (const [slug, entry] of Object.entries(extra)) targets[slug] = entry;
+}
+
+/** Default target for CLI scripts that omit --target. */
 export const defaultTarget = 'agent-harness-generator';
 
-/** Lookup helper used by build-kb / ask-kb / guard-check / grade-kb / gate. */
+/** Target lookup used by build-kb and the structured-index scripts. */
 export function getTarget(slug = defaultTarget) {
   const t = targets[slug];
   if (!t) {
@@ -2026,11 +1503,10 @@ export function getTarget(slug = defaultTarget) {
   }
   // KB_REPO_DIR — set by tools/build-kb.mjs from build.json's repo.clonePath so that every
   // kb/ engine script indexes the correct build-dir clone, not the config's default repoDir.
-  // Without this, a fresh run on a new build dir silently reads the wrong repo (Blocker-1 fix).
+  // Without this, a fresh run on a new build dir silently reads the wrong repo.
   // Direct / legacy invocations (no env var) fall back to target.repoDir as before.
   const repoDirOverride = process.env.KB_REPO_DIR;
   if (repoDirOverride) return { ...t, repoDir: repoDirOverride };
   return t;
 }
 
-export default { targets, defaultTarget, getTarget };

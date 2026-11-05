@@ -6,7 +6,7 @@
 // SVGs above the originals, or, when they have none, the explainer's two generated diagrams just after
 // the intro. The diagrams are the per-repo "story" diagrams (ADR-0014), verified against the source.
 //
-// CHANNEL (owner's decision 2026-10-10, after measuring claude-swap: 143 open PRs, 3 new a day):
+// CHANNEL (why issue-first: docs/adr/0015):
 //   default  README_OUTREACH=issue : open an ISSUE that shows the finished work — a one-click rendered
 //            README, the images, the explainer link — and offers a PR "on request". Nothing in their
 //            repo is touched, no CI is triggered, nothing is asked of them but a glance.
@@ -16,7 +16,8 @@
 // GOOD-CITIZEN RULES (enforced here, pinned in tests/readme-pr.test.mjs + tests/outreach.test.mjs):
 //   • never your own repo, never a private repo, never without a live page;
 //   • one contact per repo, ever; a closed/merged item is never re-sent;
-//   • a daily cap (README_OUTREACH_DAILY_CAP, default 5);
+//   • a daily cap (README_OUTREACH_DAILY_CAP, default 5) — both apply to either channel except `open-pr`,
+//     which is the offered second step on an issue we already sent (README_ENHANCE_ISSUE set);
 //   • additions only — their words are never changed;
 //   • every send is recorded in the outreach ledger so we can see who responds.
 //
@@ -35,6 +36,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { readContext, mergeSlot } from '../src/build-context.mjs';
 import { rewriteReadme } from '../src/readme-ascii.mjs';
 import {
   buildPrBody, buildPrTitle, buildIssueTitle, decideSend, readmePrEnabled,
@@ -114,10 +116,10 @@ async function main() {
   const buildDir = process.argv[2];
   if (!buildDir) fail('usage: node tools/readme-enhance.mjs <build-dir>');
   const env = process.env;
-  const buildJsonPath = path.join(buildDir, 'build.json');
   let ctx;
-  try { ctx = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8')); } catch (err) { fail(`cannot read ${buildJsonPath}: ${err.message}`); }
-  const record = (slot) => { ctx.readmePr = slot; fs.writeFileSync(buildJsonPath, `${JSON.stringify(ctx, null, 2)}\n`); };
+  try { ctx = readContext(buildDir); } catch (err) { fail(err.message); }
+  // Replace (never merge) our slot, and touch only that slot so a concurrent station's keys survive.
+  const record = (slot) => { mergeSlot(buildDir, 'readmePr', null); mergeSlot(buildDir, 'readmePr', slot); };
   const done = (slot, extra = {}) => { record(slot); emit({ ok: true, outputs: { readmePr: slot, ...extra }, error: null }); process.exit(0); };
 
   const dry = /^(1|true|yes|on)$/i.test(String(env.README_OUTREACH_DRYRUN || ''));
@@ -149,6 +151,8 @@ async function main() {
   const repoFull = `${repo.owner}/${repo.name}`;
   const ledger = ledgerPath(env);
 
+  if (!explainerFull) { log('no explainer repo to host the preview (publish-repo skipped?) — not contacting.'); done({ prUrl: 'skipped', kind: channel, reason: 'no-explainer-repo', svgsShared: [] }); }
+
   // ── identity ─────────────────────────────────────────────────────────────────────────────────────
   let ghLogin, ghName;
   if (dry) { ghLogin = env.README_OUTREACH_AS || 'dry-run-user'; ghName = ghLogin; }
@@ -160,19 +164,24 @@ async function main() {
   }
 
   // ── who may be contacted ─────────────────────────────────────────────────────────────────────────
-  if (!explainerFull) { log('no explainer repo to host the preview (publish-repo skipped?) — not contacting.'); done({ prUrl: 'skipped', kind: channel, reason: 'no-explainer-repo', svgsShared: [] }); }
   const entries = readLedger(ledger);
-  if (channel === 'issue') {
-    if (priorContacts(entries, repoFull).length) { log(`already contacted ${repoFull} — one contact per repo.`); done({ prUrl: 'skipped', kind: 'issue', reason: 'already-contacted', svgsShared: [] }); }
+  // The offered second step is exempt only when README_ENHANCE_ISSUE is the number of an issue WE sent to this
+  // repo and no PR has gone out yet; a bare flag proves nothing.
+  const issueNo = /^\d+$/.test(String(env.README_ENHANCE_ISSUE || '')) ? Number(env.README_ENHANCE_ISSUE) : 0;
+  const prior = priorContacts(entries, repoFull);
+  const openPr = channel === 'pr' && issueNo > 0
+    && prior.some((e) => e.kind === 'issue' && e.number != null && Number(e.number) === issueNo)
+    && !prior.some((e) => e.kind === 'pr');
+  if (!openPr) {
+    if (prior.length) { log(`already contacted ${repoFull} — one contact per repo.`); done({ prUrl: 'skipped', kind: channel, reason: 'already-contacted', svgsShared: [] }); }
     const cap = underDailyCap(entries, Number(env.README_OUTREACH_DAILY_CAP) || DEFAULT_DAILY_CAP);
-    if (!cap.ok) { log(cap.reason); done({ prUrl: 'skipped', kind: 'issue', reason: cap.reason, svgsShared: [] }); }
+    if (!cap.ok) { log(cap.reason); done({ prUrl: 'skipped', kind: channel, reason: cap.reason, svgsShared: [] }); }
   }
   const title = channel === 'pr' ? buildPrTitle(repo.name) : buildIssueTitle(repo.name);
   let existing = [];
   if (!dry) {
     try {
-      const flag = channel === 'pr' ? 'pr' : 'issue';
-      const rows = JSON.parse(run('gh', [flag, 'list', '--repo', repoFull, '--author', ghLogin, '--state', 'all', '--limit', '30', '--json', 'number,state,url,title']));
+      const rows = JSON.parse(run('gh', [channel, 'list', '--repo', repoFull, '--author', ghLogin, '--state', 'all', '--limit', '30', '--json', 'number,state,url,title']));
       existing = rows.filter((r) => r.title === title).map((r) => ({ state: r.state, url: r.url, author: ghLogin }));
     } catch (e) { log(`could not list existing items (continuing): ${String(e.message).slice(0, 120)}`); }
   }
@@ -216,19 +225,22 @@ async function main() {
   const haveFlowPng = await rasterize(flowSvg, path.join(proposal, 'preview', 'flow.png'));
 
   // ── host the preview in the explainer repo ───────────────────────────────────────────────────────
-  const rawBase = explainerFull ? `https://raw.githubusercontent.com/${explainerFull}/main` : null;
+  const rawBase = `https://raw.githubusercontent.com/${explainerFull}/main`;
   let hosted = false;
-  if (!dry && explainerFull) {
+  if (!dry) {
     const token = env.GITHUB_TOKEN || env.GH_TOKEN;
     hosted = token ? pushProposalToExplainerRepo(explainerFull, token, proposal) : false;
     if (!token) log('no GITHUB_TOKEN/GH_TOKEN — cannot host the preview; the message would have no rendered README link.');
   }
-  const previewReadmeUrl = explainerFull ? `https://github.com/${explainerFull}/blob/main/${PROPOSAL_DIR}/${readmeName}` : null;
+  const previewReadmeUrl = `https://github.com/${explainerFull}/blob/main/${PROPOSAL_DIR}/${readmeName}`;
   if (!dry && !hosted && channel === 'issue') {
     // An issue whose whole point is "see it rendered" is worthless without the rendered link: stand down.
     done({ prUrl: 'skipped', kind: 'issue', reason: 'preview-not-hosted', svgsShared: [] });
   }
-  const images = { hero: rawBase ? `${rawBase}/assets/hero.png` : undefined };
+  // The page's hero raster, under the name assemble-page copied it to; a scene hero has no raster in the repo.
+  const heroVis = ctx.visuals && ctx.visuals.hero;
+  const images = {};
+  if (heroVis && typeof heroVis.file === 'string' && heroVis.rasterSkipped !== 'scene') images.hero = `${rawBase}/assets/${path.basename(heroVis.file)}`;
   if (haveArchPng && rw.mode === 'fallback') images.architecture = `${rawBase}/${PROPOSAL_DIR}/preview/architecture.png`;
   if (haveFlowPng && rw.mode === 'fallback') images.flow = `${rawBase}/${PROPOSAL_DIR}/preview/flow.png`;
 
@@ -264,10 +276,10 @@ async function main() {
 
   // ── the message ──────────────────────────────────────────────────────────────────────────────────
   let body = buildPrBody({
-    repoName: repo.name, liveUrl, readmeUrl: readmeUrl || liveUrl, mode: rw.mode, addedLines, files, images,
-    intro: env.README_PR_INTRO, signoff: env.README_PR_SIGNOFF || ghName, contact: env.README_PR_CONTACT ?? env.OUTREACH_CONTACT, kind: channel === 'pr' ? 'pr' : 'issue',
+    repoName: repo.name, liveUrl, readmeUrl, mode: rw.mode, addedLines, files, images,
+    intro: env.README_PR_INTRO, signoff: env.README_PR_SIGNOFF || ghName, contact: env.README_PR_CONTACT ?? env.OUTREACH_CONTACT, kind: channel,
   });
-  if (channel === 'pr' && env.README_ENHANCE_ISSUE) body = `Follow-up to #${String(env.README_ENHANCE_ISSUE).replace(/\D/g, '')}, as offered.\n\n${body}`;
+  if (openPr) body = `Follow-up to #${issueNo}, as offered.\n\n${body}`;
 
   if (dry) {
     const out = path.join(proposal, channel === 'pr' ? 'PR.md' : 'ISSUE.md');

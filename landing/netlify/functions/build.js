@@ -7,7 +7,8 @@
    OWNER's keys and writes progress back to that gist. The client polls /status.
 
    Env (Netlify site settings, server-side only — never sent to the browser):
-     GITHUB_TOKEN            PAT with `gist` + `actions:write` on stuinfla/Repo-Explainer
+     EXPLAINER_GH_TOKEN      PAT with `gist` + `actions:write` on stuinfla/Repo-Explainer
+                             (preferred; GITHUB_TOKEN is the fallback name)
      EMAIL_LEDGER_GIST_ID    gist holding ledger.json  (per-email counts)   [optional]
      GLOBAL_COUNTER_GIST_ID  gist holding counter.json (global monthly cap) [optional]
    If a meter gist id is missing we FAIL OPEN (allow the build) and log — the metering
@@ -29,6 +30,9 @@ function json(statusCode, obj) {
     body: JSON.stringify(obj),
   };
 }
+
+const SEGMENT_RE = /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/;
+function isSafeSegment(s) { return typeof s === "string" && SEGMENT_RE.test(s); }
 
 function gh(token) {
   return {
@@ -75,6 +79,7 @@ async function bumpDoor(token, kind) {
   } catch { /* never block the door on its own tally */ }
 }
 
+exports.isSafeSegment = isSafeSegment;
 exports.handler = async function (event) {
   if (event.httpMethod === "OPTIONS") return json(204, {});
   if (event.httpMethod !== "POST") return json(405, { error: "Method not allowed" });
@@ -86,13 +91,21 @@ exports.handler = async function (event) {
   try { body = JSON.parse(event.body || "{}"); } catch { return json(400, { error: "Invalid JSON body." }); }
   const url = (body.url || "").toString();
   const email = (body.email || "").toString().trim().toLowerCase();
+  // The address later reaches SMTP headers and RCPT TO (tools/notify*.mjs): reject anything that is not
+  // ONE plain address, so a CR/LF can never ride in. Same rule as src/smtp.mjs isSafeAddress. Email is optional.
+  if (email && !(email.length <= 254 && /^[a-z0-9._%+'-]{1,64}@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/.test(email))) {
+    return json(400, { error: "That email address doesn't look right. Leave it blank or use a plain address like you@example.com." });
+  }
 
-  // Accept the full URL or just "owner/name" — first real user's first ask (2026-07-09).
+  // Accept the full URL or just "owner/name".
   const match = url.trim().match(/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)/)
     || url.trim().match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)$/);
   if (!match) return json(400, { error: "That doesn't look like a GitHub repo — try owner/name or https://github.com/owner/name." });
   const owner = match[1];
   const repo = match[2].replace(/\.git$/, "");
+  // "../users" matches the character class and the GitHub API normalises repos/../users to /users (a 200 with no
+  // `private` flag), which would bypass the public-repo check below: a path segment may not start with a dot.
+  if (!isSafeSegment(owner) || !isSafeSegment(repo)) return json(400, { error: "That doesn't look like a GitHub repo — try owner/name or https://github.com/owner/name." });
   const fullName = owner + "/" + repo;
 
   // 1) Repo must exist + be reachable by our token (private repos 404 to anon callers).
@@ -117,31 +130,13 @@ exports.handler = async function (event) {
     repoSizeKb = Number(repoMeta.size) || 0;
   } catch { return json(502, { error: "Couldn't reach GitHub — try again shortly." }); }
 
-  // Complexity tiers (size-based; component-count refinement can follow once the pipeline itself
-  // reports dep-graph size back, but the outer GH Actions job timeout must be fixed BEFORE dispatch,
-  // so a pre-flight signal is what's available here). Bigger repos get more wall-clock AND more $,
-  // rather than the same fixed budget regardless of scale.
-  //
-  // Floors measured live, THREE times now (2026-07-04, 2026-07-06, 2026-07-10): a first smoke
-  // test at 15min on `chalk` got killed mid-image-generation; raised small to 25. Then a REAL
-  // production front-door run on `sindresorhus/p-map` (25min) ALSO got killed, deep in a
-  // quality-grade refine loop; raised to 30. Then, same night as the credit-outage recovery,
-  // TWO more real repos (aiki-sh/cli, manjast/agentic-development-playbook) both timed out at
-  // 30min in the exact same spot — the refine loop's screenshot-vision-grade-fix round trips —
-  // and BOTH succeeded cleanly on the very next attempt at 40min (matching the existing medium
-  // tier). Three strikes on the same floor from three independent repos is a pattern, not noise.
-  // Raised small to match medium's proven-sufficient 40min. Don't lower it again without a real
-  // measured run to justify it.
+  // Size-tiered budget, fixed BEFORE dispatch (the outer job timeout cannot change later). Small repos get the
+  // medium floor: 25 and 30 min were each killed in the refine loop on real builds (see ADR-0011).
   const tier = repoSizeKb > 200000 ? "large" : repoSizeKb > 20000 ? "medium" : "small";
-  const budgetMin = tier === "large" ? 60 : tier === "medium" ? 40 : 40;
+  const budgetMin = tier === "large" ? 60 : 40;
   const budgetUsd = tier === "large" ? 18 : tier === "medium" ? 10 : 7;
-  // GitHub Actions expressions don't support arithmetic the way `fromJSON(x) + 10` implies (learned
-  // the hard way — it rejects the dispatch outright, a YAML-structure check doesn't catch it since
-  // it's an expression-syntax error, not a YAML one). Compute the overhead buffer here in
-  // plain JS instead and pass the already-summed value. +25 (was +10, 2026-07-19): the buffer now
-  // also covers the runner's post-agent CURE stage (bounded cure agent + one verification grade +
-  // deploy, ≤20min worst case — see bin/cure.mjs CURE wall constants, pinned by tests/cure.test.mjs)
-  // so a full-budget build can still be cured instead of SIGKILLed mid-recovery.
+  // Actions expressions cannot add to an input, so the overhead is summed here: +25 covers the runner's cure
+  // stage (bin/cure.mjs, <=20 min) so a full-budget build can still be cured instead of SIGKILLed.
   const timeoutMin = budgetMin + 25;
 
   // 2) METERING (before we spend a cent). Fail open if the meter gists aren't configured.
@@ -156,7 +151,7 @@ exports.handler = async function (event) {
     if (ledger && ledger[email] && ledger[email].count >= FREE_PER_EMAIL) {
       return json(402, {
         error: "You've used your " + FREE_PER_EMAIL + " free builds — thank you for trying it! " +
-          "To keep going, run it yourself with your own API keys: npx explainmyrepo <github-url> --ship-best-effort",
+          "To keep going, run it yourself with your own API keys: npx explainmyrepo <github-url>",
       });
     }
   } else if (!ledgerId) {
@@ -167,7 +162,7 @@ exports.handler = async function (event) {
   if (counterId) {
     counter = await readGist(token, counterId, "counter.json");
     if (counter && counter.month === month && typeof counter.hardCap === "number" && (counter.builds || 0) >= counter.hardCap) {
-      return json(503, { error: "We've hit this month's community build limit. It resets next month — or run it yourself: npx explainmyrepo <github-url> --ship-best-effort" });
+      return json(503, { error: "We've hit this month's community build limit. It resets next month — or run it yourself: npx explainmyrepo <github-url>" });
     }
   } else {
     console.warn("GLOBAL_COUNTER_GIST_ID not set — global cap disabled (fail-open).");
@@ -175,7 +170,7 @@ exports.handler = async function (event) {
 
   // 3) Create the status gist the runner will patch + the browser will poll.
   const buildId = (globalThis.crypto && globalThis.crypto.randomUUID) ? globalThis.crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2);
-  const initial = { buildId, step: 0, totalSteps: 16, stepName: "Queued", status: "queued", repo: fullName, startedAt: nowIso, error: null, result: null };
+  const initial = { buildId, stepName: "Queued", status: "queued", repo: fullName, startedAt: nowIso, error: null, result: null };
   let gistId;
   try {
     const r = await fetch("https://api.github.com/gists", {

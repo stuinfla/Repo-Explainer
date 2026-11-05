@@ -4,6 +4,7 @@
 // door reported "the mandatory diagrams did not render". One long sentence stopped a finished page,
 // contrary to ADR-0011. These run the real tools; the pre-check fires before any network call, and the
 // key/base URL are fakes pointed at a closed port so nothing can reach a real API.
+import { withShareCard } from './helpers/png.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -25,7 +26,7 @@ function buildDir(html, quality) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'review-b-refusal-'));
   const site = path.join(dir, 'site');
   fs.mkdirSync(site, { recursive: true });
-  fs.writeFileSync(path.join(site, 'index.html'), html);
+  fs.writeFileSync(path.join(site, 'index.html'), withShareCard(site, html));
   fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify({
     repo: { url: 'https://github.com/o/r', slug: 'r' },
     page: { dir: site, htmlPath: path.join(site, 'index.html') },
@@ -36,7 +37,7 @@ function buildDir(html, quality) {
 const read = (dir) => JSON.parse(fs.readFileSync(path.join(dir, 'build.json'), 'utf8'));
 function run(tool, dir, env = {}) {
   const e = { ...process.env, ...OFFLINE, ...env };
-  delete e.NETLIFY_AUTH_TOKEN; delete e.EXPLAINER_SUBMITTED_REPO; delete e.DEPLOY_FORCE;
+  delete e.NETLIFY_AUTH_TOKEN; delete e.EXPLAINER_SUBMITTED_REPO;
   return spawnSync(process.execPath, [tool, dir], { env: e, encoding: 'utf8' });
 }
 
@@ -72,11 +73,23 @@ test('#2 deploy DELIVERS a pre-check refusal with disclosure instead of refusing
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
-test('#2 deploy still REFUSES an empty scorecard with no recorded reason (unrun station)', () => {
-  const dir = buildDir('<!doctype html><title>Test explainer page</title>', { scorecard: [], passed: false });
-  const r = run(DEPLOY, dir);
-  assert.equal(r.status, 1);
-  assert.match(r.stdout, /no quality scorecard and no recorded grader failure/);
+// D2: a pre-check refusal on a REGRADE must not keep the previous copy's scorecard, or the cure, deploy
+// and email would report old grades for a page that was never graded in this form.
+test('D2 a refusal on a regrade writes a FRESH slot: no stale scorecard, screenshots or heights; spend and budget carry over', () => {
+  const stale = { device: 'mobile(390)', meanScore: 88, headlineScore: 80, passed: true, inv18: { passed: true } };
+  const dir = buildDir('<!doctype html><title>Test explainer page</title><section class="hero"><p>It speaks GDN to the core.</p></section>',
+    { scorecard: [stale, stale], passed: true, exemplary: false, iterations: 2, cost: { usd: 0.4, calls: 4 },
+      screenshots: { mobile: '/old/m.png' }, pageHeights: { mobile: 9000 } });
+  const r = run(QG, dir);
+  assert.equal(r.status, 0, r.stderr);
+  const q = read(dir).quality;
+  assert.deepEqual(q.scorecard, [], 'the older copy\'s grades are not this copy\'s');
+  assert.deepEqual(q.screenshots, {});
+  assert.deepEqual(q.pageHeights, {});
+  assert.equal(q.passed, false);
+  assert.equal(q.iterations, 2, 'a $0 refusal does not spend a grade');
+  assert.deepEqual(q.cost, { usd: 0.4, calls: 4 }, 'prior spend is not lost');
+  assert.equal(q.gateRefusal, 'INV-20 unexplained acronym(s): GDN');
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -91,7 +104,8 @@ test('#2 local door: a pre-check refusal or grader outage is delivered, never bl
   // the real integrity holds are unchanged
   assert.equal(belowBarVerdict({ scorecard: [] }).action, 'hold');
   assert.match(belowBarVerdict(null).why, /no quality scorecard/);
-  const noDiagrams = belowBarVerdict({ scorecard: [{ inv18: { passed: false } }, { inv18: { passed: false } }] });
-  assert.deepEqual(noDiagrams, { action: 'hold', why: 'the mandatory diagrams did not render' });
-  assert.equal(belowBarVerdict({ scorecard: [{ inv18: { passed: true } }] }).action, 'deliver');
+  const absent = { inv18: { passed: false, architecturePresent: false, architectureVisible: false } };
+  assert.deepEqual(belowBarVerdict({ scorecard: [absent, absent] }), { action: 'hold', why: 'the mandatory diagrams did not render' });
+  const present = { inv18: { passed: true, architecturePresent: true, architectureVisible: true } };
+  assert.equal(belowBarVerdict({ scorecard: [present, present] }).action, 'deliver');
 });

@@ -1,14 +1,10 @@
-// Conformance test — transient-failure resilience in the brain-call seam (src/claude.mjs).
-//
-// 2026-07-03 incident: hosted build 28663699020 (lattice) died at step 4/17 with
-// "Anthropic request failed: fetch failed" — ONE transient network blip on the runner killed an
-// otherwise-perfect 13-minute build. The seam must retry transient failures (network throw,
-// HTTP 429/5xx) with backoff, and must NOT retry permanent ones (401/400). FAILS RED until
-// callClaude carries a retry loop.
+// Brain-call resilience (src/claude.mjs): transient failures (network throw, 429/5xx) are retried with
+// backoff, permanent ones (401/400) are not, and an OpenRouter lane that cannot serve us falls back to
+// the first-party lane instead of killing the build.
 
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { callClaude } from '../src/claude.mjs';
+import { callClaude, AUTHORING_MODEL } from '../src/claude.mjs';
 
 const realFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = realFetch; });
@@ -64,11 +60,7 @@ test('gives up after exhausting retries and surfaces the last error', async () =
   assert.equal(calls, 3, 'expected initial attempt + 2 retries');
 });
 
-// 2026-09-17: OpenRouter ran out of credits (HTTP 402) and the very first brain step of a build died
-// with it — while a working Anthropic key and a logged-in CLI sat right there. The comment above the
-// fallback in callClaude says an OpenRouter outage "must never take the build down", but only RETRYABLE
-// errors ever reached it; a 402 is "permanent", so it was rethrown on the spot. A lane that cannot
-// serve us (no credits, bad key, retired model) is exactly when the OTHER lane should take over.
+// A lane that cannot serve us (no credits 402, bad key 401/403, retired model 404) hands over to the other lane.
 const openRouterDown = (status) => async (url) => (String(url).includes('openrouter.ai')
   ? { ok: false, status, text: async () => `{"error":{"message":"status ${status}"}}` }
   : okResponse('from anthropic'));
@@ -78,7 +70,7 @@ for (const status of [401, 402, 403, 404]) {
     let orCalls = 0;
     const down = openRouterDown(status);
     globalThis.fetch = async (url) => { if (String(url).includes('openrouter.ai')) orCalls += 1; return down(url); };
-    const text = await callClaude({ ...baseOpts, model: 'z-ai/glm-5.2', env: { OPENROUTER_API_KEY: 'or-key' } });
+    const text = await callClaude({ ...baseOpts, model: AUTHORING_MODEL, env: { OPENROUTER_API_KEY: 'or-key' } });
     assert.equal(text, 'from anthropic');
     assert.equal(orCalls, 1, 'a lane that cannot serve us must not be retried');
   });
@@ -86,5 +78,5 @@ for (const status of [401, 402, 403, 404]) {
 
 test('an OpenRouter 400 is OUR bug, not a lane outage — it must surface, not be papered over', async () => {
   globalThis.fetch = openRouterDown(400);
-  await assert.rejects(() => callClaude({ ...baseOpts, model: 'z-ai/glm-5.2', env: { OPENROUTER_API_KEY: 'or-key' } }), /OpenRouter 400/);
+  await assert.rejects(() => callClaude({ ...baseOpts, model: AUTHORING_MODEL, env: { OPENROUTER_API_KEY: 'or-key' } }), /OpenRouter 400/);
 });

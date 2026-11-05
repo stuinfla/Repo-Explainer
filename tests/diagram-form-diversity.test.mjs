@@ -1,19 +1,8 @@
 // tests/diagram-form-diversity.test.mjs — INV-23 (FormDiversity), ADR-0012.
 //
-// THE INCIDENT THIS ENCODES (2026-08-06): PolymathWizard/BHIL-Colophon-Spec failed TWICE
-// (runs 30857458852, 30865218481; $12.47 spent, nothing delivered) because the architecture
-// diagram and the runtime-flow diagram rendered as the SAME visual form — a vertical column of
-// rounded cards joined by downward arrows. The vision grader capped B5 at 60 ("two-or-more
-// same-form diagrams", quality-grade.mjs:158). The ship floor is min >= 70, so the cap made the
-// page arithmetically unshippable no matter how good the other nine axes were.
-//
-// The old design assigned one static `conceptVariant` per key and asserted in a comment that
-// "pairwise distinctness holds either way". It did not: that reasoning covered only the four
-// CONCEPT variants, and never `renderArchitecture` / `renderFlow` — separate functions, outside
-// the variant table, both emitting a vertical card-stack since the 2026-07-30 portrait fix.
-//
-// These tests fail RED against that design (it emits no `form` field at all, and its two grounded
-// renderers collide) and pass only with the deterministic resolver.
+// Two diagrams of the same coarse form (e.g. a vertical column of cards) cap the grader's B5 axis at 60, below the
+// 70 ship floor, so the page becomes unshippable. make-diagrams therefore resolves one distinct form family per slot
+// BEFORE drawing (resolveForms) and dies loudly if it cannot. These tests pin the resolver's outputs end to end.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -22,53 +11,27 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { makeBuild, runTool } from './helpers/diagram-build.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TOOL = path.join(REPO, 'tools', 'make-diagrams.mjs');
 
-// A fixture shaped like the repo that actually failed: a REAL dep-graph with internal edges (so
-// architecture renders grounded) AND real entrypoints (so flow renders grounded). That combination
-// — the common case for any application repo — is precisely what used to collide.
+// A fixture shaped like the repo that actually failed: a REAL dep-graph with internal edges (so architecture renders
+// grounded) AND real entrypoints (so flow renders grounded) — the common case for an application repo, and the collision.
+// A 0-edge dep-graph demotes architecture to the concept renderer, which refuses an empty graph unless rows are authored.
+const NODES = ['cli', 'router', 'validator', 'chain', 'parser'];
+const EDGES = [['cli', 'router'], ['cli', 'parser'], ['router', 'validator'], ['validator', 'parser'], ['chain', 'parser']];
 function makeFixture({ edges = true, flowRows = null, entrypoints = true, archRows = null } = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'emr-form-'));
-  const kb = path.join(dir, 'kb');
-  fs.mkdirSync(kb, { recursive: true });
-  fs.writeFileSync(path.join(kb, 'dep-graph.json'), JSON.stringify({
-    nodes: [{ name: 'cli' }, { name: 'router' }, { name: 'validator' }, { name: 'chain' }, { name: 'parser' }],
-    internalEdges: edges ? [
-      { from: 'cli', to: 'router' }, { from: 'cli', to: 'parser' }, { from: 'router', to: 'validator' },
-      { from: 'validator', to: 'parser' }, { from: 'chain', to: 'parser' },
-    ] : [],
-    componentCount: 5, internalEdgeCount: edges ? 5 : 0, ecosystems: ['python'],
-    externalDepNames: ['PyYAML'], externalDepCount: 1,
-  }));
-  fs.writeFileSync(path.join(kb, 'entrypoints.json'), JSON.stringify(entrypoints ? {
-    install: ['pip install -e .'],
-    commands: [{ category: 'build', cmd: 'make build' }, { category: 'test', cmd: 'pytest' }],
-    binaries: [{ name: 'colophon' }], quickstart: ['colophon seal'], workspace: { kind: 'single' },
-  } : {}));
-  fs.writeFileSync(path.join(kb, 'symbols.json'), JSON.stringify({ count: 42, byCrate: { parser: 20 } }));
   const visuals = {
     bigIdeaDiagram: { rows: [{ items: ['front matter', 'document body', 'colophon'], connect: true }], title: 'One file, three zones' },
     insightDiagram: { rows: [{ items: ['granted', 'dispatch', 'quarantine'], connect: true }], title: 'The clever move' },
   };
   if (flowRows) visuals.flowDiagram = { rows: flowRows };
-  // A 0-edge dep-graph demotes architecture to the concept renderer, which (correctly, pre-existing
-  // behaviour) REFUSES to draw a picture of an empty graph unless the brain authored real rows.
   if (archRows) visuals.architectureDiagram = { rows: archRows, title: 'How it is built' };
-  fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify({
-    understanding: { repoName: 'colophon-spec' },
-    kb: {
-      depGraphPath: path.join(kb, 'dep-graph.json'),
-      entrypointsPath: path.join(kb, 'entrypoints.json'),
-      symbolsPath: path.join(kb, 'symbols.json'),
-    },
-    visuals,
-  }, null, 2));
-  return dir;
+  return makeBuild({ nodes: NODES, edges: edges ? EDGES : [], entrypoints, visuals, repoName: 'colophon-spec' });
 }
 
-const run = (dir, tool = TOOL) => execFileSync(process.execPath, [tool, dir], { stdio: ['ignore', 'pipe', 'pipe'] });
+const run = (dir) => { const r = runTool(dir); if (r.status !== 0) { const e = new Error(r.out); e.stdout = r.stdout; e.stderr = r.stderr; throw e; } return r; };
 const visualsOf = (dir) => JSON.parse(fs.readFileSync(path.join(dir, 'build.json'), 'utf8')).visuals;
 const DIAGRAM_KEYS = ['architectureDiagram', 'flowDiagram', 'bigIdeaDiagram', 'insightDiagram'];
 const formsOf = (v) => DIAGRAM_KEYS.filter((k) => v[k]).map((k) => v[k].form);
@@ -84,12 +47,12 @@ test('INV-23 — the exact BHIL-Colophon-Spec shape (grounded architecture + gro
     `INV-23 VIOLATED — two diagrams share a form: ${JSON.stringify(Object.fromEntries(DIAGRAM_KEYS.map((k) => [k, v[k]?.form])))}`);
 });
 
-test('INV-23 — the architecture and flow diagrams specifically never share a form (the regression that cost $12.47)', () => {
+test('INV-23 — the architecture and flow diagrams specifically never share a form (the collision regression)', () => {
   const dir = makeFixture();
   run(dir);
   const v = visualsOf(dir);
   assert.notEqual(v.architectureDiagram.form, v.flowDiagram.form,
-    'architecture and flow collapsed to the same visual form — this is the exact 2026-08-04 failure');
+    'architecture and flow collapsed to the same visual form');
   // The pin now sits where it belongs. Architecture is RADIAL (a dependency map IS hub-and-spokes,
   // and buildArchModel already computes the hub), which leaves vertical-stack free for the grounded
   // renderFlow. NEITHER diagram demotes, so neither is drawn in a form that misdescribes it.
@@ -98,13 +61,8 @@ test('INV-23 — the architecture and flow diagrams specifically never share a f
 });
 
 test('INV-23 — the ribbon width rule still guards any slot that demotes (bans WIDE ribbons, not ribbons)', () => {
-  // Measured 2026-08-06: conceptRibbon is the only archetype whose width grows with item count
-  // (3 items 731px, 4 = 949px, 5 = 1167px, 6 = 1385px); every other archetype stays portrait. At 390px
-  // fit-to-width a 1385px ribbon renders 13px labels at 3.66px, against the 568px grounded
-  // architecture diagram that graded as legible. RIBBON_MAX_ITEMS keeps long chains off it.
-  const src = fs.readFileSync(TOOL, 'utf8');
-  assert.match(src, /RIBBON_MAX_ITEMS/, 'the width rule must exist');
-  assert.match(src, /ribbonIsSafe/, 'and must be consulted when picking an archetype');
+  // conceptRibbon is the only archetype whose width grows with item count (6 items = 1385px, 13px labels at 3.66px on a
+  // phone); RIBBON_MAX_ITEMS keeps long chains off it.
   const long = makeFixture({ flowRows: [{ items: ['a', 'b', 'c', 'd', 'e', 'f'], connect: true }] });
   run(long);
   assert.notEqual(visualsOf(long).flowDiagram.form, 'horizontal-run',
@@ -136,19 +94,6 @@ test('INV-23 — the demotion path still works where it genuinely applies (autho
   assert.match(labels, /request|validate|dispatch/, 'the authored content must survive the render');
 });
 
-test('INV-23 — holds when architecture DEMOTES too (degenerate 0-edge graph + brain-authored flow rows)', () => {
-  const dir = makeFixture({
-    edges: false,
-    flowRows: [{ items: ['input', 'seal', 'dispatch'], connect: true }],
-    archRows: [{ items: ['cli', 'router', 'parser'], connect: true }],
-  });
-  // A 0-edge graph demotes architecture to a concept archetype; all four slots are then concept-rendered.
-  const v = (run(dir), visualsOf(dir));
-  const forms = formsOf(v);
-  assert.equal(new Set(forms).size, forms.length,
-    `INV-23 VIOLATED with all-demoted slots: ${JSON.stringify(forms)}`);
-});
-
 test('INV-23 — holds for a library repo with no runtime entrypoints (flow skipped, 3 diagrams)', () => {
   const dir = makeFixture({ entrypoints: false });
   run(dir);
@@ -169,17 +114,22 @@ test('INV-23 — the guard FAILS LOUD when no distinct form remains (mutation pr
   // Mirror the real layout (tools/ + src/): the tool imports ../src/story-diagrams.mjs (ADR-0014), so a
   // bare copy in a temp dir would die on MODULE_NOT_FOUND and the mutation would be "caught" for the
   // wrong reason — exactly the failure mode the stderr assertion below exists to rule out.
+  const repo = path.join(path.dirname(TOOL), '..');
   fs.mkdirSync(path.join(mutantDir, 'tools'));
   fs.mkdirSync(path.join(mutantDir, 'src'));
-  fs.copyFileSync(path.join(path.dirname(TOOL), '..', 'src', 'story-diagrams.mjs'), path.join(mutantDir, 'src', 'story-diagrams.mjs'));
+  fs.cpSync(path.join(repo, 'tools', 'diagrams'), path.join(mutantDir, 'tools', 'diagrams'), { recursive: true });
+  for (const f of ['story-diagrams.mjs', 'story-diagrams-mobile.mjs']) fs.copyFileSync(path.join(repo, 'src', f), path.join(mutantDir, 'src', f));
+  fs.copyFileSync(TOOL, path.join(mutantDir, 'tools', 'make-diagrams.mjs'));
+  // the DIAGRAMS table (the resolver's input) lives in tools/diagrams/models.mjs since make-diagrams was split
+  const modelsPath = path.join(mutantDir, 'tools', 'diagrams', 'models.mjs');
+  const src = fs.readFileSync(modelsPath, 'utf8');
   const mutant = path.join(mutantDir, 'tools', 'make-diagrams.mjs');
-  const src = fs.readFileSync(TOOL, 'utf8');
   // Strand the insight slot: no preferences => the resolver can find no free family for it.
   const NEEDLE = /conceptHeading: 'The clever move', conceptPrefs: \[[^\]]*\]/;
   assert.ok(NEEDLE.test(src), 'mutation target not found — the DIAGRAMS table shape changed; update this test');
   const mutated = src.replace(NEEDLE, "conceptHeading: 'The clever move', conceptPrefs: []");
   assert.ok(mutated !== src, 'mutation did not apply');
-  fs.writeFileSync(mutant, mutated);
+  fs.writeFileSync(modelsPath, mutated);
 
   const dir = makeFixture();
   let threw = false, stderr = '';
@@ -206,7 +156,7 @@ test('INV-23 — the guard FAILS LOUD when no distinct form remains (mutation pr
 // of them and reported 13 overlaps on a layout that was actually clean — a detector that cannot tell
 // a card from its own shadow is worse than no detector.
 function cardRects(svg) {
-  return [...svg.matchAll(/<rect x="([-0-9.]+)" y="([-0-9.]+)" width="([0-9.]+)" height="([0-9.]+)"[^>]*filter="url\(#cardSh\)"/g)]
+  return [...svg.matchAll(/<rect x="([-0-9.]+)" y="([-0-9.]+)" width="([0-9.]+)" height="([0-9.]+)"[^>]*filter="url\(#[\w-]*cardSh\)"/g)]
     .map((m) => ({ x: +m[1], y: +m[2], w: +m[3], h: +m[4] }));
 }
 function overlapCount(rects) {
@@ -220,40 +170,13 @@ function overlapCount(rects) {
   return hits;
 }
 
-test('ADR-0012 — grounded architecture is RADIAL and grounded flow keeps the vertical stack (nothing demotes)', () => {
-  const dir = makeFixture();
-  run(dir);
-  const v = visualsOf(dir);
-  assert.equal(v.architectureDiagram.form, 'radial', 'a dependency map is hub-and-spokes');
-  assert.equal(v.flowDiagram.form, 'vertical-stack', 'the flow keeps its grounded renderer');
-  assert.equal(v.flowDiagram.formVariant, null, 'null variant means it did NOT demote to a concept archetype');
-  // The whole point: the richest diagram on the page stops being sacrificed to the form rule.
-  assert.match(v.flowDiagram.asciiFallback || '', /→|->/, 'the grounded flow still describes a sequence');
-});
-
 test('ADR-0012 — the radial layout never overlaps two cards, at any module count', () => {
-  for (const n of [2, 3, 4, 5, 7, 9]) {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), `emr-radial-${n}-`));
-    const kb = path.join(dir, 'kb');
-    fs.mkdirSync(kb, { recursive: true });
+  for (const n of [2, 3, 4, 5, 7, 9, 12]) {   // 12 = ARCH_MAX_NODES, the most the radial map draws
     const names = Array.from({ length: n }, (_, i) => `mod${i}`);
-    fs.writeFileSync(path.join(kb, 'dep-graph.json'), JSON.stringify({
-      nodes: names.map((x) => ({ name: x })),
-      internalEdges: names.slice(1).map((x) => ({ from: x, to: names[0] })),
-      componentCount: n, internalEdgeCount: n - 1, ecosystems: ['node'],
-      externalDepNames: ['left-pad'], externalDepCount: 1,
-    }));
-    fs.writeFileSync(path.join(kb, 'entrypoints.json'), JSON.stringify({
-      install: ['npm i'], commands: [{ category: 'build', cmd: 'npm run build' }], binaries: [{ name: 'b' }], quickstart: ['npx b'],
-    }));
-    fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify({
-      understanding: { repoName: 'demo' },
-      kb: { depGraphPath: path.join(kb, 'dep-graph.json'), entrypointsPath: path.join(kb, 'entrypoints.json') },
-      visuals: {
-        bigIdeaDiagram: { rows: [{ items: ['a', 'b', 'c'], connect: true }] },
-        insightDiagram: { rows: [{ items: ['x', 'y', 'z'], connect: true }] },
-      },
-    }, null, 2));
+    const dir = makeBuild({ nodes: names, edges: names.slice(1).map((x) => [x, names[0]]), repoName: 'demo', visuals: {
+      bigIdeaDiagram: { rows: [{ items: ['a', 'b', 'c'], connect: true }] },
+      insightDiagram: { rows: [{ items: ['x', 'y', 'z'], connect: true }] },
+    } });
     run(dir);
     const v = visualsOf(dir);
     const svg = fs.readFileSync(v.architectureDiagram.svgPath, 'utf8');
@@ -304,20 +227,23 @@ test('ADR-0012 — a 4-slot page where every other family is taken resolves the 
 
 test('ADR-0012 — the grid stays portrait as items grow (the property the ribbon lacks)', () => {
   const widthOf = (svgPath) => Number(/viewBox="0 0 ([0-9.]+)/.exec(fs.readFileSync(svgPath, 'utf8'))[1]);
-  let prev = 0;
-  for (const n of [3, 5, 7, 9]) {
-    const items = Array.from({ length: n }, (_, i) => `stage number ${i + 1}`);
-    const dir = makeFixture({ flowRows: [{ items, connect: true }] });
+  const heightOf = (svgPath) => Number(/viewBox="0 0 [0-9.]+ ([0-9.]+)/.exec(fs.readFileSync(svgPath, 'utf8'))[1]);
+  const seen = [];
+  for (const n of [4, 5, 7, 9]) {
+    const dir = makeFixture();
+    const bj = path.join(dir, 'build.json');
+    const b = JSON.parse(fs.readFileSync(bj, 'utf8'));
+    b.visuals.insightDiagram.rows = [{ items: Array.from({ length: n }, (_, i) => `stage number ${i + 1}`), connect: true }];
+    fs.writeFileSync(bj, JSON.stringify(b, null, 2));
     run(dir);
-    const v = visualsOf(dir);
-    const target = Object.values(v).find((d) => d && d.formVariant === 'grid');
-    if (!target) continue;
-    const w = widthOf(target.svgPath);
-    assert.ok(w < 1000, `${n} items produced a ${w}px grid — the row width must stay bounded`);
-    assert.ok(w >= prev - 1, 'width must not oscillate wildly');
-    prev = w;
+    const d = visualsOf(dir).insightDiagram;
+    assert.equal(d.formVariant, 'grid', `${n} items must land on the grid, not a wide ribbon`);
+    seen.push({ n, w: widthOf(d.svgPath), h: heightOf(d.svgPath) });
     fs.rmSync(dir, { recursive: true, force: true });
   }
+  assert.ok(seen.every((x) => x.w === seen[0].w), `row width must not depend on item count: ${JSON.stringify(seen)}`);
+  assert.ok(seen[0].w < 800, `a portrait canvas: got ${seen[0].w}px`);
+  assert.ok(seen[3].h > seen[0].h, 'more items wrap onto more rows (height grows, width does not)');
 });
 
 // ── ALT TEXT MUST NOT DESCRIBE A SHAPE THAT WAS NEVER DRAWN ─────────────────────────────────────

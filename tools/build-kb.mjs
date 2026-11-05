@@ -15,8 +15,8 @@
 //   stdout : exactly ONE JSON result object; child engine output is routed to stderr; exit 0 iff ok.
 //
 // PURE: reads only its declared build.json slice + its own freshly-produced outputs. FAIL LOUD: a
-// failed RVF build, a missing/empty store, or a non-canonical .small.rvf (a missing `embed` block)
-// all stop non-zero with a clear reason — NEVER a JSON-only fallback (INV-06) and never a placeholder.
+// failed RVF build, a missing/empty store, a target without an `embed` block, or a store with no
+// embed sidecar all stop non-zero with a clear reason — NEVER a JSON-only fallback (INV-06) and never a placeholder.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -24,7 +24,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));   // tools/
-const REPO_ROOT = path.resolve(__dirname, '..');                 // Ruv-Explainer/
+const REPO_ROOT = path.resolve(__dirname, '..');                 // repo root
 const KB_DIR = path.join(REPO_ROOT, 'kb');
 
 // ---------- uniform result protocol ----------
@@ -32,10 +32,8 @@ function emit(obj) { process.stdout.write(JSON.stringify(obj) + '\n'); }
 function fail(error) { console.error(`[build-kb] FAIL: ${error}`); emit({ ok: false, outputs: {}, error }); process.exit(1); }
 function done(outputs) { emit({ ok: true, outputs, error: null }); process.exit(0); }
 
-// Run a kb/ engine script; child stdout + stderr are routed to OUR stderr (fd 2) so our stdout
-// stays a single clean JSON object. A non-zero child exit throws -> we fail loud.
-// extraEnv is merged into process.env — used to forward KB_REPO_DIR so all scripts index the
-// correct build-dir clone instead of the hardcoded repoDir in kb/kb.config.mjs (Blocker-1 fix).
+// Run a kb/ engine script; child stdout + stderr go to OUR stderr so stdout stays one JSON object; a
+// non-zero child exit fails loud. KB_REPO_DIR points the kb engine at this build's clone.
 function runKbScript(script, args, timeout, extraEnv = {}) {
   const scriptPath = path.join(KB_DIR, script);
   if (!fs.existsSync(scriptPath)) fail(`kb engine script missing: ${path.relative(REPO_ROOT, scriptPath)}`);
@@ -79,9 +77,12 @@ function main() {
   }
 
   // ---- run the real kb/ engine (build first, then the three structured extractors) ----
-  // Forward clonePath via KB_REPO_DIR so all four scripts index THIS build dir's clone,
-  // not the hardcoded repoDir in kb/kb.config.mjs (CONTRACT §b build-dir guarantee, Blocker-1 fix).
+  // KB_REPO_DIR points all four scripts at THIS build's clone, not the config's default repoDir.
   const kbEnv = { KB_REPO_DIR: clonePath };
+  // kb:register keeps a build's own target entry in a per-build overlay (never in the tracked kb.config.mjs);
+  // a resumed run (--from build-kb) in a fresh process must still see it.
+  const overlay = path.join(path.resolve(buildDir), 'kb-targets.overlay.json');
+  if (!process.env.KB_TARGET_OVERLAY && fs.existsSync(overlay)) kbEnv.KB_TARGET_OVERLAY = overlay;
   // Large monorepos (e.g. ruvector: ~37k chunks) can exceed the 20-min default; env-tunable, default unchanged.
   const KB_BUILD_TIMEOUT = Number(process.env.KB_BUILD_TIMEOUT_MS) || 1_200_000;
   runKbScript('build-kb.mjs', ['--target', slug], KB_BUILD_TIMEOUT, kbEnv);   // embeds every chunk; allow time
@@ -96,7 +97,6 @@ function main() {
   const storeDir = path.join(KB_DIR, 'stores', slug);
   const f = {
     rvf: path.join(storeDir, `${slug}-kb.rvf`),
-    smallRvf: path.join(storeDir, `${slug}-kb.small.rvf`),
     passages: path.join(storeDir, `${slug}-kb.passages.jsonl`),
     ids: path.join(storeDir, `${slug}-kb.ids.json`),
     symbols: path.join(storeDir, `${slug}-symbols.json`),
@@ -105,9 +105,6 @@ function main() {
   };
 
   if (!fs.existsSync(f.rvf)) {
-    if (fs.existsSync(f.smallRvf)) {
-      fail(`build-kb wrote ${slug}-kb.small.rvf instead of the canonical ${slug}-kb.rvf — the target "${slug}" is missing an \`embed\` block in kb/kb.config.mjs (ADR-0005 D3). make-pack globs <slug>-kb.rvf and cannot find a .small.rvf store.`);
-    }
     fail(`RVF build produced no store at ${path.relative(REPO_ROOT, f.rvf)} — the real KB build failed (INV-06: no JSON fallback)`);
   }
   for (const [key, file] of [['passages', f.passages], ['ids', f.ids], ['symbols', f.symbols], ['dep-graph', f.depGraph], ['entrypoints', f.entrypoints]]) {
@@ -122,8 +119,10 @@ function main() {
 
   // ---- embed model: read the sidecar the engine wrote next to the canonical .rvf ----
   const embedCfg = readJsonSafe(`${f.rvf}.embed.json`);
-  const embedModel = (embedCfg && embedCfg.model) || 'Xenova/bge-small-en-v1.5';
-  if (!embedCfg) console.error(`[build-kb] warning: no ${slug}-kb.rvf.embed.json sidecar; reporting default embedModel ${embedModel}`);
+  // No sidecar means no knowable embedder: name no model rather than guess one (a wrong model here would make
+  // index-primer and the pack embed queries into a different vector space than the store).
+  const embedModel = embedCfg && typeof embedCfg.model === 'string' && embedCfg.model ? embedCfg.model : null;
+  if (!embedModel) fail(`${path.relative(REPO_ROOT, f.rvf)}.embed.json is missing or names no model — the store's embedder cannot be determined (is the target "${slug}" registered with an \`embed\` block in kb/kb.config.mjs?)`);
 
   // ---- mechanical (non-judgment) facts for the understanding slot ----
   const dep = readJsonSafe(f.depGraph) || {};
@@ -142,7 +141,6 @@ function main() {
   const kb = {
     slug,
     storeDir: rel(storeDir),
-    rvfPath: rel(f.rvf),
     passagesPath: rel(f.passages),
     idsPath: rel(f.ids),
     embedModel,

@@ -5,7 +5,8 @@
 //   2. every ASCII diagram in a fenced block gets a faithful animated-SVG twin inserted just above it
 //      (the original fenced block is left untouched — we add, we never rewrite their words);
 //   3. FALLBACK: only when the README has no ASCII diagram, the explainer's own generated
-//      architecture + flow SVGs are appended as one delimited block (the pre-0.9.3 behaviour).
+//      architecture + flow SVGs go in as one delimited block right after the intro paragraph (the end of
+//      the file only when there is no recognisable intro).
 //
 // The conversion is LOSSLESS by construction: it draws the character grid (box-drawing characters as
 // vector strokes, everything else as text pinned to its column). It never "interprets" or invents
@@ -243,7 +244,7 @@ export function asciiToSvg(text, { title = 'Diagram', desc } = {}) {
 export function stripEnhancements(md) {
   return md
     .replace(new RegExp(`${LINK_START}[\\s\\S]*?${LINK_END}\\n*`, 'g'), '')
-    .replace(new RegExp(`${BLOCK_START}[\\s\\S]*?${BLOCK_END}\\n?`, 'g'), '')
+    .replace(new RegExp(`\\n?${BLOCK_START}[\\s\\S]*?${BLOCK_END}\\n?`, 'g'), '')
     .replace(/<!-- explainmyrepo:ascii-\d+ -->\n!\[[^\n]*\]\([^)\n]*\)\n\n?/g, '')
     .replace(/\s*$/, '\n');
 }
@@ -260,7 +261,8 @@ function diagramAlt(body, n) {
  * @param {string} o.liveUrl     the live explainer URL
  * @param {string} o.repoName
  * @param {string} o.svgDir      repo-relative dir the SVG files will be written to (e.g. docs/explainer)
- * @param {{svgPath:string,alt:string,rel:string}[]} [o.fallback]  generated diagrams used ONLY when no ASCII diagram exists
+ * @param {{alt:string,rel:string}[]} [o.fallback]  generated diagrams used ONLY when no ASCII diagram exists
+ * @param {{rel:string,alt:string}|null} [o.hero]  infographic placed under the explainer link
  * @returns {{ markdown:string, diagrams:{file:string,svg:string,alt:string}[], mode:'ascii'|'fallback'|'link-only' }}
  */
 export function rewriteReadme(md, { liveUrl, repoName, svgDir, fallback = [], hero = null }) {
@@ -321,7 +323,10 @@ export function rewriteReadme(md, { liveUrl, repoName, svgDir, fallback = [], he
     if (linkEnd >= 0) {
       for (let i = linkEnd + 1; i < ml.length; i++) {
         if (ml[i].trim() === '') continue;
-        if (!/^(#|<|```|~~~|\||[-*]\s)/.test(ml[i])) p = i;
+        if (!/^(#|<|```|~~~|\||[-*]\s)/.test(ml[i])) {
+          p = i;   // the block goes after the LAST line of the paragraph, never inside it
+          while (p + 1 < ml.length && ml[p + 1].trim() !== '' && !/^(#|<|```|~~~|\||[-*]\s)/.test(ml[p + 1])) p++;
+        }
         break;
       }
     }

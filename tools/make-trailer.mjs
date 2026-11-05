@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-// make-trailer.mjs — the Alive Kit's VERIFIED capability #1 (ADR-0009 §3, pilot receipts
-// 2026-07-16: 38s 1080p, $0 render, embedded live on the agentic-kit page).
+// make-trailer.mjs — the Alive Kit's trailer capability (ADR-0009 §3).
 //
 // JOB: scaffold a ready-to-author HyperFrames trailer project from a FINISHED, GATED build —
 // reusing the expensive creative truth instead of regenerating it: the concept palette becomes

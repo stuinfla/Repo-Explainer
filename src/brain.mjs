@@ -1,19 +1,13 @@
-// src/brain.mjs — the BRAIN authors (CONTRACT §a: the slots with "no tool").
-//
-// These are the steps the e2e run proved cannot be deterministic: concept (Station 2), content
-// (Station 3), the Station-4 image briefs + diagram ASCII, and the for-humans primer. Each author
-// gathers a compact, GROUNDED brief from the real KB the deterministic build-kb station produced
-// (summary + dep-graph + entrypoints + symbols + a passage sample + README), hands it to Claude, and
-// returns a typed object the orchestrator merges into the owning slot. Grounding is the guardrail:
-// the prompt forbids invented facts/benchmarks (CONTRACT INV-06 — every claim traceable to the KB).
-//
-// STATUS: concept / content / visualBrief / primer authors are WORKING (real prompts, schema-checked
-// output). authorKbTarget is the one GATED author — it emits a kb.config.mjs target entry but, by
-// default, the orchestrator does NOT mutate the shared registry with it (see src/orchestrator.mjs).
+// src/brain.mjs — the BRAIN authors (CONTRACT §a: the slots with "no tool"): concept, content, the visual
+// brief (image prompts + concept-diagram rows) and the for-humans primer. Each gathers a compact,
+// GROUNDED brief from the real KB, hands it to Claude, and returns a typed object the orchestrator merges
+// into the owning slot. Grounding is the guardrail (INV-06): the prompts forbid invented facts/benchmarks.
+// authorKbTarget emits a kb.config.mjs entry; kb:register (src/station-runners.mjs) writes it to a per-build overlay.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { callClaudeJSON, callClaude } from './claude.mjs';
+import { validateHeroScene, sceneAltText, MAX_SCENE_BYTES } from '../tools/diagrams/scene.mjs';
 
 // ── grounding: assemble a bounded text brief from the real KB artifacts ────────────────────────
 function readJsonRel(repoRoot, rel) {
@@ -21,10 +15,8 @@ function readJsonRel(repoRoot, rel) {
   const p = path.isAbsolute(rel) ? rel : path.resolve(repoRoot, rel);
   try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return null; }
 }
-// Which passages the writer sees. File order used to decide (the first ~20 lines of passages.jsonl),
-// so on helix the brief was ADR-001 x13 + loop ledgers and never the README (review 3.0.1 #1).
-// Deterministic, offline ranking instead: root README, then docs, then source, then ADRs, then the
-// rest; agent boilerplate (AGENTS.md / CLAUDE.md / tool dirs) and loop ledgers (*STATUS.md) are
+// Which passages the writer sees: a deterministic, offline ranking, never file order. Root README, then
+// docs, then source, then ADRs, then the rest; agent boilerplate (AGENTS.md / CLAUDE.md / tool dirs) and loop ledgers (*STATUS.md) are
 // skipped, and no file gets more than `perFile` slots until every file has had its turn.
 const BOILERPLATE_RE = /(^|\/)(AGENTS|CLAUDE|GEMINI|CODEX)\.md$|(^|\/)\.(claude|codex|cursor|github|windsurf|roo|clinerules)\/|(^|\/)(\.cursorrules|copilot-instructions\.md)$|(^|\/)[\w.-]*STATUS\.md$|(^|\/)[\w.-]*(ledger|LEDGER|Ledger)[\w.-]*\.md$/;
 export function passageTier(rec) {
@@ -34,7 +26,7 @@ export function passageTier(rec) {
   const kind = String(rec?.kind || '');
   if (kind === 'adr' || /(^|\/)adrs?\//i.test(p)) return 3;
   if (kind === 'doc' && rec?.source_type === 'doc') return 1;
-  if (kind === 'source') return 2;
+  if (kind === 'source' || kind === 'crate-src') return 2;   // 'crate-src' is the Rust source tag (kb/corpus-rules.mjs)
   return 4;
 }
 export function selectPassages(records, { maxChars = 12_000, perFile = 3 } = {}) {
@@ -74,7 +66,7 @@ function readPassageSample(repoRoot, rel, maxChars = 12_000) {
   return selectPassages(records, { maxChars })
     .map(({ rec, snippet }) => `• [${rec.id || rec.path || '?'}] ${snippet}`).join('\n');
 }
-// The repo's own framing of itself (same source + size as tools/concept-tournament.mjs digest()).
+// The repo's own framing of itself (same source + size as the concept-tournament digest).
 function readReadmeHead(repoRoot, clonePath, maxChars = 6000) {
   if (!clonePath) return '';
   const dir = path.isAbsolute(clonePath) ? clonePath : path.resolve(repoRoot || '.', clonePath);
@@ -144,8 +136,7 @@ Author the "concept" slot for this repo's explainer page. Return JSON:
   "copyVoice": "the tone/register for all authored text",
   "tagline": "ONE punchy line (<= 70 chars) for the social card + og:description",
   "palette": { /* keys from this allow-list only: ${PALETTE_KNOBS}. Values are CSS colors/sizes WITHOUT ; { } < > url() . MUST include "accent". Choose colors that carry the metaphor and read well. */ },
-  "typePersonality": { "display": "a Google font family name", "sans": "a Google font family name", "mono": "a mono font family name", "fontHref": "https://fonts.googleapis.com/css2?... for the chosen families" },
-  "layoutRhythm": ["hero", "problem", "whatItIs", "insight", "howItWorks", "useCases", "getStarted", "pack"]
+  "typePersonality": { "display": "a Google font family name", "sans": "a Google font family name", "mono": "a mono font family name", "fontHref": "https://fonts.googleapis.com/css2?... for the chosen families" }
 }`;
   const out = await callClaudeJSON({ apiKey, env: ctx?._env, model, system, user, maxTokens: 6000 });
   if (!out || typeof out !== 'object') throw new Error('authorConcept: model did not return an object');
@@ -155,13 +146,9 @@ Author the "concept" slot for this repo's explainer page. Return JSON:
   return out;
 }
 
-// ── Station 3: content (the eight authored sections) ───────────────────────────────────────────
-export async function authorContent(ctx, { apiKey, model, feedback }) {
-  const brief = gatherBrief(ctx, ctx._repoRoot);
-  const voice = ctx.concept?.copyVoice || 'clear, confident, technical-but-human';
-  const system = `You are a senior technical writer + narrative designer. You write the copy for a repo explainer page in this voice: ${voice}.
-
-WHO YOU ARE WRITING FOR (ADR-0006 v1.2.0 — the owner's bar, 2026-09-17): a curious FIFTEEN-YEAR-OLD.
+// The reader bar both doors write to (ADR-0006 v1.2.0, enforced by the INV-24 reads-at-fifteen gate).
+// Exported so a behaviour test can assert the real authorContent request carries it verbatim.
+export const READER_STANDARD = `WHO YOU ARE WRITING FOR (ADR-0006 v1.2.0): a curious FIFTEEN-YEAR-OLD.
 Not a developer from another field — a bright teenager who has never built software. They must finish
 the first four sections able to say, in their own words: what this is, what it would do FOR THEM, why
 the trick is clever, and roughly how it works. Three hard rules, measured by a deterministic gate
@@ -176,11 +163,18 @@ the trick is clever, and roughly how it works. Three hard rules, measured by a d
      explanation. The reader wants: what can I now do that I could not before, and what is the neat
      idea that makes it work? Name the clever move in one plain sentence a teenager would repeat.
 Use everyday comparisons (a vending machine, a locked door with one key, a hotel phone line) instead
-of category vocabulary. Never show a file path, a code identifier or a command in rungs 1-4.
+of category vocabulary. Never show a file path, a code identifier or a command in rungs 1-4.`;
 
-LEAD WITH WHY IT EXISTS, NOT WITH WHAT IT TECHNICALLY IS (owner verdict, 2026-09-17: "why does this
-exist, and what is the primary use case? ... that makes it seem like a very low-level utility. I was
-led to believe it did a lot more."). Two failures caused that, and both are banned:
+// ── Station 3: content (the eight authored sections) ───────────────────────────────────────────
+export async function authorContent(ctx, { apiKey, model, feedback }) {
+  const brief = gatherBrief(ctx, ctx._repoRoot);
+  const voice = ctx.concept?.copyVoice || 'clear, confident, technical-but-human';
+  const system = `You are a senior technical writer + narrative designer. You write the copy for a repo explainer page in this voice: ${voice}.
+
+${READER_STANDARD}
+
+LEAD WITH WHY IT EXISTS, NOT WITH WHAT IT TECHNICALLY IS. Two failures make a repo look like a
+low-level utility, and both are banned:
   - Naming the CATEGORY instead of the point. "It is a virtual desktop" / "it is a starter kit" is a
     shelf label. Open with the change it makes for the reader: what they can now do that they could
     not before, in their own terms.
@@ -192,9 +186,9 @@ the project calls itself one thing and your page sells something smaller, your p
 the PRIMARY use case explicitly — the one job a real person would hand it — and be honest about
 which parts are real today and which are still planned.
 
-THE COMPREHENSION LADDER (ADR-0006 — non-negotiable altitude control). Your reader is a smart
-developer from a DIFFERENT domain: intelligent and curious, but knowing NOTHING about this
-project's field. The page must carry them from "never heard of it" to "I could run this now".
+THE COMPREHENSION LADDER (ADR-0006 — non-negotiable altitude control). Your reader is the one defined
+above: intelligent and curious, knowing NOTHING about this project's field. The page must carry them
+from "never heard of it" to "I could run this now".
 - hero, problem, whatItIs, insight (rungs 1-4): assume ZERO domain knowledge. No acronym or term
   of art may appear without a plain-words gloss at first use — better still, just use the plain
   words. A deterministic linter FAILS the build on any unglossed acronym in these four sections.
@@ -213,9 +207,7 @@ Define every acronym at first use EVERYWHERE, like "SSG (pre-building pages as p
 
 ${GROUNDING_RULE} Grounding supplies the FACTS, not the VOCABULARY: translate the repo's insider
 terms into plain language — cite the passage, don't parrot its jargon.`;
-  // A revision pass without the previous version is a blind rewrite — the model cannot "keep what
-  // already works" if it never sees it, and each pass reintroduces new weaknesses (the INV-20
-  // whack-a-mole: fixing RAM brought back KV). Show it exactly what it wrote last time.
+  // A revision pass must see its previous version, or each rewrite reintroduces fixed weaknesses.
   const prior = (Array.isArray(feedback) && feedback.length && ctx.content)
     ? `YOUR PREVIOUS VERSION (the one the critic graded):\n${JSON.stringify(ctx.content)}\n\nThis is a REVISION, not a rewrite: reproduce the previous version faithfully and change ONLY what the flagged weaknesses require. Keep every sentence that was not flagged.\n\n`
     : '';
@@ -238,12 +230,7 @@ ${revisionBlock(feedback)}${prior}Author the "content" slot. The page renders th
 }
 Rules: 2-4 paragraphs max per section; useCases has 2-3 cases; getStarted.install + steps must come from the brief's INSTALL/COMMANDS/QUICKSTART; cite real passage ids.
 GET-STARTED must give real IMPLEMENTATION CONFIDENCE (this is the most-failed axis): the steps must include (a) any PREREQUISITES (toolchain/version), (b) the EXACT command(s) to run, copyable and grounded in the brief, (c) WHAT THE READER WILL SEE when it succeeds (the concrete result/output), (d) what they HAVE at the end, and (e) the NEXT step. Prefer { "strong": "...", "text": "..." } steps so each has a bolded action + concrete detail. If the repo genuinely has no install command or CLI (a pure library), SAY so honestly, then give the real clone → build → test commands and what each produces — never a vague "just explore the code".`;
-  // 32k output / 300s, not 12k / 120s (both raised 2026-09-17 on ruvnet/mcp-studio, which failed
-  // twice here): the 120s default timed out three times, and then 12k died with "hit max_tokens
-  // before emitting any text — the model spent the budget on its internal reasoning block" (#17.2).
-  // A thinking block SHARES this budget, so 12k was the whole allowance for reasoning + a ~12k JSON
-  // answer. The same squeeze produced the silent "TRUNCATED at max_tokens" warning on ruos. Verified
-  // live: claude-sonnet-5 accepts max_tokens 64000, so 32k leaves real headroom for both halves.
+  // 32k tokens / 300s: a thinking block shares max_tokens with the ~12k JSON answer (#17.2).
   const out = await callClaudeJSON({ apiKey, env: ctx?._env, model, system, user, maxTokens: 32000, timeoutMs: 300_000 });
   const need = ['hero', 'problem', 'whatItIs', 'insight', 'howItWorks', 'useCases', 'getStarted', 'pack'];
   if (!out?.sections) throw new Error('authorContent: missing sections');
@@ -251,21 +238,67 @@ GET-STARTED must give real IMPLEMENTATION CONFIDENCE (this is the most-failed ax
   return out;
 }
 
-// ── Station 4 brief: image prompts + diagram ASCII (the brain half of VISUALIZE) ───────────────
-// Returns the brain content; the orchestrator stamps fixed, valid px sizes + engine ids so we never
-// emit an invalid image size. arch/flow ASCII is grounded by make-diagrams from the real kb graph —
-// here we only author their altText + the two judgment diagrams (big-idea, insight).
-export async function authorVisualBrief(ctx, { apiKey, model }) {
+
+// ── the hero scene (INV-23 / ADR-0013): motion that PERFORMS the repo's central argument ─────────
+// Mirrors the hosted door's SKILL.md rules. ONE scene serves phone and desktop, so it is authored on a
+// narrow viewBox: the validator (tools/diagrams/scene.mjs) measures text at 390px and refuses < 11px.
+export const HERO_SCENE_RULES = `HERO SCENE (heroAnim) — one bespoke animated SVG that PERFORMS this repo's central argument (INV-23).
+It replaces the raster hero, so it must carry the page's first impression. Animate the ARGUMENT, never the chrome:
+a value changes, something crosses (or pointedly refuses to cross) a boundary, a state flips. Banned as "motion": a dot sliding
+along a line, pulsing glows, crawling dashes. Echo the page metaphor so the scene and the palette read as one design.
+Hard rules (a validator rejects the scene otherwise; you get ONE repair pass, then the page ships without a scene):
+- Root: <svg xmlns="http://www.w3.org/2000/svg" id="hs" viewBox="0 0 400 W" ...> with a unique short id, a <title> and a <desc> (the desc is the alt text). Use viewBox width 400 and height 400-520: ONE scene must work on a 390px phone AND a desktop column.
+- All text is real <text>, at least 14 units (a 400-wide scene is ~1x on a phone; smaller text becomes unreadable). No label wider than ~340 units. Sentence case, plain words a fifteen-year-old knows, never ALL-CAPS.
+- Animation: CSS @keyframes on opacity/transform only (or <animate>), loop 8-14s. Every CSS selector starts with #<id>, every @keyframes name and every inner id starts with <id> (e.g. #hs .cell, @keyframes hs-snap, id="hs-a"): the SVG is inlined in the page.
+- The default (no-animation) render IS the finished static end state; put motion inside @media (prefers-reduced-motion: no-preference){...} so reduced-motion viewers see the complete picture.
+- Colours from the page palette (hex values are fine). No <script>, <foreignObject>, event handlers, external urls or images, fonts by name only. Under ${Math.round(MAX_SCENE_BYTES / 1000)} KB.`;
+
+/**
+ * Validate the authored scene; ONE repair pass through `repair(defects, svg)`; otherwise fall back to NO scene
+ * with the reason disclosed (the build ships with the raster hero instead — never a broken scene).
+ * @returns {{ heroAnim: object } | { skipped: string }}
+ */
+export async function settleHeroScene(raw, repair) {
+  const svg = raw && typeof raw === 'object' && typeof raw.sceneSvg === 'string' ? raw.sceneSvg.trim() : '';
+  if (!svg) return { skipped: 'the brain authored no hero scene' };
+  let defects = validateHeroScene(svg);
+  let final = svg;
+  if (defects.length) {
+    let fixed = null;
+    try { fixed = await repair(defects, svg); } catch (e) { return { skipped: `hero scene invalid (${defects.slice(0, 3).join('; ')}); repair call failed: ${e?.message || e}` }; }
+    final = typeof fixed?.sceneSvg === 'string' ? fixed.sceneSvg.trim() : '';
+    defects = final ? validateHeroScene(final) : ['repair returned no sceneSvg'];
+    if (defects.length) return { skipped: `hero scene still invalid after one repair pass: ${defects.slice(0, 4).join('; ')}` };
+  }
+  return { heroAnim: {
+    sceneMarkup: final,
+    altText: String(raw.altText || '').trim() || sceneAltText(final),
+    caption: typeof raw.caption === 'string' ? raw.caption.trim() : '',
+    metaphorTie: typeof raw.metaphorTie === 'string' ? raw.metaphorTie.trim() : '',
+  } };
+}
+
+async function repairHeroScene(callJSON, base, defects, svg) {
+  const system = `You repair ONE animated SVG scene so it passes a validator. Change only what the defects require; keep the idea and the story it performs.\n\n${HERO_SCENE_RULES}`;
+  const user = `DEFECTS:\n${defects.map((d) => `- ${d}`).join('\n')}\n\nSCENE:\n${svg}\n\nReturn JSON: { "sceneSvg": "<the corrected full <svg>…</svg> markup>" }`;
+  return callJSON({ ...base, system, user, maxTokens: 12000 });
+}
+
+// ── Station 4 brief: image prompts + concept-diagram rows (the brain half of VISUALIZE) ────────
+// Returns the brain content; visualsSlotFromBrief stamps fixed, valid px sizes. arch/flow are drawn by
+// make-diagrams from the real kb graph; the rows authored here are their fallback + the two judgment
+// diagrams (big-idea, insight).
+export async function authorVisualBrief(ctx, { apiKey, model, callJSON = callClaudeJSON }) {
   const brief = gatherBrief(ctx, ctx._repoRoot);
   const metaphor = ctx.concept?.metaphor || 'a clean technical metaphor';
   const palette = ctx.concept?.palette ? JSON.stringify(ctx.concept.palette) : '(none)';
-  const system = `You are an award-winning art director (think Stripe, Linear, Vercel brand work) writing image-generation prompts + ASCII concept diagrams for a repo explainer. The page's visual metaphor is: ${metaphor}. Palette: ${palette}. ${GROUNDING_RULE}
+  const system = `You are an award-winning art director (think Stripe, Linear, Vercel brand work) writing image-generation prompts + concept diagrams for a repo explainer. The page's visual metaphor is: ${metaphor}. Palette: ${palette}. ${GROUNDING_RULE}
 
 ART DIRECTION — non-negotiable, this is what separates a memorable hero from generic AI slop:
 - BAN these clichés outright: glowing neural-network trees, generic floating DNA helixes, holographic "cyber" grids, neon circuit boards, abstract particle clouds, faceless hooded hackers, glowing brains, "matrix" rain. If the metaphor is the obvious one (e.g. DNA for genomics), find a FRESH, specific, unexpected angle on it — never the postcard version.
 - Anchor every image to a CONCRETE, specific scene or object grounded in what THIS repo actually does — a real moment, material, or mechanism — not a vague mood. Specificity is what reads as "designed," not "generated."
 - Direct it like a real photo/render: name the exact subject, the camera angle, the lighting (e.g. raking low light, soft studio, single hard key), the material/texture, depth of field, and one surprising compositional choice. Editorial photography or refined cinematic 3D — not "digital art."
-- NO ROOMS, NO PROPS, NO PEOPLE (2026-09-17 — both shipped pages had to be hand-fixed for exactly this).
+- NO ROOMS, NO PROPS, NO PEOPLE.
   Banned outright from every raster: desks, offices, cafes, windows, plants, coffee cups, notebooks,
   pens, books, phones lying around, sticky notes as set dressing, hands, and any person or part of one.
   A photo of a workspace is scenery: it teaches nothing and could ship on any product's page. Compose
@@ -276,7 +309,9 @@ ART DIRECTION — non-negotiable, this is what separates a memorable hero from g
 - THE SWAP TEST IS THE BAR: if the finished image could ship unchanged on a different repo's page, it
   has failed. Legible, project-specific text inside the image (a real label, a real value, a real state)
   is the cheapest way to pass it — the image models render short text crisply, so use it.
-- It must feel bespoke to this repo: someone who knows the project should think "yes, that's exactly it," and a stranger should think "that's striking."`;
+- It must feel bespoke to this repo: someone who knows the project should think "yes, that's exactly it," and a stranger should think "that's striking."
+
+${HERO_SCENE_RULES}`;
   const user = `${brief}
 
 Author the visual brief. Return JSON:
@@ -286,6 +321,7 @@ Author the visual brief. Return JSON:
     { "id": "problem", "role": "problem illustration", "prompt": "a specific, art-directed image prompt for the PROBLEM this repo solves — a concrete before-state scene, not an abstract mood. MUST include ONE legible, project-specific written artifact (see THE SWAP TEST below)" },
     { "id": "useCase", "role": "scenario", "prompt": "a specific, art-directed image prompt for a concrete real-world use-case scenario shown through the SUBJECT ITSELF — the screen, output, or artifact at the moment this repo does its job for someone (no people, hands, desks, or rooms). MUST include ONE legible, project-specific written artifact (see THE SWAP TEST below)" }
   ],
+  "heroAnim": { "sceneSvg": "the full animated <svg>…</svg> markup, per the HERO SCENE rules (omit the whole key only if the repo's idea genuinely cannot be shown in motion)", "altText": "one sentence describing what the scene shows happening", "caption": "optional one line under the scene", "metaphorTie": "one sentence: how this scene performs the repo's central argument and echoes the page metaphor" },
   "diagrams": {
     "bigIdea": {
       "title": "a 3-5 word heading for the big-idea diagram (e.g. 'How it all fits together')",
@@ -319,13 +355,9 @@ the ship floor — however beautiful it is.
   THIS repo (a module name, a command, an option, an error, a domain noun from the brief). Keep it to
   1-4 words so it renders cleanly. That artifact is what makes the image un-swappable: these props,
   with THESE words, cannot ship on another project's page.
-- This REVERSES the old "no baked-in text" instruction, which was written when image models garbled
-  letters and became the single biggest cause of capped pages. Evidence from this project: the image
-  that scored best on takeaway carried short, legible, project-specific labels ("ACME-2026-Q3",
-  "Signal Decay Curve") — rendered perfectly by gpt-image-2, and it taught the thesis in pixels. Copy
-  its WORDS, not its props: put the label on the subject itself (a screen, a stamped artifact, a tag on
-  the object the repo is about), never on office set dressing, which stays banned above. The image that capped a page at 55 was a beautiful, wordless industrial rail yard
-  that could have illustrated any queueing project ever written.
+- Put the label on the subject itself (a screen, a stamped artifact, a tag on the object the repo is
+  about), never on office set dressing, which stays banned above. A beautiful, wordless image that could
+  illustrate any project is exactly what caps a page at 55.
 - Still banned: decorative gibberish text, lorem ipsum, invented UI chrome, watermarks, long
   paragraphs, and any word not grounded in the brief. One real term, legibly rendered, is the whole ask.
 - The scene itself must still be concrete and art-directed. The artifact EARNS the specificity; it does
@@ -338,7 +370,8 @@ DIAGRAM RULES (bigIdea + insight are DRAWN as real glassmorphic concept-cards jo
 - architecture.rows and flow.rows are a REQUIRED FALLBACK, not decoration (issue #17.4, pacphi). Those two diagrams are normally drawn from the real KB dep-graph and entrypoints. But when a repo's dependency graph is TRIVIAL (a docs vault, a single-module tool — 0 internal edges), a dependency map would be a picture of nothing, so make-diagrams REFUSES to draw one and falls back to your rows instead. Without them the build stops dead at Station 4. Author them for every repo; they cost you two lines and they are the difference between a page and a crash.
 - architecture.rows = the CONCEPT of how the thing is built (the 3-5 parts a reader must hold in their head), NOT the package wiring — the wiring is what the grounded renderer already draws when it can. flow.rows = the runtime steps in order.
 - systemMap and decision (ADR-0014) are the BETTER answer to "what does it plug into / how does it decide" and REPLACE the architecture / flow drawing when present and verified. They are optional: omit rather than invent. THE TOOL VERIFIES EVERY CLAIM against the real repo and silently drops what it cannot confirm: a "yes"/"partial" must carry a file and a VERBATIM quote that is in that file in the brief; a "no" must list the search terms the tool will grep (use the other hosts / editors / platforms a reader would wonder about — the tool performs the search, you do not assert the absence). Use real commands and real numbers from the source; never paraphrase a quote.`;
-  const out = await callClaudeJSON({ apiKey, env: ctx?._env, model, system, user, maxTokens: 10000 });
+  const base = { apiKey, env: ctx?._env, model };
+  const out = await callJSON({ ...base, system, user, maxTokens: 24000, timeoutMs: 300_000 });
   if (!out?.hero?.prompt) throw new Error('authorVisualBrief: missing hero.prompt');
   const okRows = (d) => d && Array.isArray(d.rows) && d.rows.length
     && d.rows.every((r) => r && Array.isArray(r.items) && r.items.length
@@ -346,6 +379,9 @@ DIAGRAM RULES (bigIdea + insight are DRAWN as real glassmorphic concept-cards jo
   if (!okRows(out?.diagrams?.bigIdea) || !okRows(out?.diagrams?.insight)) {
     throw new Error('authorVisualBrief: bigIdea/insight must each provide non-empty rows[].items (short concept-card labels, not ASCII)');
   }
+  const scene = await settleHeroScene(out.heroAnim, (defects, svg) => repairHeroScene(callJSON, base, defects, svg));
+  delete out.heroAnim;
+  if (scene.heroAnim) out.heroAnim = scene.heroAnim; else out.heroAnimSkipped = { reason: scene.skipped };
   return out;
 }
 
@@ -363,27 +399,25 @@ export function visualsSlotFromBrief(brief) {
     altText: (d && typeof d.altText === 'string') ? d.altText : '',
   });
   return {
-    hero: { role: 'metaphor', prompt: brief.hero.prompt, px: '1536x1024', engine: 'gpt-image-2' },
+    hero: { role: 'metaphor', prompt: brief.hero.prompt, px: '1536x1024' },
     sections: (brief.sections || []).slice(0, 3).map((s) => ({
-      id: s.id, role: s.role || 'illustration', prompt: s.prompt, px: '1024x1024', engine: 'gpt-image-2',
+      id: s.id, role: s.role || 'illustration', prompt: s.prompt, px: '1024x1024',
     })),
     bigIdeaDiagram: conceptModel(brief.diagrams.bigIdea, 'How it all fits together'),
     insightDiagram: conceptModel(brief.diagrams.insight, 'The clever move'),
-    // Issue #17.4: these two carry the brain's rows THROUGH as a fallback. They are normally drawn
-    // from the real KB (dep-graph / entrypoints), and make-diagrams prefers that grounded model every
-    // time — but when the graph is trivial (0 internal edges) it refuses to draw a picture of nothing
-    // and demands authored rows instead. Dropping them here, as this mapper used to, meant the brain
-    // could author a perfectly good fallback and the pipeline would still die at Station 4.
+    // #17.4: the brain's rows ride through as the fallback make-diagrams needs when the KB graph is trivial.
     architectureDiagram: conceptModel(brief.diagrams.architecture, 'How it is built'),
     flowDiagram: conceptModel(brief.diagrams.flow, 'What happens to your data'),
     // ADR-0014: optional evidence-backed story models. Carried through UNCHANGED — make-diagrams
     // validates and VERIFIES them against the cloned repo before anything is drawn.
+    // The validated hero scene (the raster hero is then skipped by generate-image) or the disclosed reason there is none.
+    ...(brief.heroAnim?.sceneMarkup ? { heroAnim: brief.heroAnim } : { heroAnimSkipped: { reason: brief.heroAnimSkipped?.reason || 'no hero scene authored' } }),
     ...(brief.diagrams.systemMap && typeof brief.diagrams.systemMap === 'object' ? { systemMap: brief.diagrams.systemMap } : {}),
     ...(brief.diagrams.decision && typeof brief.diagrams.decision === 'object' ? { decision: brief.diagrams.decision } : {}),
   };
 }
 
-// ── Station 1 brain deliverable: the for-humans primer markdown (make-pack/make-dropin require it) ──
+// ── Station 1 brain deliverable: the for-humans primer markdown (make-pack requires it) ──
 export async function authorPrimer(ctx, { apiKey, model, repoRoot }) {
   const brief = gatherBrief(ctx, repoRoot);
   const name = ctx.understanding?.repoName || ctx.repo?.name || ctx.repo?.slug;
@@ -407,13 +441,10 @@ Keep it tight and real; ground every statement in the brief above.`;
   return primerAbs;
 }
 
-// ── GATED: author a kb.config.mjs target entry for an unregistered repo ─────────────────────────
-// build-kb wraps `kb/build-kb.mjs --target <slug>`, which requires the slug registered in
-// kb/kb.config.mjs (embed block + repoDir -> the clone + corpus rules). The embed block is fixed
-// (the project's standard 384-dim bge-small); the corpus rules are judgment, so the brain authors
-// them. We return the entry as a plain object — the orchestrator decides whether to write it
-// (default: NO, it stops loud; --register-kb: yes). This keeps the shared registry under explicit
-// operator control rather than silently edited by a build.
+// ── Author a kb.config.mjs target entry for an unregistered repo ────────────────────────────────
+// build-kb needs the slug registered (embed block + repoDir + corpus rules). The embed block is fixed
+// (384-dim bge-small); the corpus rules are judgment, so the brain authors them. Returned as a plain
+// object; kb:register writes it to this build's overlay (the tracked kb.config.mjs is never edited).
 export async function authorKbTarget(ctx, { apiKey, model }) {
   const brief = gatherBrief(ctx, ctx._repoRoot);
   const slug = ctx.repo?.slug;
@@ -427,7 +458,6 @@ Return JSON for this repo's corpus config (only these keys):
   "productNames": ["key public names / API verbs from the brief"],
   "componentRoots": ["top-level source dirs, e.g. src, bin, examples, crates"],
   "codeExt": [".ts",".js",".mjs"],
-  "fullTextExt": [".md",".mdx",".txt"],
   "scopeExclude": ["node_modules","dist","target",".git","coverage","pkg",".next"],
   "include": [
     { "rule": "mdSweepFullText", "roots": ["."] },
@@ -448,8 +478,6 @@ Return JSON for this repo's corpus config (only these keys):
     repoDir: clonePath,
     scopeExclude: rules.scopeExclude || ['node_modules', 'dist', 'target', '.git', 'coverage', 'pkg', '.next'],
     codeExt: rules.codeExt || ['.ts', '.tsx', '.js', '.mjs', '.cjs'],
-    fullTextExt: rules.fullTextExt || ['.md', '.mdx', '.txt'],
-    templateExt: [],
     componentRoots: rules.componentRoots || ['src'],
     componentWord: ['crate', 'package', 'module', 'component'],
     include: rules.include || [

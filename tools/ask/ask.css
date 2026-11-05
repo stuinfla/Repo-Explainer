@@ -34,9 +34,7 @@
 .ask-ans{display:none;animation:ask-in .45s var(--ease,ease) both}.ask-ans.on{display:block}
 @keyframes ask-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .ask-q{font:600 .8rem/1 var(--mono,monospace);letter-spacing:.06em;text-transform:uppercase;color:var(--muted,#777);margin:0 0 .6rem}
-.ask-lead{margin:0 0 .4rem;font:500 clamp(1.08rem,2.4vw,1.3rem)/1.5 var(--sans,sans-serif);color:var(--ink,#222);max-width:68ch}
-.ask-lead mark,.ask-src p mark{background:color-mix(in srgb,var(--accent-2,#b5852f) 32%,transparent);color:inherit;border-radius:3px;padding:0 .12em}
-.ask-lead.code{font:500 .9rem/1.55 var(--mono,monospace);white-space:pre-wrap;background:var(--bg-2,#eee);border-radius:var(--radius-s,10px);padding:.9rem 1rem}
+.ask-src p mark{background:color-mix(in srgb,var(--accent-2,#b5852f) 32%,transparent);color:inherit;border-radius:3px;padding:0 .12em}
 .ask-page{display:inline-flex;align-items:center;gap:.4rem;margin:.5rem 0 0;color:var(--accent,#7a5617);font:600 .9rem/1 var(--sans,sans-serif);text-decoration:none;border-bottom:1.5px solid currentColor;padding-bottom:2px}
 .ask-h{margin:1.5rem 0 .7rem;font:600 .74rem/1 var(--mono,monospace);letter-spacing:.14em;text-transform:uppercase;color:var(--muted,#777)}
 .ask-srcs{display:grid;gap:.75rem;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
@@ -67,10 +65,4 @@
 .ask-n{display:inline-grid;place-items:center;width:1.25em;height:1.25em;margin-right:.45em;border-radius:50%;font:700 .68rem/1 var(--mono,monospace);color:var(--on-accent,#fff);background:var(--accent,#7a5617)}
 .ask-caret{display:inline-block;width:.5ch;height:1.05em;margin-left:2px;vertical-align:-.15em;background:var(--accent,#7a5617);animation:ask-blink 1s steps(1) infinite}
 @keyframes ask-blink{50%{opacity:0}}
-.ask-chips{margin-top:1rem}
-@media print{
-  .site-head,.ask,.ask-fab,video,.cta-row,.dl-cta,.dropzone{display:none!important}
-  details.section>summary .chev{display:none}
-  details.section{break-inside:avoid-page}
-  body{background:#fff!important}
-}
+@media print{.ask,.ask-fab{display:none!important}}

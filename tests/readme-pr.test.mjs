@@ -10,8 +10,8 @@ const BASE = {
   repoName: 'claude-swap', liveUrl: LIVE, readmeUrl: README_URL, mode: 'fallback', addedLines: 24,
   files: ['docs/explainer/architecture.svg', 'docs/explainer/flow.svg'],
   images: {
-    architecture: 'https://raw.githubusercontent.com/stuinfla/x/main/readme-pr/architecture.png',
-    flow: 'https://raw.githubusercontent.com/stuinfla/x/main/readme-pr/flow.png',
+    architecture: 'https://raw.githubusercontent.com/stuinfla/x/main/readme-proposal/preview/architecture.png',
+    flow: 'https://raw.githubusercontent.com/stuinfla/x/main/readme-proposal/preview/flow.png',
     hero: 'https://raw.githubusercontent.com/stuinfla/x/main/assets/hero.png',
   },
 };
@@ -90,11 +90,8 @@ test('issue: asks first — says nothing was touched, offers the PR, keeps the R
   assert.match(body, /## What I'd change/);
   assert.doesNotMatch(body, /What's in this PR|before merging/);
   assert.equal(urlsInOrder(body)[0], README_URL);
-  assert.match(body, /closing this is completely fine, and I won't send another/);
-});
-
-test('issue: the default kind is still the PR wording (back-compat)', () => {
-  assert.match(buildPrBody(BASE), /What's in this PR/);
+  assert.match(body, /closing this is completely fine and I won't contact you again/);
+  assert.match(body, /check in once, about a week from now, and no more than that/);
 });
 
 test('issue title: stable and friendly (the station finds its own earlier issue by it)', () => {

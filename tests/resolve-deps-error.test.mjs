@@ -1,10 +1,5 @@
-// loadTransformers must report WHY the import failed, not just that resolution did.
-//
-// 2026-09-17: the release workflow installs with `npm ci --ignore-scripts`, which skips the install
-// script of the nested `sharp` that @xenova/transformers carries. The package WAS on disk; importing
-// it threw "Something went wrong installing the sharp module". The resolver swallowed that and said
-// "Cannot resolve '@xenova/transformers'. Run `npm i`" — a confident, wrong diagnosis that cost three
-// months of failed releases, because the one useful fact was thrown away by a bare `catch {}`.
+// loadTransformers must report WHY the import failed (e.g. a skipped sharp install script), not just that
+// resolution did: an installed-but-broken package must not look like an absent one.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

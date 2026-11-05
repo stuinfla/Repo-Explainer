@@ -3,17 +3,14 @@
 //
 // One pure tool over a probed image engine. Reads the brain-authored emotional rungs from the
 // BuildContext (`visuals.hero` + every entry in `visuals.sections[]`), generates each as a real
-// raster image, and merges ONLY its own two slots back into build.json. The STRUCTURAL rungs
+// raster image, and merges ONLY its own slots back into build.json (hero, sections, cost). The STRUCTURAL rungs
 // (architecture/flow/big-idea/insight SVGs) are make-diagrams' job, not this one.
 //
-// Image engine (as the code in main() actually selects it — corrected 3.0.1):
-// PRIMARY = OpenAI PRIMARY_MODEL (gpt-image-2.5-flare) at QUALITY (xhigh), for the hero AND every
-// section raster. If its probe fails -> FALLBACK_MODEL (gpt-image-2) at the same quality. Only when
-// there is no OpenAI key, or the whole OpenAI chain fails its probe, does Grok (GROK_MODEL, xAI) render.
-// Grok was primary on 2026-07-11 and was demoted on 2026-07-12 (see the engine comments in main()).
-// Grok takes `aspect_ratio`+`resolution`, NOT `size`; its native output can exceed our target px by
-// design (we only ever downscale via sharp) — see GROK_PX_MAP. If every probe fails we STOP LOUD with
-// the failing IDs — never a silent substitution, never a placeholder.
+// Engine: ONE engine renders every raster. PRIMARY_MODEL (gpt-image-2.5-flare) at QUALITY; if its probe
+// fails, FALLBACK_MODEL (gpt-image-2) at the same quality; only with no OpenAI key (or a failed OpenAI
+// chain) does Grok (GROK_MODEL) render. Grok takes `aspect_ratio`+`resolution`, NOT `size`, and its native
+// output can exceed the target px (we only ever downscale via sharp; see GROK_PX_MAP). If every probe
+// fails we STOP LOUD — never a silent substitution, never a placeholder.
 //
 // Sizes: hero = 1536x1024; raster sections = 1024x1024 (valid sizes: 1024x1024, 1024x1536,
 // 1536x1024, auto — the DALL·E-3 1792x1024 is rejected). `auto` has no Grok mapping (falls
@@ -22,7 +19,7 @@
 // CONTRACT (tools/CONTRACT.md): pure (reads only `visuals` rungs + `concept.palette` + the
 // Grok/OpenAI keys from env), fail-loud (non-zero exit + clear message, NEVER a placeholder
 // asset), single JSON result object on stdout, diagnostics on stderr, merges ONLY visuals.hero +
-// visuals.sections[].
+// visuals.sections[] + visuals.cost (the derived price, read by src/receipt.mjs).
 //
 // Usage: node tools/generate-image.mjs <build-dir>
 
@@ -31,6 +28,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import sharp from 'sharp';
+import { validateHeroScene } from './diagrams/scene.mjs';
 
 const TOOLS_DIR = path.dirname(fileURLToPath(import.meta.url)); // tools/
 const ROOT = path.resolve(TOOLS_DIR, '..');
@@ -46,28 +44,13 @@ const GROK_PX_MAP = {
   '1024x1536': { aspect_ratio: '2:3', resolution: '2k' },
   '1024x1024': { aspect_ratio: '1:1', resolution: '1k' },
 };
-// Was 'high' ("owner requirement: max quality"). Reversed 2026-07-10 on real evidence, not a
-// guess: a live timed A/B (same prompt, same size) measured high=119.6s vs medium=43.6s per
-// image (2.7x), and the medium output was viewed directly — full-bleed, correct dimensions, no
-// visible quality loss for this flat-vector-icon content type. Checked and rejected the
-// alternatives first: grok-imagine-image-quality is 23x faster but its API hard-rejects a `size`
-// param (confirmed via live 400 "Argument not supported: size") — can't meet the 1536x1024
-// hero / 1024x1024 section contract, disqualified on a technical constraint, not taste.
-// gemini-3.1-flash-image is 14x faster but added an unrequested padded frame instead of filling
-// the canvas — a real defect, not fixed, flagged as a future candidate once that's resolved.
-// Meta's Emu has no public API at all (app-only, watermarked) — not usable regardless of quality.
-// 2026-09-17 (owner: "latest and greatest graphics"): moved to the Images 2.5 family. OpenAI's image
-// guide: "Choose Sunburst for workflows where editing precision matters most, and Flare for fast,
-// high-quality everyday image generation" — this tool only generates, so Flare. Quality tiers are now
-// low/medium/high/xhigh/max. Measured on the real ruos hero brief at 1536x1024: high 23.8s, xhigh 28.1s
-// (2,459 vs 1,372 output tokens), both clearly sharper with legible on-screen text vs gpt-image-2 @
-// medium — so the 2026-07-10 speed argument below no longer applies. max was not measured.
+// xhigh on the 2.5-flare family: measured sharper, with legible on-screen text, at ~28s per 1536x1024 hero (see git history).
 const QUALITY = 'xhigh';
 const PRIMARY_MODEL = 'gpt-image-2.5-flare';  // verified: real 1536x1024 generation, HTTP 200
 const FALLBACK_MODEL = 'gpt-image-2';          // previous generation, safety net only if the probe fails
 const VALID_SIZES = new Set(['1024x1024', '1024x1536', '1536x1024', 'auto']);
 const PROBE_TIMEOUT_MS = 30_000;
-const GEN_TIMEOUT_MS = 300_000;              // high-quality photoreal renders can take 60–90s+ when the endpoint is loaded; 180s was too tight and aborted mid-render
+const GEN_TIMEOUT_MS = 300_000;              // an endpoint under load can take 60-90s+ per render
 const GEN_ATTEMPTS = 3;                       // retry transient upstream 502s / aborts
 const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -256,21 +239,21 @@ export function writeSidecar(filePath, key) {
   fs.writeFileSync(sidecarPath(filePath), JSON.stringify({ key }) + '\n');
 }
 
-// ── IMAGE PRICING (3.0.1) ───────────────────────────────────────────────────────────────────────
-// USD per image, quality=high, last checked 2026-08-09. There is NO sourced rate for
-// gpt-image-2.5-flare (the primary) or for Grok, so those come back null and the total is reported as
-// UNPRICED (usd: null) — never as $0, which every receipt since the flare switch silently claimed.
+// ── IMAGE PRICING ───────────────────────────────────────────────────────────────────────────────
+// USD per image, quality=high only (last checked 2026-08-09). There is NO sourced rate for
+// gpt-image-2.5-flare, for Grok, or for any engine rendered at a quality other than the rated one, so
+// those are UNPRICED (usd null), never $0 and never a high-quality rate applied to an xhigh render.
+export const RATED_QUALITY = 'high';
 export const IMAGE_RATES = {
   'gpt-image-2': { '1024x1024': 0.167, '1536x1024': 0.25, '1024x1536': 0.25 },
-  'gpt-image-1': { '1024x1024': 0.167, '1536x1024': 0.25, '1024x1536': 0.25 },
 };
 export function priceImages(items, rates = IMAGE_RATES) {
   let sum = 0;
   const perImage = [];
   const unpricedEngines = new Set();
-  for (const { id, engine, px } of items) {
-    const rate = rates[engine]?.[px];
-    if (typeof rate === 'number') sum += rate; else unpricedEngines.add(engine);
+  for (const { id, engine, px, quality = RATED_QUALITY } of items) {
+    const rate = quality === RATED_QUALITY ? rates[engine]?.[px] : undefined;
+    if (typeof rate === 'number') sum += rate; else unpricedEngines.add(rates[engine] ? `${engine}@${quality}` : engine);
     perImage.push({ id, engine, px, usd: typeof rate === 'number' ? rate : null });
   }
   const unpriced = perImage.filter((p) => p.usd == null).length;
@@ -278,13 +261,49 @@ export function priceImages(items, rates = IMAGE_RATES) {
   return { usd: unpriced ? null : pricedUsd, pricedUsd, unpriced, unpricedEngines: [...unpricedEngines], perImage };
 }
 
-// Build a deterministic colour-direction suffix from the brain's palette (pure transform).
-function paletteSuffix(palette) {
+// Colour-direction suffix for the image prompt: ONLY colour values (hex / rgb() / hsl()) go in. The palette
+// also carries layout knobs (radius, ease, hero-grad-angle) that mean nothing to an image model.
+const COLOUR_VALUE = /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([^)]*\))$/i;
+export function paletteSuffix(palette) {
   if (!palette || typeof palette !== 'object') return '';
   const parts = Object.entries(palette)
-    .filter(([, v]) => v != null && String(v).trim())
+    .filter(([, v]) => v != null && COLOUR_VALUE.test(String(v).trim()))
     .map(([k, v]) => `${k}: ${String(v).trim()}`);
   return parts.length ? `\n\nColour direction (hold to this palette): ${parts.join('; ')}.` : '';
+}
+
+/** Quality label for the result: Grok has no quality param, so a Grok-rendered run must not claim `xhigh`. */
+export const qualityFor = (engineId) => (engineId === GROK_MODEL
+  ? 'n/a (Grok has no quality param; see px for the aspect_ratio/resolution tier used)' : QUALITY);
+
+
+// ── hero scene instead of a hero raster ────────────────────────────────────────────────────────
+// When the page already has a VALID authored hero scene (visuals.heroAnim, validated by the same function
+// make-diagrams uses), the paid raster hero is not drawn: the scene IS the hero. The decision is a pure function.
+export function heroRasterDecision(visuals, buildDir) {
+  const a = visuals && typeof visuals.heroAnim === 'object' ? visuals.heroAnim : null;
+  if (!a) return { skip: false, reason: 'no hero scene authored' };
+  let svg = null;
+  if (typeof a.sceneMarkup === 'string' && a.sceneMarkup.trim()) svg = a.sceneMarkup;
+  else if (typeof a.sceneSvg === 'string' && a.sceneSvg.trim()) {
+    const f = path.isAbsolute(a.sceneSvg) ? a.sceneSvg : path.join(buildDir, a.sceneSvg);
+    try { svg = fs.readFileSync(f, 'utf8'); } catch { return { skip: false, reason: `hero scene file not readable: ${f}` }; }
+  }
+  if (!svg) return { skip: false, reason: 'heroAnim carries no scene (chips band only)' };
+  const defects = validateHeroScene(svg);
+  return defects.length ? { skip: false, reason: `hero scene invalid: ${defects.slice(0, 3).join('; ')}` } : { skip: true, svg, reason: 'valid hero scene' };
+}
+
+// The favicon and social-card stations crop visuals.hero.file, so a scene-hero still needs ONE image: the scene's
+// static end state (no animation runs in a rasteriser) centred on its own background. Free: no model call.
+export async function renderSceneBackdrop(svg, outFile, { bg = '#0d1114', w = 1536, h = 1024 } = {}) {
+  const bgm = /background(?:-color)?\s*:\s*(#[0-9a-fA-F]{3,8})/.exec(svg);   // the scene's own page colour, else the palette bg
+  const scene = await sharp(Buffer.from(svg), { density: 192 }).resize({ height: h, width: w, fit: 'inside' }).png().toBuffer();
+  const m = await sharp(scene).metadata();
+  const buf = await sharp({ create: { width: w, height: h, channels: 3, background: (bgm && bgm[1]) || bg } })
+    .composite([{ input: scene, left: Math.round((w - m.width) / 2), top: Math.round((h - m.height) / 2) }]).png().toBuffer();
+  fs.writeFileSync(outFile, buf);
+  return buf.length;
 }
 
 // Normalise the brain-declared rungs into a uniform work list. Fail loud on any malformed rung.
@@ -332,26 +351,15 @@ async function main() {
   if (rungs.length === 0) return fail('no emotional rungs declared (visuals.hero + visuals.sections[] are both empty) — nothing to generate');
   try { for (const r of rungs) validateRung(r); } catch (e) { return fail(e?.message || String(e)); }
 
+  // A valid authored hero scene replaces the paid raster hero (recorded as hero.rasterSkipped = 'scene').
+  const heroDecision = heroRasterDecision(visuals, absBuildDir);
+  const drawRungs = heroDecision.skip ? rungs.filter((r) => r.kind !== 'hero') : rungs;
+  console.error(`[generate-image] hero raster: ${heroDecision.skip ? 'SKIPPED — the hero scene is the hero' : `drawn (${heroDecision.reason})`}`);
+
   const palette = (build.concept && typeof build.concept === 'object') ? build.concept.palette : null;
   const colourSuffix = paletteSuffix(palette);
 
-  // ---- probe the engine: Grok (fast primary, 2026-07-11) -> gpt-image-2 -> gpt-image-1 -> loud stop ----
-  // Grok chosen as primary on real measured evidence, not preference: ~5-10s/image vs gpt-image-2's
-  // ~44-120s (10-23x), same visual quality tier for this content type — see the header comment.
-  // OpenAI stays the fully-proven fallback if the Grok key is missing or the probe fails.
-  //
-  // ENGINE CHOICE IS PER-RUNG, on the READER's terms, not the pipeline's (2026-07-12).
-  // The hero is the ONE image above the fold: it is the first thing a stranger sees and it decides
-  // whether they scroll at all. Every hero on the wall that landed well was a gpt-image-2 render; the
-  // first build to ship a Grok hero (ternlight) came back from Stuart as "a 4 out of 10". Grok's real,
-  // measured win is SPEED (~5-10s vs gpt-image-2's ~44-120s) — and speed is worth having on the two
-  // secondary rasters, which nobody's first impression rests on. Making the hero fast was optimising
-  // the one place where slow was worth paying for.
-  //   hero     -> quality engine (gpt-image-2), ~1 extra minute, spent where it buys the most
-  //   sections -> fast engine (Grok), 10-23x faster, quality tier is fine for supporting art
-  // Either engine covers for the other if its probe fails, so a missing key degrades, never dies.
-  let generateFn = null;
-  const engines = {};
+  // ---- probe the engines: OpenAI (flare -> gpt-image-2) first, Grok as the safety net, else a loud stop ----
   const grokKey = loadGrokKey();
   const grokOK = !!grokKey && await probeGrok(grokKey);
   const apiKey = loadOpenAiKey();
@@ -366,38 +374,16 @@ async function main() {
   if (!grokOK && !openaiModel) {
     return fail(`image-engine probe failed for Grok AND the whole OpenAI chain (${PRIMARY_MODEL}, ${FALLBACK_MODEL}) — refusing to substitute or fake an image`);
   }
-  const grokFn = grokOK ? (prompt, px) => generateOneGrok(prompt, px, grokKey) : null;
-  const openaiFn = openaiModel ? (prompt, px) => generateOne(openaiModel, prompt, px, apiKey) : null;
-
-  // 2026-07-12, REVISED SAME DAY on real evidence: the section rasters get the QUALITY engine too.
-  // The speed split above was right in principle and wrong in fact — the section images are full-width,
-  // on-page, and a reader looks straight at them; they are not "supporting art". Shipping them on the fast
-  // engine produced a problem-section image nobody could decode. Grok stays as the FALLBACK (it is genuinely
-  // 10-23x faster and a fine safety net), but it is no longer the default for anything a reader sees big.
-  // Cost of this decision: ~2 extra minutes per build. That is the correct trade and we measured it.
-  engines.hero = openaiModel || GROK_MODEL;
-  engines.section = openaiModel || GROK_MODEL;
-  const heroFn = openaiFn || grokFn;
-  const sectionFn = openaiFn || grokFn;
-  generateFn = (prompt, px, kind) => (kind === 'hero' ? heroFn : sectionFn)(prompt, px);
-  const engine = `hero:${engines.hero} + sections:${engines.section}`;
-  console.error(`[generate-image] engines — hero: ${engines.hero} (quality, above the fold) · sections: ${engines.section} (speed)`);
+  const engine = openaiModel || GROK_MODEL;
+  const generateFn = openaiModel
+    ? (prompt, px) => generateOne(openaiModel, prompt, px, apiKey)
+    : (prompt, px) => generateOneGrok(prompt, px, grokKey);
+  console.error(`[generate-image] engine: ${engine} (every raster)`);
 
   const assetsDir = path.join(absBuildDir, 'assets');
   fs.mkdirSync(assetsDir, { recursive: true });
 
-  // ---- generate rungs with BOUNDED concurrency; ANY failure is a loud stop (no partial merge) ----
-  // Was a strict sequential for-loop: the endpoint 502s/stalls when several HIGH-quality renders
-  // peak at once, so concurrency was disabled entirely. Two things changed 2026-07-10: (1) QUALITY
-  // dropped to 'medium' (see above) — a lighter request than what caused those stalls; (2) SKILL.md
-  // was ALSO telling the agent to fire "one call per rung, in parallel" as separate `generate-image`
-  // processes — but this file never had a per-rung CLI arg, so those were redundant full-script
-  // invocations racing on the same output files, papered over by the resume-cache check and a
-  // `until ls *.png; do sleep 5; done` polling loop the agent improvised (measured: ~6min of a
-  // ~12min image station was that polling + one 302s blocking call). Fixed at the source instead of
-  // patching the workaround: ONE process call now handles every rung with real bounded concurrency.
-  // Cap of 3 is a conservative starting point (medium-quality concurrent stability is untested past
-  // this) — raise it only after a real measured run shows headroom, don't guess it higher.
+  // ---- generate rungs with ONE process and bounded concurrency (3); ANY failure is a loud stop (no partial merge) ----
   const IMAGE_CONCURRENCY = 3;
   async function mapWithConcurrency(items, limit, fn) {
     const out = new Array(items.length);
@@ -418,8 +404,7 @@ async function main() {
     const filePath = path.join(assetsDir, fileName);
     // resume idempotency: reuse a PNG on disk ONLY if it was drawn from these exact inputs (see imageCacheKey)
     const fullPrompt = String(r.prompt) + colourSuffix;
-    const rungEngine = r.kind === 'hero' ? engines.hero : engines.section;
-    const key = imageCacheKey({ prompt: fullPrompt, px: r.px, engine: rungEngine, quality: rungEngine === GROK_MODEL ? 'n/a' : QUALITY });
+    const key = imageCacheKey({ prompt: fullPrompt, px: r.px, engine, quality: engine === GROK_MODEL ? 'n/a' : QUALITY });
     const cache = cacheDecision(filePath, key);
     if (cache.reuse) {
       console.error(`[generate-image] ${label}: reusing cached ${cache.bytes} bytes (same prompt/size/engine) -> ${filePath}`);
@@ -428,7 +413,7 @@ async function main() {
     if (cache.reason !== 'no file') console.error(`[generate-image] ${label}: not reusing ${filePath} — ${cache.reason}`);
     let buf, lastErr;
     for (let attempt = 1; attempt <= GEN_ATTEMPTS; attempt++) {
-      try { buf = await generateFn(fullPrompt, r.px, r.kind); break; }
+      try { buf = await generateFn(fullPrompt, r.px); break; }
       catch (e) {
         lastErr = e;
         if (attempt < GEN_ATTEMPTS) {
@@ -444,9 +429,9 @@ async function main() {
     return { rung: r, filePath, bytes: buf.length };
   }
 
-  const results = await mapWithConcurrency(rungs, IMAGE_CONCURRENCY, renderRung);
+  const results = await mapWithConcurrency(drawRungs, IMAGE_CONCURRENCY, renderRung);
 
-  const failures = results.map((res, i) => (res.status === 'rejected' ? `${rungs[i].kind}${rungs[i].kind === 'section' ? `(${rungs[i].id})` : ''}: ${res.reason?.message || res.reason}` : null)).filter(Boolean);
+  const failures = results.map((res, i) => (res.status === 'rejected' ? `${drawRungs[i].kind}${drawRungs[i].kind === 'section' ? `(${drawRungs[i].id})` : ''}: ${res.reason?.message || res.reason}` : null)).filter(Boolean);
   if (failures.length) return fail(`image generation failed for ${failures.length} rung(s): ${failures.join(' | ')}`);
 
   // ---- merge ONLY visuals.hero + visuals.sections[] back into build.json (read-modify-write) ----
@@ -459,8 +444,7 @@ async function main() {
   const newSections = [];
   for (let i = 0; i < results.length; i++) {
     const { rung, filePath, bytes } = results[i].value;
-    const rungEngine = rung.kind === 'hero' ? engines.hero : engines.section;
-    const entry = { role: rung.role, prompt: rung.prompt, file: filePath, px: rung.px, engine: rungEngine, http200: true, bytes };
+    const entry = { role: rung.role, prompt: rung.prompt, file: filePath, px: rung.px, engine, http200: true, bytes };
     if (rung.kind === 'hero') {
       fresh.visuals.hero = entry;
     } else {
@@ -469,16 +453,20 @@ async function main() {
   }
   // Only overwrite sections[] if the brain declared sections this run (otherwise leave untouched).
   if (Array.isArray(visuals.sections)) fresh.visuals.sections = newSections;
+  let heroBackdrop = null;
+  if (heroDecision.skip) {
+    const file = path.join(assetsDir, 'hero-scene-static.png');
+    const pbg = String(build.concept?.palette?.bg || '').trim();
+    const bytes = await renderSceneBackdrop(heroDecision.svg, file, /^#[0-9a-f]{3,8}$/i.test(pbg) ? { bg: pbg } : {});
+    const h = visuals.hero || {};
+    fresh.visuals.hero = { role: h.role || 'metaphor', prompt: h.prompt, file, px: '1536x1024', engine: 'scene-render', http200: true, bytes, rasterSkipped: 'scene' };
+    heroBackdrop = file;
+  }
 
-  // ── IMAGE COST (2026-08-09) ───────────────────────────────────────────────────────────────────
-  // Rasters are the single largest line item in a LOCAL build and were entirely unaccounted, which
-  // is why "what does a build cost?" could only be answered by estimating. Per-image, per-size rates
-  // are published and the image APIs return no charge, so this is DERIVED and labelled as such.
-  // Rates last checked 2026-08-09; if they drift, the receipt is wrong in a visible, fixable way
-  // rather than silently absent. An engine with no sourced rate is reported UNPRICED, never $0.
+  // Image cost is DERIVED (the image APIs return no charge); an engine/quality with no sourced rate is UNPRICED, never $0.
   const priced = priceImages(results.map((res) => {
     const r = res.value.rung;
-    return { id: r.id || r.kind, engine: r.kind === 'hero' ? engines.hero : engines.section, px: r.px };
+    return { id: r.id || r.kind, engine, px: r.px, quality: engine === GROK_MODEL ? 'n/a' : QUALITY };
   }));
   if (priced.unpriced) console.error(`[generate-image] cost: ${priced.unpriced} image(s) UNPRICED — no sourced rate for ${priced.unpricedEngines.join(', ')}`);
   fresh.visuals.cost = {
@@ -487,19 +475,21 @@ async function main() {
     unpriced: priced.unpriced,
     unpricedEngines: priced.unpricedEngines,
     images: results.length,
+    heroRasterSkipped: heroDecision.skip,
     perImage: priced.perImage,
     basis: priced.unpriced
       ? `UNPRICED: no sourced per-image rate for ${priced.unpricedEngines.join(', ')} — usd is null, not $0`
-      : 'derived from published per-image rates (the image APIs return no charge)',
+      : 'derived from published per-image rates at quality=high (the image APIs return no charge)',
     ratesCheckedAt: '2026-08-09',
+    ratedQuality: RATED_QUALITY,
   };
 
   fs.writeFileSync(buildJsonPath, JSON.stringify(fresh, null, 2) + '\n');
 
-  const files = results.map((res) => res.value.filePath);
+  const files = results.map((res) => res.value.filePath).concat(heroBackdrop ? [heroBackdrop] : []);
   succeed({
     engine,
-    quality: engine === GROK_MODEL ? 'n/a (Grok has no quality param; see px for the aspect_ratio/resolution tier used)' : QUALITY,
+    quality: qualityFor(engine),
     rungs: results.map((res) => ({ id: res.value.rung.id, kind: res.value.rung.kind, px: res.value.rung.px, file: res.value.filePath, http200: true })),
     files,
     slots: ['visuals.hero', 'visuals.sections'],

@@ -124,6 +124,9 @@ export function finalize(siteDir, host, secret) {
   const htmlPath = path.join(siteDir, 'index.html');
   let html = fs.readFileSync(htmlPath, 'utf8');
   fs.rmSync(pending, { force: true });
+  // The Ask section was lost (a later assemble-page rewrote index.html): say so instead of reporting an
+  // answer-writing box that is not on the page.
+  if (!html.includes(PLACEHOLDER) && !html.includes('id="ask"')) return { ask: 'lost', reason: 'index.html has no Ask section — re-run make-ask after the last assemble-page' };
   let token = null;
   try { if (secret && isHost(host)) token = signAskToken(host, secret); } catch { token = null; }
   if (token) { html = html.replace(PLACEHOLDER, token); fs.writeFileSync(htmlPath, html); return { ask: 'written-answers', host }; }

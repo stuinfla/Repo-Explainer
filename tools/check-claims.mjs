@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// tools/check-claims.mjs — ADVISORY check of the authored page against the repo's own KB (review 3.0.1 #5).
+// tools/check-claims.mjs — ADVISORY check of the authored page against the repo's own KB.
 //
-// The brain is asked for content.citations and a real getStarted.install, but nothing ever compared
-// them with the KB. This reports, without failing anything:
+// The brain is asked for content.citations and a real getStarted.install; this compares them with the KB
+// and reports, without failing anything:
 //   (a) citations whose passageId is not a passage in the KB (or that carry no passageId at all);
 //   (b) install / step commands that appear neither in entrypoints (install, quickstart, commands)
 //       nor anywhere in the README or passage text.
-// Pure functions + a tiny CLI. The CLI always exits 0 on a readable build: the result is a signal for
-// the grader / operator, never a gate.
+// Pure functions + a tiny CLI; `checkBuild(build.json path)` is the one call a station makes. It always
+// returns a result on a readable build: a signal for the grader / operator, never a gate.
 //
 //   node tools/check-claims.mjs <build.json> [--root <dir kb paths resolve against>] [--readme <file>]
 
@@ -102,7 +102,7 @@ export function checkClaims({ content, passages = [], ids = null, entrypoints = 
 }
 
 // ── loaders + CLI ──────────────────────────────────────────────────────────────────────────────
-export function readPassages(file) {
+function readPassageRecords(file) {
   try {
     return fs.readFileSync(file, 'utf8').split('\n').filter((l) => l.trim())
       .map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
@@ -122,7 +122,7 @@ export function checkBuild(buildJsonPath, { root = process.cwd(), readmePath = n
   }
   return checkClaims({
     content: build.content || {},
-    passages: readPassages(res(kb.passagesPath)),
+    passages: readPassageRecords(res(kb.passagesPath)),
     ids: readJson(res(kb.idsPath)),
     entrypoints: readJson(res(kb.entrypointsPath)),
     readme,

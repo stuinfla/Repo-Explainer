@@ -2,13 +2,13 @@
 // clone-repo.mjs — Station 0–1 (VALIDATE + CLONE).
 //
 // Validate that the target repo URL is reachable, then clone it into <build-dir>/repo. Supports
-// PUBLIC repos and PRIVATE / owner repos via a GitHub token supplied with the top-level
-// `git -c http.extraheader=...` option — which is process-scoped and is NEVER written into the
+// PUBLIC repos and PRIVATE / owner repos via a GitHub token (github.com ONLY) supplied through
+// GIT_CONFIG_COUNT/KEY_0/VALUE_0 environment variables (http.extraHeader) — process-scoped, off the command line, and is NEVER written into the
 // cloned repo's config (so no credentials are baked into the saved remote).
 //
 // Uniform tool convention (tools/CONTRACT.md §b): `node tools/clone-repo.mjs <build-dir>`.
 //   reads  : <build-dir>/build.json -> repo.url   (+ GITHUB_TOKEN / GH_TOKEN from env for private)
-//   writes : the `repo` slot (owner/name/slug/private/defaultBranch/clonePath/reachable) and the
+//   writes : the `repo` slot (owner/name/slug/private/defaultBranch/clonePath/sha/reachable) and the
 //            top-level buildId (set first, here); the working tree at <build-dir>/repo/
 //   stdout : exactly ONE JSON result object; all diagnostics go to stderr; exit 0 iff ok:true.
 //
@@ -46,15 +46,11 @@ function parseRepoUrl(raw) {
 }
 
 // ---------- git helpers (token never logged) ----------
-function runGit(args, { capture = true, timeout = 120000 } = {}) {
+function runGit(args, { capture = true, timeout = 120000, extraEnv = {} } = {}) {
   try {
     const out = execFileSync('git', args, {
-      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },   // never block on an interactive prompt
-      // Run from a NEUTRAL directory: if this tool is invoked from inside a git checkout (e.g. the
-      // CI runner's own actions/checkout tree, whose local config carries an AUTHORIZATION
-      // extraheader), git would inherit that repo's config and stack a second auth header —
-      // GitHub rejects it with `Duplicate header: "Authorization"` (hit live 2026-07-08). A
-      // neutral cwd also keeps the unauthenticated probe honestly unauthenticated.
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0', ...extraEnv },   // never block on an interactive prompt
+      // Neutral cwd: an inherited checkout's extraheader would duplicate Authorization.
       cwd: os.tmpdir(),
       stdio: ['ignore', capture ? 'pipe' : 2, 'pipe'],     // non-captured stdout -> our stderr (fd 2)
       timeout, maxBuffer: 32 * 1024 * 1024,
@@ -89,22 +85,31 @@ async function main() {
   if (!parsed) fail(`could not parse owner/name from repo.url "${url}" (expected https://host/owner/name or git@host:owner/name)`);
   const { host, owner, name, cloneUrl } = parsed;
 
-  // SOURCE-IDENTITY pin (INV-21): when the harness pins the submitted repo, build.json's repo.url
-  // must BE that repo — an agent that edits repo.url to a lookalike dies here, before any network.
-  // (Incident 2026-07-08: submitted mamd69/SONA-Trader, an agent swapped in Dar-41's repo.)
+  // SOURCE-IDENTITY pin (ADR-0007 / INV-21): repo.url must BE the submitted repo — a lookalike dies here.
   const pinned = (process.env.EXPLAINER_SUBMITTED_REPO || '').trim().toLowerCase();
+  // The pin is an owner/name on GitHub: a lookalike on ANOTHER host with the same owner/name is still a substitution.
+  if (pinned && host.toLowerCase() !== 'github.com') {
+    fail(`SOURCE-IDENTITY VIOLATION (INV-21): build.json repo.url is on host ${host} but this build was submitted for ${pinned} on github.com. The submitted repo is the only permitted source — never substitute a similar-looking repo.`);
+  }
   if (pinned && `${owner}/${name}`.toLowerCase() !== pinned) {
     fail(`SOURCE-IDENTITY VIOLATION (INV-21): build.json repo.url is ${owner}/${name} but this build was submitted for ${pinned}. The submitted repo is the only permitted source — never substitute a similar-looking repo.`);
   }
 
-  const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
-  const base = `https://${host}/`;
-  const authArgs = token
-    ? ['-c', `http.${base}.extraheader=AUTHORIZATION: basic ${Buffer.from(`x-access-token:${token}`).toString('base64')}`]
-    : [];
+  // The token is a GitHub credential: it is attached ONLY when the host is exactly github.com. Any other host
+  // is cloned unauthenticated (a hostile repo.url must never receive it). It travels in the environment
+  // (GIT_CONFIG_COUNT/KEY/VALUE), never on the command line, so it does not show up in `ps`.
+  const token = host.toLowerCase() === 'github.com' ? (process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '').trim() : '';
+  if (!token && (process.env.GITHUB_TOKEN || process.env.GH_TOKEN) && host.toLowerCase() !== 'github.com') {
+    console.error(`[clone-repo] host ${host} is not github.com — GitHub token NOT sent; cloning unauthenticated`);
+  }
+  const authEnv = token ? {
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',
+    GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${Buffer.from(`x-access-token:${token}`).toString('base64')}`,
+  } : {};
   // Probe args neutralise any ambient credential helper so "public vs private" is an HONEST signal.
   const noAuthProbe = ['-c', 'credential.helper=', 'ls-remote', '--symref', cloneUrl, 'HEAD'];
-  const authProbe = [...authArgs, '-c', 'credential.helper=', 'ls-remote', '--symref', cloneUrl, 'HEAD'];
+  const authProbe = ['-c', 'credential.helper=', 'ls-remote', '--symref', cloneUrl, 'HEAD'];
 
   // ---- Station 0: reachability + public/private detection ----
   console.error(`[clone-repo] probing ${owner}/${name} on ${host} (unauthenticated)`);
@@ -116,7 +121,7 @@ async function main() {
     symref = pub.stdout;
   } else if (token) {
     console.error('[clone-repo] unauthenticated probe failed — retrying with token');
-    const prv = runGit(authProbe);
+    const prv = runGit(authProbe, { extraEnv: authEnv });
     if (!prv.ok) fail(`repo not reachable even with a token: ${owner}/${name} — check the URL and that the token can access it (git: ${prv.stderr || `exit ${prv.code}`})`);
     isPrivate = true;
     symref = prv.stdout;
@@ -130,11 +135,10 @@ async function main() {
   catch (e) { fail(`could not clear prior clone at ${dest}: ${e.message}`); }
   fs.mkdirSync(buildDirAbs, { recursive: true });
 
-  // Top-level `git -c ...` (BEFORE the `clone` subcommand) applies the auth header to THIS process
-  // only; it is NOT persisted into <dest>/.git/config, so the saved remote stays credential-free.
-  const cloneArgs = [...authArgs, 'clone', '--depth', '1', '--no-tags', '--single-branch', cloneUrl, dest];
+  // The env-supplied header applies to THIS process only; it is NOT persisted into <dest>/.git/config, so the saved remote stays credential-free.
+  const cloneArgs = ['clone', '--depth', '1', '--no-tags', '--single-branch', cloneUrl, dest];
   console.error(`[clone-repo] cloning ${cloneUrl} -> ${dest} (private=${isPrivate})`);
-  const cloned = runGit(cloneArgs, { capture: false, timeout: 600000 });
+  const cloned = runGit(cloneArgs, { capture: false, timeout: 600000, extraEnv: authEnv });
   if (!cloned.ok) fail(`git clone failed for ${owner}/${name}: ${cloned.stderr || `exit ${cloned.code}`}`);
 
   // Guard: never bake creds into the saved remote (defence-in-depth on the §1 invariant).
@@ -153,14 +157,10 @@ async function main() {
   }
   if (!defaultBranch) fail('cloned successfully but could not determine the default branch');
 
-  // The PERSON behind the handle (owner ask 2026-07-09: "give the person who wrote it props —
-  // not just the company"). Public profile fields only; best-effort — a profile fetch failure
-  // never blocks a clone. Downstream: assemble-page credits the human by real name, and the
-  // brain sees author context when writing the page.
+  // Public author profile, best-effort, for page credits.
   let author = null;
   if (host === 'github.com') {
     try {
-      const token = (process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '').trim();
       const headers = { Accept: 'application/vnd.github+json', 'User-Agent': 'explainmyrepo' };
       if (token) headers.Authorization = `Bearer ${token}`;
       const r = await fetch(`https://api.github.com/users/${owner}`, { headers });
@@ -181,6 +181,9 @@ async function main() {
     } catch { /* best-effort */ }
   }
 
+  const head = runGit(['-C', dest, 'rev-parse', 'HEAD']);
+  const sha = head.ok ? head.stdout.trim() || null : null;
+
   // ---- merge ONLY the repo slot (+ buildId, set first here) ----
   const repoSlot = {
     url,
@@ -190,6 +193,7 @@ async function main() {
     private: isPrivate,
     defaultBranch,
     clonePath: dest,
+    sha,
     reachable: true,
     author,
   };

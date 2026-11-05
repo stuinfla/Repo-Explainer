@@ -19,9 +19,8 @@
 //   brand.favicon slot  { set:[…png/ico…], appleTouchIcon:"apple-touch-icon.png", derivedFromHero:true }
 //   <build-dir>/assets/ favicon-16/32/48/192/512.png · apple-touch-icon.png (180) · favicon.ico (16/32/48)
 //
-// Mechanics: shells out to ImageMagick (`magick`, v7 — `convert` v6 fallback), matching the kb/
-// engine's system-binary style (kb/make-dropin.mjs → `zip`). ImageMagick is required because it is
-// the tool that writes multi-resolution .ico natively. No npm install.
+// Mechanics: shells out to ImageMagick (`magick`, v7 — `convert` v6 fallback), because it is the tool that
+// writes multi-resolution .ico natively. No npm install.
 //
 // Idempotent: re-running overwrites these files + the brand.favicon slot; it never appends.
 
@@ -77,7 +76,7 @@ function resolveHero(buildDir, ctx) {
   return p;
 }
 
-// Re-read fresh and merge only brand.favicon, to minimise the window vs the parallel make-social-card.
+// Re-read fresh and merge only brand.favicon (make-social-card may write build.json around the same time).
 function mergeFavicon(buildDir, slot) {
   const bj = path.join(buildDir, 'build.json');
   const ctx = JSON.parse(fs.readFileSync(bj, 'utf8'));

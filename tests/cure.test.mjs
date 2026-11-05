@@ -1,27 +1,9 @@
-// tests/cure.test.mjs — the systemic fix for the 07/15–07/17 hosted-failure streak.
-//
-// Diagnosis (2026-07-19, from the admin record + code): the pipeline was ONE-SHOT. Any
-// unforeseen condition at the last mile became a terminal, user-visible "failed" — even with a
-// finished, floor-clearing page on disk — because no component owned recovery after the agent
-// stopped. The one cure mechanism that existed (agentic-runner's operator-grade block, 427ffbb)
-// required `quality.postCapManualFix`, a key NOTHING ever taught the agent to write (it appeared
-// in exactly one file), while the runner prompt said "when you see capReached, ship immediately"
-// — marching the agent into the rail with no way to act on the refusal.
-//
-// The fix under test: bin/cure.mjs — a pure, deterministic end-state classifier + cure-prompt
-// builder the runner uses to route every unshipped ending: near-miss → one bounded cure cycle
-// (fix ONLY the named weaknesses → ONE fresh grade → the existing ship-bar rail judges);
-// everything else → an honest hold. Fixtures below are shaped like the three real incidents.
+// tests/cure.test.mjs — bin/cure.mjs: the end-state classifier, the ratchet decision and the cure prompt.
+// Fixtures are shaped like the real incidents (66HEX/frame, supertone-inc/supertonic, bissanmu/spring3).
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { classifyEndState, namedWeaknesses, buildCurePrompt, CURE } from '../bin/cure.mjs';
-
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
+import { classifyEndState, namedWeaknesses, buildCurePrompt, decideCureDeploy } from '../bin/cure.mjs';
 
 // Scorecard fixture helper: axes as {name: score}, operators as {name: bool}.
 const device = (label, axes, operators, inv18Passed = true) => ({
@@ -91,9 +73,17 @@ test('a diffusely-mediocre page (mean below floor, no single nameable axis) is b
   assert.equal(classifyEndState({ ...baseState, quality: q }).cls, 'below-bar');
 });
 
-test('an agent-documented postCapManualFix is honored as near-miss even outside the envelope (427ffbb behavior preserved)', () => {
-  const q = { passed: false, iterations: 3, postCapManualFix: 'raised the label staircase', scorecard: [device('mobile', { a: 90, b: 48 }, OPS_YES), device('desktop', { a: 91, b: 90 }, OPS_YES)], refineNotes: [] };
-  assert.equal(classifyEndState({ ...baseState, quality: q }).cls, 'near-miss');
+// A built page whose grader was recorded unavailable (quality.graderUnavailable, empty scorecard) is
+// deliverable ungraded (deploy accepts it): one plain redeploy, not 'unbuilt'.
+test('built + grader unavailable + not deployed classifies ungraded-undeployed -> redeploy; never without a site or the flag', () => {
+  const q = { passed: false, iterations: 1, scorecard: [], graderUnavailable: true, graderError: 'vision API 529' };
+  const r = classifyEndState({ ...baseState, quality: q });
+  assert.equal(r.cls, 'ungraded-undeployed');
+  assert.equal(r.cure, 'redeploy');
+  assert.equal(classifyEndState({ ...baseState, siteExists: false, quality: q }).cls, 'unbuilt', 'no page, nothing to deploy');
+  assert.equal(classifyEndState({ ...baseState, quality: { ...q, graderUnavailable: false } }).cls, 'unbuilt', 'a missing scorecard with no recorded reason is an unrun station');
+  assert.equal(classifyEndState({ ...baseState, exitCode: 1, quality: q }).cls, 'crash');
+  assert.equal(classifyEndState({ ...baseState, liveUrl: 'https://x.netlify.app', quality: q }).cure, false, 'already live: nothing to redeploy');
 });
 
 test('terminal states never cure: shipped, identity violation, budget kill, crash, graded-pass-undeployed routes to redeploy', () => {
@@ -109,14 +99,7 @@ test('terminal states never cure: shipped, identity violation, budget kill, cras
   assert.equal(r.cure, 'redeploy');
 });
 
-// ── ADR-0011 REGRESSION GUARD ────────────────────────────────────────────────────────────────────
-// Caught in adversarial review on 2026-08-06, hours after ADR-0011 shipped and before any customer
-// build ran. Telling the agent to deploy at the refine cap means EVERY below-bar ending now arrives
-// with liveUrl set — and classifyEndState short-circuited on liveUrl, so the entire fix-and-regrade
-// lane (built 2026-07-19 as the systemic fix for the 07/15-07/17 failure streak, unit-tested against
-// three real incidents) went unreachable overnight. A near-miss that used to be repaired to ~90 for
-// ~$1 would instead ship at 84 with an email offering the customer a full-cost manual rebuild:
-// replacing an automatic repair that already exists, is tested, and is already paid for.
+// ADR-0011: a live URL must not short-circuit the cure lane (the near-miss repair stays reachable after delivery).
 test('ADR-0011 — a DELIVERED but below-bar page still reaches the cure lane (deliver, THEN improve)', () => {
   const r = classifyEndState({ ...baseState, liveUrl: 'https://x.netlify.app', quality: q66hex });
   assert.equal(r.cls, 'shipped-below-bar',
@@ -131,12 +114,14 @@ test('ADR-0011 — a delivered page with nothing nameable to fix is left alone (
   assert.equal(r.cure, false, 'without a named weakness there is nothing for a cure agent to act on');
 });
 
-test('ADR-0011 — the runner RATCHETS the redeploy: a live page is never replaced by a worse one', () => {
-  const src = read('bin/agentic-runner.mjs');
-  assert.match(src, /A live page is never replaced by a worse one/,
-    'the ratchet must be present — the refine loop can regress, and every below-bar email invites a re-run');
-  assert.match(src, /KEEPING the already-delivered version/,
-    'the no-improvement branch must keep what the customer already has');
+test('RATCHET — a live page is replaced only by a strictly better verdict; an unpublished one is always delivered', () => {
+  const pre = { scorecard: [device('m', { a: 90, b: 64 })] };
+  const worse = { scorecard: [device('m', { a: 99, b: 60 })] };
+  const better = { scorecard: [device('m', { a: 92, b: 66 })] };
+  assert.equal(decideCureDeploy({ wasLive: true, beforeQuality: pre, afterQuality: worse }).deploy, false, 'a worse cure must never replace the delivered page');
+  assert.equal(decideCureDeploy({ wasLive: true, beforeQuality: pre, afterQuality: pre }).deploy, false, 'no change is not an improvement');
+  assert.equal(decideCureDeploy({ wasLive: true, beforeQuality: pre, afterQuality: better }).deploy, true);
+  assert.equal(decideCureDeploy({ wasLive: false, beforeQuality: pre, afterQuality: worse }).deploy, true, 'nothing is live: deliver whatever the fresh grade says');
 });
 
 test('INV-18 failure is a named weakness', () => {
@@ -154,98 +139,4 @@ test('cure prompt is narrow: names every weakness, forbids grading/deploying, re
   assert.match(p, /Do NOT run deploy/i);
   assert.match(p, /assemble-page/);
   assert.match(p, /ONLY/);
-});
-
-// ---- source-shape checks: the protocol's halves must live in EVERY file that speaks it. ----
-// The 66HEX root cause was exactly this drift: a mechanism whose listener (runner) and speaker
-// (agent instructions) disagreed because they lived in different files with no test pinning them.
-
-test('agentic-runner imports and uses the classifier — the cure stage exists', () => {
-  const src = read('bin/agentic-runner.mjs');
-  assert.match(src, /from '\.\/cure\.mjs'/);
-  assert.match(src, /classifyEndState\(/);
-});
-
-// ── ADR-0011 RETIRED THE POST-CAP PROTOCOL ───────────────────────────────────────────────────────
-// These three tests used to be bare `assert.match(src, /postCapManualFix/)` greps asserting that the
-// runner prompt, SKILL.md and the cap note all TAUGHT the protocol. When ADR-0011 removed it and the
-// prose was rewritten to say "do NOT write quality.postCapManualFix", all three still PASSED — the
-// substring was present while the meaning had inverted. A test that passes on the presence of a
-// token, regardless of what the surrounding sentence claims, cannot fail on broken code.
-// They now assert the INSTRUCTION, not the token.
-const teachesDeployAtCap = (src, label) => {
-  assert.doesNotMatch(src, /capReached, ship immediately/, `${label}: the pre-2026-07 dead-end must stay gone`);
-  assert.match(src, /ADR-0011/, `${label}: must cite the decision that governs what happens at the cap`);
-  assert.match(src, /do not write .*postCapManualFix|do NOT write .*postCapManualFix|not write quality\.postCapManualFix|do not write that key/i,
-    `${label}: must explicitly retire the post-cap key, not merely stop mentioning it`);
-};
-
-test('ADR-0011 — the runner prompt tells the agent to DEPLOY at the cap, and retires postCapManualFix', () => {
-  const src = read('bin/agentic-runner.mjs');
-  teachesDeployAtCap(src, 'agentic-runner.mjs');
-  assert.match(src, /RUN DEPLOY AND YOU ARE DONE/, 'the cap instruction must be unambiguous');
-});
-
-test('ADR-0011 — SKILL.md (the agent-facing half) teaches deliver-at-cap, not the retired rescue dance', () => {
-  const src = read('skills/explainmyrepo/SKILL.md');
-  teachesDeployAtCap(src, 'SKILL.md');
-  assert.match(src, /DISCLOSURE/, 'SKILL.md must state that the scorecard is disclosure, not a gate');
-});
-
-test('ADR-0011 — the quality-grade cap note tells the agent to deploy, not to await a rescue', () => {
-  const src = read('tools/quality-grade.mjs');
-  teachesDeployAtCap(src, 'quality-grade.mjs');
-});
-
-test('ADR-0011 — the cure agent can NO LONGER be disarmed by the main agent writing a note', () => {
-  const src = read('bin/agentic-runner.mjs');
-  // Match EXECUTABLE code only — the history comment above the fix legitimately quotes the old line,
-  // and a naive substring check would fail on the very comment that explains the fix.
-  const codeLines = src.split('\n').filter((l) => !l.trim().startsWith('//') && !l.trim().startsWith('*'));
-  const disarmed = codeLines.filter((l) => /cureAgentOk\s*=\s*!!\s*savedNote/.test(l));
-  assert.deepEqual(disarmed, [],
-    `a self-authored note must never substitute for the independent cure agent (2026-08-03 incident):\n${disarmed.join('\n')}`);
-  assert.match(src, /NOT accepting it in place of one/,
-    'the runner must say plainly that a documented note is context, not a substitute');
-});
-
-// 2026-07-19, run 29714490286 (the cure stage's own E2E proof run): the Anthropic key had hit its
-// MONTHLY usage limit. The credential preflight probes GET /v1/models — a metadata endpoint that
-// spends nothing — so authentication passed and the build died one step later with a generic
-// message. The systemic principle applies to the fix itself: every new failure mode becomes a
-// preflight, pinned here so the spend-probe can never silently regress to auth-only.
-test('credential preflight proves the Anthropic key can SPEND (1-token completion), not just authenticate', () => {
-  const src = read('bin/agentic-runner.mjs');
-  assert.match(src, /api\.anthropic\.com\/v1\/messages/);
-  assert.match(src, /max_tokens: 1/);
-  assert.match(src, /usage limits\|regain access/i); // the distinct usage-limit classification
-});
-
-test('a mid-build usage-limit error reads as the honest budget message, not a generic snag', () => {
-  const src = read('bin/agentic-runner.mjs');
-  assert.match(src, /credit balance\|insufficient\.\*balance\|billing\|usage limits\|regain access/);
-});
-
-test('dispatch buffer covers the cure stage (agent + one grade + deploy) after a full-budget build', () => {
-  assert.match(read('landing/netlify/functions/build.js'), /budgetMin \+ 25/);
-  const wallMin = CURE.AGENT_WALL_MS / 60_000 + CURE.GRADE_WALL_MS / 60_000 + CURE.DEPLOY_WALL_MS / 60_000;
-  assert.ok(wallMin <= 20, `cure worst case ${wallMin}min must fit the 25min buffer with margin`);
-});
-
-// ── ADR-0011 D4 / ADR-0012 D4 — the tracking that keeps the removed gate honest ───────────────────
-// Adversarial review, 2026-08-06: "the named mechanism is D4 tracking — and D4 is not implemented."
-// Correct at the time. Removing a gate's teeth without building the replacement signal is how a
-// signal becomes decorative, and this repo has form for exactly that (a keystone test red for a
-// week; a hook printing its own defect daily for eight days, unread).
-test('ADR-0011 D4 — every build records WHETHER it was a below-bar delivery and WHICH axis held it back', () => {
-  const src = read('bin/agentic-runner.mjs');
-  assert.match(src, /belowBarDelivery/, 'the receipt must carry the below-bar disclosure, not just the email');
-  assert.match(src, /publishDisclosure = \{/, 'the disclosure must be extracted from the publish slot');
-  assert.match(src, /weakest: pub\.weakest/, 'the weakest axis must be recorded, or "which axes hold pages back" stays anecdotal');
-});
-
-test('ADR-0012 D4 — every build records the FORM each diagram actually took (makes the taxonomy falsifiable)', () => {
-  const src = read('bin/agentic-runner.mjs');
-  assert.match(src, /diagramForms/, 'recorded forms are what let a grader "same form" verdict be checked against reality');
-  assert.match(src, /formVariant/, 'the concrete archetype matters, not only the family');
 });

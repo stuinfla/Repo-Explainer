@@ -1,9 +1,4 @@
-// tests/review-a-brief.test.mjs — review 3.0.1 findings #1 (grounding brief) and #7 (image prompt).
-//
-// #1: gatherBrief used the first ~20 passages in FILE order and never the README, so on helix the
-//     writer saw ADR-001 x13 + loop ledgers (and, on the rebuilt store, AGENTS.md/CLAUDE.md).
-// #7: the visual-brief prompt banned people / notebooks / sticky notes, then asked for "someone using
-//     this" and held up binders + a handwritten sticky note as the best example.
+// tests/review-a-brief.test.mjs — the grounding brief (#1: README-first, no agent boilerplate) and the image prompt (#7: no self-contradiction).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -12,7 +7,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const { gatherBrief, authorVisualBrief } = await import('../src/brain.mjs');
+const { gatherBrief, authorVisualBrief, authorContent, READER_STANDARD } = await import('../src/brain.mjs');
+const { DEFAULT_MODEL } = await import('../src/claude.mjs');
 const idsIn = (brief) => new Set([...brief.matchAll(/^• \[([^\]]+)\]/gm)].map((m) => m[1]));
 
 test('#1 — boilerplate-first store: brief carries README head + README passages, no agent boilerplate', () => {
@@ -43,17 +39,18 @@ test('#1 — boilerplate-first store: brief carries README head + README passage
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('#1 — real committed helix store: README sampled, no single file dominates', () => {
-  const rel = 'kb/stores/helix/helix-kb.passages.jsonl';
-  const recs = fs.readFileSync(path.join(REPO, rel), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l));
-  const byId = new Map(recs.map((r) => [String(r.id), r]));
-  const ids = [...idsIn(gatherBrief({ kb: { passagesPath: rel } }, REPO))];
-  const paths = ids.map((i) => byId.get(i)?.path);
-  assert.ok(ids.length >= 15, `expected a full sample, got ${ids.length}`);
-  assert.ok(paths.includes('README.md'), `README.md must be in the sample; got ${[...new Set(paths)].join(', ')}`);
-  assert.ok(!paths.some((p) => /(^|\/)(AGENTS|CLAUDE)\.md$|STATUS\.md$/.test(p)), 'no agent boilerplate or loop ledgers');
-  const counts = paths.reduce((m, p) => m.set(p, (m.get(p) || 0) + 1), new Map());
-  assert.ok(Math.max(...counts.values()) <= 3, `no file may exceed 3 passages: ${JSON.stringify([...counts])}`);
+test('#1 — tier 0: under budget pressure the README outranks 25 earlier docs', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'review-a-tier0-'));
+  try {
+    const lines = [];
+    // 25 docs x 600-char snippets overfill the 12k budget on their own and sit BEFORE the README in file order.
+    for (let i = 0; i < 25; i++) lines.push(JSON.stringify({ id: `d${i}`, path: `docs/guide${i}.md`, kind: 'doc', source_type: 'doc', text: `A guide to widgetco, part ${i}. `.repeat(30) }));
+    lines.push(JSON.stringify({ id: 'readme', path: 'README.md', kind: 'doc', source_type: 'doc', text: 'WIDGETCO turns receipts into budgets. '.repeat(20) }));
+    fs.writeFileSync(path.join(dir, 'p.jsonl'), lines.join('\n') + '\n');
+    const ids = idsIn(gatherBrief({ kb: { passagesPath: 'p.jsonl' } }, dir));
+    assert.ok(ids.has('readme'), 'without the README tier rule it sorts last among docs and the budget drops it');
+    assert.equal(ids.size, 20, '12000 chars / 600 per snippet = exactly 20 passages fit');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 test('#7 — the visual-brief prompt no longer contradicts its own people/props ban', async () => {
@@ -65,7 +62,7 @@ test('#7 — the visual-brief prompt no longer contradicts its own people/props 
     return { ok: true, json: async () => ({ content: [{ type: 'text', text: JSON.stringify(reply) }], stop_reason: 'end_turn', usage: {} }) };
   };
   try {
-    await authorVisualBrief({ _env: { EXPLAINMYREPO_BRAIN: 'api' }, repo: { name: 'fixture' } }, { apiKey: 'test-key', model: 'claude-sonnet-5-5' });
+    await authorVisualBrief({ _env: { EXPLAINMYREPO_BRAIN: 'api' }, repo: { name: 'fixture' } }, { apiKey: 'test-key', model: DEFAULT_MODEL });
   } finally { globalThis.fetch = realFetch; }
   const prompt = `${sent.system}\n${sent.messages[0].content}`;
   assert.match(prompt, /NO ROOMS, NO PROPS, NO PEOPLE/, 'the ban itself must survive');
@@ -74,4 +71,21 @@ test('#7 — the visual-brief prompt no longer contradicts its own people/props 
   assert.doesNotMatch(prompt, /binders|handwritten/i, 'must not hold up banned props as the model to copy');
   const sticky = prompt.match(/sticky note/gi) || [];
   assert.equal(sticky.length, 1, 'sticky notes may appear only in the ban list');
+});
+
+test('two doors — the real authorContent request carries READER_STANDARD verbatim', async () => {
+  const realFetch = globalThis.fetch;
+  let sent;
+  const section = (extra = {}) => ({ title: 't', ...extra });
+  const reply = { sections: { hero: { headline: 'h', lede: 'l' }, problem: section(), whatItIs: section(), insight: section({ oh: 'o' }), howItWorks: section(), useCases: section({ cases: [] }), getStarted: section({ steps: [] }), pack: section() } };
+  globalThis.fetch = async (_url, init) => {
+    sent = JSON.parse(init.body);
+    return { ok: true, json: async () => ({ content: [{ type: 'text', text: JSON.stringify(reply) }], stop_reason: 'end_turn', usage: {} }) };
+  };
+  try {
+    await authorContent({ _env: { EXPLAINMYREPO_BRAIN: 'api' }, repo: { name: 'fixture' } }, { apiKey: 'test-key', model: DEFAULT_MODEL });
+  } finally { globalThis.fetch = realFetch; }
+  assert.ok(READER_STANDARD.length > 800 && /FIFTEEN-YEAR-OLD/.test(READER_STANDARD), 'the block is the real reader standard');
+  assert.ok(sent.system.includes(READER_STANDARD), 'authorContent must put READER_STANDARD, word for word, in the system prompt');
+  assert.match(sent.system, /INV-24/, 'and the gate that enforces it is named');
 });
