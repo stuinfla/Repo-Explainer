@@ -3,8 +3,22 @@
 Status: Accepted + Implemented (station, CLI, ledger, tests). **Response rates are not yet known** —
 the tracking exists to find out; no claim is made that this works until it has been measured.
 Date: 2026-10-10
+Updated: 2026-11-05
 Amends: ADR-0005 (Station 8b readme-enhance)
 Builds on: ADR-0014 (the diagrams it sends are the per-repo story diagrams)
+
+> **Follow-up rule (3.0.1, 2026-11-05) — verified against code.**
+> - **One check-in, 7 days later, run by the owner.** Nothing schedules it: `explainmyrepo outreach followup` posts at most one short note per issue,
+>   `OUTREACH_FOLLOWUP_DAYS` (default 7) after our last contact, and stays silent if they replied or closed it
+>   (`src/outreach-followup.mjs`).
+> - **A maintainer email is drafted for the OWNER only.** `tools/readme-enhance.mjs` sends the owner a review copy
+>   with a draft addressed to a public commit address, marked NOT sent; nothing is ever mailed to the maintainer.
+>   (Decision 4, "never email", therefore still holds for the maintainer.)
+> - **Issue first, on by default.** The station opens an issue; the PR comes through
+>   `outreach open-pr <owner/name>`, which requires an issue already on record for that repo
+>   (`src/outreach-cli.mjs`), or only when the operator sets `README_OUTREACH=pr` explicitly. One contact per repo, a daily cap of 5, additions only, every send in the ledger.
+> - **Door.** `readme-enhance` is `doors: ['local']` in `src/stations.mjs`: the hosted agent never runs it
+>   (it has no GitHub write token and the hosted brief does not mention the station).
 
 ## Context
 

@@ -1,7 +1,7 @@
 # DDD — The Alive Kit domain (companion artifacts)
 
 **Paired ADR:** [ADR-0009](../adr/0009-alive-kit-local-companions.md)
-**Status**: Accepted · **Date**: 2026-07-17 · **Updated**: 2026-07-17
+**Status**: Accepted · **Date**: 2026-07-17 · **Updated**: 2026-11-05
 
 ## Bounded contexts
 
@@ -41,24 +41,24 @@ Capability {
 }
 ```
 
-**Invariants** (numbered continuing the core DDD's INV series, which ends at INV-23). Three are
+**Invariants** (numbered INV-29 to INV-33; renumbered on 2026-11-05 because the old INV-24 clashed with the ReadsAtFifteen gate, old to new: 24 to 29, 25 to 30, 26 to 31, 27 to 32, 28 to 33). Three are
 mechanically enforced; two are conventions with a named human enforcement point — the doc set is
 honest about which is which (the ADR's Consequences section says registry upkeep is a
 discipline; these labels agree with it):
 
-- **INV-24** `advertised ⇒ status == verified` — MECHANICAL: the CLI renders availability only
+- **INV-29** `advertised ⇒ status == verified` — MECHANICAL: the CLI renders availability only
   from the registry (`bin/explainmyrepo.mjs`), so there is no second list to drift; the registry
   schema itself is checked by `tests/capabilities-registry.test.mjs`.
-- **INV-25** `status == verified ⇒ receipts + verifiedAt present, entry exists` — MECHANICAL:
+- **INV-30** `status == verified ⇒ receipts + verifiedAt present, entry exists` — MECHANICAL:
   `tests/capabilities-registry.test.mjs` fails the suite on violation, so a receipt-less
   promotion cannot land through a green build. Promotion and receipts land in the same commit.
-- **INV-26** **hosted context never loads a companion** — MECHANICAL: every companion entry tool
+- **INV-31** **hosted context never loads a companion** — MECHANICAL: every companion entry tool
   exits at startup when `CI`/`GITHUB_ACTIONS` is set, and the hosted runner has no invoking
   code path.
-- **INV-27** **companions are fail-open** — CONVENTION, enforced by placement: no companion is
+- **INV-32** **companions are fail-open** — CONVENTION, enforced by placement: no companion is
   wired between GRADE and SHIP, so a companion's non-zero exit cannot change the page, the
   verdict, or the deploy. Guarded at review time whenever the pipeline's station map changes.
-- **INV-28** **read-only consumption** — CONVENTION, enforced at code review of each companion
+- **INV-33** **read-only consumption** — CONVENTION, enforced at code review of each companion
   tool: a companion never mutates BuildArtifacts; outputs are additive (`trailer-project/`,
   `renders/`, `deck/`). Current tools honor it (`make-trailer.mjs` copies assets out and writes
   only its own project dir).

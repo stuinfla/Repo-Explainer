@@ -1,8 +1,14 @@
 # Repo Explainer (Recipe) — Domain-Driven Design Model
 
-**Version:** 1.2.0
+> **HISTORICAL (2026-11-05).** This is the original domain model from June 2026 and is kept for its reasoning.
+> It is **not** a description of the current code: it predates the single station table (`src/stations.mjs`),
+> the two doors, the SHIP/EXEMPLARY tiers and the advising gate (ADR-0011), `make-pack` replacing
+> `make-dropin`, and the Ask box (ADR-0016). For what the tools read and write today, use
+> `tools/CONTRACT.md`; for the stations, `src/stations.mjs`; for the decisions since, `docs/adr/`.
+
+**Version:** 1.2.1
 **Created:** 2026-06-28
-**Updated:** 2026-06-29 (v1.2.0 — quality-bar reconciliation + implementation-experience, owner-signed:
+**Updated:** 2026-11-05 (v1.2.1 — historical banner, superseded invariants marked inline); 2026-06-29 (v1.2.0 — quality-bar reconciliation + implementation-experience, owner-signed:
 the ≥95-on-every-axis floor → the exemplar-anchored bar `meanScore` ≥ 90 AND `headlineScore` (MIN) ≥ 85;
 a new five-question binary **operator qualitative gate** (the owner's words, all must be YES); a new
 scored axis **A6 Implementation-confidence**; invariants **INV-18 ArchitectureAndFlowRequired** + **INV-19
@@ -405,7 +411,7 @@ ArtDirectionBrief {
   metaphor:       VisualMetaphor      // e.g. "prism" (PhotonLayer), "evidence dossier" (ruvn)
   palette:        Palette             // colours chosen to fit the metaphor
   typePersonality:TypePersonality     // type that carries the metaphor's voice
-  layoutRhythm:   SectionArchetype[]  // ordered archetypes → the page's cadence
+  layoutRhythm:   SectionArchetype[]  // (removed from the code; no longer authored or read)
   heroConcept:    HeroConcept         // the single emotional opening image idea
   copyVoice:      CopyVoice           // tone/register for all authored text
 }
@@ -585,7 +591,7 @@ checkpoint cue is satisfied with positive evidence (fail loud, never silent — 
 | # | State (Station) | Checkpoint cue (loud postcondition) |
 |---|---|---|
 | 0 | `Validating` | URL parsed; TargetRepo reachable (incl. private/own, authenticated) — or stop with a clear reason. |
-| 1 | `Understanding` | `kb/build-kb.mjs` wrote the canonical `<slug>-kb.rvf` (explicit `embed` block set — not `.small.rvf`); it answers "what is this repo?" correctly; repo named correctly; the three structured JSONs (`-symbols.json` / `-dep-graph.json` / `-entrypoints.json`) exist; **the authored `<slug>-primer.md` exists** (without it the S6 pack builder hard-fails at its line-79 `must()`). |
+| 1 | `Understanding` | `kb/build-kb.mjs` wrote the canonical `<slug>-kb.rvf` (a target must carry an `embed` block; the `.small.rvf` suffix no longer exists); it answers "what is this repo?" correctly; repo named correctly; the three structured JSONs (`-symbols.json` / `-dep-graph.json` / `-entrypoints.json`) exist; **the authored `<slug>-primer.md` exists** (it is the for-humans half of the pack). |
 | 2 | `Conceiving` | `ArtDirectionBrief` is specific to THIS repo; the metaphor fits. |
 | 3 | `Authoring` | All arc questions answered; zero placeholder text; every claim traceable to a KB passage. |
 | 4 | `Visualizing` | Every raster rung valid + HTTP 200 (gpt-image-2, the verified primary); every structural rung valid SVG (ascii-to-svg, xmllint-clean); each answers its arc question at the right altitude. |
@@ -803,13 +809,13 @@ These hold for every Build. The aggregate (§7) or a context boundary enforces e
 
 - **INV-01 — Build isolation.** Each Build is self-contained with its own per-build deploy target;
   Builds never share mutable state.
-- **INV-02 — Responsive-great-verified.** A Build passes only with both viewports (390 + 1440)
+- **INV-02 — Responsive-great-verified.** *(Both viewports are still graded; the bar is now the two tiers in ADR-0011.)* A Build passes only with both viewports (390 + 1440)
   clearing the bar (mean ≥ 90, min ≥ 85, five operator YES) on real screenshots.
 - **INV-03 — Quarantine of long-async/optional steps.** Studio (or any optional long-async step)
   is quarantined and optional; it NEVER blocks or sinks the core (StudioQuarantine).
 - **INV-04 — Never fail silently.** Every station has a loud postcondition (its checkpoint cue);
   any failure surfaces inline AND by email. A station that advances without evidence is a defect.
-- **INV-05 — Never ship below the exemplar bar.** The completion criterion (owner-signed 2026-06-29):
+- **INV-05 — Never ship below the exemplar bar.** *(SUPERSEDED, ADR-0011: the gate advises. Below-bar pages ship with disclosure; ship tier is mean 82 / min 70 with five ship operators, exemplary is mean 90 / min 85 with all six. Deploy refuses only on integrity.)* The completion criterion (owner-signed 2026-06-29):
   on BOTH devices, `meanScore` ≥ 90 AND `headlineScore` (MIN of the eleven A1–A6/B1–B5 axes) ≥ 85 AND
   all five `operatorQuestions` true. Anchored to the owner's own example sites (~88 headline / ~92 mean);
   a literal "95 on every axis" is unreachable by an honest grader and would reject those exemplars. The
@@ -821,8 +827,8 @@ These hold for every Build. The aggregate (§7) or a context boundary enforces e
   for-AI half (`.rvf` + `.passages.jsonl` + `.ids.json` + the three structured indexes
   `<slug>-symbols.json` / `<slug>-dep-graph.json` / `<slug>-entrypoints.json` so all four MCP tools
   return data, + `ask-kb.mjs` + `kb-mcp-server.mjs`) AND the for-humans half (the authored
-  `<slug>-primer.md`) — built by the **studio-less** variant of `kb/make-dropin.mjs` (§6.5).
-- **INV-08 — One-source-of-truth.** All three adapters call the identical Brain/Skill; no adapter
+  `<slug>-primer.md`) — built by `tools/make-pack.mjs` *(was `kb/make-dropin.mjs`, deleted)*.
+- **INV-08 — One-source-of-truth.** *(SUPERSEDED: two brains, held in step by tests, `tests/two-doors-conform.test.mjs`. The local door authors through `src/brain.mjs`, the hosted door follows `skills/explainmyrepo/SKILL.md`.)* All three adapters call the identical Brain/Skill; no adapter
   contains explainer logic of its own.
 - **INV-09 — Brain/Tools split.** Tools are pure, receive only their args, return
   `{ ok | loud failure }`, and never read the `BuildContext` or another tool's files.
@@ -838,13 +844,13 @@ These hold for every Build. The aggregate (§7) or a context boundary enforces e
 - **INV-14 — ShipsSocialCard.** Every Page ships Open Graph + Twitter Card (`summary_large_image`)
   meta pointing at a designed **1200×630** social card (tagline baked in) plus the full favicon set
   (favicon + apple-touch-icon + standard sizes). Verified at Brand & Social (S5) + Assembly (S6).
-- **INV-15 — StructuralDiagramsAsSVG.** The structural/explanatory ladder rungs (big-idea, the
+- **INV-15 — StructuralDiagramsAsSVG.** *(Still true; the SVGs are now drawn by `tools/make-diagrams.mjs`, not the `ascii-to-svg` skill.)* The structural/explanatory ladder rungs (big-idea, the
   "aha" insight, architecture, flow, quickstart, pack) are SVG via `ascii-to-svg` (xmllint-clean,
   ASCII fallback) — never raster — and the SAME SVGs are shared by the Page and the README PR.
-- **INV-16 — SourceRepoTouchedViaPROnly.** Any change to the TargetRepo (README enhancement +
+- **INV-16 — SourceRepoTouchedViaPROnly.** *(SUPERSEDED, ADR-0015: an issue first, a PR only after a yes.)* Any change to the TargetRepo (README enhancement +
   source-repo SEO suggestions) is OPTIONAL, offered, and delivered ONLY as a pull request — never
   a direct push. It is quarantined (INV-03) and NEVER blocks, gates, or sinks the core.
-- **INV-17 — VerifiedImagePrimary.** Raster generation uses **`gpt-image-2` as the verified
+- **INV-17 — VerifiedImagePrimary.** *(SUPERSEDED: `gpt-image-2.5-flare` at xhigh, then `gpt-image-2`, then Grok; see ADR-0008.)* Raster generation uses **`gpt-image-2` as the verified
   primary** (`GET /v1/models/gpt-image-2` → HTTP 200, confirmed 2026-06-28); **`gpt-image-1` is the
   fallback ONLY**, used solely if a **build-time availability probe** of `gpt-image-2` (at Station 4)
   fails. The build never silently downgrades and never treats gpt-image-2 as unproven.
@@ -909,7 +915,7 @@ kb/                                       ← REUSED, NOT REBUILT (P3) — one g
   entrypoints.mjs     → Station 1: writes <slug>-entrypoints.json (pack prerequisite)
   index-primer.mjs    → Station 1: indexes the authored <slug>-primer.md into the store
   ask-kb.mjs          → grounding retrieval (INV-06)
-  make-dropin.mjs     → Assembly (Station 6): builds the AIKnowledgePack via its --no-studio variant (INV-07)
+  make-dropin.mjs     → [REMOVED in 3.0.1 — historical; the pack is now built by tools/make-pack.mjs] (INV-07)
   kb-mcp-server.mjs   → the MCP server shipped inside the pack (4 tools; 3 read the structured JSONs)
 
 www/                                      ← thin website door (validate → run core)

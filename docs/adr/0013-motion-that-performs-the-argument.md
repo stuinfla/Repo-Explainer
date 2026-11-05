@@ -1,8 +1,20 @@
 # ADR-0013 — Motion that performs the argument (the hero scene, and where 3D belongs)
 
-Status: Accepted + Implemented
+Status: Accepted + Implemented, including the local door authoring the scene (3.0.1); not yet validated against a live model at scale.
 Date: 2026-09-17
+Updated: 2026-11-05
 Amends: ADR-0005 (skill-based recipe), ADR-0008 (every image teaches)
+
+> **Note (3.0.1, 2026-11-05).** Verified: `tools/make-diagrams.mjs` installs `visuals.heroAnim.sceneSvg` and refuses
+> it without a `viewBox`, real animation or a `prefers-reduced-motion` end state, and it checks the scene's
+> phone layout against the 11px floor. The scene is still **optional**: a build that authors none gets the chips
+> band or no band on the hosted door. **On the local door the brain now authors the scene** (`src/brain.mjs`
+> `settleHeroScene`): it is validated by `tools/diagrams/scene.mjs` (viewBox, real animation, reduced-motion
+> end state, scoped ids, no scripts or external refs, 11px phone text floor, xmllint, 25 KB), gets ONE repair
+> pass, and otherwise falls back with `visuals.heroAnimSkipped.reason`. A valid scene replaces the raster hero
+> (`hero.rasterSkipped: 'scene'`; `generate-image` skips it, a static backdrop feeds the favicon and share card).
+> Both routes meet the same strict contract: `sceneMarkup` (the local brain, inline) and `sceneSvg` (a file the hosted agent writes) are checked by the same validator in `make-diagrams`.
+> The scene is the only SVG the brain still authors; the four diagram slots are drawn by `make-diagrams` (ADR-0012, ADR-0014).
 
 ## Context
 

@@ -2,7 +2,7 @@
 
 **Status**: Accepted (adversarial review round 1 — Fable 5, 2026-08-06. Findings 2–5 resolved by moving the form pin; see "The pin was on the wrong diagram". GPT-5.6-Sol could not run: codex usage limit, so a second reviewer is still owed.)
 **Date**: 2026-08-06
-**Updated**: 2026-08-06
+**Updated**: 2026-11-05
 **Authors**: Claude Code (Opus 5), directed by Stuart Kerr
 **Prompted by**: The INV-23 form collision that failed `PolymathWizard/BHIL-Colophon-Spec` twice —
 discovered by a ~$0.30 vision call at the refine cap, when a 20-line function could have prevented it
@@ -10,10 +10,14 @@ for $0 before a single pixel rendered
 **Supersedes**: None
 **Related ADRs**: ADR-0005 (Station recipe), ADR-0008 (every image teaches / INV-22),
 ADR-0011 (the gate advises, never destroys)
-**Code touchpoints**: `tools/make-diagrams.mjs` (`FORM`, `resolveForms`, `flowRowsFromModel`),
+**Code touchpoints**: `tools/diagrams/models.mjs` (`FORM`, `resolveForms`), `tools/diagrams/concept.mjs` (`renderConcept`), `tools/make-diagrams.mjs` (slot assembly),
 `tools/quality-grade.mjs` (INV-20 acronym gate — the existing precedent), `tests/diagram-form-diversity.test.mjs`
 
 ---
+
+> **Note (3.0.1, 2026-11-05).** Every diagram is now also drawn as a 360px phone twin, and `make-diagrams`
+> fails if any label on it would be under 11px on a 390px phone (ADR-0014). The form-family resolver and the
+> pre-render collision check described here are unchanged.
 
 ## Context
 
@@ -157,7 +161,7 @@ vision model every build. The vision grader's budget belongs to judgements only 
 |---|---|---|
 | 1 | **The taxonomy has two linear-chain families.** `vertical-stack` and `horizontal-run` are the same *information shape* — a chain of cards joined by arrows, rotated 90°. The rubric's own vocabulary (`quality-grade.mjs`, check (c)) names the shapes "containment, journey, field, fan"; both of ours are **journey**. So the resolver can guarantee distinctness in *its* taxonomy while the judge scores in a *different* one — and they may disagree on exactly the pair the resolver most often emits (grounded architecture + demoted flow). There is also no `field`/`grid` family at all. | **Open, and now measurable.** See the risk note below. |
 | 2 | **The flow demotion loses the page's densest information**, and a 6-item single-row ribbon is ~1,380px wide — illegible when fit to a 390px phone. | **MEASURED AND CONFIRMED, then mitigated.** Rendered for real: ribbon 3 items=731px, 4=949px, 5=1167px, 6=1385px; every other archetype stays portrait at any length (orbit 806px, strata 824px for the same chain). At 390px fit-to-width a 1385px ribbon renders 13px labels at **3.66px**, against the 568px grounded architecture diagram that graded as legible — 2.4x the width, ~40% the text size. `RIBBON_MAX_ITEMS = 3` now keeps a long chain off the ribbon entirely. The IN/OUT loss is unmitigated and stands as debt. |
-| 3 | **The demotion satisfies check (c) by feeding check (d).** "Stages-in-boxes with arrows is a list, not a flow" is precisely what `flowRowsFromModel` + `conceptRibbon` produce. | **Open.** |
+| 3 | **The demotion satisfies check (c) by feeding check (d).** "Stages-in-boxes with arrows is a list, not a flow" is precisely what the ribbon form of `renderConcept` produces (these were `flowRowsFromModel` + `conceptRibbon` when this was written; neither name exists now). | **Open.** |
 | 4 | **The dominant alternative was never considered.** `archModel` already computes a `hub`; a grounded *radial* architecture plus a grounded vertical `renderFlow` keeps BOTH diagrams fully grounded with zero demotion. That strictly dominates demoting flow, and appears nowhere in the alternatives table. | **Open — this is probably the right answer.** |
 | 5 | **`conceptStrata` silently drops `connect` semantics.** A demoted architecture authored as a chain (`cli → router → parser`, `connect:true`) renders as concentric nested frames — asserting *containment*, which is false — while the `asciiFallback` for the same diagram still says `cli → router → parser`. The pixels and the accessible text describe different structures. | **Open — a correctness bug, not a taste issue.** |
 | 6 | **D5 was violated by its own commit.** The INV-22 cap shipped as a prompt plea asking the model that already botched the arithmetic to redo it in the right order. | **Fixed.** Verdicts are now structured output (`rasters[].takeaway/.swappable`) and the cap is arithmetic in `applyRasterCap`, with grader/arithmetic disagreements logged rather than invisible. `tests/raster-cap.test.mjs`. |
@@ -217,9 +221,14 @@ Result: **four grounded-or-authored diagrams, four distinct families, zero demot
 |---|---|---|---|
 | architecture | `radial` | `renderArchitectureRadial` | real dep-graph, hub, dependent counts, externals |
 | flow | `vertical-stack` | `renderFlow` | real entrypoints, with IN/OUT per stage |
-| big idea | `containment` | `conceptStrata` |
-| `grid` | `conceptGrid` — a wrapped **field** (added 2026-08-06) | brain-authored rows |
-| insight | `horizontal-run` | `conceptRibbon` | brain-authored rows |
+| big idea | `containment` | `conceptStrata` | brain-authored rows |
+| insight | `grid` | `conceptGrid` — a wrapped **field** (added 2026-08-06) | brain-authored rows |
+
+*(This table is the 2026-08-06 resolution on one real build. It is not a fixed assignment: the resolver
+(`resolveForms`, `tools/diagrams/models.mjs`) picks the first free family from each slot's preference
+list. As of 3.0.1 those lists are architecture `strata, orbit, grid, ribbon, column`; flow `ribbon,
+column, grid, strata, orbit`; big idea `ribbon, grid, column, orbit` (it never claims containment from its
+own wording); insight `orbit, ribbon, grid, strata, column`. A ribbon is only offered for a short chain.)*
 
 ### What the geometry cost, and what fixed it
 

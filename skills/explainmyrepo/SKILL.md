@@ -9,8 +9,9 @@ description: >-
   deeply via a real RVF knowledge base, conceives a one-of-a-kind visual
   metaphor, authors the content along a comprehension arc grounded in the KB,
   generates feeling (raster) + structure (SVG) imagery, assembles one page,
-  grades it on real pixels to the exemplar-anchored bar (mean >= 90, min >= 85, six operator-YES) with a surgical refine
-  loop, ships a downloadable AI knowledge pack, and deploys to a live URL. Do
+  grades it on real pixels against the exemplar bar (mean >= 90, min >= 85, six operator-YES) with a surgical refine
+  loop (a below-bar page still ships, with its weakest axis disclosed), ships a downloadable AI knowledge pack, and
+  deploys to a live URL. Do
   NOT use for generic "build me a website" requests with no repo to explain.
 ---
 
@@ -29,10 +30,12 @@ email. You never let a tool think, and a tool never decides "good enough."
 > bar, it is **not done and not acceptable.** Every station below exists to serve
 > that one sentence.
 
-Authoritative sources (read them if anything here is ambiguous):
-`docs/adr/0005-skill-based-explainer-recipe.md` (the decision),
-`tools/CONTRACT.md` (the tool law), `docs/ddd/explainmyrepo-recipe-domain.md`
-(the domain model). Where they conflict, **ADR-0005 governs.**
+Authoritative sources (read them if anything here is ambiguous): `tools/CONTRACT.md` (the tool law and the
+slot shapes), `skills/explainmyrepo/TOOLS-CONTRACT.md` (every tool's own header: flags, env, gotchas),
+`src/stations.mjs` (the station order and which door runs what), and the newest ADRs 0011-0016 in `docs/adr/`.
+`docs/adr/0005-skill-based-explainer-recipe.md` is the founding record and
+`docs/ddd/explainmyrepo-recipe-domain.md` the historical domain model; where they conflict with the code or a newer ADR,
+**the code and the newer ADR govern.**
 
 ---
 
@@ -50,12 +53,13 @@ Authoritative sources (read them if anything here is ambiguous):
    writes a placeholder, default asset, stub, or `TODO` to limp past a failure.
    You read the **exit code first**, then the JSON. A failed cue stops the build
    with an honest reason — never a stack trace, never a silent green.
-4. **Never ship below the exemplar bar (INV-05).** "Done" = on BOTH mobile (390px) and desktop
-   (1440px) the scorecard's **mean ≥ 90 AND min axis ≥ 85 AND all six operator questions YES**
-   (anchored to the owner's own example sites — a literal "95 on every axis" is unreachable by an
-   honest grader; a build that clears this bar is **reported as a normalized 95**). The two pre-ship
-   eyes (vision model + you) agree, the page is live (200 unauthenticated), and the AI pack ships.
-   Below the bar: **refine, or flag honestly.** Never ship slop and call it done.
+4. **Aim for the exemplar bar, and never lie about where you landed (INV-05).** The target the refine
+   loop climbs to is, on BOTH mobile (390px) and desktop (1440px), **mean ≥ 90 AND min axis ≥ 85 AND all
+   six operator questions YES** (anchored to the owner's own example sites — a literal "95 on every axis"
+   is unreachable by an honest grader; every page reports its honest mean). The
+   page must be live (200 unauthenticated) and the AI pack must ship. **Delivery is gated only on
+   integrity (ADR-0011), not on the score:** a page below the bar still ships, with its weakest axis
+   named to the requester. Refine, or flag honestly. Never ship slop and call it done.
 5. **The submitted repo IS the identity (INV-21).** You build an explainer of the EXACT
    repo the human submitted — nothing else, ever. If it cannot be cloned (private,
    deleted, typo) or its clone is broken, STOP with an honest, actionable reason ("we
@@ -97,26 +101,31 @@ After every tool call: **check the exit code (0 ⇔ ok), then parse stdout.** If
 forward on a failed cue. Secrets (GitHub token, OpenAI key, deploy token, SMTP
 creds) come from the **environment**, never from `build.json`.
 
-### Tool roster (14 pure tools)
+### Tool roster
 
-| Station | Tool | Fills slot |
-|---|---|---|
-| 0–1 | `clone-repo` | `repo` (+ `buildId`) |
-| 1 | `build-kb` | `understanding`, `kb` |
-| 4 | `generate-image` | `visuals.hero` / `visuals.sections[]` (one rung per call) |
-| 4 | `make-diagrams` | `visuals.architectureDiagram` / `.flowDiagram` / `.bigIdeaDiagram` / `.insightDiagram` |
-| 5 | `make-favicon` | `brand.favicon` |
-| 5 | `make-social-card` | `brand.socialCard` |
-| 6 | `assemble-page` | `page` (+ SEO/social `<head>`, sitemap/robots/llms.txt) |
-| 6 | `make-pack` | `pack` |
-| 7 | `quality-grade` | `quality` (two scorecards) |
-| 8 | `deploy` | `publish.liveUrl` / `.http200` |
-| 8 | `publish-repo` | `publish.explainerRepoUrl` / `.ownerInvited` |
-| 8 | `repo-seo` | `publish.repoTopics` / `.repoDescription` / `.sourceRepoSeoSuggested` |
-| 8b | `readme-enhance` | `readmePr` (optional, PR-only) |
-| 9 | `notify` | `notify` |
+The station order, and which door runs each station, is `src/stations.mjs`. **You are the HOSTED door**:
+the table below is exactly the stations of that file whose doors include `hosted`, in the order you meet them.
+The harness, not you, does the clone, the concept tournament, the notify email and the advisory claims check.
+The stations that run on the local door only (`make-ask`, `publish-repo`, `repo-seo`, `readme-enhance`,
+`make-overview` and its `redeploy` / `republish`) are not yours: never run them.
 
-`concept` (Station 2) and `content` (Station 3) have **no tool** — you fill them
+| Station | Tool | Fills slot | Who runs it |
+|---|---|---|---|
+| 0–1 | `tools/clone-repo.mjs` | `repo` (+ `buildId`) | the harness already did it for you |
+| 1 | `tools/build-kb.mjs` | `understanding`, `kb` | you |
+| 2 | `tools/concept-tournament.mjs` | `concept` (seeds it) | the harness, BEFORE you start; advisory |
+| 3 | `tools/check-claims.mjs` | `claims` | the harness, AFTER you finish; advisory |
+| 4 | `tools/generate-image.mjs` | `visuals.hero` / `visuals.sections[]` (one call, all rungs) | you |
+| 4 | `tools/make-favicon.mjs` | `brand.favicon` | you |
+| 4 | `tools/make-social-card.mjs` | `brand.socialCard` (required; a missing or unreadable card stops the build) | you |
+| 4 | `tools/make-diagrams.mjs` | `visuals.architectureDiagram` / `.flowDiagram` / `.bigIdeaDiagram` / `.insightDiagram` / `.heroAnim` | you |
+| 6 | `tools/assemble-page.mjs` | `page` (+ SEO/social `<head>`, sitemap/robots/llms.txt) | you |
+| 6 | `tools/make-pack.mjs` | `pack` | you |
+| 7 | `tools/quality-grade.mjs` | `quality` (two scorecards) | you |
+| 8 | `tools/deploy.mjs` | `publish.liveUrl` / `.http200` and the below-bar disclosure | you |
+| 9 | `tools/notify.mjs` | `notify` | the runner sends it, not you |
+
+`concept` (Station 2, when no tournament ran) and `content` (Station 3) have **no tool** — you fill them
 directly. So does the **primer** (Station 1). That is the judgment that is yours.
 
 The KB engine has direct CLIs you call yourself for **reading + grounding** (not
@@ -143,11 +152,11 @@ tools — they are how the brain thinks): `node kb/ask-kb.mjs <slug> "question" 
 
 ## The stations (run them in order; each cue fails loud)
 
-Critical path: **S1 → S2 → S3 → S4(slowest visual) → S6 → S7(may loop) → S8 → S9.**
+Critical path: **S1 → S2 → S3 → S4(slowest visual) → S6 → S7(may loop) → S8.**
 Parallelize off-path (see "Parallelism" at the end): raster rungs fire together;
-the SVGs are authored during S3; favicon + social card start the moment the hero
-returns; the AI pack builds as soon as S1's KB exists; the README PR (S8b) is
-optional and quarantined.
+the diagram rows are authored during S3; favicon + social card start the moment the hero
+returns; the AI pack builds as soon as S1's KB exists. Optional, local-door-only extras
+(README outreach, the video overview) never sit on the path.
 
 ### Station 0 — VALIDATE
 - **Do:** Confirm the repo URL is reachable (supports private + the owner's own
@@ -159,12 +168,12 @@ optional and quarantined.
 ### Station 1 — UNDERSTAND (read the repo deeply; this is where grounding is earned)
 1. **Clone** (the `clone-repo` call above leaves the working tree at
    `<build-dir>/repo/`).
-2. **Register the target** in `kb/kb.config.mjs` with an **explicit `embed` block**
-   (`Xenova/bge-small-en-v1.5`, 384-dim) and its `repoDir` pointing at the clone.
-   This is required: on the bare MiniLM default, `build-kb.mjs` writes
-   `<slug>-kb.small.rvf`, which the Station-6 pack builder globs for `<slug>-kb.rvf`
-   and **cannot find**. The `build-kb` tool **fails loud** if the target is
-   unregistered or writes a `.small.rvf`.
+2. **Register the target** in `kb/kb.config.mjs` (`kb:register` in the station table) with an
+   **`embed` block** (model + dimension; registered targets use `Xenova/bge-small-en-v1.5`, 384-dim) and its
+   `repoDir` pointing at the clone. `kb/build-kb.mjs` **refuses a target with no `embed` block** (there is no
+   default embedder), writes `<slug>-kb.rvf`, and records the model it used in `<slug>-kb.rvf.embed.json`;
+   that sidecar, not this document, is what governs queries and what `kb/index-primer.mjs` checks (it throws
+   if the sidecar is missing or names a different model than `ids.json`).
 3. **Build the KB + structured indexes:** `node tools/build-kb.mjs <build-dir>`.
    This runs the real engine: `kb/build-kb.mjs` (the RVF store, local embeddings,
    self-reconciling) **plus** `extract-symbols.mjs`, `dep-graph.mjs`,
@@ -181,7 +190,7 @@ optional and quarantined.
    `kb/stores/<slug>/<slug>-primer.md` — a natural-language top-down orientation
    (what it is / its concepts / how each works / maturity / where the docs are /
    how to use it end-to-end). This is a **hard prerequisite of Station 6**:
-   `kb/make-dropin.mjs` line 79 `must()`s it and throws `missing: <slug>-primer.md`
+   `tools/make-pack.mjs` fails with `missing required input: …<slug>-primer.md`
    if absent. Never let a tool fake it.
 6. **Index the authored primer:** `node kb/index-primer.mjs <slug>` (a write/index
    step — it consumes the primer you wrote; it does not create it).
@@ -210,51 +219,33 @@ failure). The brief, grounded in what the KB revealed:
 
 - **`metaphor`** — a visual metaphor that genuinely fits this repo (PhotonLayer →
   prism; ruvn → evidence dossier; ruqu → Bloch-sphere orb). A stranger should nod.
-- **`palette`** — colours that fit the metaphor. These are the **design-system
-  expression knobs**; `assemble-page` compiles them into the page's per-repo theme
+- **`palette`** — colours that fit the metaphor, as an **object of knobs** (`{ "accent": "#…", "bg": "#…", … }`),
+  never prose: `assemble-page` reads it as an object and **fails loud** otherwise. These are the
+  **design-system expression knobs**; `assemble-page` compiles them into the page's per-repo theme
   layer over the shared `assets/design-system/design-system.css` skeleton. This —
   the palette + type knobs you set here — **is** the page's "theme.css": the
   invariants (responsive, accessible, the required sections) live in the shared
-  skeleton; the **expression** is what you set in `concept`.
-- **`typePersonality`** — a display + body + mono pairing that carries the
-  metaphor's voice.
-- **`layoutRhythm`** — the ordered section archetypes (the page's cadence).
+  skeleton; the **expression** is what you set in `concept`. (The concept tournament already emits
+  this object shape, so a tournament winner renders as is.)
+- **`typePersonality`** — an object (`{ "display", "sans", "mono", … }`): a display + body + mono pairing
+  that carries the metaphor's voice.
 - **`heroConcept`** — the single emotional opening-image idea.
-  - **THE HERO PROMPT MUST *BE* THE METAPHOR** (2026-07-12, learned the hard way). When you author
-    `visuals.hero.prompt` in S4, it renders **`concept.metaphor`, literally and concretely** — the
-    metaphor is not decoration you invent and then discard. ternlight authored a genuinely good one
-    ("a maritime signal lamp flashing exactly three states — −1, 0, +1 — across dark water") and then
-    shipped a hero of *generic glowing dots in space*: the stock embedding-space cliché, connected to
-    nothing. The reader's verdict was exact — **"I don't know what the lights are meant to be"** — and
-    they were right: the lights meant nothing, because the image had abandoned the idea. If a stranger
-    cannot look at the hero and get the ONE idea, the hero has failed, however pretty it is. Never
-    reach for a generic "abstract glowing network / constellation / neural mesh" — that is the tell
-    that you stopped thinking.
+  - **THE HERO PROMPT MUST *BE* THE METAPHOR.** `visuals.hero.prompt` renders `concept.metaphor` literally and
+    concretely; a generic glowing network or constellation is the tell that you stopped thinking (ADR-0008).
 - **`copyVoice`** — the tone/register for all authored text.
 - **`tagline`** — the one line baked into the social card + `og:description`.
 
-- **THREE DIRECTIONS, THEN A VERDICT (2026-07-13 — anti-sameness is a design step, not a hope).**
-  A single concept pass converges on the house style (dark editorial, cream serif, warm inserts —
-  the wall proves it). So author **THREE genuinely divergent art directions** before choosing:
-  different metaphor FAMILY (mechanical / spatial / document / organic / optical…), different
-  palette temperature, different layout rhythm. For each, one line of "why it fits THIS repo."
-  Then judge for repo-fit and commit to ONE. Two hard rules on the verdict:
-  1. **The house look is never the default.** Dark-editorial-with-serif may WIN, but only by
-     argument from this repo's own domain — never because it's what the last build did.
-  2. **NEVER open another build's `build.json` or page for creative direction.** The exemplar
-     bar (INV-05) is a QUALITY bar, not a style guide — imitating a prior build's concept is how
-     the wall became one page in seven costumes. Record the two rejected directions (one line
-     each) in `concept.rejectedDirections` so the choice is auditable.
+- **THREE DIRECTIONS, THEN A VERDICT.** Author three genuinely divergent art directions (different metaphor
+  family, palette temperature and layout rhythm, one line each on why it fits THIS repo), then commit to ONE.
+  The house look never wins by default, and never open another build's `build.json` or page for direction
+  (the exemplar bar is a quality bar, not a style guide). Record the two rejected directions in
+  `concept.rejectedDirections`.
 - **Cue:** the brief is **specific to THIS repo** and the **metaphor genuinely
   fits**. A generic brief is a failure **here**, not at the gate.
 
 ### Station 2b — THE STORY SPEC (do this BEFORE authoring a single section)
-**Write the thesis and the arc FIRST, then write sections to serve them.** The failure this
-prevents (2026-07-12, cost a whole night): the page was authored section-by-section from repo
-facts, so it opened INSIDE THE MACHINE — multiplication counts, tokenizers, WASM — for a reader
-who has never heard of any of it. Three independent judges, shown three competing story angles,
-were unanimous on the cause: **"you cannot rescue an insider-ordered story with better sentences."**
-No amount of rewriting fixed it, because the defect was the ORDER, not the words.
+**Write the thesis and the arc FIRST, then write sections to serve them.** An insider-ordered story cannot be
+rescued by better sentences (ADR-0006).
 
 Write into `concept.story` before Station 3:
 - **`thesis`** — ONE plain sentence a stranger understands, that the whole page proves. Zero jargon.
@@ -287,9 +278,7 @@ forms. **Never show a low-level detail before the high-level frame that makes it
 legible.**
 
 **THE COMPREHENSION LADDER (ADR-0006 v1.2.0 — altitude control).** The reader is a **curious
-FIFTEEN-YEAR-OLD** (superseding "a smart developer from a different domain", 2026-09-17: the owner
-scored two shipped pages 6.5/10 — *"it still feels like it's asking me to geek out versus bringing it
-back to my level ... the whole point of this is to explain it like somebody is 15"*). They have never
+FIFTEEN-YEAR-OLD** (ADR-0006 D8; this replaced "a smart developer from a different domain"). They have never
 built software. After rungs 1–4 they must be able to say, in their own words: what this is, what it
 would do FOR THEM, why the trick is clever, and roughly how it works.
 
@@ -318,12 +307,9 @@ problem it kills. `howItWorks` may descend ONE technical level (terms still defi
 what the experience looks like. Grounding (INV-06) supplies the FACTS, not the
 VOCABULARY: translate insider terms; cite the passage, don't parrot its jargon.
 
-**SHOW, THEN SAY (2026-07-13 — the reader's verdict on a text-heavy page: "their README is
-better than this").** No section may run more than ~120 visible words before a visual, a code
-block, a real artifact, or a structural element carries the next beat. When a mechanism takes
-more words than that to explain, the words are describing a diagram you haven't drawn yet —
-draw it, label it, and cut the prose to what the diagram can't say. The page must beat the
-repo's own README on scannability or it has no reason to exist.
+**SHOW, THEN SAY.** No section runs more than about 120 visible words before a visual, a code block, a real
+artifact or a structural element carries the next beat; the page must beat the repo's own README on
+scannability.
 
 Author all eight sections:
 
@@ -341,9 +327,9 @@ Author all eight sections:
 **Grounding is non-negotiable (INV-06).** Every claim must be traceable to a KB
 passage retrieved via `node kb/ask-kb.mjs <slug> "…"`. Record `content.citations`
 as `{ claim, passageId }`. **No invented capabilities, no "lorem", no "TODO", no
-placeholder text.** As you author `howItWorks`, the **ASCII for the architecture +
-flow diagrams falls out naturally** — capture it now so S4 can convert it in
-parallel.
+placeholder text.** As you author `howItWorks`, capture the architecture and flow as
+`visuals.architectureDiagram.rows` / `visuals.flowDiagram.rows` (and `bigIdeaDiagram` / `insightDiagram`
+rows): short concept-card labels, never ASCII art. `make-diagrams` draws them in S4.
 
 - **Cue:** all arc questions answered, zero placeholder text, every claim traceable
   to a KB source. A4 specifically: the page explicitly answers **"how is this useful
@@ -351,11 +337,8 @@ parallel.
 
 ### Station 4 — VISUALIZE (feeling = raster, structure = SVG)
 
-- **THE IMAGE CONTRACT (INV-22, 2026-07-13 — every image must teach, or it must not exist.)**
-  Born from a real verdict on a shipped page: a warm, competent photo of a man pointing at a
-  laptop scored 91 at the gate and the owner correctly called it "generic drivel — what am I
-  supposed to take away from this?" The gate measured beauty; nobody measured payload. Rules,
-  in force for every raster on the page:
+- **THE IMAGE CONTRACT (INV-22, ADR-0008 — every image must teach, or it must not exist).** Rules, in force
+  for every raster on the page:
   1. **Every raster brief MUST carry a `takeaway:` line** — the one sentence a stranger should
      be able to say about THIS repo after looking at the finished image (not the caption — the
      pixels). No stateable takeaway → the image is decoration → do not generate it; give the
@@ -364,11 +347,9 @@ parallel.
      DIFFERENT repo's page, it fails. A person at a laptop passes the swap test for every repo
      on earth — which is exactly why it is banned.
   3. **BANNED imagery (the AI-slop list — these have all shipped and all read as slop).**
-     **NO ROOMS, NO PROPS, NO PEOPLE (ADR-0008 v1.1.0, 2026-09-17):** desks, offices, cafes, windows,
+     **NO ROOMS, NO PROPS, NO PEOPLE (ADR-0008 v1.1.0):** desks, offices, cafes, windows,
      plants, coffee cups, notebooks, pens, books, stray phones, sticky notes as set dressing, hands.
-     Two consecutive builds shipped a desk-and-plant "problem" scene that the grader capped at B5=55
-     (*"a generic desk/plant/binder scene does not teach a discernible fact ... could ship unchanged on
-     many software or office-product pages"*). Compose from the SUBJECT ITSELF — the screens, artifacts
+     Compose from the SUBJECT ITSELF — the screens, artifacts
      and objects the repo is about — filling the frame. Also banned:
      person at a laptop/desk/screen · hands typing · generic office or cafe scenes · glowing
      abstract networks/particles · fake UI floating on a fake device · concerned-developer
@@ -394,76 +375,52 @@ parallel.
 - **Raster rungs (emotional) — `generate-image`, ONE call, no rung argument:**
   the tool reads every declared rung (`visuals.hero` + `visuals.sections[]`) from
   `build.json` itself and generates all of them internally with bounded
-  concurrency (2026-07-10: firing multiple separate `generate-image` processes —
-  one per rung — is WRONG; the tool has no per-rung CLI argument, and doing this
-  produced redundant concurrent processes racing on the same output files, papered
-  over by shell-level `sleep`-polling. Call it once and let it finish). Covers the
+  concurrency (never one process per rung: there is no per-rung CLI argument). Covers the
   **hero (1536×1024)**, the **problem (1024×1024)**, and the **use-case scenario
-  (1024×1024)** at quality `xhigh` (2026-09-17: on Images 2.5 an `xhigh` hero measured
-  28.1s, and was clearly sharper with legible on-screen text than `gpt-image-2` at `medium`;
-  see the QUALITY comment in `tools/generate-image.mjs`). Valid sizes: `1024×1024`,
+  (1024×1024)** at quality `xhigh` (see the QUALITY comment in `tools/generate-image.mjs`). Valid sizes: `1024×1024`,
   `1024×1536`, `1536×1024`, `auto` (the DALL·E-3 `1792×1024` is rejected — never use it).
-- **STRUCTURAL RUNGS ARE BESPOKE, AUTHORED, ANIMATED SVG (INV-23, 2026-07-13 — rails on
-  truth, never on form).** The old path funneled every diagram through one renderer and the
-  owner's verdict on the result was exact: "four different versions of the same process map."
-  A vertical pill-stack is a LIST wearing a costume; an information shape must dictate its
-  form. New contract — YOU author each diagram as a standalone SVG file (same output paths:
-  `assets/big-idea.svg`, `assets/insight.svg`, `assets/architecture.svg`, `assets/flow.svg`):
-  1. **Pick each diagram's ARCHETYPE from the menu and declare it** as `data-archetype` on the
-     root `<svg>` AND in `visuals.<slot>.archetype`: `journey` (something travels and
-     transforms, left→right) · `containment` (boxes within boxes, layers) · `field` (a
-     population of many small things, a few highlighted) · `fan` (one radiating to many) ·
-     `tree` (hierarchy) · `exchange` (two sides, a broker between). **No two diagrams on one
-     page may share an archetype** — the gate fails repetition.
-     **WIDTH-BUDGET EVERY LABEL (2026-07-15, autonomous-wealth-builder + agentic-kit hero
-     collisions — both from unmeasured text)**: before writing any <text>, compute its budget —
-     monospace ≈ 0.62 × font-size per char, bold sans ≈ 0.55 — and verify the string fits its
-     container at the DESKTOP COLUMN scale (~45% of natural size), not just the full-size stage.
-     Two same-lane labels need ≥12px gap at column scale. Style micro-labels lowercase with
-     letter-spacing (caps-styled words like DISK/AGENT trip the INV-20 acronym gate).
-  2. **The flow diagram must SHOW the thesis motion, not name stages.** For a repo whose trick
-     is spatial ("the key never leaves the vault"), the invariant must be VISIBLE: the request
-     dot travels the full journey while the key glyph stays pulsing inside the vault boundary.
-     If a stranger can't see the trick happen, it's a list of stages — rejected.
-  3. **Animate INSIDE the SVG** (CSS keyframes / SMIL in a `<style>` block — no external JS;
-     honor `prefers-reduced-motion` with a static end-state). The data-flow diagram IS the
-     page's animation. A dot crawling along a dotted line is NOT animation of the argument —
-     it is the banned decoration (see heroAnim rules) in diagram form.
-  4. **Craft bar:** real `<text>` (≥13px at rendered size), `<title>` + `<desc>` accessibility
-     fallback, `viewBox` set, palette from `concept`, validate every file with
-     `xmllint --noout` before installing. Budget ≤60KB per SVG.
-  5. **THE ENGINE DUEL (flagship diagrams: big-idea + flow):** author your version, then
-     request a competing standalone SVG from GPT-5.6-Sol via the OpenAI API (same brief, same
-     archetype + palette constraints — plain `curl` with `$OPENAI_API_KEY`; benchmarks show
-     Sol is genuinely strong at UI polish). Judge both with the same vision model the gate
-     uses, on takeaway + legibility + craft; install the winner and record
-     `visuals.<slot>.engine` = `fable|sol` with one line of why. If the Sol call fails,
-     proceed with yours — never block the build on the duel.
-  6. **Fallback, loud:** if your bespoke SVG fails xmllint or legibility twice, fall back to
-     `make-diagrams` for that slot and say so in `visuals.<slot>.fallback` — a working plain
-     diagram beats a broken beautiful one, but the fallback is an admission, not a choice.
-- **The prior `make-diagrams` path below remains ONLY as that fallback** — the big-idea
-  diagram, the "aha" insight, and the **two diagrams that are MANDATORY on every explainer
-  (INV-18 — the three questions every developer asks):**
-  1. an **ARCHITECTURE diagram** (*how is it constructed* — modules / components /
-     dependencies), built from `<slug>-dep-graph.json` + `<slug>-symbols.json`, and
-  2. a **PROCESS / DATA-FLOW diagram** (*how does it work* — the runtime flow),
-     built from `<slug>-entrypoints.json`.
+- **STRUCTURAL RUNGS ARE DRAWN BY `make-diagrams` FROM WHAT YOU AUTHOR (INV-23: rails on truth,
+  never on form).** You do **not** hand-write the architecture, flow, big-idea or insight SVGs: you
+  author the *content* (`visuals.<slot>.rows`, and the optional story slots below) and `make-diagrams`
+  draws each slot, then checks it. The only SVG you may author yourself is the hero scene
+  (`visuals.heroAnim.sceneSvg`, below). What `make-diagrams` guarantees, so you do not have to:
+  1. **Distinct forms.** Each slot gets its own form family (`vertical-stack`, `horizontal-run`,
+     `radial`, `containment`, `grid`; concept variants `column` / `ribbon` / `orbit` / `strata` / `grid`),
+     chosen by what the slot says; two diagrams on one page never share a family, and a collision
+     fails loudly before any file is written (INV-23). Nested frames (`strata`) are only used when your
+     own text says one thing is inside another.
+  2. **Drawn twice, from one model.** A wide canvas plus a 360-wide portrait **phone twin**
+     (`assets/<name>.m.svg`, recorded as `mobileSvgPath`). The page swaps them with `<picture>`.
+     `make-diagrams` measures the smallest text on the phone twin and **fails the step** if any label is
+     under 11 px on a 390 px phone (`mobileLabelPx`). Keep labels short; a long label is the usual cause.
+  3. **Craft and validity.** Real `<text>`, `<title>` + `<desc>` accessible text, a `viewBox`, the
+     palette from `concept`, `xmllint --noout` on every file, labels checked for overlap.
+  4. **The flow diagram must SHOW the thesis, not name stages.** For a repo whose trick is spatial
+     ("the key never leaves the vault"), author rows (or a `decision` story, below) that make the
+     invariant visible. If a stranger cannot see the trick happen, it is a list of stages.
+  Banned as "performance": a dot moving along a path, pulsing glows, crawling dashes: motion must
+  change something the argument depends on. **Style micro-labels in sentence case** (ALL-CAPS words
+  such as DISK or AGENT trip the INV-20 acronym gate).
+- **What is drawn, per slot** (the first that applies wins): a verified story diagram (`systemMap` ->
+  architecture slot, `decision` -> flow slot); else for architecture a **radial hub-and-spokes
+  dependency map** from the real dep-graph, and for flow a vertical build-lifecycle stack from the real
+  entrypoints (skipped for a library with none); else the **authored concept diagram** from
+  `visuals.<slot>.rows`. The big-idea and insight slots are always authored concept diagrams.
+  The **two diagrams that are MANDATORY on every explainer (INV-18 — the three questions every
+  developer asks):**
+  1. an **ARCHITECTURE diagram** (*how is it constructed*), built from `<slug>-dep-graph.json` +
+     `<slug>-symbols.json`, and
+  2. a **PROCESS / DATA-FLOW diagram** (*how does it work*), built from `<slug>-entrypoints.json`.
 
-  Both are **grounded in the repo's REAL structure, never invented.** You author the
-  ASCII (it already fell out of S3); `make-diagrams` converts to crisp, accessible,
-  xmllint-clean SVGs. **These SVGs are emitted once and reused by both the page AND
-  the README (S8b)** — author once, share.
+  Both are **grounded in the repo's REAL structure, never invented.** You author the rows (they fell out
+  of S3); `make-diagrams` draws crisp, accessible, xmllint-clean SVGs. **These SVGs are emitted once and
+  reused by both the page AND the README PR (S8b, local door)** — author once, share.
 
-- **A DIAGRAM MUST CARRY INFORMATION, OR IT MUST NOT BE DRAWN** (2026-07-12 — the deepest
-  quality bug this pipeline has had). "Grounded in the repo's real structure" is necessary,
-  not sufficient: it is entirely possible to draw a *truthful picture of nothing*. chalk,
-  stronghold, agenticow and ternlight each shipped a gorgeous, animated **"N modules · 0
-  internal links"** dependency map — a diagram of an empty graph — because the renderer drew
-  whatever the graph handed it and nobody asked whether the graph *said* anything. Two rules
-  now enforced in `make-diagrams`:
-  1. **Trivial dep-graph (0 internal edges) → the dependency map is REFUSED** (loud fail). You
-     must author **`visuals.architectureDiagram.rows`**: the *concept* of how the thing is
+- **A DIAGRAM MUST CARRY INFORMATION, OR IT MUST NOT BE DRAWN.** A truthful picture of an empty graph
+  ("N modules, 0 internal links") is a defect. Two rules enforced in `make-diagrams`:
+  1. **Trivial dep-graph (0 internal edges) → the dependency map is not drawn.** `make-diagrams`
+     draws your authored concept instead, or **fails loud** if you wrote none. Author
+     **`visuals.architectureDiagram.rows`**: the *concept* of how the thing is
      built — the 3-4 parts a reader must hold in their head — not the package wiring.
   2. **The flow diagram is the RUNTIME data-flow** — *what happens to the reader's data* —
      authored as `visuals.flowDiagram.rows`. If you leave it unauthored, the tool falls back
@@ -471,10 +428,10 @@ parallel.
      because that is what it is. Shipping a build lifecycle captioned "Data-flow pipeline" is a
      lie the vision grader has caught repeatedly. Author the real flow.
 
-  **`rows` shape (a footgun — read this):** `renderConcept` stacks items vertically and draws a
-  connecting arrow **only between items *within the same row***. So a connected chain is **ONE
-  row of N items**, not N rows of one item (that renders as floating cards with no arrows — a
-  bulleted list, not a structure):
+  **`rows` shape (a footgun — read this):** a connecting arrow is drawn **only between items *within
+  the same row***. So a connected chain is **ONE row of N items**, not N rows of one item (that renders
+  as floating cards with no arrows — a bulleted list, not a structure). The resolver then picks the
+  chain's shape (a short chain may become a ribbon; a long one a column) so it stays legible on a phone:
   `"rows": [{ "items": ["your sentence", "tokenizer", "add · skip · subtract", "384 numbers"], "connect": true }]`
 
 - **STORY DIAGRAMS (`visuals.systemMap`, `visuals.decision`) — answer the questions a reader
@@ -493,13 +450,13 @@ parallel.
   runs the "no" searches itself; whatever it cannot confirm is dropped, and if nothing survives the
   slot keeps the grounded graph diagram. So quote, do not paraphrase, and prefer fewer true claims.
   Shapes are in `src/story-diagrams.mjs` (`validateSystemMap`, `validateDecision`) and a worked
-  example is `tests/fixtures/story-claude-swap.mjs`.
+  example is `tests/fixtures/story-claude-swap.mjs`. Story diagrams get the same phone twin and the
+  same 11 px floor as every other slot (ADR-0014).
 
 - **THE HERO ANIMATION (`visuals.heroAnim`) — motion that PERFORMS the argument.** Author this for
-  every repo that has a "trick" (almost all of them do). It renders above the fold as a 9s loop and
-  it is the only motion on the page. **Animate the ARGUMENT, never the chrome.** Crawling dashed
-  lines and pulsing dots are decoration; they were shipped twice and correctly called "the weakest
-  sauce I've seen". What earns its place is the project's one idea, *performed*: for ternlight, the
+  every repo that has a "trick" (almost all of them do). It renders above the fold as a short loop
+  and it is the only motion on the page. **Animate the ARGUMENT, never the chrome** (crawling dashed lines and
+  pulsing dots are decoration). What earns its place is the project's one idea, *performed*: for ternlight, the
   model's messy decimal weights (`0.0731`, `−1.24`) **snap** to exactly `0` / `−1` / `+1`; as each
   lands, the word beneath it appears — **skip · subtract · add**; then the multiply sign is struck
   through and goes dark: **never used**.
@@ -521,14 +478,19 @@ parallel.
   before the vision pass. **No `heroAnim` → no animation band**, and the tool will NEVER substitute
   another repo's (this content is per-repo and lives in `build.json`, never in the tool).
 
-  **THE CHIPS BAND IS THE FLOOR, NOT THE CEILING (2026-07-13 — owner's verdict on a shipped
-  chips band: "the animation is nothing more than a dotted line. That's worthless. You
-  punted.").** For any repo whose trick is spatial or mechanical (most), author a **bespoke
-  animated SVG SCENE** instead (`visuals.heroAnim.sceneSvg` → `assets/hero-scene.svg`, same
-  in-SVG CSS/SMIL rules as INV-23). **IMPLEMENTED 2026-09-17 (ADR-0013)** — this path had been
-  specified since 2026-07-13 with no code behind it, so every spatial repo silently got chips or
-  nothing. `make-diagrams` now installs the scene and REFUSES it loudly if it lacks a viewBox, real
-  animation, or a `prefers-reduced-motion` static end state. **Labels inside a scene are page copy**
+  **THE CHIPS BAND IS THE FLOOR, NOT THE CEILING.** For any repo whose trick is spatial or mechanical (most),
+  author a **bespoke animated SVG SCENE** instead (`visuals.heroAnim.sceneSvg` → `assets/hero-scene.svg`, same
+  in-SVG CSS/SMIL, no external JS, a `viewBox`, real `<text>` and `<title>`/`<desc>`).
+  One validator (`tools/diagrams/scene.mjs`) decides: a root `<svg>` with its own `id` and a `viewBox`; real
+  animation AND a `prefers-reduced-motion` static end state; every CSS selector, keyframe name and inner id
+  scoped under the root id (the SVG is inlined into the page); no script, `foreignObject`, event handler or
+  external reference; smallest text >= 11 px at phone width; xmllint-clean; at most 25 KB. `make-diagrams`
+  refuses an invalid scene loudly. **When a valid scene exists, `generate-image` does not draw the raster hero**
+  (`visuals.hero.rasterSkipped: "scene"`, `cost.heroRasterSkipped`): the scene IS the hero, so **author
+  `heroAnim.sceneSvg` before you run `generate-image`**. A static backdrop (`assets/hero-scene-static.png`,
+  not shipped in the site) feeds the favicon and share card. On the local door the brain authors the scene
+  itself (`heroAnim.sceneMarkup`), gets one repair pass, and otherwise falls back to the raster hero and records
+  `visuals.heroAnimSkipped.reason`. Scenes have not yet been run against a live model at scale. **Labels inside a scene are page copy**
   and obey the ladder: plain words, sentence case (ALL-CAPS reads as an acronym to INV-20).
   **OPTIONAL 3D (`visuals.hero3d`)**: an authored ES module mounted OVER the flat scene only when the
   viewer has WebGL and has not asked for reduced motion; the scene stays in the DOM as the fallback
@@ -553,31 +515,35 @@ parallel.
   **tagline baked in** (drives OG/Twitter `summary_large_image` and `og:description`).
 - **Tools:** `node tools/make-favicon.mjs <build-dir>` and
   `node tools/make-social-card.mjs <build-dir>` (both run alongside the rest of S4).
-- **Cue:** **valid favicon files** AND a **valid 1200×630 social card**. A missing
-  or invalid favicon **or** social card **stops the build loud** — never substitute
-  a default. The card's delight + craft are judged at the gate (B5).
+- **Cue:** **valid favicon files** AND a **valid 1200×630 social card**. The card is **required and
+  verified** on both doors (`make-social-card` is fatal and no `--no-*` flag skips it): the card
+  legibility gate (WCAG 4.5:1 ink on the backdrop) must pass, and `src/site-check.mjs` then checks the
+  assembled page: a 1200×630 card under 1.5 MB, `og:image` and `twitter:image` the same absolute https
+  file on the deploy host, `og:title` at most 70 characters, plus a live fetch after deploy. A missing
+  or unreadable card **stops the build loud** — never substitute a default. The card's delight + craft
+  are judged at the gate (B5).
 
 ### Station 6 — ASSEMBLE + PACK (the page is rendered ONCE)
 - **Precondition (fail loud).** `<slug>-primer.md` AND the three structured JSONs
   MUST already exist (S1). If the primer is missing, **stop loud** and return to
-  Station 1 — never synthesize a placeholder to get past `make-dropin.mjs`'s
-  line-79 `must()`.
+  Station 1 — never synthesize a placeholder to get past `make-pack`'s
+  `missing required input` check.
 - **Do (a) — render the page once:** `node tools/assemble-page.mjs <build-dir>`.
   This composes `concept` + `content` + `visuals` + `brand` onto the shared
   `assets/design-system/design-system.css` skeleton + the per-repo theme, wires the
   full **SEO + social `<head>`** (`<title>`, meta description, canonical, JSON-LD
   `SoftwareApplication`/`SoftwareSourceCode`, favicon links, OG + Twitter
   `summary_large_image` pointing at the S5 card), emits root-level **`sitemap.xml`,
-  `robots.txt`, and `llms.txt`**, inlines the primer in the download section, and
+  `robots.txt`, and `llms.txt`**, links the primer in the download block (the primer itself ships inside the pack zip), and
   injects the **mandatory ISOvision attribution + CTA footer verbatim** (see below).
   **No string markers** (INV-10).
-- **Do (b) — build the AI pack:** `node tools/make-pack.mjs <build-dir>`. This wraps
-  `kb/make-dropin.mjs` via its **`--no-studio`** variant (studio-less first — the one
-  acknowledged engine change; studio media re-packs later, INV-03). The pack ships
-  the `for-ai/` half (`<slug>-kb.rvf` + idmap + embed sidecar + `.passages.jsonl` +
-  `.ids.json` + the **three structured JSONs** + `ask-kb.mjs` + `kb-mcp-server.mjs`
-  + `package.json` declaring `@ruvector/rvf@^0.2.2` + `@xenova/transformers@^2.17.2`)
-  and the `for-humans/` half (the authored primer).
+- **Do (b) — build the AI pack:** `node tools/make-pack.mjs <build-dir>`. `make-pack` is a **port**
+  of the old drop-in packer (it no longer wraps another tool), and it writes the one slot
+  `pack = { zipPath }`. The zip ships the `for-ai/` half (the single-store `<slug>-kb.rvf` + idmap +
+  `.passages.jsonl` + `.ids.json` + the **three structured JSONs** + the `kb/` engine files
+  `ask-kb.mjs`, `kb-mcp-server.mjs`, `resolve-deps.mjs` + a generated single-store `kb.config.mjs` +
+  a `package.json` whose `@ruvector/rvf` and `@xenova/transformers` ranges are copied from this
+  repo's own `package.json`) and the `for-humans/` half (the authored primer).
 - **Cue:** **zero dangling refs or unresolved tokens** in the page; the **pack opens,
   the KB loads, and `node ask-kb.mjs <slug> "…"` returns real passage TEXT** (not
   `{id,distance}`); **the MCP server's `lookup_symbol`, `get_entrypoints`,
@@ -588,12 +554,13 @@ parallel.
   station **stops loud**. The AI pack is a hard deliverable (INV-07).
 
 > **The ISOvision footer is mandatory on EVERY explainer.** `assemble-page` injects
-> it verbatim (design-system §16b). Two lines, always, in order: (1) "Built by
-> **Stuart Kerr** at **ISOvision.ai**" (`ISOvision.ai` → `https://isovision.ai`);
-> (2) the CTA "Want an explainer for your own repo? **Create one →**" →
-> `https://repoexplainer.isovision.ai`. Semantic `<footer role="contentinfo">`,
-> real `<a>` links, on-brand tokens, AA contrast, responsive. If it is missing, the
-> page is not done.
+> it (design-system §16b). In order: (1) the credit "Explainer page created by
+> **Stuart Kerr** at **ISOvision**" (Stuart Kerr links to his card, ISOvision to
+> `https://isovision.ai`), with a small line crediting the open-source explainmyrepo engine
+> and inviting a star or an issue; (2) the CTA "Would you like your own repo explainer
+> page? **Generate one here**" -> `https://explainmyrepo.isovision.ai`. Semantic
+> `<footer role="contentinfo">`, real `<a>` links, on-brand tokens, AA contrast,
+> responsive. If it is missing, the page is not done.
 
 ### Station 7 — QUALITY GATE ⟲ (the completion criterion — judged on real pixels)
 - **Do:** `node tools/quality-grade.mjs <build-dir>`. It renders the **assembled
@@ -627,12 +594,15 @@ parallel.
   the measured numbers for the refine loop to fix.
 
 - **The bar + the loop (non-negotiable — iteration over a few revs is EXPECTED, not a failure):**
-  - **BAR:** on **BOTH** devices, **mean ≥ 90 AND min axis ≥ 85 AND all six operator questions YES**
-    (11 axes × 2 devices). The **min ≥ 85 is the anti-slop floor** — a single slop axis (a raw-ASCII
-    diagram, a pretty-but-empty image) scores ≈50 and fails the build. Anchored to the owner's own
-    example sites (~88 headline / ~92 mean); a build that clears the bar is reported as a normalized **95**.
+  - **TWO TIERS (`tools/quality-grade.mjs`).** **EXEMPLARY** (`evaluatePass`): on **BOTH** devices,
+    **mean ≥ 90 AND min axis ≥ 85 AND all six operator questions YES** (11 axes × 2 devices); the
+    **min ≥ 85 is the anti-slop floor**. **SHIP** (`evaluateShipworthy`): **mean ≥ 82 AND min ≥ 70 AND
+    the five ship operators YES** (`architectureConfidence` is informational) AND the INV-18 diagrams
+    present. Aim for EXEMPLARY; a page that is SHIP-worthy but not exemplary is delivered with an honest
+    note; every page reports its honest mean.
+    A device whose mean lands within 82±3 is graded a second time and the two samples merged.
   - **`headlineScore` = the MINIMUM across all axes** (the anti-slop floor); **`meanScore` = the mean**
-    (the "as good as the examples" measure). Both gate; the mean is not ignored.
+    (the "as good as the examples" measure). Both are reported; the mean is not ignored.
   - **RUN THE REFINE LOOP:** any axis below the bar OR any operator NO → the gate **names the exact
     weakness** (which criterion / which question, which device, what it saw) → you **refine just
     that, surgically** (a B1 typography miss re-opens `page`; an A4 "not useful to me" miss re-opens
@@ -641,67 +611,62 @@ parallel.
     weakness — never a broad reflow that could regress a passing axis.
   - If the grader returns malformed / missing / non-per-criterion scores, the gate
     **stops loud and does not pass** — a broken grader is never a silent green.
-  - **At the cap: DEPLOY AND FINISH (ADR-0011, 2026-08-06).** The tool enforces a hard cap of 3
+  - **At the cap: DEPLOY AND FINISH (ADR-0011).** The tool enforces a hard cap of 3
     quality-grade calls. When you reach it, run `deploy` and you are done — whatever the score says.
     Delivery is no longer conditional on quality: `deploy` refuses only on **integrity** (a page that
     did not assemble, a source-identity violation, or a missing scorecard), never on a low grade. A
     below-bar page ships to its live URL and the requester receives an honest note naming its weakest
-    axis in plain words, plus an offer to re-run. This replaced a binary rail under which **56 of 104
-    hosted builds delivered nothing at ~$5 each** — one weak axis could veto an otherwise-finished
-    page. *The retired post-cap protocol (`quality.postCapManualFix` + ending `ok:false` for a runner
-    re-grade) is gone: do not write that key and do not end a run hoping to be rescued.*
+    axis in plain words, plus an offer to re-run (ADR-0011 explains why a binary rail was removed).
+    *Do not end a run hoping to be rescued by a later re-grade: ship it and disclose.*
   - **The scorecard is DISCLOSURE, not a gate.** It is sent to the requester verbatim. That means
     there is nothing to gain by making the page look better to the grader than it is — grade-chasing
     and cosmetic rubric-pleasing are now pure waste and actively dishonest. Spend the effort on what
     genuinely helps a stranger understand the repo, and let the number land where it honestly lands.
     (The runner still classifies a non-deploying ending deterministically and may run one bounded
-    cure cycle with an **independent** cure agent — which you cannot disarm by writing a note.)
+    cure cycle with an **independent** cure agent.)
 - **Honesty escape hatch:** if a repo **genuinely** cannot reach the bar on some axis,
   **flag it honestly** in the result and the email. **Never ship slop and call it
   done.** Two pre-ship eyes gate S7: the **vision model** and **you** (the
-  operator), viewing the **same screenshots**, both agreeing, with **mean ≥ 90, min ≥ 85, and all
-  six operator questions YES** on both devices. The **owner is the post-delivery third eye** (S9) —
+  operator), viewing the **same screenshots**, both agreeing; the target is the EXEMPLARY bar (**mean ≥ 90,
+  min ≥ 85, all six operator questions YES**) on both devices. The **owner is the post-delivery third eye** (S9) —
   owner rejection re-opens this same surgical loop.
-- **Cue:** **mean ≥ 90 AND min axis ≥ 85 AND all six operator questions YES on BOTH devices**, or an
-  honest flag. Only an **already-great** page proceeds to deploy.
+- **Cue:** the **EXEMPLARY bar (mean ≥ 90, min ≥ 85, six YES) on BOTH devices**, or an honest flag.
+  Below the bar the page still ships once the cap is reached, with its scorecard disclosed.
 
-### Station 8 — PUBLISH / DEPLOY (+ repo SEO) — the FIRST and only deploy
-- **Do:** Create the dedicated **explainer GitHub repo** (public), invite the owner
-  as a collaborator (best-effort), and deploy the already-passed page to its **own
-  per-build URL**.
-- **Tools (run all three):**
-  - `node tools/publish-repo.mjs <build-dir>` — creates the explainer repo +
-    invites the owner.
-  - `node tools/deploy.mjs <build-dir>` — deploys to its own per-build URL.
-    **Default provider: Netlify** (clean auto `{repo}-explainer.netlify.app` URL,
-    zero DNS work, git-connected auto-redeploy so the owner's later edits redeploy
-    themselves). The adapter is provider-agnostic — Vercel is a one-line swap.
-  - `node tools/repo-seo.mjs <build-dir>` — sets **GitHub topics + a strong
-    description** on the **explainer** repo (GitHub is the new AI-world social
-    media), and emits **suggested** topic/description improvements for the **source**
-    repo (offered, never set directly — INV-16).
-- **Cue:** **live URL returns 200 unauthenticated**, the **repo is public**, the
-  **owner is invited**, and the **explainer repo has topics + a description set**
-  (verified via the GitHub API). An invite/SEO failure degrades to a warning — it
-  never inverts a live, graded build.
+### Station 8 — DEPLOY (local door: + publish the explainer repo)
+- **Do (both doors):** deploy the graded page to its **own per-build URL**.
+- **Tools:**
+  - `node tools/deploy.mjs <build-dir>` — **both doors.** Deploys to `{repo}-explainer.netlify.app` on
+    **Netlify**, the only provider; there is no provider switch. Deploy **advises, never refuses on score**; it refuses
+    only on integrity (unassembled page, source-identity violation, site-integrity failure, no scorecard with no
+    recorded reason).
+  - `node tools/publish-repo.mjs <build-dir>` and `node tools/repo-seo.mjs <build-dir>` — **local
+    door only.** They create the explainer GitHub repo (named `{owner}-{name}-explainer`, or
+    `{owner}--{name}-explainer` when the names are not plain alphanumeric), mark it with
+    `.explainmyrepo.json`, invite the owner, and set topics + a description on the **explainer** repo
+    (suggestions for the **source** repo are offered, never set directly — INV-16). **You skip both**; do not run them.
+- **Cue:** **live URL returns 200 unauthenticated**. On the local door also: the **repo is public**,
+  the **owner is invited**, and the **explainer repo has topics + a description set** (verified via
+  the GitHub API). A failed collaborator invite is a warning (`ownerInvited: false`); a failed `publish-repo` or `repo-seo`
+  stops the local build (both are fatal there) but never un-deploys a page that is already live.
 
-### Station 8b — README ENHANCEMENT (OPTIONAL — offered, source-repo PR only)
-- **Do:** **Offer** to enhance the **source** repo's README via
-  `node tools/readme-enhance.mjs <build-dir>` (wraps the `readme-enhance` skill): an
-  architectural explanation, the **shared Station-4 SVG diagrams** (reused, not
-  re-authored), and an **explainer badge** linking to the live explainer. May also
-  carry the Station-8 source-repo topic/description suggestions.
-- **Cue:** **delivered ONLY as a PULL REQUEST** on the source repo (never a direct
-  push — INV-16); the author merges or skips. It is **OPTIONAL, off the critical
-  path, quarantined (INV-03), and NEVER blocks the core ship.** If declined, it is a
-  clean no-op; a failure is a warning only.
+### Station 8b — README OUTREACH (local door in practice — the hosted agent does not run it)
+- **Do:** `node tools/readme-enhance.mjs <build-dir>` is **on by default** on the local door and **issue-first**
+  (ADR-0015): it opens an **issue** on the source repo offering the explainer. The station table lists it for the
+  local door only; the hosted agent never runs it. A pull request is opened only through
+  `explainmyrepo outreach open-pr <owner/name>` after a yes (it needs a matching prior issue on record), or when the
+  operator sets `README_OUTREACH=pr` explicitly. It reuses the shared S4 diagrams; `explainmyrepo outreach followup`
+  posts one check-in 7 days later; a maintainer-email draft goes to the **owner only**, never to the maintainer.
+- **Cue:** **nothing reaches the source repo except an issue or a PR** (never a direct push — INV-16).
+  It is **off the critical path** and **NEVER blocks the core ship**; a failure is a warning only.
 
 ### Station 9 — NOTIFY
-- **Do:** `node tools/notify.mjs <build-dir>` — return the result inline **and**
+- **Do (local door):** `node tools/notify.mjs <build-dir>` — return the result inline **and**
   email the owner the **scorecard + both screenshots + links** (live URL, explainer
   repo, pack) plus, when present, the **README-PR link** and the **suggested
   source-repo topics/description**, so the owner can act on the optional offers and
-  be the third eye.
+  be the third eye. **Hosted door: do not run `notify`.** Sending the submitter's email is handled
+  outside your process; your job ends once `quality-grade` + `deploy` are done and `publish.liveUrl` is set.
 - **Cue:** **send confirmed (SMTP 250).** A notify failure degrades to a warning —
   it never inverts a live, graded, deployed build (INV-04).
 
@@ -715,13 +680,13 @@ in its `BuildContext` slot.
 - **S4 raster images all fire at once** — internally, inside ONE `generate-image`
   call (bounded concurrency in the tool itself, not multiple parallel processes —
   see Station 4 above).
-- **The structural SVGs are authored during S3** (their ASCII falls out of
-  authoring) and converted in parallel with the raster generation — not after it.
+- **The diagram rows are authored during S3** (they fall out of authoring) and
+  `make-diagrams` draws them in parallel with the raster generation — not after it.
 - **Favicon + the 1200×630 social card (S5) start the moment the hero returns**,
   overlapping the rest of S4.
 - **The AI pack builds as soon as S1's KB exists** — it overlaps S2 + S3.
-- **The README PR (S8b) and any studio/long-async step are quarantined** (INV-03):
-  optional, off the critical path, after deploy, never block the core ship.
+- **The README outreach (S8b) and the video overview are quarantined** (INV-03): local door only,
+  off the critical path, after deploy, never block the core ship.
 
 ---
 
@@ -729,18 +694,20 @@ in its `BuildContext` slot.
 
 - **INV-04 Never-fail-silently** — every station has a loud cue; no placeholder,
   default, or stub past a failure.
-- **INV-05 Never-ship-below-the-exemplar-bar** — on both devices, mean ≥ 90 AND min axis ≥ 85 AND all
-  six operator questions YES IS the completion criterion (a clearing build is reported as a normalized
-  95); below it, refine or flag honestly.
+- **INV-05 Aim-for-the-exemplar-bar, disclose the rest** — on both devices, mean ≥ 90 AND min axis ≥ 85
+  AND all six operator questions YES is the EXEMPLARY target; the SHIP tier (mean ≥ 82, min ≥ 70, five
+  ship operators) is what delivery is judged against. Below the exemplar bar, refine within the cap,
+  then ship and disclose honestly (ADR-0011).
 - **INV-06 Grounded-in-KB** — no claim without a real RVF KB passage; never a JSON
   stand-in.
 - **INV-07 Ships-the-pack** — every explainer ships the downloadable AI pack
   (`.passages.jsonl` present so search returns text; the three structured JSONs
   present so all four MCP tools return data).
-- **INV-08 One-source-of-truth** — this skill is the only brain; the plugin, npx
-  CLI, and website all run the identical core.
-- **INV-16 Source-repo-via-PR-only** — any touch to the source repo (README
-  enhancement, SEO suggestions) is offered and delivered ONLY as a pull request.
+- **INV-08 Two brains, held in step by tests** — the hosted door follows this skill; the local door authors
+  through `src/brain.mjs`. They share the tools and the station table (`src/stations.mjs`) and are pinned to
+  the same reader standard and image rules by `tests/two-doors-conform.test.mjs`, not by sharing one brain.
+- **INV-16 Source-repo-via-issue-or-PR-only** — any touch to the source repo (README
+  enhancement, SEO suggestions) is delivered ONLY as an issue or a pull request, never a direct push.
 - **INV-18 Architecture + flow diagrams mandatory** — every explainer ships both
   an architecture diagram and a process/data-flow diagram, as crisp SVGs grounded
   in the repo's real structure; missing either means the build is not done.
@@ -753,6 +720,6 @@ in its `BuildContext` slot.
 - **Mandatory ISOvision footer** — the credit + "create one" CTA footer ships on
   every page, verbatim.
 
-**"Done" = real screenshots; on both devices mean ≥ 90, min axis ≥ 85, and all six operator questions
-YES (reported as a normalized 95); the two pre-ship eyes agree; the page is live; and the AI pack ships.
+**"Done" = real screenshots; the page graded on both devices with the scorecard disclosed (EXEMPLARY is
+mean ≥ 90, min ≥ 85, six YES; SHIP is mean ≥ 82, min ≥ 70); the page is live; and the AI pack ships.
 If a stranger doesn't smile — or a newcomer can't follow the first four sections — it isn't finished.**

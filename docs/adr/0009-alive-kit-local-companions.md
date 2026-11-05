@@ -2,13 +2,18 @@
 
 **Status**: Accepted — per-capability status lives ONLY in `capabilities.json` (render it with `explainmyrepo capabilities`); this ADR never transcribes it
 **Date**: 2026-07-17
-**Updated**: 2026-07-17
+**Updated**: 2026-11-05
 **Authors**: Claude Code (Fable 5), directed by Stuart Kerr
 **Supersedes**: None
 **Related ADRs**: ADR-0005 (skill-based recipe), ADR-0008 (every image teaches)
-**Code touchpoints**: the ship-bar rail (tools/deploy.mjs, 2026-07-13), the operator's grade (bin/agentic-runner.mjs, 2026-07-15)
+**Code touchpoints**: `capabilities.json`, `tools/make-trailer.mjs`, `tools/make-social-loop.mjs`, `tests/capabilities-registry.test.mjs`
 
 ---
+
+> **Renumbered (3.0.1, 2026-11-05).** This ADR's invariants were INV-24 to INV-28. INV-24 is the reading-level
+> gate (ReadsAtFifteen, ADR-0006), so the Alive Kit set is now **INV-29 to INV-33** (old to new: 24 to 29,
+> 25 to 30, 26 to 31, 27 to 32, 28 to 33). The source comments and test titles
+> (`tools/make-social-loop.mjs`, `tests/capabilities-registry.test.mjs`) carry the new numbers.
 
 ## Context
 
@@ -47,7 +52,7 @@ policy this ADR encodes:
 `capabilities.json` at the repo root lists every companion with:
 `{ id, title, status: specified | built | verified, verifiedAt?, receipts?, entry? }`.
 
-**INV-24 (the gating invariant)**: a capability is *advertised* (shown as available by any
+**INV-29 (the gating invariant)**: a capability is *advertised* (shown as available by any
 user-facing surface) **iff `status: "verified"`** — meaning one supervised end-to-end proof run
 produced a real artifact whose receipts (date, output, cost, duration) are recorded in the
 registry entry. `specified` and `built` entries may be listed only under an explicit "not yet
@@ -55,12 +60,12 @@ verified — not enabled" label. Truth-in-advertising is enforced by the registr
 data source the CLI reads; there is no second list to drift — which is why this ADR itself
 carries no per-capability status or receipts anywhere, including its Status line.
 
-**INV-25**: `status: "verified"` ⇒ `receipts` and `verifiedAt` present, and `entry` points at a
+**INV-30**: `status: "verified"` ⇒ `receipts` and `verifiedAt` present, and `entry` points at a
 real tool. Mechanically enforced: `tests/capabilities-registry.test.mjs` fails the suite on any
-registry shape that violates this (or INV-24's schema), so a promotion without receipts cannot
+registry shape that violates this (or INV-29's schema), so a promotion without receipts cannot
 land through a green build.
 
-### 2. Local-door-only invariant (INV-26)
+### 2. Local-door-only invariant (INV-31)
 
 Companions run **only** on a locally cloned repo, invoked explicitly by the person at the
 keyboard. Enforcement is mechanical, not advisory:
@@ -74,7 +79,7 @@ people who **bring the solution down and run it themselves**.
 ### 3. The four capabilities, specified
 
 Common contract for all four: **input is a completed, gated build directory** (`build.json` +
-`site/` + `assets/`) consumed read-only (INV-28); the engine is a HyperFrames workflow authored in a
+`site/` + `assets/`) consumed read-only (INV-33); the engine is a HyperFrames workflow authored in a
 local Claude Code session (subscription-covered, per the 2026-07-15 `--executor-auth` finding);
 rendering is local FFmpeg ($0); output lands in the build directory and is never auto-deployed.
 
@@ -89,9 +94,9 @@ capabilities`); this table defines each capability's contract and its objective 
 | 4 | `social-loop` | `/motion-graphics`, ≤10s loop from the page's hero animation | `renders/social-loop.mp4` (+ 9:16 variant) | one supervised run; worst-frame check passes in BOTH aspect ratios |
 
 Verification promotes `status` to `verified` in the same commit that records the receipts
-(INV-25).
+(INV-30).
 
-### 4. Fail-open, always (INV-27)
+### 4. Fail-open, always (INV-32)
 
 A companion failure logs loudly, records the failure in the build dir, and exits non-zero —
 and changes nothing about the page, the gate verdict, or the deploy. No companion sits between
@@ -166,8 +171,8 @@ verification run per §3's pass condition.
 ## References
 
 - `capabilities.json` — the registry (this ADR §1); all live status + receipts live there
-- `tests/capabilities-registry.test.mjs` — INV-24/INV-25 mechanical enforcement
+- `tests/capabilities-registry.test.mjs` — INV-29/INV-30 mechanical enforcement
 - `tools/make-trailer.mjs` — the trailer capability's scaffolder/entry
 - `bin/explainmyrepo.mjs` — the `capabilities` subcommand (§7)
-- `docs/ddd/alive-kit-domain.md` — the companion domain model (INV-24…INV-28)
+- `docs/ddd/alive-kit-domain.md` — the companion domain model (INV-29 to INV-33)
 - heygen-com/hyperframes (Apache-2.0 core; skills unlicensed — hence §5)

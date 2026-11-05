@@ -2,7 +2,7 @@
 
 **Status**: Accepted (adversarial review round 1 complete — Fable 5, 2026-08-06; five defects found and repaired, see Review below. GPT-5.6-Sol could not run: codex usage limit. A second independent reviewer is still owed.)
 **Date**: 2026-08-06
-**Updated**: 2026-08-06
+**Updated**: 2026-11-05
 **Authors**: Claude Code (Opus 5), directed by Stuart Kerr
 **Prompted by**: Two consecutive hosted-build failures for `PolymathWizard/BHIL-Colophon-Spec`
 (runs [30857458852](https://github.com/stuinfla/Repo-Explainer/actions/runs/30857458852),
@@ -11,17 +11,28 @@ two complete pages rendered, **nothing delivered to the requester**
 **Supersedes**: None
 **Related ADRs**: ADR-0005 (Station recipe), ADR-0006 (comprehension ladder), ADR-0007 (source
 identity invariant), ADR-0008 (every image teaches / INV-22)
-**Code touchpoints**: `tools/deploy.mjs` (ship-bar rail), `bin/agentic-runner.mjs` (cure stage,
+**Code touchpoints**: `tools/deploy.mjs` (integrity refusals only), `bin/agentic-runner.mjs` + `bin/cure.mjs` (cure stage,
 failure path), `tools/notify.mjs` / `tools/notify-failure.mjs` (delivery), `tools/quality-grade.mjs`
 (scorecard is unchanged — only its *consequence* changes)
 
 ---
 
+> **Note (3.0.1, 2026-11-05) — verified against code.** (1) Deploy refuses only on integrity: an unassembled
+> page, a source-identity violation (when the pin is armed), a site-integrity failure (`src/site-check.mjs`),
+> or no scorecard with no recorded reason. (2) The ship-bar rail is gone and no force-deploy escape hatch exists
+> in `tools/deploy.mjs`; the recorded `quality.graderUnavailable` is the only no-scorecard path. (3) The cure
+> stage is `bin/cure.mjs` (`classifyEndState`): it classifies how a hosted build ended, runs at most one
+> bounded cure with an independent agent (only for a near-miss: diffuse mediocrity gets the honest "no cure"), and redeploys only a strictly better verdict. There is no manual-fix
+> escape: a build the cure stage cannot improve stays as delivered (`tests/cure.test.mjs`). (4) `quality.gateRefusal`
+> records why a free pre-check (INV-20 / INV-24) refused. (5) The identity pin is still armed on the hosted
+> door only (the honesty note in D1 remains true).
+
 ## Context
 
-The ship-bar rail is binary. `tools/quality-grade.mjs:350` (`evaluateShipworthy`) returns
+*(Context as of 2026-08-06, before this ADR.)* The ship-bar rail was binary. `evaluateShipworthy` in
+`tools/quality-grade.mjs` returns
 pass/fail on `mean >= 82 && min >= 70 && SHIP_OPERATORS.every(YES)`, and
-`tools/deploy.mjs` refuses to publish on `false`. A refusal is terminal: the run exits 1,
+`tools/deploy.mjs` then refused to publish on `false`. A refusal is terminal: the run exits 1,
 the assembled page is uploaded as a private Actions artifact with 7-day retention, and the
 requester receives a failure email containing no page and no link.
 
@@ -44,7 +55,7 @@ page existed. It was rendered, graded, and thrown away.
 The Aug 4 build was killed by a single axis — **B5 (imagery craft) = 55 on desktop**, with
 every other axis between 88 and 94 and a mean of 88. B5 was capped at 55 by the INV-22
 raster rule, which fires only when a raster fails **both** the takeaway test *and* the swap
-test (`tools/quality-grade.mjs:149`).
+test (the INV-22 cap in the `tools/quality-grade.mjs` rubric).
 
 The raster in question (`assets/problem.png`, inspected directly) renders its brief
 faithfully: labelled binders (`ACME-2026-Q3`, `RUBICON-2026-Q1`), a legible handwritten
@@ -96,7 +107,7 @@ renders is a page that ships.
 > hosted path, unarmed on the local path, and closing that is tracked work — not a claim to make in
 > the present tense.
 
-**A recorded grader OUTAGE is deliverable; a missing grade is not.** Before this ADR, `DEPLOY_FORCE`
+**A recorded grader OUTAGE is deliverable; a missing grade is not.** Before this ADR, a human force-deploy flag (since deleted)
 skipped the entire quality block *including* the no-scorecard refusal, so a human could still ship
 during a vision-API outage. Removing the quality gate removed that escape too — leaving the
 stochastic judge holding a veto through its own **availability**, this ADR's thesis exactly
@@ -176,10 +187,10 @@ hard versus which are mis-firing (as B5 did on 2026-08-04).
 
 | Alternative | Why rejected |
 |---|---|
-| **Lower the ship bar** (e.g. `min >= 55`) | Dishonest — it renames failure as success and destroys the scorecard's diagnostic value. Rule 9 forbids it. Also fails to fix the real problem: *some* threshold still destroys value. |
+| **Lower the ship bar** (for example, a minimum-axis floor of 55) | Dishonest — it renames failure as success and destroys the scorecard's diagnostic value. Rule 9 forbids it. Also fails to fix the real problem: *some* threshold still destroys value. |
 | **Preview-only URL for below-bar builds** | The customer cannot share what they paid for, which is most of the value. Rejected by the owner. |
 | **Quality banner on the page itself** | Degrades the artifact for every third party the owner shares it with. Rejected by the owner in favour of an honest email. |
-| **Deliver only above a floor (mean ≥ 80)** | Keeps a category of paid-for-and-destroyed builds for no clear benefit. Rejected by the owner: deliver anything that renders. |
+| **Deliver only above a floor (a mean floor of 80)** | Keeps a category of paid-for-and-destroyed builds for no clear benefit. Rejected by the owner: deliver anything that renders. |
 | **Retry until it passes** | Unbounded cost against a stochastic judge; already the failure mode the 3-call cap exists to prevent. |
 
 ## Verification
@@ -213,9 +224,9 @@ the house recipe requires. A second round is still owed.
 | 2 | **Same-URL downgrade.** Every below-bar email invites a re-run; a re-run targets the same Netlify URL; the refine loop is known to regress. The old gate was accidentally a ratchet protecting delivered pages. | **Fixed.** Redeploy requires a strictly better verdict. |
 | 3 | **The honest note lied.** `notify.mjs` hardcoded "the rest scored well" unconditionally — worst exactly when the page was worst. | **Fixed.** Derived from the real scorecard. |
 | 4 | **Weakest-axis misattribution.** `passed:false` from an operator or INV-18 failure would blame an axis scoring 83 while an invisible diagram was the truth. | **Fixed.** A numeric axis below 70 wins when one exists; otherwise the non-numeric blocker is named. |
-| 5 | **Grader outage = total delivery outage.** `DEPLOY_FORCE` used to cover the no-scorecard refusal. | **Fixed.** Recorded outages deliver, ungraded and stated. |
+| 5 | **Grader outage = total delivery outage.** A force-deploy flag used to cover the no-scorecard refusal. | **Fixed.** Recorded outages deliver, ungraded and stated. |
 | 6 | **D4 was unimplemented** — the mechanism named as keeping the grader honest did not exist. | **Fixed.** See D4. |
-| 7 | **The no-banner argument stops at the owner's preferred conclusion.** It treats "one soft axis" and "mean 45 with broken images" as one class, and never weighs the zero-cost middle option: an invisible machine-readable scorecard (meta tag / JSON-LD) on the page. | **Open.** The owner's decision on the visible banner stands; the machine-readable option is genuinely unconsidered and should be. |
+| 7 | **The no-banner argument stops at the owner's preferred conclusion.** It treats "one soft axis" and "a failing mean with broken images" as one class, and never weighs the zero-cost middle option: an invisible machine-readable scorecard (meta tag / JSON-LD) on the page. | **Open.** The owner's decision on the visible banner stands; the machine-readable option is genuinely unconsidered and should be. |
 | 8 | **No content-security pass at the delivery boundary.** A hostile README that prompt-injects the `bypassPermissions` agent yields a page that assembles, grades well, and ships publicly. Not a regression — but this boundary now explicitly claims to be *the* delivery gate, and house Rule 8 (AIMDS) is unapplied here. | **Open.** Pre-existing; newly load-bearing. |
 | 9 | **"Removing the gate doesn't weaken honesty" is not self-evidently true.** The scorecard stays honest; nothing forces anyone to *read* it. D4 now creates the record, but no one is yet required to look at it. | **Partly addressed.** D4 exists; a standing review of below-bar distributions does not. |
 

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 576" width="600" height="576" role="img" aria-labelledby="doors-t doors-d" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">
+  <title id="doors-t">Two doors, one station table</title>
+  <desc id="doors-d">The local door runs from your machine with npx explainmyrepo and your own keys, for any repo including private ones, and runs every station. The hosted door is the website: a GitHub Action runs a headless agent that follows SKILL.md for public repos with no keys. Both read the same station table, run the same tools and apply the same quality gate.</desc>
+  <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#64748b"/></marker></defs>
+  <rect x="0" y="0" width="600" height="576" rx="16" fill="#0f172a" stroke="#1e293b"/>
+  <text x="300" y="34" fill="#7dd3fc" font-size="16" font-weight="bold" text-anchor="middle">two doors, one station table</text>
+  <rect x="150" y="50" width="300" height="40" rx="10" fill="#111c33" stroke="#7dd3fc" stroke-width="1.5"/>
+  <text x="300" y="75" fill="#7dd3fc" font-size="14" font-weight="bold" text-anchor="middle">src/stations.mjs + tools/*.mjs</text>
+  <line x1="300" y1="90" x2="300" y2="112" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="20" y="116" width="560" height="165" rx="10" fill="#111c33" stroke="#34d399" stroke-width="1.5"/>
+  <text x="36" y="142" fill="#34d399" font-size="15" font-weight="bold">local door</text>
+  <text x="138.75" y="142" fill="#94a3b8" font-size="13">npx explainmyrepo &lt;url&gt;</text>
+  <text x="36" y="166" fill="#34d399" font-size="13">·</text>
+  <text x="52" y="166" fill="#e2e8f0" font-size="13">your keys, any repo including private ones</text>
+  <text x="36" y="189" fill="#34d399" font-size="13">·</text>
+  <text x="52" y="189" fill="#e2e8f0" font-size="13">src/orchestrator.mjs runs every local station in table order,</text>
+  <text x="52" y="208" fill="#e2e8f0" font-size="13">with src/brain.mjs authoring prompts</text>
+  <text x="36" y="231" fill="#34d399" font-size="13">·</text>
+  <text x="52" y="231" fill="#e2e8f0" font-size="13">also does: GitHub explainer repo, the Ask box, video +</text>
+  <text x="52" y="250" fill="#e2e8f0" font-size="13">infographic after delivery, README outreach</text>
+  <rect x="20" y="295" width="560" height="207" rx="10" fill="#111c33" stroke="#7dd3fc" stroke-width="1.5"/>
+  <text x="36" y="321" fill="#7dd3fc" font-size="15" font-weight="bold">hosted door</text>
+  <text x="147.825" y="321" fill="#94a3b8" font-size="13">explainmyrepo.isovision.ai</text>
+  <text x="36" y="345" fill="#7dd3fc" font-size="13">·</text>
+  <text x="52" y="345" fill="#e2e8f0" font-size="13">zero keys, public repos only</text>
+  <text x="36" y="368" fill="#7dd3fc" font-size="13">·</text>
+  <text x="52" y="368" fill="#e2e8f0" font-size="13">a GitHub Action starts bin/agentic-runner.mjs: clone, credential</text>
+  <text x="52" y="387" fill="#e2e8f0" font-size="13">probes, concept tournament, then a headless agent that follows</text>
+  <text x="52" y="406" fill="#e2e8f0" font-size="13">skills/explainmyrepo/SKILL.md</text>
+  <text x="36" y="429" fill="#7dd3fc" font-size="13">·</text>
+  <text x="52" y="429" fill="#e2e8f0" font-size="13">the runner then handles a bounded cure stage, the advisory claims</text>
+  <text x="52" y="448" fill="#e2e8f0" font-size="13">check and the delivery email</text>
+  <text x="36" y="471" fill="#7dd3fc" font-size="13">·</text>
+  <text x="52" y="471" fill="#e2e8f0" font-size="13">no GitHub repo is published and there is no Ask box yet</text>
+  <text x="20" y="524" fill="#94a3b8" font-size="13">Same tools, same gate, same standards: tests fail when the two doors</text>
+  <text x="20" y="543" fill="#94a3b8" font-size="13">drift apart.</text>
+</svg>
