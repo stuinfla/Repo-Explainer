@@ -856,6 +856,8 @@ footer .fine { margin-top: var(--space-l); padding-top: var(--space-m); border-t
   .hero-grid { grid-template-columns: 1.05fr 0.95fr; gap: var(--space-2xl); align-items: start; }
   .hero-art { position: sticky; top: var(--space-l); align-self: start; }
   .dual { grid-template-columns: 1fr 1fr; }
+  /* two technical diagrams carry 12px labels only at full width: stack them, never share a half-width row */
+  .dual.dual-diagrams { grid-template-columns: 1fr; }
   /* Paragraph-length sequential steps read best at 2 columns: ~60-char lines,
      4 steps land as a clean 2x2 with no orphaned card, graceful for any count.
      (repeat(3,1fr) forced columns too narrow -> 1-2 words/line + orphaned 4th.) */

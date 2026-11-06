@@ -746,7 +746,7 @@ ${jsonLdScript}
     howItWorks.lead ? `<p class="lead-in">${inline(howItWorks.lead)}</p>` : '',
     paras(howItWorks.paragraphs),
     flowFile
-      ? `<div class="dual">${figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, mobile: archM, tier: { cls: 'tech', label: 'Architecture' } })}${figureHtml(flowFile, flowAlt, 'Data flow — how a request moves through the system at runtime.', { diagram: true, mobile: flowM, tier: { cls: 'tech', label: 'Data flow' } })}\n      </div>`
+      ? `<div class="dual dual-diagrams">${figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, mobile: archM, tier: { cls: 'tech', label: 'Architecture' } })}${figureHtml(flowFile, flowAlt, 'Data flow — how a request moves through the system at runtime.', { diagram: true, mobile: flowM, tier: { cls: 'tech', label: 'Data flow' } })}\n      </div>`
       : figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, mobile: archM, tier: { cls: 'tech', label: 'Architecture' } }),
   ].filter(Boolean).join('\n      ')));
 
