@@ -55,3 +55,10 @@ export async function runGate({ render, measure }) {
   }
   throw new Error(`social card failed the legibility gate after a corrective re-render (${last}); refusing to ship an unreadable card`);
 }
+
+/**
+ * Text for ImageMagick's `caption:` / `label:` as a literal. A leading "@" would read a file into the public card and
+ * "%" starts a property expansion. The @file route is blocked by the default Ubuntu ImageMagick policy, so neutralise
+ * instead: a leading no-break space (ImageMagick strips ordinary leading whitespace before looking for '@'; the card is trimmed afterwards) and doubled percent signs.
+ */
+export const literalText = (text) => `\u00a0${String(text).replace(/%/g, '%%')}`;

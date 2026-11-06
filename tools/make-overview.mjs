@@ -26,6 +26,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { MAX_SECONDS, withinCap } from '../src/overview-cap.mjs';
 import { injectOverview } from '../src/overview-block.mjs';
+import { cleanVideo, cleanInfographic } from '../src/overview-clean.mjs';
 
 const num = (v, d) => (Number(v) > 0 ? Number(v) : d);
 const POLL_MS = num(process.env.OVERVIEW_POLL_MS, 15000);
@@ -130,20 +131,29 @@ async function main() {
     try {
       const mp4 = path.join(work, `${job.format}.mp4`);
       sh('nlm', ['download', 'video', nb, '--id', job.aid, '-o', mp4, '--no-progress']);
-      const dur = parseFloat(sh('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', mp4]));
+      // NotebookLM brands its renders: strip the mark from every frame and cut the trailing splash card (local, ffmpeg).
+      let use = mp4, cleaned = false;
+      try { const c = path.join(work, `${job.format}.clean.mp4`); const r = cleanVideo(mp4, c); use = c; cleaned = true; log(`${job.format}: branding removed (trimmed ${r.trimmedSec}s of splash card)`); }
+      catch (e) { log(`${job.format}: branding NOT removed (${why(e)}) — shipping the original`); }
+      const dur = parseFloat(sh('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', use]));
       log(`${job.format}: ${dur.toFixed(1)}s`);
       if (!withinCap(dur)) { log(`${job.format}: over ${MAX_SECONDS}s — discarded, never shipped`); return null; }
-      return { format: job.format, mp4, dur };
+      return { format: job.format, mp4: use, dur, cleaned };
     } catch (e) { log(`${job.format}: ${why(e)}`); return null; }
   };
-  const fetchInfographic = (job) => {
+  const fetchInfographic = async (job) => {
     try {
       const png = path.join(work, 'infographic.png');
       sh('nlm', ['download', 'infographic', nb, '--id', job.aid, '-o', png, '--no-progress']);
+      let src = png, cleaned = false;
+      try {
+        const c = path.join(work, 'infographic.clean.png'), r = await cleanInfographic(png, c);
+        if (r.cleaned) { src = c; cleaned = true; log('infographic: branding removed'); } else log(`infographic: branding NOT removed (${r.reason}) — shipping the original`);
+      } catch (e) { log(`infographic: branding NOT removed (${why(e)}) — shipping the original`); }
       // 4 MB PNG is too heavy for a page; 1800px JPEG is ~10x smaller and still crisp at text size.
-      sh('ffmpeg', ['-v', 'error', '-y', '-i', png, '-vf', 'scale=1800:-2', '-q:v', '3', path.join(assets, 'overview-infographic.jpg')]);
+      sh('ffmpeg', ['-v', 'error', '-y', '-i', src, '-vf', 'scale=1800:-2', '-q:v', '3', path.join(assets, 'overview-infographic.jpg')]);
       log('infographic: saved');
-      return { path: 'assets/overview-infographic.jpg' };
+      return { path: 'assets/overview-infographic.jpg', cleaned };
     } catch (e) { log(`infographic skipped: ${why(e)}`); return null; }
   };
 
@@ -161,7 +171,7 @@ async function main() {
       video = result ? null : startVideo();
     }
     if (infoJob && terminal(state(infoJob))) {
-      if (state(infoJob) === 'completed') info = fetchInfographic(infoJob); else log('infographic: ended as "failed"');
+      if (state(infoJob) === 'completed') info = await fetchInfographic(infoJob); else log('infographic: ended as "failed"');
       infoJob = null;
     }
     if (result && !infoJob) break;
@@ -178,7 +188,7 @@ async function main() {
   if (placed.injected) fs.writeFileSync(htmlPath, placed.html);
   else if (placed.reason !== 'already present') log(`${placed.reason} — video copied but not embedded`);
   const injected = placed.injected;
-  return { infographic: info, format: result.format, durationSec: +result.dur.toFixed(1), path: 'assets/overview.mp4', injected };
+  return { infographic: info, brandingRemoved: { video: !!result.cleaned, infographic: !!(info && info.cleaned) }, format: result.format, durationSec: +result.dur.toFixed(1), path: 'assets/overview.mp4', injected };
 }
 
 let slot;

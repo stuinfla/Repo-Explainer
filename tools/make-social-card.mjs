@@ -33,7 +33,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { backdropContrast, inkVisibility, regionReadable, runGate, MIN_CONTRAST } from '../src/card-legibility.mjs';
+import { backdropContrast, inkVisibility, regionReadable, runGate, MIN_CONTRAST, literalText } from '../src/card-legibility.mjs';
 
 const HEX = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 const RGB = /^rgba?\(/i;
@@ -65,14 +65,6 @@ function magick(bin, args) {
     const detail = (e.stderr ? e.stderr.toString() : e.message || '').trim().split('\n').slice(-3).join(' ');
     throw new Error(`ImageMagick failed (${bin} ${args.join(' ')}): ${detail || 'non-zero exit'}`);
   }
-}
-
-// Text reaches ImageMagick ONLY as `caption:@file` / `label:@file`. Inline `caption:${text}` makes a leading
-// '@' read an arbitrary file into the public PNG and expands % escapes; the @file form is literal.
-function textFile(stage, name, text) {
-  const f = path.join(stage, `${name}.txt`);
-  fs.writeFileSync(f, String(text));
-  return `@${f}`;
 }
 
 function pickFont() { for (const f of FONT_CANDIDATES) { if (fs.existsSync(f)) return f; } return null; }
@@ -191,7 +183,7 @@ async function main() {
       let tagH = 0, tagW = 0, tagSize = 0;
       for (const size of [58, 52, 46, 40]) {
         magick(bin, ['-background', 'none', '-fill', hex(ink), ...fontArgs, '-size', `${CARD_W - PAD * 2}x`, '-gravity', 'West',
-          '-pointsize', String(size), `caption:${textFile(stage, `tag-${attempt}-${size}`, tagline)}`, '-trim', '+repage', f('tag')]);
+          '-pointsize', String(size), `caption:${literalText(tagline)}`, '-trim', '+repage', f('tag')]);
         [tagW, tagH] = dimsOf(f('tag')); tagSize = size;
         if (tagH <= size * 3.6) break;
       }
@@ -207,7 +199,7 @@ async function main() {
       if (repoName) {
         let size = 34, wmW = 0, wmH = 0;
         for (; size >= 24; size -= 2) {
-          magick(bin, ['-background', 'none', '-fill', hex(ink), ...fontArgs, '-pointsize', String(size), `label:${textFile(stage, `wm-${attempt}-${size}`, repoName)}`, '-trim', '+repage', f('wm')]);
+          magick(bin, ['-background', 'none', '-fill', hex(ink), ...fontArgs, '-pointsize', String(size), `label:${literalText(repoName)}`, '-trim', '+repage', f('wm')]);
           [wmW, wmH] = dimsOf(f('wm'));
           if (wmW <= 760) break;
         }

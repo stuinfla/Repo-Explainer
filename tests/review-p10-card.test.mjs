@@ -135,3 +135,10 @@ test('runGate: pass first time = 1 attempt; fail then pass = ONE corrective re-r
   await assert.rejects(runGate({ render, measure: async () => ({ ok: false, detail: 'wordmark 2.10:1' }) }), /legibility gate.*wordmark 2\.10:1.*refusing to ship/);
   assert.deepEqual(calls, [0, 1], 'exactly one corrective re-render, never a third');
 });
+
+test('literalText: no leading "@" and no live "%" ever reaches ImageMagick (policy-independent, runs everywhere)', async () => {
+  const { literalText } = await import('../src/card-legibility.mjs');
+  assert.equal(literalText('@secret.txt')[0], '\u00a0', 'a guard that is not whitespace to ImageMagick precedes any leading @');
+  assert.equal(literalText('100%[fx:1]'), '\u00a0100%%[fx:1]', 'percent is doubled so it prints, never expands');
+  assert.equal(literalText('plain').replace(/^\u00a0/, ''), 'plain');
+});
