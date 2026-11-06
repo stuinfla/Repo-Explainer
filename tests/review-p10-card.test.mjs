@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import sharp from 'sharp';
 import { inkVisibility, regionReadable, backdropContrast, runGate, MIN_CONTRAST } from '../src/card-legibility.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -114,7 +115,8 @@ test('backdropContrast reports the WORST 1% of pixels, so one bright patch under
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'emr-bd-'));
   try {
     const f = path.join(dir, 'bd.png');
-    im(['-size', '200x100', 'xc:#0b1020', '-fill', '#ffffff', '-draw', 'rectangle 0,0 40,100', f]);   // 20% white bar
+    const bar = await sharp({ create: { width: 40, height: 100, channels: 3, background: '#ffffff' } }).png().toBuffer();   // 20% white bar
+    await sharp({ create: { width: 200, height: 100, channels: 3, background: '#0b1020' } }).composite([{ input: bar, left: 0, top: 0 }]).png().toFile(f);
     const c = await backdropContrast(f, { x: 0, y: 0, w: 200, h: 100 }, [247, 248, 252]);
     assert.ok(c.p1 < 1.2, `white ink over a white patch is ~1:1, got ${c.p1}`);
     assert.ok(c.median > 15, `most of the box is dark, got ${c.median}`);

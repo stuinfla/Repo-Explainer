@@ -32,7 +32,8 @@ jobs:
 
       # The diagram tests spawn make-diagrams, which shells out to `xmllint` to validate every SVG. A bare
       # runner does not have it; system deps here must mirror what the tools invoke (nothing calls `dot`).
-      - run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+      # imagemagick: make-social-card renders the share card with it; without it the card-legibility tests SKIP.
+      - run: sudo apt-get update && sudo apt-get install -y libxml2-utils imagemagick
 
       - run: npm test
 
