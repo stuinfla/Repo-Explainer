@@ -490,6 +490,8 @@ async function main() {
   const flow = (visuals.flowDiagram && typeof visuals.flowDiagram === 'object') ? visuals.flowDiagram : null;
   const flowFile = (flow && flow.svgPath) ? copyAsset(reqStr(flow.svgPath, 'visuals.flowDiagram.svgPath'), buildDir, siteAssets, 'flow diagram') : null;
   const flowAlt = flow ? (flow.altText || '') : '';
+  const archCap = (typeof arch.caption === 'string' && arch.caption.trim()) || 'Architecture — modules, components and how they depend on each other.';
+  const flowCap = (flow && typeof flow.caption === 'string' && flow.caption.trim()) || 'Data flow — how a request moves through the system at runtime.';
   const flowM = flowFile ? twin(flow, 'flow diagram') : null;
 
   // optional ladder rungs — rendered only when present (no silent placeholder; broken file = loud)
@@ -746,8 +748,8 @@ ${jsonLdScript}
     howItWorks.lead ? `<p class="lead-in">${inline(howItWorks.lead)}</p>` : '',
     paras(howItWorks.paragraphs),
     flowFile
-      ? `<div class="dual dual-diagrams">${figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, mobile: archM, tier: { cls: 'tech', label: 'Architecture' } })}${figureHtml(flowFile, flowAlt, 'Data flow — how a request moves through the system at runtime.', { diagram: true, mobile: flowM, tier: { cls: 'tech', label: 'Data flow' } })}\n      </div>`
-      : figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, mobile: archM, tier: { cls: 'tech', label: 'Architecture' } }),
+      ? `<div class="dual dual-diagrams">${figureHtml(archFile, archAlt, archCap, { diagram: true, mobile: archM, tier: { cls: 'tech', label: 'Architecture' } })}${figureHtml(flowFile, flowAlt, flowCap, { diagram: true, mobile: flowM, tier: { cls: 'tech', label: 'Data flow' } })}\n      </div>`
+      : figureHtml(archFile, archAlt, archCap, { diagram: true, mobile: archM, tier: { cls: 'tech', label: 'Architecture' } }),
   ].filter(Boolean).join('\n      ')));
 
   // 5 · use cases  (collapsible cases + scenario raster)

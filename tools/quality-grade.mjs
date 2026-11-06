@@ -614,6 +614,9 @@ async function renderDevice(chromium, url, device, assetsDir) {
       { idx: domInv18.flowIndex, key: 'flow', label: 'PROCESS / DATA-FLOW diagram — the runtime flow (how it works)' },
     ];
     const diagCrops = [];
+    // A figure taller than the viewport is shot with the sticky header scrolled on top of it; hide the header
+    // for the element crops only, so a diagram is judged on what it draws and not on a capture artifact.
+    await page.evaluate(() => { const st = document.createElement('style'); st.id = 'grade-hide-head'; st.textContent = '.site-head{visibility:hidden !important}'; document.head.appendChild(st); }).catch(() => {});
     for (const d of diagSpecs) {
       if (d.idx < 0) { log(`  diagram ${d.key}: no figure found in #how-it-works — skipped`); continue; }
       try {
@@ -640,6 +643,7 @@ async function renderDevice(chromium, url, device, assetsDir) {
         diagCrops.push({ key: `concept${i}`, label: `CONCEPT diagram (big-idea / insight) — must be a real DRAWN diagram (cards + arrows), NEVER typeset ASCII/box-characters`, path: cropPath });
       } catch (e) { log(`  concept${i}: capture failed (${e?.message || e}) — skipped`); }
     }
+    await page.evaluate(() => document.getElementById('grade-hide-head')?.remove()).catch(() => {});
     // (3d) WORST-FRAME RULE: the hero animation, when present, is captured at three loop phases ~3s apart
     // and all three go to the grader (~6s per device); a moving thing is judged at its worst moment.
     const heroAnimEl = page.locator('.hero-refusal').first();
