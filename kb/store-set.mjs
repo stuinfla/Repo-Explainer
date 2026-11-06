@@ -9,9 +9,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
+import { fileURLToPath } from 'node:url';
+
+const KB_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 export const SYNTHETIC_PATH_RE = /^PRIMER#/;   // the documented "synthetic, preserve on delta" marker
 const LOCK_STALE_MS = 60 * 60 * 1000;          // 1 h — a builder that old is presumed dead
+
+// Directory holding a slug's StoreSet: kb/stores/<slug>/ (KB_STORE_DIR overrides, so tests and
+// staging never touch real stores). One rule shared by build-kb.mjs and index-primer.mjs.
+export function storeDirFor(slug) {
+  return process.env.KB_STORE_DIR ? path.resolve(process.env.KB_STORE_DIR) : path.join(KB_DIR, 'stores', slug);
+}
 
 // ---------- StoreSet lock ----------
 // Exclusive-create lockfile next to the store. Both builders take it BEFORE reading any state.
@@ -63,13 +72,7 @@ export function readIdsIndex(file) {
   return { header: { model: j.model, dimensions: j.dimensions, metric: j.metric, maxIdEver: j.maxIdEver }, entries: j.entries || {} };
 }
 
-// ---------- atomic write + staged publish ----------
-export function writeFileAtomic(filePath, content) {
-  const tmp = `${filePath}.tmp-${process.pid}`;
-  fs.writeFileSync(tmp, content);
-  fs.renameSync(tmp, filePath);
-}
-
+// ---------- staged publish ----------
 // Clone a file for staging. COPYFILE_FICLONE is instant (CoW) on APFS and silently falls
 // back to a real copy elsewhere.
 export function cloneFile(src, dst) {

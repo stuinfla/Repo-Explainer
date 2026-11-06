@@ -27,7 +27,7 @@
     contribute: 'contributing pull request develop', test: 'tests testing verify', slow: 'performance speed benchmark', fast: 'performance speed benchmark'
   };
   function expand(q) {
-    var out = q.slice(); out.orig = q.slice(); out.w = Object.create(null);
+    var out = q.slice(); out.w = Object.create(null);
     q.forEach(function (w) { out.w[w] = 1; });
     q.forEach(function (w) { if (SYN[w]) tok(SYN[w]).forEach(function (x) { if (out.indexOf(x) < 0) { out.push(x); out.w[x] = 0.35; } }); });
     return out;
@@ -112,8 +112,8 @@
     ans.classList.remove('on'); scan.classList.add('on'); scanTxt.textContent = 'opening the project…';
     var t0 = Date.now(), ticker;
     load().then(function (D) {
-      var sample = []; for (var k = 0; k < 40; k++) sample.push(D.docs[(k * 97 + 13) % D.docs.length].p);
-      var n = 0; ticker = setInterval(function () { scanTxt.textContent = 'reading ' + sample[n++ % sample.length]; }, 70);
+      var sample = []; if (D.docs.length) for (var k = 0; k < 40; k++) sample.push(D.docs[(k * 97 + 13) % D.docs.length].p);   // an index with sections but no passages must not throw
+      var n = 0; if (sample.length) ticker = setInterval(function () { scanTxt.textContent = 'reading ' + sample[n++ % sample.length]; }, 70);
       var hits = D.docIdx.top(q, 12, function (i) { return kindBoost(D.docs[i].p); });
       var sec = D.secIdx.top(q, 1)[0]; if (sec && sec.s < 1.0) sec = null;
       var seen = {}, picked = [];

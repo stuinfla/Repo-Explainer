@@ -28,7 +28,7 @@
 //                 typePersonality?:{ display?,sans?,mono?,fontHref?,
 //                                    displayWeight?,displayCase?,displayTracking? } }
 //     content.sections:
-//       hero:        { eyebrow?, headline | headlineHtml, lede, sub?, ctas?[{label,href,ghost?}],
+//       hero:        { eyebrow?, headline, lede, sub?, ctas?[{label,href,ghost?}],
 //                      meta?[{label,value}], plain? }
 //       problem:     { title, lead?, paragraphs?, note?:{kind?,label?,text} }
 //       whatItIs:    { title, lead?, paragraphs?, table?:{caption?,head[],rows[][]} }
@@ -42,6 +42,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { makeVariants, pictureHtml } from '../src/image-variants.mjs';
+import { injectOverview } from '../src/overview-block.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));      // tools/
 const REPO_ROOT = path.resolve(HERE, '..');
@@ -107,20 +109,17 @@ const KNOBS = new Set([
   'radius', 'radius-s', 'ease', 'hero-grad-angle',
 ]);
 function normKnob(k) { return String(k).replace(/^--/, '').trim().toLowerCase(); }
+const SAFE_HREF = /^(https?:|#|\/(?!\/)|mailto:)/i;
 function safeCssValue(v, knob) {
   const val = String(v).trim();
   if (!val) throw new Error(`concept.palette['${knob}'] is empty`);
-  if (/[;{}<>]/.test(val) || /javascript:/i.test(val) || /url\(/i.test(val)) {
+  if (/[;{}<>"]/.test(val) || /javascript:/i.test(val) || /url\(/i.test(val)) {
     throw new Error(`concept.palette['${knob}'] contains a disallowed value: ${val}`);
   }
   return val;
 }
-// ── CTA legibility: derive --on-accent from the ACTUAL button fill (WCAG AA) ───────────────────
-// The skeleton hard-codes `--on-accent: #0a0a12` (near-black), but the per-repo theme overrides
-// `--accent` / `--spectrum` freely. A dark accent therefore paints near-black text on a near-black
-// button: the CTA label is invisible. Nothing validated that the ink could be READ on the fill —
-// only that `--accent` existed. Never trust a fixed default against a brain-chosen colour: measure
-// the contrast and pick the legible ink.
+// ── CTA legibility: derive --on-accent from the ACTUAL button fill (WCAG AA). The skeleton's near-black
+// default is invisible on a dark brain-chosen accent, so measure the contrast and pick the legible ink.
 const ON_ACCENT_DARK = '#0a0a12';
 const ON_ACCENT_LIGHT = '#f7f8fc';
 const AA_CONTRAST = 4.5;                    // WCAG AA for normal-weight label text
@@ -163,10 +162,8 @@ function bestOnAccent(fills) {
   return { color: best, minRatio: bestMin };
 }
 
-// A bare colour list ("#a, #b, #c") is not a valid `background` value. Through a custom property the
-// browser discards it at computed-value time, `.cta` paints NO fill, and its dark ink lands on the dark
-// page — the primary button went invisible on ruos, ruvector and helix (2026-09-17). The contrast guard
-// below could not catch it: it measured the listed colours of a fill that never painted. Wrap the list.
+// A bare colour list is not a valid `background` through a custom property (the browser drops it and the
+// CTA paints no fill), so a bare list is wrapped in linear-gradient().
 const GRADIENT_FN = /^(repeating-)?(linear|radial|conic)-gradient\(/i;
 const COLOR_TOKEN = /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([^)]*\))$/i;
 function normalizeSpectrum(val) {
@@ -180,6 +177,42 @@ function normalizeSpectrum(val) {
   }
   parts.push(cur.trim());
   return parts.length >= 2 && parts.every((p) => COLOR_TOKEN.test(p)) ? `linear-gradient(96deg, ${parts.join(', ')})` : val;
+}
+
+// ── theme completeness: a palette that sets bg/ink must not inherit the skeleton's DARK siblings ─────────────
+// The skeleton's defaults (--bg-2, --surface-2, --ridge, --ink-2, --muted, --faint) belong to a dark theme. A light
+// palette that sets only bg/surface/ink would paint body copy (--ink-2, pale lavender) on a cream card and end the
+// page background in near-black. Derive every missing sibling from the colours the palette DID set, and hold the
+// text tokens to AA against every surface they can sit on.
+const toHex = (rgb) => '#' + rgb.map((c) => Math.max(0, Math.min(255, Math.round(c))).toString(16).padStart(2, '0')).join('');
+const mixRgb = (a, b, t) => a.map((c, i) => c + (b[i] - c) * t);   // t=0 -> a, t=1 -> b
+function holdAA(rgb, toward, grounds) {            // move `rgb` toward `toward` until every ground reaches AA
+  let c = rgb;
+  for (let i = 0; i < 40 && Math.min(...grounds.map((g) => contrast(c, g))) < AA_CONTRAST; i++) c = mixRgb(c, toward, 0.08);
+  return c;
+}
+function completeTheme(decls, tokensUsed, note = (m) => process.stderr.write(m)) {
+  const get = (t) => (decls.find(([k]) => k === t) || [])[1];
+  const bg = parseColor(get('--bg')), ink = parseColor(get('--ink'));
+  if (!bg || !ink) return;
+  const surface = parseColor(get('--surface')) || bg;
+  const put = (k, rgb, why) => {
+    const v = toHex(rgb), cur = decls.find(([d]) => d === k);
+    if (cur) cur[1] = v; else { decls.push([k, v]); tokensUsed.push(k); }
+    note(`assemble-page: ${why} ${k} ${v}\n`);
+  };
+  const surface2 = parseColor(get('--surface-2')) || mixRgb(surface, ink, 0.05);
+  if (!get('--bg-2')) put('--bg-2', mixRgb(bg, ink, 0.04), 'derived');
+  if (!get('--surface-2')) put('--surface-2', surface2, 'derived');
+  if (!get('--ridge')) put('--ridge', mixRgb(surface, ink, 0.14), 'derived');
+  const grounds = [bg, surface, surface2, parseColor(get('--bg-2')) || bg];
+  for (const [k, t] of [['--ink-2', 0.22], ['--muted', 0.42]]) {
+    const given = parseColor(get(k));
+    const want = holdAA(given || mixRgb(ink, bg, t), ink, grounds);
+    if (!given) put(k, want, 'derived');
+    else if (Math.min(...grounds.map((g) => contrast(given, g))) < AA_CONTRAST) put(k, want, `raised to AA (${AA_CONTRAST}:1)`);
+  }
+  if (!get('--faint')) put('--faint', mixRgb(ink, bg, 0.6), 'derived');
 }
 
 function buildTheme(concept) {
@@ -216,6 +249,8 @@ function buildTheme(concept) {
     }
   }
 
+  completeTheme(decls, tokensUsed);
+
   const tp = concept.typePersonality;
   let fontHref = null;
   if (tp && typeof tp === 'object') {
@@ -223,7 +258,7 @@ function buildTheme(concept) {
     for (const [key, knob] of Object.entries(map)) {
       if (tp[key] != null && String(tp[key]).trim()) { decls.push([`--${knob}`, safeCssValue(tp[key], knob)]); tokensUsed.push(`--${knob}`); }
     }
-    const fh = tp.fontHref || tp.fontImport;
+    const fh = tp.fontHref;
     if (fh) {
       const m = String(fh).match(/https:\/\/[^\s'")]+/);
       if (!m) throw new Error('concept.typePersonality.fontHref must be an https font URL');
@@ -239,6 +274,80 @@ function buildTheme(concept) {
   ].filter(Boolean).join('\n');
 
   return { css: rootBlock, tokensUsed, fontHref, accent: (decls.find(([k]) => k === '--accent') || [])[1] };
+}
+
+// ── share text: never clipped mid-phrase, never an ellipsis ───────────────────────────────────
+const DANGLING = /(?:\s+(?:and|or|but|the|a|an|of|to|in|on|for|with|by|at|from|into|as|is|are|—|–|-))+$/i;
+const tidyEnd = (t) => t.replace(DANGLING, '').replace(/[\s,;:—–-]+$/, '').trim();
+/** Longest prefix of `text` that fits `max`: whole sentences first, else a word boundary. No ellipsis. */
+export function fitText(text, max) {
+  const t = String(text).replace(/\s+/g, ' ').trim();
+  if (t.length <= max) return t;
+  const sentences = t.match(/[^.!?]+[.!?]+(?=\s|$)/g) || [];
+  let acc = '';
+  for (const sn of sentences) { const next = (acc ? `${acc} ` : '') + sn.trim(); if (next.length > max) break; acc = next; }
+  if (acc.length >= 20) return acc;
+  const words = t.slice(0, max + 1).split(' ');
+  if (words.length > 1) words.pop();               // the last word may be cut by the slice
+  const cut = tidyEnd(words.join(' '));
+  return cut || t.slice(0, max);
+}
+/** `<repo name> — <short tagline>` (or the authored title when it already fits), ≤ 70 chars, word-boundary cut. */
+export function fitTitle(repoName, tagline, authored, max = 70) {
+  const a = authored && String(authored).replace(/\s+/g, ' ').trim();
+  if (a && a.length <= max && !/(?:…|\.{3})$/.test(a)) return a;
+  const name = String(repoName).replace(/\s+/g, ' ').trim();
+  const head = `${name} — `;
+  if (head.length + 12 > max) return fitText(name, max);
+  let tag = fitText(tagline, max - head.length).replace(/[.]$/, '');
+  return `${head}${tag}`;
+}
+
+// ── mobile-first page CSS, appended AFTER the design system + theme ──────────────────────────────
+// Facts text takes an ink derived from the theme's real background (≥ 4.5:1), never a 60%-opacity mono.
+const ctrOn = (ink, bg) => contrast(parseColor(ink), bg);
+export function factsInk(bgValue, candidates) {
+  const bg = parseColor(bgValue);
+  if (!bg) return candidates[0];
+  const ok = candidates.find((c) => parseColor(c) && ctrOn(c, bg) >= AA_CONTRAST);
+  return ok || bestOnAccent([bg]).color;
+}
+function pageCss(factsColor) {
+  return `
+/* ── page layer: mobile-first (appended by assemble-page) ── */
+html { overflow-x: clip; }
+img, svg, video { max-width: 100%; }
+.meta-row, .meta-row span, .dl-cta .dl-meta, .attrib-lede .attrib-handle { color: ${factsColor}; opacity: 1; font-size: max(13px, var(--step--2, 13px)); }
+.meta-row b { color: var(--accent-2); }
+.cmd-block { position: relative; margin: 14px 0; max-width: 100%; min-width: 0; }
+.cmd-block pre.code-block { margin: 0; max-width: 100%; padding-right: 92px; }
+.cmd-block .cmd-note { margin: 0 0 6px; font-size: 13px; color: ${factsColor}; }
+.copy-btn { position: absolute; top: 6px; right: 6px; min-width: 44px; min-height: 44px; padding: 0 12px; border-radius: 10px;
+  border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--ink); font: 600 13px var(--mono); cursor: pointer; }
+.copy-btn:hover, .copy-btn:focus-visible { border-color: var(--accent); }
+.hero-refusal .rf-m { display: none; }
+.gallery .grid > .case.has-code { grid-column: 1 / -1; }
+.steps.has-code { grid-template-columns: 1fr; }
+@media (max-width: ${PHONE_MAX}px) { .hero-refusal .rf-d { display: none; } .hero-refusal .rf-m { display: block; } }
+@media print{.site-head,video,.cta-row,.dl-cta,.dropzone{display:none!important}details.section>summary .chev{display:none}details.section{break-inside:avoid-page}body{background:#fff!important}}
+`;
+}
+
+// A code sample becomes ONE command per full-width block (comment lines ride along, never copied).
+export function commandBlocks(code) {
+  const lines = String(code).replace(/\r/g, '').split('\n');
+  const cmds = [];
+  let notes = [], cur = null;
+  for (const raw of lines) {
+    const line = raw.trimEnd();
+    if (cur) { cur.cmd += `\n${line}`; if (!/\\$/.test(line)) { cmds.push(cur); cur = null; } continue; }
+    if (!line.trim()) continue;
+    if (/^\s*#/.test(line)) { notes.push(line.replace(/^\s*#\s?/, '')); continue; }
+    cur = { cmd: line, notes }; notes = [];
+    if (!/\\$/.test(line)) { cmds.push(cur); cur = null; }
+  }
+  if (cur) cmds.push(cur);
+  return cmds.map((c) => `<div class="cmd-block">${c.notes.length ? `<p class="cmd-note">${esc(c.notes.join(' '))}</p>` : ''}<pre class="code-block"><code>${esc(c.cmd)}</code></pre><button type="button" class="copy-btn" data-copy="${esc(c.cmd)}" aria-label="Copy command" hidden>Copy</button></div>`).join('\n          ');
 }
 
 // ── section render helpers ─────────────────────────────────────────────────────────────────────
@@ -257,16 +366,23 @@ function noteHtml(n) {
   const lab = n.label ? `<span class="lab">${esc(n.label)}</span>` : '';
   return `\n      <p class="note${kind}">${lab}${inline(n.text)}</p>`;
 }
+export const PHONE_MAX = 640;
+const FIGURE_SIZES = `(max-width: ${PHONE_MAX}px) calc(100vw - 32px), 720px`;
+const HERO_SIZES = `(max-width: ${PHONE_MAX}px) calc(100vw - 32px), 560px`;
+/** Which file the lightbox shows: the phone twin when the phone query matches and a twin exists. */
+export function pickLightboxSrc(phoneMatches, srcMobile, src) { return (phoneMatches && srcMobile) || src; }
+
 function figureHtml(base, alt, caption, opts = {}) {
   const cls = opts.diagram ? (opts.concept ? 'figure diagram concept' : 'figure diagram') : 'figure';
   const tier = opts.tier ? `\n        <span class="tier ${opts.tier.cls}">${esc(opts.tier.label)}</span>` : '';
   const cap = caption ? `\n        <figcaption>${inline(caption)}</figcaption>` : '';
-  // EVERY figure image is click-to-enlarge — rasters included (2026-07-13, owner: "whenever I
-  // click on an image, I should get a larger image… every image should be zoomable"). The
-  // 2026-07-12 version wrapped only diagrams; rasters shipped bare and unzoomable. Same button
-  // class for all so the one lightbox handler covers everything; the build-time guard below
-  // fails the build if any figure <img> ever ships outside the zoom button again.
-  const img = `<button type="button" class="diagram-zoom" data-src="assets/${esc(base)}" data-alt="${esc(alt)}" aria-label="Enlarge: ${esc(alt)}"><img src="assets/${esc(base)}" alt="${esc(alt)}" loading="lazy"></button>`;
+  // Every figure image is click-to-enlarge (rasters included); the build-time guard below enforces it.
+  // A phone twin (opts.mobile) swaps in under 640px, both in the page and in the enlarged view.
+  const m = opts.mobile ? ` data-src-m="assets/${esc(opts.mobile)}"` : '';
+  // A raster with responsive variants is a <picture> (AVIF + JPEG, explicit width/height, lazy); the full-size original stays the lightbox target.
+  const tag = opts.variants ? pictureHtml(opts.variants, { alt, sizes: FIGURE_SIZES, esc }) : `<img src="assets/${esc(base)}" alt="${esc(alt)}" loading="lazy">`;
+  const pic = opts.mobile ? `<picture><source media="(max-width: ${PHONE_MAX}px)" srcset="assets/${esc(opts.mobile)}">${tag}</picture>` : tag;
+  const img = `<button type="button" class="diagram-zoom" data-src="assets/${esc(base)}"${m} data-alt="${esc(alt)}" aria-label="Enlarge: ${esc(alt)}">${pic}</button>`;
   return `\n      <figure class="${cls}">${tier}\n        ${img}${cap}\n      </figure>`;
 }
 function tableHtml(t) {
@@ -296,7 +412,7 @@ function sectionShell(key, num, sec, arcQ, bodyHtml) {
 }
 
 // ── MAIN ─────────────────────────────────────────────────────────────────────────────────────
-function main() {
+async function main() {
   const buildDirArg = process.argv[2];
   if (!buildDirArg) throw new Error('usage: node tools/assemble-page.mjs <build-dir>');
   const buildDir = path.resolve(process.cwd(), buildDirArg);
@@ -310,9 +426,7 @@ function main() {
   const owner = reqStr(repo.owner, 'repo.owner');
   const repoName = reqStr(ctx.content?.meta?.repoName || repo.name, 'repo.name');
   const repoUrl = reqStr(repo.url, 'repo.url');
-  // Credit the PERSON, not just the handle (owner ask 2026-07-09): when clone-repo resolved a
-  // real name from the GitHub profile, the attribution reads "Jane Smith (janedev)"; orgs and
-  // profiles without a public name fall back to the handle exactly as before.
+  // Credit the person when clone-repo resolved a real name; orgs and unnamed profiles fall back to the handle.
   const author = repo.author || null;
   const authorCredit = author?.name && author.type !== 'Organization'
     ? `${esc(author.name)} <span class="attrib-handle">(${esc(owner)})</span>`
@@ -345,27 +459,43 @@ function main() {
   // --- theme + stylesheet (design-system base + per-repo theme override) ---
   const theme = buildTheme(concept);
   const dsCss = fs.readFileSync(DS_CSS, 'utf8');
-  fs.writeFileSync(path.join(siteDir, 'styles.css'), `${dsCss}\n\n${theme.css}\n`);
+  const dsDefault = (k) => (dsCss.match(new RegExp(`--${k}:\\s*([^;]+);`)) || [])[1];
+  const themed = (k) => (theme.css.match(new RegExp(`--${k}:\\s*([^;]+);`)) || [])[1] || dsDefault(k);
+  const factsColor = factsInk(themed('bg'), [themed('muted') || '#8e93ad', themed('ink-2') || '#c4c8de', themed('ink') || '#eef0fb']);
+  fs.writeFileSync(path.join(siteDir, 'styles.css'), `${dsCss}\n\n${theme.css}\n${pageCss(factsColor)}`);
 
   // --- copy mandatory visual assets (fail loud). Generated explainers always carry meaningful
   // raster imagery. Previously the renderer treated every raster as optional, so a skipped image
   // station or a missing file still produced a polished page with no visible images. That is a
   // silent partial build. The image generator already fails loudly; assembly must enforce its output.
   const heroVisual = reqObj(visuals.hero, 'visuals.hero (MANDATORY generated image)');
-  const heroFile = copyAsset(reqStr(heroVisual.file, 'visuals.hero.file'), buildDir, siteAssets, 'hero image');
+  // hero.rasterSkipped === 'scene': a valid animated hero scene IS the hero (no raster is shown; the static backdrop only feeds the favicon/social card).
+  const heroIsScene = heroVisual.rasterSkipped === 'scene';
+  const heroFile = heroIsScene ? null : copyAsset(reqStr(heroVisual.file, 'visuals.hero.file'), buildDir, siteAssets, 'hero image');
+  // Responsive AVIF/JPEG variants for every raster that is shown. A failure degrades to the plain <img>, never to a broken page.
+  const variantsOf = async (file, what) => {
+    try { return await makeVariants(path.join(siteAssets, file), siteAssets); }
+    catch (e) { process.stderr.write(`assemble-page: no responsive variants for ${what} (${e?.message || e}) — serving the original\n`); return null; }
+  };
+  const heroVariants = heroFile ? await variantsOf(heroFile, 'hero') : null;
   const heroAlt = visuals.hero?.altText || visuals.hero?.alt || `${repoName}: ${concept.heroConcept || concept.metaphor}`;
 
   const arch = reqObj(visuals.architectureDiagram, 'visuals.architectureDiagram (MANDATORY)');
+  const twin = (d, what) => (d && d.mobileSvgPath) ? copyAsset(d.mobileSvgPath, buildDir, siteAssets, `${what} (phone twin)`) : null;
   const archFile = copyAsset(reqStr(arch.svgPath, 'visuals.architectureDiagram.svgPath'), buildDir, siteAssets, 'architecture diagram');
+  const archM = twin(arch, 'architecture diagram');
   const archAlt = reqStr(arch.altText, 'visuals.architectureDiagram.altText');
 
   // flow diagram is OPTIONAL — a pure library repo (no runtime entrypoints) has no flow; make-diagrams skips it there
   const flow = (visuals.flowDiagram && typeof visuals.flowDiagram === 'object') ? visuals.flowDiagram : null;
   const flowFile = (flow && flow.svgPath) ? copyAsset(reqStr(flow.svgPath, 'visuals.flowDiagram.svgPath'), buildDir, siteAssets, 'flow diagram') : null;
   const flowAlt = flow ? (flow.altText || '') : '';
+  const archCap = (typeof arch.caption === 'string' && arch.caption.trim()) || 'Architecture — modules, components and how they depend on each other.';
+  const flowCap = (flow && typeof flow.caption === 'string' && flow.caption.trim()) || 'Data flow — how a request moves through the system at runtime.';
+  const flowM = flowFile ? twin(flow, 'flow diagram') : null;
 
   // optional ladder rungs — rendered only when present (no silent placeholder; broken file = loud)
-  const optDiagram = (d) => (d && d.svgPath) ? { file: copyAsset(d.svgPath, buildDir, siteAssets, 'diagram'), alt: d.altText || '' } : null;
+  const optDiagram = (d) => (d && d.svgPath) ? { file: copyAsset(d.svgPath, buildDir, siteAssets, 'diagram'), alt: d.altText || '', mobile: twin(d, 'diagram') } : null;
   const bigIdea = optDiagram(visuals.bigIdeaDiagram);
   const insightDia = optDiagram(visuals.insightDiagram);
   const rungs = reqArr(visuals.sections, 'visuals.sections (at least one generated section image is MANDATORY)');
@@ -379,6 +509,8 @@ function main() {
   if (!problemRung && !useCaseRung) throw new Error('visuals.sections must include a visible problem or use-case generated image; arbitrary generated files do not satisfy the page image contract');
   const problemImg = problemRung?.file ? { file: copyAsset(problemRung.file, buildDir, siteAssets, 'problem illustration'), alt: problemRung.alt || problemRung.altText || `${repoName}: the problem` } : null;
   const useCaseImg = useCaseRung?.file ? { file: copyAsset(useCaseRung.file, buildDir, siteAssets, 'use-case scenario'), alt: useCaseRung.alt || useCaseRung.altText || `${repoName} in use` } : null;
+  if (problemImg) problemImg.variants = await variantsOf(problemImg.file, 'problem illustration');
+  if (useCaseImg) useCaseImg.variants = await variantsOf(useCaseImg.file, 'use-case scenario');
 
   // --- social card + favicons ---
   const card = reqObj(brand.socialCard, 'brand.socialCard');
@@ -399,9 +531,9 @@ function main() {
   const BASE = `https://${slug}-explainer.netlify.app`;
   const canonical = `${BASE}/`;
   const cardUrl = `${BASE}/assets/${cardFile}`;
-  const clip = (s, n) => { const t = String(s).replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t; };
-  const seoTitle = clip(content.meta?.title || `${repoName} — ${tagline}`, 70);
-  const seoDesc = clip(content.meta?.description || tagline, 158);
+  const seoTitle = fitTitle(repoName, tagline, content.meta?.title);
+  const seoDesc = fitText(content.meta?.description || tagline, 200);
+  const shareDesc = fitText(tagline, 200);
   const packZip = (ctx.pack && ctx.pack.zipPath) ? path.basename(ctx.pack.zipPath) : `${slug}-knowledge-pack.zip`;
 
   const jsonLd = {
@@ -433,14 +565,14 @@ function main() {
   <link rel="canonical" href="${esc(canonical)}">${themeColor}
   <meta property="og:type" content="website">
   <meta property="og:title" content="${esc(seoTitle)}">
-  <meta property="og:description" content="${esc(tagline)}">
+  <meta property="og:description" content="${esc(shareDesc)}">
   <meta property="og:url" content="${esc(canonical)}">
   <meta property="og:image" content="${esc(cardUrl)}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${esc(seoTitle)}">
-  <meta name="twitter:description" content="${esc(tagline)}">
+  <meta name="twitter:description" content="${esc(shareDesc)}">
   <meta name="twitter:image" content="${esc(cardUrl)}">
   ${favLinks.join('\n  ')}${fontPreconnect}
   <link rel="stylesheet" href="styles.css">
@@ -481,52 +613,27 @@ ${jsonLdScript}
 
   // ── hero ────────────────────────────────────────────────────────────────────────────────────
   const hero = reqObj(S.hero, 'content.sections.hero');
-  const headline = hero.headlineHtml ? hero.headlineHtml : inline(reqStr(hero.headline, 'content.sections.hero.headline'));
+  const headline = inline(reqStr(hero.headline, 'content.sections.hero.headline'));   // always escaped: no raw-HTML escape hatch
 
-  // THE REFUSAL — the hero animation, INLINED (not <img>) so it is crisp at any width and its <style>
-  // participates in the page. It is the one piece of motion on the page and it exists to perform the
-  // argument, not to decorate: the model's decimal weights snap to −1/0/+1, each becomes subtract/skip/add,
-  // and the multiply sign is struck out and dies. Above the fold, because that is where the reader decides.
-  // Hero video — the explainer film under the hero text. Two modes: a SHORT loop (autoplay/muted/loop,
-  // decorative) or a LONG-FORM narrated explainer (poster + controls, watched deliberately WITH sound).
-  // Added post-grade as an enhancement, so it is not part of the graded static page.
-  let heroVideoHtml = '';
-  if (visuals.heroVideo && visuals.heroVideo.file) {
-    const vf = copyAsset(visuals.heroVideo.file, buildDir, siteAssets, 'hero video');
-    const pf = visuals.heroVideo.poster ? copyAsset(visuals.heroVideo.poster, buildDir, siteAssets, 'hero video poster') : null;
-    const valt = esc(visuals.heroVideo.alt || 'Explainer video');
-    const longform = visuals.heroVideo.longform === true;
-    const vattrs = longform
-      ? `controls preload="metadata"${pf ? ` poster="assets/${esc(pf)}"` : ''}`
-      : `autoplay muted loop playsinline controls preload="metadata"${pf ? ` poster="assets/${esc(pf)}"` : ''}`;
-    const cap = longform
-      ? 'Watch the explainer — a narrated walkthrough of RuVector, the digital nervous system for AI agents.'
-      : 'How a query flows through ruvector — vector → HNSW graph search → nearest match, in milliseconds.';
-    heroVideoHtml = `\n      <figure class="hero-video" style="margin:2.5rem auto 0;max-width:64rem">
-        <video src="assets/${esc(vf)}" ${vattrs} aria-label="${valt}" style="width:100%;height:auto;display:block;border-radius:14px;box-shadow:0 20px 80px #7c6cff33,0 0 0 1px #ffffff14"></video>
-        <figcaption style="text-align:center;margin-top:.75rem;font-size:.9rem;color:var(--muted)">${cap}</figcaption>
-      </figure>`;
-  }
+  // The hero animation is INLINED (not <img>) so it is crisp at any width and its <style> joins the page.
   let refusalHtml = '';
   let refusalRaw = '';
   const refusalAria = esc(visuals.heroAnim?.altText || 'The one idea, in motion');
   {
     const rp = visuals.heroAnim && visuals.heroAnim.svgPath;
     if (rp && fs.existsSync(rp)) {
-      refusalRaw = fs.readFileSync(rp, 'utf8').replace(/<\?xml[^>]*\?>\s*/i, '');
-      // When a raster hero exists, the animation is a band BELOW the grid. When there is no raster
-      // (dropped to avoid the raster swap-test), the animation IS the hero art — no duplicate band.
-      if (refusalRaw) refusalHtml = `\n      <div class="hero-refusal" role="img" aria-label="${refusalAria}">${refusalRaw}</div>`;
+      const readSvg = (f) => fs.readFileSync(f, 'utf8').replace(/<\?xml[^>]*\?>\s*/i, '');
+      refusalRaw = readSvg(rp);
+      const mp = visuals.heroAnim.mobileSvgPath;
+      const phone = mp ? readSvg(must(path.isAbsolute(mp) ? mp : path.resolve(buildDir, mp), 'visuals.heroAnim.mobileSvgPath (phone twin)')) : '';
+      const inner = phone ? `<div class="rf-d">${refusalRaw}</div><div class="rf-m" aria-hidden="true">${phone}</div>` : refusalRaw;
+      if (refusalRaw) refusalHtml = `\n      <div class="hero-refusal" role="img" aria-label="${refusalAria}">${inner}</div>`;
     }
   }
-  // ── OPTIONAL 3D HERO (visuals.hero3d) — owner ask 2026-09-17, "the flourish of animations in Three.js"
-  // ─────────────────────────────────────────────────────────────────────────────────────────────────
-  // Deliberately an ENHANCEMENT, never the page: the vision gate scores still screenshots, WebGL costs
-  // battery on phones, and a rotating object that performs no argument is the decoration ADR-0008 bans.
-  // So the authored SVG scene (or the raster hero) renders FIRST and stays in the DOM; the 3D module
-  // only paints over it when the viewer has WebGL, has not asked for reduced motion, and the module
-  // actually loads. Any failure — no WebGL, blocked CDN, a throw inside the scene — leaves the page
-  // exactly as it was. The scene itself is authored per repo (never generic) and must say what it is.
+  if (heroIsScene && !refusalHtml) throw new Error('visuals.hero.rasterSkipped is "scene" but visuals.heroAnim has no scene file on disk — refusing to ship a page with no hero');
+  // ── OPTIONAL 3D HERO (visuals.hero3d): an ENHANCEMENT, never the page. The SVG scene / raster hero renders
+  // first and stays in the DOM; the module paints over it only with WebGL, no reduced-motion request, and a
+  // successful load. Any failure leaves the page exactly as it was.
   let hero3dHtml = '';
   if (visuals.hero3d && visuals.hero3d.module) {
     const src = path.isAbsolute(visuals.hero3d.module) ? visuals.hero3d.module : path.join(buildDir, visuals.hero3d.module);
@@ -547,13 +654,9 @@ ${jsonLdScript}
             if (typeof scene.mount !== 'function') return;
             await scene.mount(host, { label: ${JSON.stringify(label)} });
             host.style.opacity = '1';
-            // The flat scene STAYS in the DOM (fallback + screen readers) but stops drawing over the
-            // 3D one: composited together they double every element — two walls, two figures — which
-            // looked muddled on the first live render of ruview-explainer.
+            // The flat scene stays in the DOM (fallback + screen readers) but stops drawing over the 3D one.
             const flat = host.parentElement && host.parentElement.querySelector('.hero-refusal');
-            // .hero-refusal carries "animation: hero-enter ... both", and a filled animation BEATS an
-            // inline style — the first attempt set opacity and nothing happened. Clear the animation
-            // and set the value as !important, or the two scenes keep drawing over each other.
+            // A filled CSS animation beats an inline style: clear it and set opacity !important.
             if (flat) {
               flat.style.animation = 'none';
               flat.style.transition = 'opacity .9s ease';
@@ -570,8 +673,10 @@ ${jsonLdScript}
     { label: 'View the source ↗', href: repoUrl, ghost: true },
   ];
   const ctaHtml = ctas.map((c) => {
-    const ext = /^https?:/.test(c.href || '') ? ' target="_blank" rel="noopener"' : '';
-    return `<a class="cta${c.ghost ? ' ghost' : ''}" href="${esc(c.href || '#')}"${ext}>${inline(c.label)}</a>`;
+    // only web, in-page, site-relative or mail links: a javascript:/data: href from the brain must never ship
+    const href = SAFE_HREF.test(String(c.href || '').trim()) ? String(c.href).trim() : '#';
+    const ext = /^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : '';
+    return `<a class="cta${c.ghost ? ' ghost' : ''}" href="${esc(href)}"${ext}>${inline(c.label)}</a>`;
   }).join('\n          ');
   const metaRow = Array.isArray(hero.meta) && hero.meta.length
     ? `\n        <div class="meta-row">${hero.meta.map((m) => `<span><b>${esc(m.label)}</b> ${esc(m.value)}</span>`).join('')}</div>` : '';
@@ -583,7 +688,7 @@ ${jsonLdScript}
   <a id="top"></a>
   <section class="hero">
     <div class="wrap">
-      <div class="hero-grid"${heroFile ? '' : ' style="grid-template-columns:1fr;max-width:60rem"'}>
+      <div class="hero-grid">
         <div>
           ${hero.eyebrow ? `<span class="eyebrow">${inline(hero.eyebrow)}</span>` : `<span class="eyebrow">${esc(concept.metaphor)}</span>`}
           <h1>${headline}</h1>
@@ -594,10 +699,11 @@ ${jsonLdScript}
           ${ctaHtml}
           </div>${metaRow}
         </div>
-        ${heroFile ? `<figure class="hero-art">
-          <button type="button" class="diagram-zoom" data-src="assets/${esc(heroFile)}" data-alt="${esc(heroAlt)}" aria-label="Enlarge: ${esc(heroAlt)}"><img src="assets/${esc(heroFile)}" alt="${esc(heroAlt)}"></button>
-        </figure>` : ''}
-      </div>${refusalHtml ? `<div class="hero-motion" style="position:relative">${refusalHtml}${hero3dHtml}</div>` : hero3dHtml}${heroVideoHtml}
+        <figure class="hero-art">
+          ${heroIsScene ? `<div class="hero-motion" style="position:relative">${refusalHtml}${hero3dHtml}</div>`
+            : `<button type="button" class="diagram-zoom" data-src="assets/${esc(heroFile)}" data-alt="${esc(heroAlt)}" aria-label="Enlarge: ${esc(heroAlt)}">${heroVariants ? pictureHtml(heroVariants, { alt: heroAlt, sizes: HERO_SIZES, eager: true, esc }) : `<img src="assets/${esc(heroFile)}" alt="${esc(heroAlt)}">`}</button>`}
+        </figure>
+      </div>${!heroIsScene && refusalHtml ? `<div class="hero-motion" style="position:relative">${refusalHtml}${hero3dHtml}</div>` : (heroIsScene ? '' : hero3dHtml)}
     </div>${plainBand}
   </section>`;
 
@@ -610,12 +716,7 @@ ${jsonLdScript}
   out.push(sectionShell('problem', '01', problem, arcQ.problem, [
     problem.lead ? `<p class="lead-in">${inline(problem.lead)}</p>` : '',
     paras(problem.paragraphs),
-    // A designed diagram of the architectural challenge (visuals.problemVisual) beats a decorative
-    // raster every time — it VISUALISES the copy. Fall back to the raster image only if none authored.
-    // A supplementary authored problem visual must not hide the generated raster. Both teach
-    // different things, and generation is not complete until its output is visible on the page.
-    (visuals.problemVisual && typeof visuals.problemVisual === 'string') ? visuals.problemVisual : '',
-    problemImg ? figureHtml(problemImg.file, problemImg.alt, problemRung?.caption, { tier: { cls: 'friendly', label: 'The problem' } }) : '',
+    problemImg ? figureHtml(problemImg.file, problemImg.alt, problemRung?.caption, { variants: problemImg.variants, tier: { cls: 'friendly', label: 'The problem' } }) : '',
     noteHtml(problem.note),
   ].filter(Boolean).join('\n      ')));
 
@@ -625,7 +726,7 @@ ${jsonLdScript}
   out.push(sectionShell('whatItIs', '02', whatItIs, arcQ.whatItIs, [
     whatItIs.lead ? `<p class="lead-in">${inline(whatItIs.lead)}</p>` : '',
     paras(whatItIs.paragraphs),
-    bigIdea ? figureHtml(bigIdea.file, bigIdea.alt || `${repoName}: the whole idea in one picture`, whatItIs.figureCaption, { diagram: true, concept: true, tier: { cls: 'tech', label: 'The big idea' } }) : '',
+    bigIdea ? figureHtml(bigIdea.file, bigIdea.alt || `${repoName}: the whole idea in one picture`, whatItIs.figureCaption, { diagram: true, concept: true, mobile: bigIdea.mobile, tier: { cls: 'tech', label: 'The big idea' } }) : '',
     tableHtml(whatItIs.table),
   ].filter(Boolean).join('\n      ')));
 
@@ -636,7 +737,7 @@ ${jsonLdScript}
   out.push(sectionShell('insight', '03', insight, arcQ.insight, [
     insight.lead ? `<p class="lead-in">${inline(insight.lead)}</p>` : '',
     paras(insight.paragraphs),
-    insightDia ? figureHtml(insightDia.file, insightDia.alt || `${repoName}: the one clever move`, insight.figureCaption, { diagram: true, concept: true, tier: { cls: 'tech', label: 'The aha' } }) : '',
+    insightDia ? figureHtml(insightDia.file, insightDia.alt || `${repoName}: the one clever move`, insight.figureCaption, { diagram: true, concept: true, mobile: insightDia.mobile, tier: { cls: 'tech', label: 'The aha' } }) : '',
     `<p class="oh">${inline(insight.oh)}</p>`,
   ].filter(Boolean).join('\n      ')));
 
@@ -646,19 +747,10 @@ ${jsonLdScript}
   out.push(sectionShell('howItWorks', '04', howItWorks, arcQ.howItWorks, [
     howItWorks.lead ? `<p class="lead-in">${inline(howItWorks.lead)}</p>` : '',
     paras(howItWorks.paragraphs),
-    // Prefer the authored LAYERED-STACK architecture (real crate families by level) over the raw
-    // dependency-dot map — full width, with the runtime flow ribbon beneath it.
-    (visuals.architectureStack && typeof visuals.architectureStack === 'string')
-      ? visuals.architectureStack + (flowFile ? '\n      ' + figureHtml(flowFile, flowAlt, 'Data flow — how a query moves through the system at runtime.', { diagram: true, tier: { cls: 'tech', label: 'Data flow' } }) : '')
-      : (flowFile
-          ? `<div class="dual">${figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, tier: { cls: 'tech', label: 'Architecture' } })}${figureHtml(flowFile, flowAlt, 'Data flow — how a request moves through the system at runtime.', { diagram: true, tier: { cls: 'tech', label: 'Data flow' } })}\n      </div>`
-          : figureHtml(archFile, archAlt, 'Architecture — modules, components and how they depend on each other.', { diagram: true, tier: { cls: 'tech', label: 'Architecture' } })),
+    flowFile
+      ? `<div class="dual dual-diagrams">${figureHtml(archFile, archAlt, archCap, { diagram: true, mobile: archM, tier: { cls: 'tech', label: 'Architecture' } })}${figureHtml(flowFile, flowAlt, flowCap, { diagram: true, mobile: flowM, tier: { cls: 'tech', label: 'Data flow' } })}\n      </div>`
+      : figureHtml(archFile, archAlt, archCap, { diagram: true, mobile: archM, tier: { cls: 'tech', label: 'Architecture' } }),
   ].filter(Boolean).join('\n      ')));
-
-  // 4b · capabilities showcase (authored designed section) — the standout, differentiating features.
-  if (visuals.capabilitiesSection && typeof visuals.capabilitiesSection === 'string') {
-    out.push(visuals.capabilitiesSection);
-  }
 
   // 5 · use cases  (collapsible cases + scenario raster)
   const useCases = reqObj(S.useCases, 'content.sections.useCases');
@@ -668,9 +760,9 @@ ${jsonLdScript}
     reqStr(c.title, `content.sections.useCases.cases[${i}].title`);
     const dl = Array.isArray(c.dl) && c.dl.length
       ? `\n          <dl>${c.dl.map((d) => `<dt>${esc(d.term)}</dt><dd>${inline(d.desc)}</dd>`).join('\n          ')}</dl>` : '';
-    const code = c.code ? `\n          <pre class="code-block"><code>${esc(c.code)}</code></pre>` : '';
+    const code = c.code ? `\n          ${commandBlocks(c.code)}` : '';
     return `
-      <details class="case" open>
+      <details class="case${c.code ? ' has-code' : ''}" open>
         <summary>
           <span class="uc-num">${i + 1}</span>
           <span class="uc-title">${inline(c.title)}</span>
@@ -684,7 +776,7 @@ ${jsonLdScript}
   }).join('');
   out.push(sectionShell('useCases', '05', useCases, arcQ.useCases, [
     useCases.intro ? `<p class="lead-in">${inline(useCases.intro)}</p>` : '',
-    useCaseImg ? figureHtml(useCaseImg.file, useCaseImg.alt, useCaseRung?.caption, { tier: { cls: 'friendly', label: 'In the real world' } }) : '',
+    useCaseImg ? figureHtml(useCaseImg.file, useCaseImg.alt, useCaseRung?.caption, { variants: useCaseImg.variants, tier: { cls: 'friendly', label: 'In the real world' } }) : '',
     `<div class="gallery"><div class="grid">${casesHtml}\n      </div></div>`,
   ].filter(Boolean).join('\n      ')));
 
@@ -698,8 +790,8 @@ ${jsonLdScript}
   }).join('\n        ');
   out.push(sectionShell('getStarted', '06', getStarted, arcQ.getStarted, [
     getStarted.intro ? `<p class="lead-in">${inline(getStarted.intro)}</p>` : '',
-    getStarted.install ? `<div class="install-block"><pre class="code-block"><code>${esc(getStarted.install)}</code></pre></div>` : '',
-    `<ol class="steps">\n        ${stepsHtml}\n      </ol>`,
+    getStarted.install ? `<div class="install-block">${commandBlocks(getStarted.install)}</div>` : '',
+    `<ol class="steps${steps.some((x) => /`/.test(typeof x === 'object' ? `${x.strong || ''}${x.text || ''}` : String(x))) ? ' has-code' : ''}">\n        ${stepsHtml}\n      </ol>`,
   ].filter(Boolean).join('\n      ')));
 
   // 7 · the AI pack  — a TIGHT, visual DOWNLOAD block: a file-tree TEASER of what's inside
@@ -728,8 +820,7 @@ ${jsonLdScript}
     `<a class="dropzone" href="${esc(packZip)}" download><span class="dz-icon" aria-hidden="true">&darr;</span><strong>Give your AI the same understanding</strong><span class="dz-hint">${esc(packZip)}</span></a>`,
   ].filter(Boolean).join('\n      ')));
 
-  // ── mandated ISOvision attribution + CTA footer (verbatim per design-system §16b; the
-  //    open-source + star/issue line added at the owner's direction, 2026-07-08) ─────────────────
+  // ── mandated ISOvision attribution + CTA footer (design-system §16b) ─────────────────────────────
   const footer = `
   <footer class="explainer-footer" role="contentinfo">
     <div class="wrap explainer-footer-inner">
@@ -749,7 +840,7 @@ ${jsonLdScript}
   </footer>`;
 
   // ── assemble the single HTML document (rendered ONCE — INV-10) ───────────────────────────────
-  const html = `<!DOCTYPE html>
+  let html = `<!DOCTYPE html>
 <html lang="en">
 ${head}
 <body>
@@ -769,12 +860,27 @@ ${footer}
   </dialog>
   <script>
   (function () {
+    document.querySelectorAll('.copy-btn').forEach(function (b) {
+      b.hidden = false;
+      b.addEventListener('click', function () {
+        var text = b.getAttribute('data-copy') || '';
+        var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); };
+        if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, function () {}); return; }
+        var t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select();
+        try { document.execCommand('copy'); done(); } catch (e) {} document.body.removeChild(t);
+      });
+    });
+  })();
+  </script>
+  <script>
+  ${pickLightboxSrc.toString()}
+  (function () {
     var dlg = document.getElementById('diagram-lightbox');
     if (!dlg || typeof dlg.showModal !== 'function') return;
     var img = document.getElementById('diagram-lightbox-img');
     document.querySelectorAll('.diagram-zoom').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        img.src = btn.getAttribute('data-src');
+        img.src = pickLightboxSrc(window.matchMedia('(max-width: ${PHONE_MAX}px)').matches, btn.getAttribute('data-src-m'), btn.getAttribute('data-src'));
         img.alt = btn.getAttribute('data-alt') || '';
         dlg.showModal();
       });
@@ -788,60 +894,41 @@ ${footer}
 </html>
 `;
 
-  // ── guard: zero template tokens / dangling refs (CONTRACT (b)·6, Station-6 cue) ───────────────
-  // Mask legit escaped code/pre content before scanning: author code samples and the inlined primer
-  // routinely contain `${...}` template literals and `{ ... }` JSON braces — that is CONTENT, never a
-  // render leak. For this renderer a literal `${` in the output can ONLY come from esc()'d data (every
-  // `${x}` in the renderer's own template strings is evaluated when the HTML is built), so masking the
-  // <pre>/<code> regions removes the false positives while still catching real leaks in prose/markup.
-  // <style> is masked for the same reason as <pre>/<code>: a CSS rule set legitimately ENDS in `}}`
-  // (`@keyframes x{ 0%{opacity:0} }` closes both the block and the at-rule), which the leak regex reads
-  // as a Handlebars-style placeholder. The inlined hero animation is real CSS, not a render leak.
+  // ── guard: zero template tokens / dangling refs (CONTRACT (b)·6). <pre>/<code>/<style> are masked first:
+  // code samples legitimately hold `${...}` / `{ ... }`, and CSS legitimately ends in `}}`.
   const scannable = html
     .replace(/<pre[\s\S]*?<\/pre>/gi, '')
     .replace(/<code[\s\S]*?<\/code>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
-    // A table cell or definition-description whose ENTIRE content is a bare value is API
-    // DOCUMENTATION, not a render leak. Found 2026-08-09 on sindresorhus/p-map, whose options table
-    // correctly documents `signal`'s default as `undefined` — the guard read its own reference table
-    // as corruption and killed a perfect page. `undefined` is genuinely ambiguous here and the
-    // pattern cannot resolve it; the CONTEXT can. Only whole-cell values are masked, so a leak in
-    // prose, a heading, or mid-sentence is still caught.
+    // A cell whose ENTIRE content is a bare value is API documentation (p-map's `signal` default), not a leak.
     .replace(/<(td|dd)\b[^>]*>\s*(undefined|NaN|null)\s*<\/\1>/gi, '<$1>—</$1>');
-  // CASE MATTERS, and the whole-regex /i flag was throwing away that signal (found 2026-08-08 by an
-  // end-to-end local build of sindresorhus/p-map). The page legitimately read "…that slot is simply
-  // omitted from the results array — no placeholder, no error, just a silently dropped entry",
-  // describing pMapSkip. `\bPLACEHOLDER\b/i` matched the ordinary English word and killed a build
-  // whose page was completely fine. Same latent fault on the others: /i made `\bTODO\b` fail any page
-  // about a to-do app, and `undefined` fail any JS page discussing undefined behaviour.
-  //
-  // A genuine unresolved sentinel SCREAMS — TODO, PLACEHOLDER, FIXME are conventionally upper-case,
-  // and a leaked JS value is exactly `undefined` / `NaN`. So those are matched case-SENSITIVELY.
-  // Only "lorem ipsum" stays case-insensitive: it is filler slop in any casing.
-  // `undefined` needed one more distinction than case, because the prose word is lowercase too:
-  // "reading it is undefined behaviour" vs "Version: undefined". A LEAKED value TERMINATES a phrase;
-  // the prose one is followed by another word. Hence the negative lookahead for a following
-  // lowercase word — it keeps "undefined behaviour" and "undefined variables" out of the net.
+  // Case matters: a genuine sentinel SCREAMS (TODO, PLACEHOLDER, FIXME) or is exactly a leaked JS value, so
+  // those match case-SENSITIVELY ("no placeholder" is prose). A leaked `undefined`/`NaN` ends a phrase; the
+  // prose word is followed by another word, hence the negative lookahead. Only "lorem ipsum" is /i.
   const leakCase = /\{\{|\}\}|\$\{|\[object Object\]|(?:^|[\s">:])(?:undefined|NaN)(?!\s+[a-z])(?:[\s"<.,;)]|$)|\bTODO\b|\bPLACEHOLDER\b|\bFIXME\b/;
   const leakAny = /lorem ipsum/i;
   const leak = scannable.match(leakCase) || scannable.match(leakAny);
   if (leak) {
-    // SHOW WHERE. "undefined leaked into the page" with no location sends the next person hunting
-    // through 26KB of HTML — the same unhelpful-diagnosis shape as #17.2's "returned no text".
-    // The surrounding markup names the section immediately.
+    // Show WHERE: the surrounding markup names the section immediately.
     const at = leak.index ?? scannable.indexOf(leak[0]);
     const ctx = scannable.slice(Math.max(0, at - 120), at + 120).replace(/\s+/g, ' ').trim();
     throw new Error(`unresolved token / placeholder leaked into the page: "${leak[0].trim()}"\n`
       + `  …${ctx}…`);
   }
-  // Every figure image must sit inside the click-to-enlarge button — an unzoomable image is a
-  // shipped bug (owner, 2026-07-13: "every image should be zoomable, especially the smaller ones").
+  // Every figure image must sit inside the click-to-enlarge button.
   for (const fig of html.matchAll(/<figure[\s\S]*?<\/figure>/g)) {
     if (/<img\b/.test(fig[0]) && !fig[0].includes('class="diagram-zoom"')) {
       throw new Error(`figure image shipped without click-to-enlarge: ${fig[0].slice(0, 140)}…`);
     }
   }
-  for (const m of html.matchAll(/(?:src|href)="(assets\/[^"]+)"/g)) {
+  // A re-assemble (refine pass, resumed build) rebuilds the HTML from scratch: put the narrated overview back when
+  // make-overview already produced it, or the video silently disappears from the shipped page.
+  const ov = ctx.overview;
+  if (ov?.path && !ov.skipped && fs.existsSync(path.join(siteDir, ov.path)) && fs.existsSync(path.join(siteDir, 'assets', 'overview-poster.jpg'))) {
+    const infographicPath = ov.infographic?.path && fs.existsSync(path.join(siteDir, ov.infographic.path)) ? ov.infographic.path : null;
+    html = injectOverview(html, { name: repoName, url: repoUrl, secs: Math.round(ov.durationSec || 0), infographicPath }).html;
+  }
+  for (const m of [...html.matchAll(/(?:src|href)="(assets\/[^"]+)"/g), ...[...html.matchAll(/srcset="([^"]+)"/g)].flatMap((x) => x[1].split(',').map((c) => [null, c.trim().split(/\s+/)[0]]))]) {
     const ref = path.join(siteDir, m[1]);
     if (!fs.existsSync(ref)) throw new Error(`dangling asset reference: ${m[1]} (no file at ${ref})`);
   }
@@ -874,7 +961,7 @@ ${footer}
       llmsTxt: 'llms.txt',
     },
     social: {
-      og: { title: seoTitle, description: tagline, image: cardUrl, url: canonical },
+      og: { title: seoTitle, description: shareDesc, image: cardUrl, url: canonical },
       twitter: { card: 'summary_large_image', image: cardUrl },
     },
   };
@@ -902,6 +989,6 @@ const isEntrypoint = (() => {
   try { return Boolean(process.argv[1]) && fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url)); }
   catch { return true; }
 })();
-if (isEntrypoint) { try { main(); } catch (e) { fail(e.message || e); } }
+if (isEntrypoint) { main().catch((e) => fail(e.message || e)); }
 
-export { buildTheme, bestOnAccent, contrast, parseColors };
+export { buildTheme, contrast, parseColors };

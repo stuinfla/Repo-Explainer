@@ -1,23 +1,35 @@
-// Conformance test — A6 + the operator qualitative gate (ADR-0005 v1.7.0 §"The QA System").
-//
-// The vision RUBRIC handed to the grader must COPY the v1.7 spec verbatim, not the old A1–A5/B1–B5
-// set. It must include the A6 Implementation-confidence axis and the five operator questions (the
-// owner's words). FAILS RED until quality-grade.mjs's RUBRIC is rewritten to the v1.7 spec.
-
+// The rubric text carries the A6 axis and the operator questions, and the grader REJECTS a reply that
+// omits A6 (behaviour, through the real gradeCrops with a stubbed fetch).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { RUBRIC, gradeCrops } from '../tools/quality-grade.mjs';
+import { gradeReply, withStubbedGrader, tempCrops, ARGS } from './grader-stub.mjs';
 
-test('A6 + INV-19 — the grader RUBRIC includes the Implementation-confidence axis', async () => {
-  const { RUBRIC } = await import('../tools/quality-grade.mjs');
-  assert.match(RUBRIC, /\bA6\b/, 'RUBRIC is missing the A6 Implementation-confidence axis');
-  assert.match(RUBRIC, /what (they|you)('|’)?ll see|what you will see|implementation confidence/i,
-    'RUBRIC must judge whether the reader knows what to run and what they will SEE (A6)');
+test('prompt text: the RUBRIC names A6 and the operator questions', () => {
+  assert.match(RUBRIC, /\bA6\b/);
+  assert.match(RUBRIC, /what (they|you)('|’)?ll see|what you will see|implementation confidence/i);
+  assert.match(RUBRIC, /approachable/i);
+  assert.match(RUBRIC, /confidence I understand the architecture/i);
+  assert.match(RUBRIC, /make me smile|that'?s cool/i);
 });
 
-test('Operator gate — the RUBRIC carries the five operator yes/no questions (owner verbatim)', async () => {
-  const { RUBRIC } = await import('../tools/quality-grade.mjs');
-  assert.match(RUBRIC, /approachable/i, 'missing operator question: "Would this make it approachable?"');
-  assert.match(RUBRIC, /confidence I understand the architecture/i,
-    'missing operator question: "Would it give me confidence I understand the architecture?"');
-  assert.match(RUBRIC, /make me smile|that'?s cool/i, 'missing operator question: "Does it make me smile — oh, that\'s cool?"');
+test('a complete reply is accepted, with all eleven scores kept', async () => {
+  const out = await withStubbedGrader([gradeReply(88)], () => gradeCrops(ARGS(tempCrops())));
+  assert.equal(Object.keys(out.gateA).length, 6);
+  assert.equal(out.gateA.A6, 88);
+});
+
+test('a reply WITHOUT gateA.A6 is rejected loudly, never scored as a pass', async () => {
+  const bad = gradeReply(95);
+  delete bad.gateA.A6;
+  await assert.rejects(
+    withStubbedGrader([bad], () => gradeCrops(ARGS(tempCrops()))),
+    /gateA\.A6 invalid\/missing/);
+});
+
+test('a reply with a missing rationale or a non-boolean operator answer is rejected', async () => {
+  const noRationale = gradeReply(95); noRationale.rationales.B3 = '';
+  await assert.rejects(withStubbedGrader([noRationale], () => gradeCrops(ARGS(tempCrops()))), /rationale B3/);
+  const badOp = gradeReply(95); badOp.operatorQuestions.makesMeSmile = 'yes';
+  await assert.rejects(withStubbedGrader([badOp], () => gradeCrops(ARGS(tempCrops()))), /operatorQuestions\.makesMeSmile must be boolean/);
 });

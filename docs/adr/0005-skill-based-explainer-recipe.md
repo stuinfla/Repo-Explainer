@@ -1,7 +1,27 @@
 # ADR-0005: The Skill-Based Explainer Recipe — One Brain, Three Doors
 
-Updated: 2026-06-29 10:40:00 EDT | Version 1.7.0
+Updated: 2026-11-05 12:00:00 EST | Version 1.8.0
 Created: 2026-06-28 00:00:00 EDT
+
+Status: Accepted — **superseded in part** (see the 3.0.1 note below)
+Date: 2026-06-28
+Updated: 2026-11-05
+
+> **Superseded in part (3.0.1, 2026-11-05).** This is the origin recipe and is kept as written for its
+> reasoning. Where it disagrees with the code, the code wins. What has changed since:
+>
+> | This ADR says | The code now |
+> |---|---|
+> | "One brain, three doors" | **Two doors.** The local orchestrator (`src/orchestrator.mjs`, the `npx` CLI; its authoring calls live in `src/brain.mjs`) and the agent that follows `skills/explainmyrepo/SKILL.md` (the hosted runner; the slash command loads the same file). They are held in step by tests (`tests/two-doors-conform.test.mjs`, `tests/review-p4b-parity.test.mjs`), not by sharing one brain. |
+> | The station list in this ADR | `src/stations.mjs` is the one station table (id, tool, kind, fatal, doors, phase). |
+> | `kb/make-dropin.mjs` builds the pack; its `must()` needs the primer; `.small.rvf` stores | `kb/make-dropin.mjs` is deleted. `tools/make-pack.mjs` is a port (one slot, `pack = { zipPath }`); the store is `<slug>-kb.rvf` (`rvfSuffix: '.rvf'`); `@ruvector/rvf` is `^0.4.2`. |
+> | Bar: mean >= 90 and min >= 85, five operator questions, below it the build does not ship | **Two tiers.** EXEMPLARY mean >= 90, min >= 85, **six** operator questions (ADR-0006); SHIP mean >= 82, min >= 70, five ship operators. **The gate advises** (ADR-0011): deploy refuses only on integrity. |
+> | Station 4: the brain authors ASCII / SVGs | `make-diagrams` draws every slot from authored `rows` and verified story models (ADR-0012, ADR-0014); only `heroAnim.sceneSvg` is authored as SVG (ADR-0013). |
+> | Explainer targets MUST set an `embed` block; the engine default is MiniLM and writes `.small.rvf`; bge-small is required | **No default embedder.** `kb/build-kb.mjs` refuses a target with no `embed` block (model + dim) and the suffix is always `.rvf` (`rvfSuffix`). The model the store was built with is recorded in `<slug>-kb.rvf.embed.json` and that sidecar governs queries; every registered target happens to use `Xenova/bge-small-en-v1.5`, but nothing requires that model. `kb/index-primer.mjs` throws if the sidecar is missing or names a different model than `ids.json`. |
+> | Image engine: primary `gpt-image-2`, fallback `gpt-image-1` | `gpt-image-2.5-flare` at `xhigh`, then `gpt-image-2`, then Grok if the OpenAI chain fails or there is no OpenAI key (`tools/generate-image.mjs`). Prices for `-flare` are unknown and receipts say so. |
+> | Deploy adapter is provider-agnostic, "Vercel is a one-line swap" | `tools/deploy.mjs` deploys to Netlify only. |
+> | Station 8b offers a README pull request | Issue first, PR only after a yes (ADR-0015). |
+> | (not in this ADR) | The Ask box (ADR-0016) and the share-card gate are later additions. |
 
 > **v1.7.0 (2026-06-29) — quality-bar reconciliation + implementation-experience.** Owner-signed
 > changes to the gate: (1) the literal "≥95 on every axis" floor is replaced by the
@@ -173,8 +193,7 @@ The KB is **not rebuilt**. The skill's KB tools **wrap the real, working `kb/` e
   - `<slug>-kb.ids.json` (per-id kind/preview index)
   - `<slug>-kb.rvf.embed.json` (embedder sidecar so the *query* uses the same model as the corpus)
   - Build self-reconciles: `chunks == vectors == passages == ids` or it `exit(1)`s.
-- **Embedder — explainer targets MUST set an `embed` block (the MiniLM default is *not* the
-  operative path here).** The engine's bare default is `Xenova/all-MiniLM-L6-v2` (384-dim) — but on
+- **Embedder — explainer targets MUST set an `embed` block (SUPERSEDED, see the 3.0.1 banner: there is now no default embedder, the suffix is always `.rvf`, and the `.small.rvf` text below is history).** The engine's bare default is `Xenova/all-MiniLM-L6-v2` (384-dim) — but on
   that default `build-kb.mjs` (`RVF_SUFFIX = target.embed ? '.rvf' : '.small.rvf'`, line 244) writes
   `<slug>-kb.`**`small`**`.rvf`, while `kb/make-dropin.mjs` globs the literal `<slug>-kb.rvf`; so a
   default-embedder target produces a store the pack builder cannot find and the pack's `must()` check
@@ -185,7 +204,7 @@ The KB is **not rebuilt**. The skill's KB tools **wrap the real, working `kb/` e
   `kb/models-cache/` so CI never cold-downloads.
 - `node kb/ask-kb.mjs <slug> "question" [k]` is the real search CLI. It joins `.rvf` hits to
   `.passages.jsonl` by id and prints **full passages** through an intent-routing + rerank layer.
-- `node kb/make-dropin.mjs <slug> <out.zip>` builds the downloadable AI pack (see Station 6 —
+- `node kb/make-dropin.mjs <slug> <out.zip>` — **[REMOVED; historical — the pack is built by `tools/make-pack.mjs` today]** — built the downloadable AI pack (see Station 6 —
   ASSEMBLE + PACK, and INV-07).
 - `kb/kb-mcp-server.mjs` is the real MCP server. It exposes **four** tools: `search_kb`,
   `lookup_symbol`, `get_entrypoints`, `get_dep_graph`, returning `content:[{type:'text', text:…}]`.
@@ -382,8 +401,7 @@ stations in order, filling `BuildContext` slot by slot; the tools do the mechani
 ### Station 1 — UNDERSTAND
 - **Do:** Clone the repo. Run the **real** `kb/` engine to build the RVF KB:
   `node kb/build-kb.mjs --target <slug>` (after registering the target in `kb/kb.config.mjs`
-  **with an `embed` block** — see D3; without it build-kb writes `<slug>-kb.small.rvf`, which the
-  Station 6 pack builder cannot find). Then **run the structured-extraction build step** —
+  **with an `embed` block** — see D3; without it build-kb now refuses; the `.small.rvf` fallback this once described is gone). Then **run the structured-extraction build step** —
   `node kb/extract-symbols.mjs <slug>`, `node kb/dep-graph.mjs <slug>`,
   `node kb/entrypoints.mjs <slug>` — which is a **REQUIRED build step, not optional reading**: its
   `<slug>-symbols.json` / `<slug>-dep-graph.json` / `<slug>-entrypoints.json` outputs are
@@ -481,7 +499,7 @@ stations in order, filling `BuildContext` slot by slot; the tools do the mechani
 - **Do:** (a) **Render the page once** onto the shared design system (D8) — compose the brief +
   content + visuals into the component skeleton. (b) Build the **AI knowledge pack** with the
   studio-less pack builder (see the deviation note below):
-  `node kb/make-dropin.mjs <slug> <site>/<repo>-knowledge-pack.zip`. The pack ships the
+  `node kb/make-dropin.mjs <slug> <site>/<repo>-knowledge-pack.zip` **[REMOVED; historical — use `tools/make-pack.mjs`]**. The pack ships the
   `for-ai/` half — `<slug>-kb.rvf` + `<slug>-kb.rvf.idmap.json` + `<slug>-kb.rvf.embed.json` +
   `<slug>-kb.passages.jsonl` + `<slug>-kb.ids.json` + **`<slug>-symbols.json` + `<slug>-dep-graph.json`
   + `<slug>-entrypoints.json`** + `ask-kb.mjs` + `kb-mcp-server.mjs` + `kb.config.mjs` +
@@ -821,7 +839,7 @@ These are always-true properties, enforced in code (design system + tools) and a
 | Search CLI | `node kb/ask-kb.mjs <slug> "question" [k]` — joins `.rvf` hits to `.passages.jsonl` by id; intent-routing + rerank |
 | Pack builder | `node kb/make-dropin.mjs <slug> <out.zip>` — `for-ai/` + `for-humans/`; declares `@ruvector/rvf@^0.2.2` + `@xenova/transformers@^2.17.2` |
 | MCP server | `kb/kb-mcp-server.mjs` — four tools: `search_kb`, `lookup_symbol`, `get_entrypoints`, `get_dep_graph`. The latter three READ `<slug>-symbols.json` / `<slug>-entrypoints.json` / `<slug>-dep-graph.json` (produced by `kb/extract-symbols.mjs` / `kb/entrypoints.mjs` / `kb/dep-graph.mjs`) — these MUST be in the pack or three of the four tools return nothing |
-| Embedders | `Xenova/all-MiniLM-L6-v2` (384-dim, engine default → writes `.small.rvf`) or `Xenova/bge-small-en-v1.5` (384-dim, the explainer's **required** `embed` override → canonical `.rvf`) — both cached at `kb/models-cache/` |
+| Embedders | historical (see banner): `Xenova/all-MiniLM-L6-v2` (384-dim) and `Xenova/bge-small-en-v1.5` (384-dim); today the target's `embed` block and the `.embed.json` sidecar decide — both cached at `kb/models-cache/` |
 | Real packages | `@ruvector/rvf@^0.2.2` (query), `@ruvector/rvf-node` (native, transitive), `@xenova/transformers@^2.17.2` (local ONNX) |
 | Fictional (npm 404) | `@rvf/forge`, `@ruvector/search-cli`, `@ruvector/mcp-server` — never reference (re-verified via `npm view` at edit time) |
 | Real but NOT used | `@ruvector/rvf-mcp-server` (npm `0.1.4`, real) — deliberately not pulled in; the pack ships the in-repo `kb/kb-mcp-server.mjs` instead |

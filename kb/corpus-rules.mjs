@@ -4,11 +4,10 @@
 // walk helper, exclusion set, chunker, addDoc collector, etc.) plus the rule's own config object
 // (from `kb.config.mjs` target.include[]) and APPENDS entries to the corpus via ctx.addDoc(...).
 //
-// The mechanics are generalized from the proven Cognitum prototype (build-ruview-kb.mjs):
-// repo-shape is now DATA (roots / exts / files / headLines) instead of hard-coded ruview/ruvector
-// paths. NO repo name is baked in here. build-kb.mjs wires these rules together per config.
+// Repo shape is DATA (roots / exts / files / headLines); no repo name is baked in here.
+// build-kb.mjs wires these rules together per config.
 //
-// Rule types (build-plan-metaharness.md §2a [D5]):
+// Rule types:
 //   mdSweepFullText   — every *.md/.mdx/.txt under the given roots, verbatim (untruncated).
 //   componentManifests— each component's package.json / Cargo.toml summarized (name/desc/scripts/deps).
 //   componentLead     — each component's README / lead doc (full text) + lead source doc-block.
@@ -16,6 +15,7 @@
 //   docCommentSweep   — leading doc comments only (//!, /** */, """...""", #-prefixed) from source.
 //   literalFiles      — an explicit list of files, full text (guarantees key docs are present).
 //   htmlText          — visible text of *.html under the roots (scripts/styles/tags stripped).
+//   testsAndExamples  — full bodies of test/example/bench source (the best usage docs).
 //   templates         — scaffolding templates (.tmpl/.hbs/...): first-N-lines + path, kind:'template'.
 //
 // A `kind` is attached to every entry so the intent layer (ask-kb) can route by content kind.
@@ -181,9 +181,11 @@ export function componentLead(ctx, rule) {
       if (lead) {
         const text = read(lead);
         const doc = docBlock(text, 200);
-        if (doc) {
+        // docCommentSweep emits the same file's doc block, so record it to avoid a duplicate chunk.
+        if (doc && !ctx.hasDocBlock(lead)) {
           ctx.addDoc(ctx.rel(lead), 'crate-src', `${dirent.name} ${path.basename(lead)}`,
             `Component ${dirent.name} — ${path.basename(lead)} leading doc:\n${doc}`, /*absPath*/ undefined);
+          ctx.markDocBlock(lead);
           n++;
         }
       }
@@ -200,10 +202,7 @@ export function sourceBodies(ctx, rule) {
   const ROOTS_FILE = /(^|\/)(lib\.rs|main\.rs|mod\.rs|index\.ts|index\.js|index\.mjs)$/i;
   const MINIFIED = /\.(min|bundle)\.(js|css|mjs)$/i;
   const TESTY = /(^|\/)(tests?|benches?|__tests__|__mocks__|spec)\//i;
-  // NAMING A ROOT *IS* THE SCOPE DECISION (2026-09-17, ruvnet/mcp-studio). The /src/ + root-file
-  // convention below is the fallback for a target that named no specific root ("." or none). A
-  // Next.js app keeps its code in app/ + lib/ + components/ with no src/ anywhere, so the
-  // convention silently ingested ZERO source and the KB came out as README + config only.
+  // A named root is the scope; the src/ + root-file convention applies only to '.' or no root.
   const named = (rule.roots || []).filter((r) => r && r !== '.');
   const inScope = (rel) => {
     if (MINIFIED.test(rel)) return false;
@@ -232,7 +231,7 @@ export function sourceBodies(ctx, rule) {
 // testsAndExamples — full bodies of TEST / EXAMPLE / BENCH source files under the roots. These are
 // the single best USAGE documentation a repo has (real call sites + expected results), so they are
 // ingested deliberately (sourceBodies excludes them on purpose; this rule is the complement). The
-// source_type tagger in build-kb.mjs marks each as 'test' or 'example' from its path. kind stays
+// source_type tagger (chunker.classifySourceType) marks each as 'test' or 'example' from its path. kind stays
 // 'source' so the existing source-routing/reranking treats them like code.
 export function testsAndExamples(ctx, rule) {
   const exts = (rule.ext || ['.rs', '.ts', '.tsx', '.js', '.mjs']).map((e) => e.toLowerCase());
@@ -266,10 +265,12 @@ export function docCommentSweep(ctx, rule) {
     for (const p of ctx.walk(root)) {
       if (!hasExt(p, exts)) continue;
       if (ctx.isFullBody(p)) continue;   // already ingested in full by sourceBodies
+      if (ctx.hasDocBlock(p)) continue;  // componentLead already emitted this file's doc block
       const doc = docBlock(firstLines(read(p), 40), 40);
       if (!doc) continue;
       const rel = ctx.rel(p);
       ctx.addDoc(rel, 'crate-src', path.basename(p), `Module ${rel} — doc comment:\n${doc}`, /*absPath*/ undefined);
+      ctx.markDocBlock(p);
       n++;
     }
   }
@@ -312,7 +313,7 @@ export function htmlText(ctx, rule) {
 
 // templates — scaffolding templates (.tmpl/.hbs/.handlebars): path + first-N-lines, kind:'template'.
 // These are the bulk of "what does a generated harness contain" — neither prose nor runnable source,
-// so we index a head sample + the path (decided IN, not skipped — plan top risk #2).
+// so we index a head sample + the path.
 export function templates(ctx, rule) {
   const exts = (rule.ext || ['.tmpl', '.hbs', '.handlebars']).map((e) => e.toLowerCase());
   const headLines = rule.headLines || 40;
@@ -343,5 +344,3 @@ export const RULE_IMPLS = {
   htmlText,
   templates,
 };
-
-export default RULE_IMPLS;

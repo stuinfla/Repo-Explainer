@@ -1,14 +1,12 @@
 // tests/build-context.test.mjs — coverage for src/build-context.mjs, the BuildContext (build.json)
-// read-modify-write lifecycle every station and the orchestrator share (CONTRACT §a). Previously
-// zero test coverage despite being the single cross-tool data channel every station depends on
-// (see memory test-coverage-gap-2026-07-09, pass 4).
+// read-modify-write lifecycle every station and the orchestrator share (CONTRACT §a).
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { buildJsonPath, initBuildDir, readContext, mergeSlot, hasSlot } from '../src/build-context.mjs';
+import { buildJsonPath, initBuildDir, readContext, mergeSlot } from '../src/build-context.mjs';
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'build-context-'));
 
@@ -58,23 +56,4 @@ test('mergeSlot replaces (does not merge) a non-object slot value outright', () 
   mergeSlot(dir, 'stations', ['clone', 'kb', 'assemble']);
   const ctx = readContext(dir);
   assert.deepEqual(ctx.stations, ['clone', 'kb', 'assemble']);
-});
-
-test('hasSlot: false for missing/empty object/empty array; true once populated', () => {
-  const dir = tmp();
-  initBuildDir(dir, 'https://github.com/foo/bar');
-  assert.equal(hasSlot(dir, 'concept'), false, 'never-set slot');
-  mergeSlot(dir, 'concept', {});
-  assert.equal(hasSlot(dir, 'concept'), false, 'empty object slot');
-  mergeSlot(dir, 'concept', { metaphor: 'x' });
-  assert.equal(hasSlot(dir, 'concept'), true);
-  mergeSlot(dir, 'tags', []);
-  assert.equal(hasSlot(dir, 'tags'), false, 'empty array slot');
-  mergeSlot(dir, 'tags', ['a']);
-  assert.equal(hasSlot(dir, 'tags'), true);
-});
-
-test('hasSlot returns false (never throws) when build.json itself is missing', () => {
-  const dir = tmp();
-  assert.equal(hasSlot(dir, 'anything'), false);
 });

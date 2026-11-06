@@ -2,13 +2,15 @@
 // Trusts nothing from the browser but a question and passage ids. Everything the model reads comes from the
 // asking site's own published ask/index.json, fetched here, for a host proven ours by a signed token.
 import crypto from 'node:crypto';
+import { createGuard } from '../../lib/guard.mjs';
 
 export const MODEL = () => process.env.ASK_MODEL || 'anthropic/claude-haiku-5.5';
 const num = (v, d) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : d);
 const MAX_INDEX_BYTES = 12 * 1024 * 1024, INDEX_TTL_MS = 10 * 60 * 1000;
 
-// ---- token (same format as src/ask-token.mjs in the main repo) ----
-const isHost = (h) => typeof h === 'string' && h.length <= 120 && /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(h);
+// ---- token (same format as src/ask-token.mjs; this site is deployed on its own, so it cannot import across the
+// boundary — tests/ask.test.mjs signs with one and verifies with the other, and feeds both the same host corpus) ----
+export const isHost = (h) => typeof h === 'string' && h.length <= 120 && /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(h);
 export function verifyToken(token, secret) {
   if (typeof token !== 'string' || !secret) return null;
   const [h, sig, extra] = token.split('.'); if (!h || !sig || extra !== undefined) return null;
@@ -37,13 +39,26 @@ export function buildPassages(index, ids) {
   return out;
 }
 
+// Read a response body with a hard byte cap, whatever Content-Length claims (chunked/missing/lying headers).
+export async function readCapped(res, max) {
+  if (!res.body) { const t = await res.text(); if (Buffer.byteLength(t) > max) throw new Error('index too large'); return t; }
+  const reader = res.body.getReader(), chunks = []; let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read(); if (done) break;
+    total += value.byteLength;
+    if (total > max) { try { await reader.cancel(); } catch {} throw new Error('index too large'); }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks).toString('utf8');
+}
+
 const cache = new Map();   // host -> { at, index }   (per warm instance)
-async function siteIndex(host) {
+async function siteIndex(host, doFetch) {
   const hit = cache.get(host); if (hit && Date.now() - hit.at < INDEX_TTL_MS) return hit.index;
-  const r = await fetch(`https://${host}/ask/index.json`, { redirect: 'error', signal: AbortSignal.timeout(8000) });
+  const r = await doFetch(`https://${host}/ask/index.json`, { redirect: 'error', signal: AbortSignal.timeout(8000) });
   if (!r.ok) throw new Error(`index ${r.status}`);
   if (Number(r.headers.get('content-length') || 0) > MAX_INDEX_BYTES) throw new Error('index too large');
-  const index = JSON.parse(await r.text());
+  const index = JSON.parse(await readCapped(r, MAX_INDEX_BYTES));
   cache.set(host, { at: Date.now(), index }); return index;
 }
 
@@ -79,7 +94,15 @@ Write the answer a smart friend would give someone who is not an engineer:
 const json = (o, status = 200, h = {}) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', ...h } });
 const originOk = (o) => { try { const u = new URL(o); return u.protocol === 'https:' && isHost(u.hostname) ? u.origin : null; } catch { return null; } };
 
-export default async (req) => {
+let defaultGuard;
+// Salted hash of the caller IP (never stored raw); null when the platform gives us no address.
+export function callerHash(req) {
+  const ip = (req.headers.get('x-nf-client-connection-ip') || (req.headers.get('x-forwarded-for') || '').split(',')[0] || '').trim();
+  return ip ? crypto.createHmac('sha256', process.env.ASK_SIGNING_SECRET || 'x').update(ip).digest('hex').slice(0, 24) : null;
+}
+
+export async function handle(req, deps = {}) {
+  const guard = deps.guard ?? (defaultGuard ??= createGuard()), doFetch = deps.fetch ?? fetch;
   const origin = originOk(req.headers.get('origin') || '');
   const cors = origin ? { 'access-control-allow-origin': origin, 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-allow-headers': 'content-type', vary: 'origin' } : { vary: 'origin' };
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
@@ -93,41 +116,53 @@ export default async (req) => {
   if (!origin || new URL(origin).hostname !== host) return json({ error: 'not allowed' }, 403, cors);   // browsers always send Origin; it must match the signed host
   const question = String(body.q || '').trim().slice(0, 300);
   if (question.length < 2) return json({ error: 'bad request' }, 400, cors);
+  if (!(await guard.checkQuestion(question)).ok) return json({ error: 'question not allowed' }, 422, cors);   // AIMDS, before anything is spent or sent
 
   let passages;
-  try { passages = buildPassages(await siteIndex(host), body.ids); } catch { return json({ error: 'site index unavailable' }, 502, cors); }
+  try { passages = buildPassages(await siteIndex(host, doFetch), body.ids); } catch { return json({ error: 'site index unavailable' }, 502, cors); }
   if (!passages.length) return json({ error: 'bad request' }, 400, cors);
 
   try {   // atomic per-site and global daily caps; no working counter means no answer (fail closed)
-    const { getStore } = await import('@netlify/blobs');
-    const ok = await takeSlot(getStore('ask-usage'), [`site:${host}`, 'all'], [num(process.env.ASK_SITE_CAP, 150), num(process.env.ASK_DAILY_CAP, 1500)], new Date().toISOString().slice(0, 10));
+    const getStore = deps.getStore ?? (await import('@netlify/blobs')).getStore;
+    const ipH = callerHash(req);   // per-caller cap first, so one abuser cannot burn the site/global budget
+    const keys = [...(ipH ? [`ip:${ipH}`] : []), `site:${host}`, 'all'];
+    const caps = [...(ipH ? [num(process.env.ASK_IP_CAP, 40)] : []), num(process.env.ASK_SITE_CAP, 150), num(process.env.ASK_DAILY_CAP, 1500)];
+    const ok = await takeSlot(getStore('ask-usage'), keys, caps, new Date().toISOString().slice(0, 10));
     if (!ok) return json({ error: 'daily limit' }, 429, cors);
   } catch { return json({ error: 'counter unavailable' }, 503, cors); }
 
   const name = host.replace(/-explainer\.netlify\.app$/, '').replace(/\..*$/, '');
   const prompt = `QUESTION: ${question}\n\nNOTES:\n` + passages.map((e, i) => `[${i + 1}] (${e.src})\n${e.text}`).join('\n\n');
-  const up = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST', headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json', 'HTTP-Referer': `https://${host}`, 'X-Title': 'explainmyrepo ask' },
-    body: JSON.stringify({ model: MODEL(), stream: true, max_tokens: 1200, reasoning: { effort: 'low' }, temperature: 0.2, messages: [{ role: 'system', content: SYSTEM(name) }, { role: 'user', content: prompt }] }),
-  });
-  if (!up.ok || !up.body) return json({ error: 'upstream' }, 502, cors);
-  const enc = new TextEncoder(), dec = new TextDecoder();
-  const stream = new ReadableStream({
-    async start(ctl) {
-      const rd = up.body.getReader(); let buf = '';
-      try {
-        for (;;) {
-          const { done, value } = await rd.read(); if (done) break; buf += dec.decode(value, { stream: true });
-          let i; while ((i = buf.indexOf('\n')) > -1) {
-            const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
-            if (!line.startsWith('data:')) continue; const d = line.slice(5).trim(); if (d === '[DONE]') continue;
-            try { const t = JSON.parse(d).choices?.[0]?.delta?.content; if (t) ctl.enqueue(enc.encode(t)); } catch { /* keep-alive comment */ }
-          }
-        }
-      } finally { ctl.close(); }
-    },
-  });
-  return new Response(stream, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', ...cors } });
-};
+  let answer;
+  try {
+    const up = await doFetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST', headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json', 'HTTP-Referer': `https://${host}`, 'X-Title': 'explainmyrepo ask' },
+      body: JSON.stringify({ model: MODEL(), stream: true, max_tokens: 1200, reasoning: { effort: 'low' }, temperature: 0.2, messages: [{ role: 'system', content: SYSTEM(name) }, { role: 'user', content: prompt }] }),
+    });
+    if (!up.ok || !up.body) return json({ error: 'upstream' }, 502, cors);
+    answer = await readAnswer(up.body);
+  } catch { return json({ error: 'upstream' }, 502, cors); }
+  // The answer is held until it has been scanned: a stream cannot be taken back once it has started. Answers are
+  // under 150 words, so the wait is a few seconds.
+  if (!answer.trim()) return json({ error: 'upstream' }, 502, cors);
+  if (!(await guard.checkAnswer(answer)).ok) return json({ error: 'answer withheld' }, 502, cors);
+  return new Response(answer, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', ...cors } });
+}
+
+export default (req) => handle(req);
+
+async function readAnswer(stream) {
+  const rd = stream.getReader(), dec = new TextDecoder();
+  let buf = '', out = '';
+  for (;;) {
+    const { done, value } = await rd.read(); if (done) break; buf += dec.decode(value, { stream: true });
+    let i; while ((i = buf.indexOf('\n')) > -1) {
+      const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+      if (!line.startsWith('data:')) continue; const d = line.slice(5).trim(); if (d === '[DONE]') continue;
+      try { out += JSON.parse(d).choices?.[0]?.delta?.content || ''; } catch { /* keep-alive comment */ }
+    }
+  }
+  return out;
+}
 
 export const config = { path: '/api/ask' };

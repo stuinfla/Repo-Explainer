@@ -1,8 +1,6 @@
-// tests/capabilities-registry.test.mjs — INV-24/INV-25 made mechanical (ADR-0009 §1).
-// The QA review of ADR-0009 (2026-07-17) flagged that "verified ⇒ receipts" was labeled an
-// enforced invariant while actually being a human discipline. This test is the enforcement:
-// a promotion without receipts, a verified entry whose tool doesn't exist, or a status
-// outside the lifecycle enum now fails the suite — it cannot land through a green build.
+// tests/capabilities-registry.test.mjs — INV-29/INV-30 made mechanical (ADR-0009 §1).
+// A promotion without receipts, a verified entry whose tool is missing, or a status outside the lifecycle
+// enum fails the suite.
 import { test } from 'node:test';
 import assert from 'node:assert';
 import fs from 'node:fs';
@@ -21,7 +19,7 @@ test('registry shape: capabilities is a non-empty array with unique ids', () => 
   assert.strictEqual(new Set(ids).size, ids.length, `duplicate capability ids: ${ids}`);
 });
 
-test('INV-24: every capability has id, title, and a status in the lifecycle enum', () => {
+test('INV-29: every capability has id, title, and a status in the lifecycle enum', () => {
   for (const c of reg.capabilities) {
     assert.ok(c.id && typeof c.id === 'string', 'capability missing id');
     assert.ok(c.title && typeof c.title === 'string', `${c.id}: missing title`);
@@ -29,7 +27,7 @@ test('INV-24: every capability has id, title, and a status in the lifecycle enum
   }
 });
 
-test('INV-25: verified ⇒ receipts + verifiedAt present, entry names a real tool', () => {
+test('INV-30: verified ⇒ receipts + verifiedAt present, entry names a real tool', () => {
   for (const c of reg.capabilities.filter((c) => c.status === 'verified')) {
     assert.ok(c.verifiedAt, `${c.id}: verified without verifiedAt`);
     assert.ok(c.receipts && typeof c.receipts === 'object', `${c.id}: verified without receipts`);
@@ -41,7 +39,7 @@ test('INV-25: verified ⇒ receipts + verifiedAt present, entry names a real too
   }
 });
 
-test('INV-25 corollary: entry present iff built or verified; unverified name a verification protocol', () => {
+test('INV-30 corollary: entry present iff built or verified; unverified name a verification protocol', () => {
   for (const c of reg.capabilities) {
     if (c.status === 'specified') {
       assert.ok(!c.entry, `${c.id}: specified must not carry an entry (nothing is built)`);

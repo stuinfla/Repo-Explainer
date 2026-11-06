@@ -13,6 +13,8 @@ import path from 'node:path';
 import {
   fit, wrap, renderSystemMap, renderDecision, validateSystemMap, validateDecision, verifySystemMap, verifyDecision,
 } from '../src/story-diagrams.mjs';
+import { renderSystemMapMobile, renderDecisionMobile } from '../src/story-diagrams-mobile.mjs';
+import { fontSizes, canvasWidth, cssOf } from './helpers/diagram-svg.mjs';
 import { SYSTEM_MAP, DECISION } from './fixtures/story-claude-swap.mjs';
 
 const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -29,7 +31,7 @@ for (const [name, render, model] of [['system map', renderSystemMap, SYSTEM_MAP]
     const svg = render(model);
     const ok = xmllintOk(svg);
     if (ok !== null) assert.equal(ok, true, 'xmllint must accept it');
-    assert.match(svg, /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+    assert.match(svg, /^<svg id="sd-(map|decision)" xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
     assert.doesNotMatch(svg, /<script|foreignObject|href="https?:|<image/i);
     assert.match(svg, /<title id="sd-t">/);
     assert.match(svg, /<desc id="sd-d">/);
@@ -137,7 +139,7 @@ test('decision: shows a real choice — threshold, qualify line, skipped and pic
 test('decision: reduced-motion still tells the whole story (static state = the END)', () => {
   const svg = renderDecision(DECISION);
   const base = svg.slice(svg.indexOf('<style>'), svg.indexOf('@media (prefers-reduced-motion'));
-  assert.match(base, /\.sd-arc \{ stroke-dasharray: 1; stroke-dashoffset: 0; \}/, 'arc fully drawn');
+  assert.doesNotMatch(base, /\.sd-arc\s*\{[^}]*stroke-dashoffset/, 'the arc is never dash-offset: it is simply drawn (opacity is its only animation)');
   assert.match(base, /\.sd-ring \{ opacity: 1; \}/, 'pick ring visible');
 });
 
@@ -161,6 +163,27 @@ test('decision: GUARD — values outside 0–100 and two picks are refused', () 
   const m2 = clone(DECISION);
   m2.candidates[1].status = 'picked';
   assert.ok(validateDecision(m2).some((e) => /at most one picked/.test(e)));
+});
+
+test('decision: GUARD — threshold and qualify lines must sit on the 0–100 gauge, not off it', () => {
+  for (const bad of [140, -5, 100.5]) {
+    const m = clone(DECISION);
+    m.threshold.value = bad;
+    assert.ok(validateDecision(m).some((e) => /threshold/.test(e)), `threshold ${bad} must be refused`);
+    assert.throws(() => renderDecision(m), /threshold/);
+    const q = clone(DECISION);
+    q.qualify.value = bad;
+    assert.ok(validateDecision(q).some((e) => /qualify\.value must be 0–100/.test(e)), `qualify ${bad} must be refused`);
+  }
+  for (const edge of [0, 100]) {   // the gauge's own ends are legal
+    const m = clone(DECISION);
+    m.threshold.value = edge;
+    m.qualify = { value: edge, label: 'to qualify' };
+    assert.deepEqual(validateDecision(m), []);
+  }
+  const none = clone(DECISION);
+  none.qualify = null;
+  assert.deepEqual(validateDecision(none), [], 'qualify is optional');
 });
 
 test('fit: never lets a label exceed its box — truncates with an ellipsis', () => {
@@ -211,4 +234,52 @@ test('render: markup in model text is escaped', () => {
   const svg = renderSystemMap(m);
   assert.doesNotMatch(svg, /<img src=x/);
   assert.match(svg, /&lt;img/);
+});
+
+// ── the PHONE twins (drawn from the same verified model; the page swaps them in below 640px) ────────────────
+for (const [name, render, model] of [['system map', renderSystemMapMobile, SYSTEM_MAP], ['decision', renderDecisionMobile, DECISION]]) {
+  test(`${name} (phone): well-formed, script-free, 360 wide, no text under 13 units`, () => {
+    const svg = render(model);
+    const ok = xmllintOk(svg);
+    if (ok !== null) assert.equal(ok, true, 'xmllint must accept it');
+    assert.doesNotMatch(svg, /<script|foreignObject|href="https?:|<image/i);
+    assert.equal(canvasWidth(svg), 360);
+    assert.ok(Math.min(...fontSizes(svg)) >= 13, `smallest declared size ${Math.min(...fontSizes(svg))}`);
+    assert.match(svg, /<svg id="sd-(map|decision)-m" /);
+    assert.match(svg, /<title id="sd-(map|decision)-m-t">/);
+  });
+
+  test(`${name} (phone): motion is gated, opacity/transform only, scoped under its own id`, () => {
+    const svg = render(model);
+    const id = /<svg id="([^"]+)"/.exec(svg)[1];
+    assert.match(svg, /@media \(prefers-reduced-motion: no-preference\)/);
+    let out = svg, at;
+    while ((at = out.indexOf('@media')) !== -1) {
+      let i = out.indexOf('{', at), depth = 0;
+      for (; i < out.length; i++) { if (out[i] === '{') depth++; else if (out[i] === '}' && --depth === 0) break; }
+      out = out.slice(0, at) + out.slice(i + 1);
+    }
+    assert.doesNotMatch(out.replace(/@keyframes[^{]+\{(?:[^{}]|\{[^{}]*\})*\}/g, ''), /animation:/, 'no animation outside the no-preference block');
+    for (const m of svg.matchAll(/@keyframes\s+([\w-]+)\s*\{((?:[^{}]|\{[^{}]*\})*)\}/g)) {
+      assert.ok(m[1].startsWith(`${id}-`), `keyframes ${m[1]} must be prefixed with ${id}-`);
+      assert.doesNotMatch(m[2], /stroke-dash/, `keyframes ${m[1]} may only move opacity/transform`);
+    }
+    for (const r of cssOf(svg).rules) for (const sel of r.selector.split(',')) assert.ok(sel.trim().startsWith(`#${id}`), `unscoped selector "${sel.trim()}"`);
+  });
+}
+
+test('decision (phone): reduced-motion shows the END of the story — pick ring visible, ACTIVE overlays hidden', () => {
+  const svg = renderDecisionMobile(DECISION);
+  const base = svg.slice(svg.indexOf('<style>'), svg.indexOf('@media (prefers-reduced-motion'));
+  assert.match(base, /#sd-decision-m \.sd-ring \{ opacity: 1; \}/);
+  assert.match(base, /#sd-decision-m \.sd-act, #sd-decision-m \.sd-actC \{ opacity: 0; \}/);
+  assert.match(svg, /✓ PICKED/);
+});
+
+test('system map (phone): a long unbreakable name wraps by breaking at hyphens, never an ellipsis', () => {
+  const m = clone(SYSTEM_MAP);
+  m.inputs.items[0].name = 'a-very-long-hyphenated-input-name-here';
+  const svg = renderSystemMapMobile(m);
+  assert.doesNotMatch(svg, /…/);
+  assert.equal(svg.replace(/<[^>]+>/g, '').replace(/\s+/g, '').includes('a-very-long-hyphenated-input-name-here'), true);
 });

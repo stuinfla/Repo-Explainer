@@ -1,11 +1,5 @@
-// Conformance test — ADR-0006 The Comprehension Ladder (first-principles altitude control).
-//
-// First real reader (2026-07-03): "lots of acronyms and assumptions the reader understands them."
-// Verified on the live hono page: JSX, SSG, KV, R2, ESM, CJS all unglossed. The gate could not
-// catch it because every judge was an expert. This suite pins the three repairs:
-//   (1) O6 zeroKnowledgeReader joins the operator gate + the beginner persona pass (RUBRIC);
-//   (2) INV-20 UnexplainedAcronymZero — deterministic linter over ladder rungs 1-4;
-//   (3) the ship tier blocks on zeroKnowledgeReader (technical-but-pretty must not ship).
+// ADR-0006 The Comprehension Ladder: the novice operator, the INV-20 acronym linter over rungs 1-4, and the
+// guarantee that the vision gate captures the same four rungs the text gate scans.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -15,7 +9,8 @@ test('O6 — RUBRIC carries zeroKnowledgeReader (owner verbatim) + the beginner 
   assert.match(RUBRIC, /zeroKnowledgeReader/, 'RUBRIC missing the sixth operator question key');
   assert.match(RUBRIC, /knows nothing about this domain[\s\S]*first four\s+sections/i,
     'RUBRIC must ask the owner\'s O6 question about the first four sections');
-  assert.match(RUBRIC, /DIFFERENT\s+domain/i, 'RUBRIC must set the beginner persona (smart developer from a different domain)');
+  assert.match(RUBRIC, /curious fifteen-year-old/i, 'RUBRIC must set the beginner persona (ADR-0006 D8: a curious fifteen-year-old)');
+  assert.doesNotMatch(RUBRIC, /smart developer from a DIFFERENT domain/i, 'the superseded persona must be gone');
   assert.match(RESPONSE_SPEC, /zeroKnowledgeReader/, 'RESPONSE_SPEC must require the sixth operator boolean');
 });
 
@@ -61,20 +56,12 @@ test('INV-20 — extractRungText scans rungs 1-4 only (deep sections keep full a
     'RVF in the problem rung must be flagged; HNSW/SIMD in how-it-works must NOT be scanned');
 });
 
-// ── REGRESSION: the gate must SEE what it claims to judge (2026-07-12) ────────────────────────────
-// The bug that made explainsToNovice / zeroKnowledgeReader unpassable on EVERY build ever shipped:
-// the RUBRIC told the vision model "judge the novice questions on the first four sections (hero,
-// problem, what-it-is, insight)", but CROP_SECTIONS never captured #problem or #the-insight. So the
-// model judged "can a newcomer follow this?" against whatever four images arrived first — which
-// included the ARCHITECTURE DIAGRAM — and reported, correctly for what it was shown, that the reader
-// meets "Rust engine"/"BitLinear" with no grounding. The grounding was on the page, in the two
-// sections the grader was structurally incapable of seeing.
-//
-// Note the shape of the miss: a test ALREADY asserted the TEXT gate (extractRungText) scans exactly
-// rungs 1-4. Nobody asserted the VISION gate captured the same four. The two halves of one gate
-// drifted apart in silence. These tests bind them together.
-test('INV-06/O6 — CROP_SECTIONS captures EVERY ladder rung the RUBRIC promises the grader', async () => {
+// The vision gate must capture the same four rungs the text gate scans, or the novice operators are
+// judged on whatever images happen to arrive first. Both are derived from ONE list (LADDER); the four
+// rungs themselves are pinned here, so dropping one from the list fails instead of silently shrinking both.
+test('INV-06/O6 — the ladder is exactly the four rungs the RUBRIC promises, and CROP_SECTIONS captures each', async () => {
   const { CROP_SECTIONS, LADDER_RUNGS } = await import('../tools/quality-grade.mjs');
+  assert.deepEqual(LADDER_RUNGS, ['hero', 'problem', 'whatItIs', 'insight'], 'the RUBRIC says there are four rungs');
   const captured = new Set(CROP_SECTIONS.map((c) => c.key));
   for (const rung of LADDER_RUNGS) {
     assert.ok(captured.has(rung),
@@ -102,9 +89,7 @@ test('A6 — get-started is captured WHOLE, not as a viewport slice that cuts of
   const { CROP_SECTIONS } = await import('../tools/quality-grade.mjs');
   const gs = CROP_SECTIONS.find((c) => c.key === 'getStarted');
   assert.ok(gs && gs.whole === true,
-    'get-started must be captured as a whole element: a 390x844 viewport slice ends above the runnable '
-    + 'example, so the grader marks down "no complete program" for a program that is simply below the '
-    + 'crop edge (this held A6 at 68 on mobile; capturing the whole section took it to 97).');
+    'get-started must be captured whole: a viewport slice ends above the runnable example, so A6 marks down a program that sits below the crop edge.');
 });
 
 test('INV-20 — ordinary words in display caps are NOT acronyms (INSIDE / MODEL / MOVE)', async () => {
@@ -118,13 +103,7 @@ test('INV-20 — ordinary words in display caps are NOT acronyms (INSIDE / MODEL
     'a genuinely unglossed acronym must still be caught');
 });
 
-// ── REGRESSION: a gloss the reader cannot SEE does not count (2026-07-13) ─────────────────────────
-// assemble-page renders a table <caption> as class="visually-hidden" (screen-reader only). INV-20 was
-// scanning it, so glossing an acronym THERE satisfied the linter while a sighted reader still met a bare
-// "POST /agents/{id}/chat" and "Streaming SSE chat" with nothing to decode them. Two independent authors
-// (a subagent, and me) both reached for that caption as the natural place to put the gloss — which is the
-// tell that the CHECK was rewarding the wrong thing, not that the authors were careless. A gate you can
-// satisfy without helping the reader is worse than no gate: it manufactures false confidence.
+// A gloss in screen-reader-only text (visually-hidden) must not satisfy the gate: a sighted reader never sees it.
 test('INV-20 — a gloss hidden from sighted readers (visually-hidden) does NOT satisfy the gate', async () => {
   const { extractRungText, findUnexplainedAcronyms } = await import('../tools/quality-grade.mjs');
 
@@ -144,4 +123,36 @@ test('INV-20 — a gloss hidden from sighted readers (visually-hidden) does NOT 
     </details>`;
   assert.deepEqual(findUnexplainedAcronyms(extractRungText(visibleGloss)), [],
     'the SAME gloss in visible prose must satisfy the gate');
+});
+
+// INV-20 compound-token gloss: "ADR-001 (short for ...)" glosses the reader, so it clears the bare token.
+test('INV-20: a gloss attached to a compound token (ADR-001 (…)) clears the bare acronym', async () => {
+  const { findUnexplainedAcronyms } = await import('../tools/quality-grade.mjs');
+  assert.deepEqual(findUnexplainedAcronyms("a design record labeled ADR-001 (short for 'architecture decision record')"), []);
+  assert.deepEqual(findUnexplainedAcronyms('The ADR-001 file governs this build.'), ['ADR'], 'a bare compound still fails');
+});
+
+// A dash used as punctuation is not a gloss: "GNU — and then it stops" explains nothing.
+test('INV-20: an em dash followed by a connective is NOT a gloss; one followed by an explanation is', async () => {
+  const { findUnexplainedAcronyms } = await import('../tools/quality-grade.mjs');
+  assert.deepEqual(findUnexplainedAcronyms('It runs on GNU — and then it stops.'), ['GNU']);
+  assert.deepEqual(findUnexplainedAcronyms('GNU tools — so it is fast.'), ['GNU']);
+  assert.deepEqual(findUnexplainedAcronyms('GNU — but only on Linux.'), ['GNU']);
+  assert.deepEqual(findUnexplainedAcronyms('GDN — the running signal between layers.'), []);
+  assert.deepEqual(findUnexplainedAcronyms('The GNU state — the numbers carried forward.'), []);
+});
+
+// The text gate and the vision gate read the same ladder: an unglossed acronym in ANY rung is scanned, and
+// every rung's crop selector is the section the text gate scans.
+test('INV-20/O6 — extractRungText scans EVERY ladder rung (one bare acronym per rung, each caught)', async () => {
+  const { extractRungText, findUnexplainedAcronyms, LADDER, CROP_SECTIONS } = await import('../tools/quality-grade.mjs');
+  const fixture = (bareIn) => LADDER.map((r) => {
+    const body = `<p>${r.key === bareIn ? 'It speaks ZZQ to the world.' : 'Plain words only here.'}</p>`;
+    return r.htmlId === null ? `<section class="hero">${body}</section>` : `<details class="section" id="${r.htmlId}">${body}</details>`;
+  }).join('\n');
+  for (const r of LADDER) {
+    assert.deepEqual(findUnexplainedAcronyms(extractRungText(fixture(r.key))), ['ZZQ'], `a bare acronym in the "${r.key}" rung must be scanned`);
+    const crop = CROP_SECTIONS.find((c) => c.key === r.key);
+    assert.equal(crop.selector, r.selector, `the "${r.key}" vision crop must select the section the text gate scans`);
+  }
 });

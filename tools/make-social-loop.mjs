@@ -1,15 +1,13 @@
 #!/usr/bin/env node
-// make-social-loop.mjs — the Alive Kit's social-loop capability (ADR-0009 §3, verified
-// 2026-07-17: agentic-kit pilot — 10.0s 16:9 + 9:16 h264 pair, $0 render, worst-frame
-// check passed in BOTH ratios by operator eyeball + gpt-5.6-sol on 1fps contact sheets).
+// make-social-loop.mjs — the Alive Kit's social-loop capability (ADR-0009 §3).
 //
 // JOB: scaffold a ready-to-author HyperFrames motion-loop project from a FINISHED, GATED
 // build — a ≤10s loop of the page's own hero animation, in 16:9 and 9:16. The authoring
 // runs in YOUR local Claude Code session via the HyperFrames skills; this tool stages the
 // source material and prints the exact prompt to paste.
 //
-// LOCAL-DOOR-ONLY (ADR-0009 §2 / INV-26, enforced): refuses to run in CI. Fail-open by
-// placement (INV-27): never invoked by the pipeline. Read-only consumption (INV-28):
+// LOCAL-DOOR-ONLY (ADR-0009 §2 / INV-31, enforced): refuses to run in CI. Fail-open by
+// placement (INV-32): never invoked by the pipeline. Read-only consumption (INV-33):
 // outputs land under the build dir's loop-project/ and renders/ only.
 //
 // Usage: node tools/make-social-loop.mjs <build-dir>
@@ -64,7 +62,7 @@ Deliverable: a ≤10s silent motion loop of the page's hero animation, rendered 
 - End the 16:9 with a 1-line closing caption; the 9:16 carries a persistent big title + the
   same caption.
 
-## The proven recipe (agentic-kit pilot, 2026-07-17 — follow it, it earned its scars)
+## The proven recipe (ADR-0009 §3 — follow it)
 1. The hero animation uses wall-clock CSS/SMIL. Re-choreograph it onto ONE paused GSAP
    timeline (inline the SVG, strip its clocks, reproduce its @keyframes percentages as
    tweens) so every frame is seek-safe for the renderer.

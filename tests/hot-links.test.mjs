@@ -6,45 +6,15 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const TOOL = path.join(REPO, 'tools', 'assemble-page.mjs');
+import { makeBuild, assemble, cleanup } from './helpers/assemble-fixture.mjs';
 
 function build() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'emr-links-'));
-  const assets = path.join(dir, 'assets'); fs.mkdirSync(assets, { recursive: true });
-  const png = Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c6360000002000100ffff03000006000557bfabd40000000049454e44ae426082', 'hex');
-  for (const f of ['hero.png', 'card.png', 'favicon-32.png', 'problem.png']) fs.writeFileSync(path.join(assets, f), png);
-  fs.writeFileSync(path.join(assets, 'arch.svg'), '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><title>a</title><desc>d</desc><rect width="4" height="4"/></svg>');
-  const ctx = {
-    repo: { owner: 'o', name: 'r', slug: 'r', url: 'https://github.com/o/r' },
-    concept: { palette: { accent: '#4be3c8' }, metaphor: 'm', tagline: 't' },
-    kb: { primerPath: path.join(dir, 'primer.md') },
-    visuals: {
-      hero: { file: path.join(assets, 'hero.png'), altText: 'h' },
-      sections: [{ id: 'problem', role: 'problem illustration', file: path.join(assets, 'problem.png'), alt: 'p' }],
-      architectureDiagram: { svgPath: path.join(assets, 'arch.svg'), altText: 'arch' },
-    },
-    brand: { socialCard: { file: path.join(assets, 'card.png') }, favicon: { set: [path.join(assets, 'favicon-32.png')] } },
-    content: { sections: {
-      hero: { headline: 'H', lede: 'L' }, problem: { title: 'P', lead: 'l', paragraphs: ['p'] },
-      whatItIs: { title: 'W', lead: 'l', paragraphs: ['p'] }, insight: { title: 'I', oh: 'oh', lead: 'l', paragraphs: ['p'] },
-      howItWorks: { title: 'HW', paragraphs: ['p'] }, useCases: { title: 'U', cases: [{ title: 'c', paragraphs: ['p'] }] },
-      getStarted: { title: 'G', install: 'npm i', steps: [{ strong: 's', text: 't' }] },
-      pack: { title: 'K', intro: 'i', downloadLabel: 'd' },
-    } },
-  };
-  fs.writeFileSync(path.join(dir, 'primer.md'), '# primer\n');
-  fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify(ctx, null, 2));
-  execFileSync(process.execPath, [TOOL, dir], { stdio: ['ignore', 'pipe', 'pipe'] });
-  const html = fs.readFileSync(path.join(dir, 'site', 'index.html'), 'utf8');
-  fs.rmSync(dir, { recursive: true, force: true });
-  return html;
+  const dir = makeBuild();
+  try {
+    const r = assemble(dir);
+    assert.equal(r.status, 0, r.stderr);
+    return r.html;
+  } finally { cleanup(dir); }
 }
 
 const strip = (h) => h.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<head[\s\S]*?<\/head>/i, '');

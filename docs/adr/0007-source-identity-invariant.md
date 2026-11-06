@@ -1,7 +1,15 @@
 # ADR-0007: INV-21 Source-Identity — the submitted repo is the build, or there is no build
 
-Updated: 2026-07-08 19:50:00 EDT | Version 1.2.0
+Updated: 2026-11-05 12:00:00 EST | Version 1.2.1
 Created: 2026-07-08 17:10:00 EDT
+
+Status: Accepted + Implemented
+Date: 2026-07-08
+Updated: 2026-11-05
+
+> **Note (3.0.1).** Re-checked against code: `tools/clone-repo.mjs` and `tools/deploy.mjs` both read
+> `EXPLAINER_SUBMITTED_REPO`. Only the hosted runner sets it (`bin/agentic-runner.mjs`, `bin/runner-lib.mjs`), so
+> the pin is armed on the hosted door and **unarmed on the local door**, as ADR-0011's honesty note records.
 
 > **v1.2.0 — the open question is RESOLVED (owner decision, same day): the hosted door builds
 > PUBLIC repos only.** A hosted build publishes a public page, which must never quietly expose

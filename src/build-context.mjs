@@ -52,15 +52,3 @@ export function mergeSlot(buildDir, slot, value) {
   fs.writeFileSync(p, JSON.stringify(obj, null, 2) + '\n');
   return obj[slot];
 }
-
-// True iff a slot is already populated (used by --from/--to resume + "skip if done" logic).
-export function hasSlot(buildDir, slot) {
-  try {
-    const ctx = readContext(buildDir);
-    const v = ctx[slot];
-    if (v == null) return false;
-    if (Array.isArray(v)) return v.length > 0;
-    if (typeof v === 'object') return Object.keys(v).length > 0;
-    return true;
-  } catch { return false; }
-}

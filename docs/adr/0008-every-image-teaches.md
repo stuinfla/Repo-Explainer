@@ -2,6 +2,7 @@
 
 Status: Accepted + Implemented
 Date: 2026-07-13
+Updated: 2026-11-05
 Amends: ADR-0005 (skill-based recipe), ADR-0006 (comprehension ladder)
 
 ## Context
@@ -40,6 +41,11 @@ better than this page." He was right, and the cause was in the spec, not the exe
    element carries the next beat.
 7. **Creative engine.** The runner's default model is `claude-fable-5` (verified live
    2026-07-13) — the product is creative judgment, so the top-tier model is the correct spend.
+   *(Superseded 2026-11-05: the runner's default is now `claude-sonnet-5-5` (`bin/agentic-runner.mjs`
+   `args.model || 'claude-sonnet-5-5'`; `src/claude.mjs` `DEFAULT_MODEL`). The local door uses OpenRouter
+   `z-ai/glm-5.3` only when it is the sole credential or asked for. Image generation is a separate chain:
+   `gpt-image-2.5-flare` at `xhigh`, then `gpt-image-2`, with Grok when there is no OpenAI key or the whole OpenAI chain fails (`tools/generate-image.mjs`); the
+   flare price is unknown and receipts say UNPRICED, never $0.)*
 
 ## Consequences
 

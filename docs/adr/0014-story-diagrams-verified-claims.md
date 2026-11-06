@@ -2,7 +2,15 @@
 
 Status: Accepted + Implemented (renderers, verifier, `make-diagrams` wiring, brain schema, tests); **not yet validated across a corpus of real builds** — see Consequences.
 Date: 2026-10-10
+Updated: 2026-11-05
 Amends: ADR-0005 (Station 4), ADR-0012 (grounded radial architecture), INV-23 (every image teaches)
+
+> **Note (3.0.1, 2026-11-05) — the "mobile legibility is the known weakness" consequence below is addressed.**
+> Every story diagram is now drawn twice from the one verified model, wide and as a 360px phone twin
+> (`src/story-diagrams-mobile.mjs`; `tools/diagrams/story.mjs`), and `make-diagrams` fails the step if any
+> label on the twin would be under 11px on a 390px phone (`mobileLabelPx`, `MOBILE_FLOOR_PX` in
+> `tools/diagrams/legibility.mjs`). Still true: the story diagrams have been exercised on few real builds, so
+> the corpus-level claim in Consequences remains unmeasured.
 
 ## Context
 
@@ -64,10 +72,7 @@ external references.
 
 ## Consequences
 
-- **Mobile legibility is the known weakness.** Both canvases are ~1100 px wide; on a 312 px column
-  the 13 px labels render near 3.7 px. The page's tap-to-zoom lightbox covers it for now, and
-  `legibilityOf` does not see CSS-sized text, so these report `null`. A portrait layout is the
-  follow-up; do not claim mobile parity until it exists.
+- **Mobile legibility was the known weakness (addressed in 3.0.1, see the note above).** When this ADR was written both canvases were ~1100 px wide and the 13 px labels rendered near 3.7 px on a 312 px column. Each story diagram now has a 360px phone twin and the 11px floor is enforced by `make-diagrams`.
 - **Not yet validated on a corpus.** Two repos' worth of evidence exists (claude-swap, hand-authored).
   Whether the brain authors good `systemMap` / `decision` models unprompted across many repos is
   unmeasured. The fallback keeps that safe; the gain is unproven until measured.

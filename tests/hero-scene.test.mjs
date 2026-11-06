@@ -1,11 +1,5 @@
-// INV-23's bespoke animated hero SCENE — documented in SKILL.md, unimplemented until 2026-09-17.
-//
-// SKILL.md: "For any repo whose trick is spatial or mechanical (most), author a bespoke animated SVG
-// SCENE instead (visuals.heroAnim.sceneSvg -> assets/hero-scene.svg) ... The chips band is the
-// fallback for repos whose trick is genuinely abstract." make-diagrams only ever built the chips
-// band, so a spatial repo got chips that did not fit — or, for ruvnet/ruos, no animation at all
-// (the brain authored no chips, and "no heroAnim => no band"). These tests pin the scene path AND
-// the guards, so an unanimated or unscalable file can never reach the hero band.
+// INV-23's bespoke animated hero SCENE (visuals.heroAnim.sceneSvg -> assets/hero-scene.svg): the scene path and its
+// guards, so an unanimated or unscalable file can never reach the hero band.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,22 +8,23 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validScene } from './helpers/hero-scene-fixture.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TOOL = path.join(REPO, 'tools', 'make-diagrams.mjs');
 
-const SCENE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 40" width="100" height="40">
-  <title>t</title><desc>A request crosses the boundary and the desktop acts.</desc>
-  <style>.d{animation:go 9s linear infinite}@keyframes go{0%{opacity:0}100%{opacity:1}}
-  @media (prefers-reduced-motion: reduce){.d{animation:none;opacity:1}}</style>
-  <rect class="d" x="1" y="1" width="20" height="10" fill="#4be3c8"/></svg>`;
+const SCENE = validScene();
+// the pre-3.0.1 hosted-door contract: no root id, unscoped selectors, no text-size floor
+const UNSCOPED_SCENE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 40"><title>t</title><desc>d</desc>
+  <style>.d{animation:go 9s linear infinite}@keyframes go{0%{opacity:0}100%{opacity:1}}@media (prefers-reduced-motion: reduce){.d{animation:none}}</style>
+  <text x="2" y="9" font-size="3">tiny</text><rect class="d" x="1" y="1" width="20" height="10"/></svg>`;
 
-function fixture(heroAnim, sceneBody = SCENE) {
+function fixture(heroAnim, sceneBody = SCENE) {   // 'no heroAnim => no band' is covered in diagrams.test.mjs
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'emr-scene-'));
   const kb = path.join(dir, 'kb');
   fs.mkdirSync(kb, { recursive: true });
   fs.mkdirSync(path.join(dir, 'assets'), { recursive: true });
-  if (sceneBody !== null) fs.writeFileSync(path.join(dir, 'assets', 'hero-scene.svg'), sceneBody);
+  fs.writeFileSync(path.join(dir, 'assets', 'hero-scene.svg'), sceneBody);
   fs.writeFileSync(path.join(kb, 'dep-graph.json'), JSON.stringify({
     nodes: [{ name: 'a' }, { name: 'b' }], internalEdges: [], componentCount: 2, internalEdgeCount: 0, ecosystems: ['node'],
   }));
@@ -56,7 +51,7 @@ test('an authored sceneSvg becomes the hero animation (no chips required)', () =
     const v = JSON.parse(fs.readFileSync(path.join(dir, 'build.json'), 'utf8')).visuals;
     assert.equal(v.heroAnim.format, 'svg-vector-animated-scene');
     assert.ok(v.heroAnim.svgPath.endsWith('assets/hero-scene.svg'), 'the band must point at the authored scene');
-    assert.match(v.heroAnim.altText, /desktop acts/, 'alt text comes from the scene\'s own <desc>');
+    assert.match(v.heroAnim.altText, /original model stays locked/, 'alt text comes from the scene\'s own <desc>');
     assert.ok(!fs.existsSync(path.join(dir, 'assets', 'refusal.svg')), 'the chips band must NOT also be emitted');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
@@ -82,12 +77,14 @@ test('a missing sceneSvg file fails loud rather than silently dropping the band'
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('no heroAnim at all still means NO band (unchanged)', () => {
-  const dir = fixture(undefined, null);
+test('a hosted-door sceneSvg gets the SAME strict contract as the local one (no root id, 3px text are refused)', () => {
+  const dir = fixture({ sceneSvg: 'assets/hero-scene.svg' }, UNSCOPED_SCENE);
   try {
-    run(dir);
-    const v = JSON.parse(fs.readFileSync(path.join(dir, 'build.json'), 'utf8')).visuals;
-    assert.equal(v.heroAnim, undefined);
-    assert.ok(!fs.existsSync(path.join(dir, 'assets', 'refusal.svg')));
+    assert.throws(() => run(dir), (e) => {
+      const out = String(e.stdout || '') + String(e.stderr || '');
+      assert.match(out, /root <svg> has no id/);
+      assert.match(out, /smallest text is [0-9.]+px/);
+      return true;
+    });
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });

@@ -1,36 +1,32 @@
 #!/usr/bin/env node
-// bin/agentic-runner.mjs — the AGENTIC hosted runner (replaces the deterministic orchestrator.mjs
-// call for the hosted /build flow). Runs the real explainmyrepo SKILL as a headless Claude Code
-// agent (`claude -p`) — the brain decides, tools/*.mjs do the mechanics (CONTRACT), instead of a
-// fixed 19-station bash pipeline. See docs memory "hosted-agentic-architecture" (approved
-// 2026-06-30) and ADR-033 (agent-harness-generator) for why: GitHub Actions is the right HOST for
-// this triggered, autonomous class of task; what it invokes should be the agent, not a rigid script.
+// bin/agentic-runner.mjs — the HOSTED door. Deterministic preflight (clone, live credential and
+// embedding probes, concept tournament), then `claude -p` running skills/explainmyrepo/SKILL.md, then
+// the cure stage, then notify. The decisions live in runner-lib.mjs / runner-preflight.mjs / cure.mjs
+// (importable, unit-tested); this file is the wiring.
 //
-// Usage: node bin/agentic-runner.mjs <github-url> --build-dir <dir> [--budget-min N] [--budget-usd N]
-//        [--submitter <email>] [--run-url <url>] [--build-id <id>]
+// Usage: node bin/agentic-runner.mjs <github-url|owner/name> --build-dir <dir> [--budget-min N]
+//        [--budget-usd N] [--submitter <email>] [--run-url <url>] [--build-id <id>] [--gist-id <id>]
 //
-// Behavior:
-//   - Spawns `claude -p` headless, non-interactive (--permission-mode bypassPermissions, --bare to
-//     skip hooks/CLAUDE.md/plugin-sync — irrelevant/unsafe on a shared CI runner), with the
-//     explainmyrepo skill as the task brief and Bash/Read/Write/Edit/Glob/Grep as its only tools.
-//   - Streams --output-format stream-json so tool calls are visible AS THEY HAPPEN (real progress,
-//     not a fixed step counter) — printed to stderr and, if --build-id/--gist-id are set, patched to
-//     the status gist so the website's poll shows the agent's actual current action.
-//   - Enforces its OWN wall-clock (--budget-min) and $ (--budget-usd) ceilings, ending the run
-//     cleanly with an honest reason BEFORE the outer GH Actions job timeout would SIGKILL it — a
-//     clean stop can still report; a SIGKILL cannot. This is the dynamic-per-repo budget: the caller
-//     (landing/netlify/functions/build.js) sizes --budget-min from a cheap pre-flight repo check.
-//   - On ANY failure (non-zero exit, timeout, budget exceeded, or a completed run with no live URL
-//     in build.json), calls tools/alert-owner.mjs with full particulars — never fails silently.
+//   - The agent runs headless with --permission-mode bypassPermissions and --bare, tools limited to
+//     Bash/Read/Write/Edit/Glob/Grep, env limited to AGENT_ENV_ALLOWLIST, .env reads disallowed.
+//   - stream-json shows tool calls as they happen (status gist gets a human progress line).
+//   - The runner enforces its own wall-clock and $ ceilings so it can still report before the outer
+//     job is SIGKILLed.
+//   - Any failure (non-zero exit, budget kill, no verified live URL) alerts the owner AND the submitter.
 
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { classifyEndState, buildCurePrompt, CURE } from './cure.mjs';
+import { runCureStage, createCostMeter, maxBudgetArgs, CURE } from './cure.mjs';
+import { probeCredentials, probeEmbedding } from './runner-preflight.mjs';
+import { NPX_LINE, mainAgentSpawn, cureAgentSpawn, spawnAndWait, startAgent, createStreamHandler, repoId, elapsedMinutes, agentWallMs, MIN_AGENT_WALL_MS, STATUS_RETRY_DELAYS_MS,
+  classifyFailure, agentReportOf, liveUrlOf, finalizeRun, disclosureOf, scorecardOf, buildAgentPrompt } from './runner-lib.mjs';
+import { recordClaims } from '../src/claims-record.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(HERE, '..');
+const startedAt = Date.now();
 
 function parseArgs(argv) {
   const out = { _: [] };
@@ -45,9 +41,7 @@ function parseArgs(argv) {
 const args = parseArgs(process.argv.slice(2));
 let repoUrl = args._[0];
 if (!repoUrl) { console.error('usage: agentic-runner.mjs <github-url> --build-dir <dir> [--budget-min N] [--budget-usd N]'); process.exit(2); }
-// The workflow passes the bare "owner/name" form (build.js sends fullName, not a URL) — normalize
-// to a full URL up front so the identity pin, build.json seed, and clone all see the same thing.
-// (Learned live 2026-07-08: the first INV-21 preflight failed CLOSED on exactly this — safe, but wrong.)
+// The workflow passes bare "owner/name": normalize to a full URL so the identity pin, build.json seed and clone agree.
 if (!/^[a-z]+:\/\//i.test(repoUrl) && !/github\.com/i.test(repoUrl)) repoUrl = `https://github.com/${repoUrl.replace(/^\/+/, '')}`;
 
 const buildDir = path.resolve(args['build-dir'] || path.join(REPO_ROOT, 'build', `hosted-${Date.now()}`));
@@ -56,70 +50,30 @@ const budgetUsd = Number(args['budget-usd'] || 8);
 const submitter = args.submitter || '';
 const runUrl = args['run-url'] || '';
 const buildId = args['build-id'] || '';
-// Executor model economics (owner directive 2026-07-13, "build-economics-text-first"): the
-// premium creative judgment happens in the TEXT-MODE CONCEPT TOURNAMENT below (Fable/Sonnet/Sol
-// compete on specs for cents; a cheap judge ranks them) — so the implementation agent runs on
-// the low-cost tier. All-Fable implementation measured $7-9/page; tournament + Sonnet executor
-// targets $2.50-4.00 at the same gate bar. Both IDs verified live via GET /v1/models 2026-07-13.
+// The tournament (text-mode, cents) holds the premium creative judgment, so the implementation
+// agent runs on the low-cost tier (build-economics-text-first).
 const model = args.model || 'claude-sonnet-5-5';
-// Which endpoint + billing lane runs the executor (`claude -p`). Default: first-party Anthropic.
-// The credential preflight may FAIL THIS OVER to OpenRouter's Anthropic-compatible endpoint
-// (their "Anthropic Skin" — same executor model, billed to the owner's OpenRouter credits) when
-// the primary key is capacity-dead. MetaHarness ADR-167 router shape: reroute on a VERIFIED
-// failure only; the grader + ship-bar rail are lane-independent, so quality is enforced the same
-// either way. The Skin is only guaranteed for Anthropic first-party models — never point this
-// lane at a non-Anthropic model (that experiment is a separate, deliberate lane via Moonshot).
 let executor = { lane: 'anthropic', model, baseUrl: null, key: null };
-// Defined up here (not beside classifyFailure) because the credential preflight's usage-limit
-// message also needs it, and that block runs at module load — before the classifier section.
-const NPX_LINE = 'Run it yourself with no wait and no budget limit: npx explainmyrepo <your-github-url> in a VS Code / Claude Code session (or Codex) — it uses your own API key and takes about 15 minutes.';
 
 fs.mkdirSync(buildDir, { recursive: true });
 const buildJsonPath = path.join(buildDir, 'build.json');
-if (!fs.existsSync(buildJsonPath)) {
-  fs.writeFileSync(buildJsonPath, JSON.stringify({ repo: { url: repoUrl } }, null, 2) + '\n');
-}
+if (!fs.existsSync(buildJsonPath)) fs.writeFileSync(buildJsonPath, JSON.stringify({ repo: { url: repoUrl } }, null, 2) + '\n');
 
-function log(msg) { process.stderr.write(`[agentic-runner] ${msg}\n`); }
+const log = (msg) => process.stderr.write(`[agentic-runner] ${msg}\n`);
+const run = (label, bin, argv, opts) => spawnAndWait(label, bin, argv, opts, log);
+const readBuild = () => JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
+const repoSlug = repoUrl.replace(/^https?:\/\/github\.com\//, '');
 
-// Confirmed bug (tests/spawn-error-handling.test.mjs): none of this file's spawn() calls
-// registered an .on('error', ...) listener — a missing/misconfigured binary (a bad `claude`
-// PATH, a moved node executable) crashes the WHOLE process with a raw Node stack trace,
-// contradicting this file's own "never fail silently" contract. Fire-and-forget notification
-// spawns (alert-owner, notify, notify-failure) go through this: waits for close OR error,
-// logs either way, never throws, never hangs.
-function spawnAndWait(label, bin, args, opts) {
-  return new Promise((resolve) => {
-    const child = spawn(bin, args, opts);
-    let settled = false;
-    child.on('error', (e) => { if (settled) return; settled = true; log(`${label} FAILED TO START: ${e.message}`); resolve(-1); });
-    child.on('close', (code) => { if (settled) return; settled = true; resolve(code); });
-  });
-}
-
-// Canonical "owner/name" identity for a GitHub URL — what the whole build is pinned to (INV-21).
-function repoId(u) {
-  const m = String(u || '').trim().replace(/\/+$/, '').match(/github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?$/i);
-  return m ? `${m[1]}/${m[2]}`.toLowerCase() : null;
-}
 const submittedRepoId = repoId(repoUrl);
 if (!submittedRepoId) { console.error(`[agentic-runner] cannot parse owner/name from "${repoUrl}" — need a github.com/owner/name URL`); process.exit(2); }
 
-// Status-gist patching lives ABOVE the preflight so access failures can reach the status page too.
+// ── status gist (the submitter's progress page) ──────────────────────────────────────────────────
 const gistId = args['gist-id'] || '';
 const ghToken = process.env.EXPLAINER_GH_TOKEN || process.env.GITHUB_TOKEN || '';
-// status: 'building' while in progress (the default); MUST be called with 'done'/'failed' at the
-// end too — a real production run (2026-07-06, sindresorhus/p-map, budget-exceeded) proved this
-// wasn't happening: the gist froze on the last in-progress step forever, so anyone watching the
-// live status page (as opposed to the email alert, which DID fire correctly) saw no indication the
-// build had actually finished, successfully or not. That is exactly the silent-failure mode this
-// whole rebuild exists to close.
-// Progress patches are throttled: one gist PATCH per tool call blew GitHub's secondary
-// rate limit mid-build (2026-07-09, agentveil-sdk) — and the 403 landed on the one patch
-// that mattered, `done`, leaving the submitter staring at "building" while their page was
-// live. Progress is best-effort every ≥20s; terminal states retry through the limit.
 let lastProgressPatchAt = 0;
 
+// 'building' patches are throttled (a patch per tool call hit GitHub's secondary rate limit); the
+// terminal 'done'/'failed' patch must land, so it retries through the limit. Never throws.
 async function patchStatus(stepName, status = 'building', result = null, error = null, internalReason = null) {
   if (!gistId || !ghToken || !buildId) {
     if (status !== 'building') log(`patchStatus(${status}) SKIPPED — missing ${!gistId ? 'gistId' : !ghToken ? 'ghToken' : 'buildId'}`);
@@ -129,23 +83,16 @@ async function patchStatus(stepName, status = 'building', result = null, error =
     if (Date.now() - lastProgressPatchAt < 20_000) return;
     lastProgressPatchAt = Date.now();
   }
-  // Terminal states (done/failed) must land even if a secondary rate limit is active —
-  // GitHub's write-burst limits clear within a minute or two, so wait them out.
-  const delaysMs = status === 'building' ? [] : [30_000, 60_000, 120_000];
+  const delaysMs = status === 'building' ? [] : STATUS_RETRY_DELAYS_MS;
   for (let attempt = 0; ; attempt++) {
     try {
       const resp = await fetch(`https://api.github.com/gists/${gistId}`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-        // internalReason is the real diagnostic (e.g. "Credit balance is too low") — it rides in
-        // the same gist for the admin dashboard to read, but app.js (the submitter's own status
-        // page) only ever displays `error`, never this, so nothing internal leaks publicly.
-        body: JSON.stringify({ files: { 'status.json': { content: JSON.stringify({ buildId, step: 0, totalSteps: 1, stepName, status, repo: repoUrl, result, error, internalReason }, null, 2) } } }),
+        // internalReason is for the admin dashboard; the submitter's page only shows `error`.
+        body: JSON.stringify({ files: { 'status.json': { content: JSON.stringify({ buildId, stepName, status, repo: repoUrl, result, error, internalReason }, null, 2) } } }),
       });
       if (resp.ok) return;
-      // A silent swallow here is exactly the anti-pattern this whole rebuild exists to close — a
-      // gist-patch failure on the TERMINAL state is itself worth knowing about, even though it must
-      // never invert the real build outcome (hence: log loudly, but never throw).
       const body = await resp.text().catch(() => '');
       if (status !== 'building') log(`patchStatus(${status}) attempt ${attempt + 1} FAILED: HTTP ${resp.status} ${body.slice(0, 200)}`);
       if (attempt >= delaysMs.length) return;
@@ -157,16 +104,24 @@ async function patchStatus(stepName, status = 'building', result = null, error =
   }
 }
 
-// ── SOURCE-IDENTITY GATE: Station 0–1 (validate + clone) runs HERE, pre-agent, deterministic ────
-// Incident 2026-07-08 (submitted mamd69/SONA-Trader, shipped Dar-41/Virtual-Trader-SONA-AI-): the
-// agent, unable to clone a private-but-shared repo (the env allowlist strips GITHUB_TOKEN —
-// correctly), treated the clone failure as an obstacle to work around, GitHub-searched a lookalike,
-// edited repo.url in build.json, and shipped a stranger's repo to the submitter as theirs. Two
-// structural conclusions, both enforced here:
-//   1. The clone belongs in trusted deterministic code that MAY hold the token — never in the
-//      agent. Private repos shared with our account now work; the agent still never sees a token.
-//   2. If the EXACT submitted repo cannot be cloned, the build ends before the agent exists,
-//      loudly, with an actionable message to the human. Nothing can "work around" it.
+// A preflight failure ends the run before any cost: tell the status page, the OWNER and the SUBMITTER.
+async function failBeforeBuild({ stepName, publicMessage, reason }) {
+  await patchStatus(stepName, 'failed', null, publicMessage);
+  await run('alert-owner', process.execPath, [
+    path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
+    '--repo', repoSlug, '--submitter', submitter || '(none)', '--build-id', buildId || '(none)', '--run-url', runUrl || '(none)',
+    '--reason', reason, '--elapsed-min', String(elapsedMinutes(startedAt)),
+  ], { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
+  if (submitter) {
+    await run('notify-failure', process.execPath, [path.join(REPO_ROOT, 'tools', 'notify-failure.mjs'), '--repo', repoSlug, '--to', submitter, '--message', publicMessage],
+      { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
+  }
+  process.exit(1);
+}
+
+// ── SOURCE-IDENTITY GATE: validate + clone run HERE, before the agent exists (INV-21) ─────────────
+// The clone needs the token, which the agent must never hold; and if the EXACT submitted repo cannot
+// be cloned, the build ends loudly — nothing can "work around" it by substituting a lookalike.
 log(`preflight: cloning ${repoUrl} deterministically (pre-agent, token never enters the agent env)`);
 const cloneEnv = { ...process.env, EXPLAINER_SUBMITTED_REPO: submittedRepoId };
 if (!cloneEnv.GITHUB_TOKEN && cloneEnv.EXPLAINER_GH_TOKEN) cloneEnv.GITHUB_TOKEN = cloneEnv.EXPLAINER_GH_TOKEN;
@@ -177,331 +132,92 @@ try { cloneOut = JSON.parse((cloneRes.stdout || '').trim().split('\n').pop()); }
 if (cloneRes.status !== 0 || !cloneOut?.ok) {
   const why = cloneOut?.error || (cloneRes.stderr || '').trim().split('\n').pop() || `clone-repo exited ${cloneRes.status}`;
   log(`PREFLIGHT FAILED — ${why}`);
-  await patchStatus('Stopped before building: we could not access this repo.', 'failed', null,
-    `We couldn't access ${repoUrl}. If it's private, share it with our GitHub account or make it public, then rebuild. Nothing was built — we never build from a guess or a similar-looking repo.`);
-  await spawnAndWait('alert-owner', process.execPath, [
-    path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
-    '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),
-    '--submitter', submitter || '(none)',
-    '--build-id', buildId || '(none)',
-    '--run-url', runUrl || '(none)',
-    '--reason', `repo inaccessible at preflight: ${why}`,
-    '--elapsed-min', '0',
-  ], { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
-  process.exit(1);
+  await failBeforeBuild({
+    stepName: 'Stopped before building: we could not access this repo.',
+    publicMessage: `We couldn't access ${repoUrl}. If it's private, share it with our GitHub account or make it public, then rebuild. Nothing was built — we never build from a guess or a similar-looking repo.`,
+    reason: `repo inaccessible at preflight: ${why}`,
+  });
 }
 log(`preflight OK — cloned ${cloneOut.outputs?.repo?.owner}/${cloneOut.outputs?.repo?.name} (private=${cloneOut.outputs?.repo?.private})`);
 
-// CREDENTIAL PREFLIGHT — live-verify every key this run will need BEFORE any expensive work.
-// A rotated key discovered at agent turn 1 costs minutes; discovered at deploy (minute ~9) it
-// costs the whole build; discovered here it costs three parallel HTTP probes (~2s total).
-// Learned live 2026-07-13: a stale ANTHROPIC_API_KEY in the caller's shell env killed a local
-// build on its first turn while a valid key sat unused in the repo .env — the runner trusted
-// the env instead of proving it. Images note: generate-image.mjs self-loads GROK_AI_KEY from
-// the repo .env as its own fallback, so Grok is probed through the same resolution order and
-// a dead Grok key only WARNS (gpt-image fallback exists) — a dead OpenAI key FAILS (it also
-// backs vision grading, which has no fallback).
-// Every source that HAS a value, in priority order (process env first, then repo .env),
-// deduped by value. The probe walks this list and the first LIVE key wins — learned live
-// 2026-07-14: a dead key PRESENT in process env shadowed a proven-live .env key, so
-// "first that exists" failed a build that "first that works" would have started.
-function credCandidates(...names) {
-  const out = [];
-  for (const n of names) if (process.env[n]) out.push({ val: process.env[n], src: `process env ${n}` });
-  try {
-    const txt = fs.readFileSync(path.join(REPO_ROOT, '.env'), 'utf8');
-    for (const n of names) {
-      const m = txt.match(new RegExp(`^${n}=("?)(.*?)\\1\\s*$`, 'm'));
-      if (m?.[2] && !out.some((c) => c.val === m[2])) out.push({ val: m[2], src: `.env ${n}` });
-    }
-  } catch { /* no .env in CI — env-only is the normal hosted case */ }
-  return out;
-}
-async function probeCred(label, candidates, url, headers) {
-  if (!candidates.length) return { label, ok: false, why: 'not set anywhere (process env or repo .env)' };
-  const dead = [];
-  for (const cred of candidates) {
-    try {
-      const r = await fetch(url, { headers: headers(cred.val), signal: AbortSignal.timeout(5000) });
-      if (r.ok) return { label, ok: true, val: cred.val, why: dead.length ? `OK via ${cred.src} — self-healed past: ${dead.join('; ')}` : `OK via ${cred.src}` };
-      dead.push(`${cred.src} HTTP ${r.status}`);
-    } catch (e) { dead.push(`${cred.src} unreachable (${e.message})`); }
-  }
-  return { label, ok: false, why: `every source dead: ${dead.join('; ')}` };
-}
+// ── CREDENTIAL + EMBEDDING PREFLIGHT: prove every key and the model source BEFORE any cost ─────────
 {
-  const bearer = (v) => ({ Authorization: `Bearer ${v}` });
-  const [a, n, o, g] = await Promise.all([
-    probeCred('ANTHROPIC_API_KEY (agent reasoning)', credCandidates('ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'), 'https://api.anthropic.com/v1/models', (v) => ({ 'x-api-key': v, 'anthropic-version': '2023-06-01' })),
-    probeCred('NETLIFY_AUTH_TOKEN (deploy)', credCandidates('NETLIFY_AUTH_TOKEN'), 'https://api.netlify.com/api/v1/user', bearer),
-    probeCred('OPENAI_API_KEY (vision grading + image fallback)', credCandidates('OPENAI_API_KEY', 'OPEN_AI_KEY'), 'https://api.openai.com/v1/models', bearer),
-    probeCred('GROK_AI_KEY (primary image engine)', credCandidates('GROK_AI_KEY', 'GROK_API_KEY'), 'https://api.x.ai/v1/models', bearer),
-  ]);
-  // Authentication is NOT capacity (2026-07-19, run 29714490286: a monthly usage-limit 400 sailed
-  // straight through the /v1/models probe — a metadata endpoint that spends nothing — and killed
-  // the build one step later with a generic "snag" message). Prove the Anthropic key can actually
-  // SPEND with a 1-token completion on the same model the agent will use; classify the
-  // usage-limit case distinctly so the submitter hears the honest budget truth + reset date.
-  if (a.ok) {
-    try {
-      const r = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'x-api-key': a.val, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({ model, max_tokens: 1, messages: [{ role: 'user', content: 'ping' }] }),
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (!r.ok) {
-        const body = await r.text().catch(() => '');
-        if (/usage limits|regain access/i.test(body)) {
-          a.ok = false;
-          a.usageLimited = true;
-          a.why = `key authenticates but has hit its API usage limit (spend-probe HTTP ${r.status}): ${body.slice(0, 300)}`;
-        } else {
-          a.ok = false;
-          a.why = `key authenticates but a real 1-token completion on ${model} failed (HTTP ${r.status}): ${body.slice(0, 300)}`;
-        }
-      }
-    } catch (e) { log(`credential preflight: spend-probe inconclusive (${e.message}) — proceeding on the auth probe`); }
-  }
-  // EXECUTOR FAILOVER LANE (2026-07-19, after run 29714490286 turned a monthly cap into a
-  // pipeline-wide outage): usage-limited — and ONLY usage-limited — primary key + an OpenRouter
-  // key present → run the SAME executor model through OpenRouter's Anthropic Skin on the owner's
-  // OR credits. A dead/invalid key is a config bug the operator must see, never silently re-bill.
-  // The lane is spend-probed exactly like the primary: engage only on a PROVEN-live 1-token
-  // completion (which also validates the model slug + credits in one shot, loudly).
-  if (!a.ok && a.usageLimited) {
-    const orCands = credCandidates('OPENROUTER_API_KEY');
-    const orModel = process.env.OPENROUTER_ANTHROPIC_MODEL || 'anthropic/claude-sonnet-5.5';
-    for (const cand of orCands) {
-      try {
-        const r = await fetch('https://openrouter.ai/api/v1/messages', {
-          method: 'POST',
-          headers: { 'x-api-key': cand.val, Authorization: `Bearer ${cand.val}`, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-          body: JSON.stringify({ model: orModel, max_tokens: 1, messages: [{ role: 'user', content: 'ping' }] }),
-          signal: AbortSignal.timeout(20_000),
-        });
-        if (r.ok) {
-          executor = { lane: 'openrouter', model: orModel, baseUrl: 'https://openrouter.ai/api', key: cand.val };
-          a.ok = true;
-          a.why = `primary key usage-limited — FAILOVER ENGAGED: same executor model via OpenRouter's Anthropic Skin (${orModel}, ${cand.src}), billed to OpenRouter credits`;
-          break;
-        }
-        const body = await r.text().catch(() => '');
-        log(`failover probe: OpenRouter Skin refused (${cand.src}, HTTP ${r.status}): ${body.slice(0, 200)}`);
-      } catch (e) { log(`failover probe: ${cand.src} unreachable (${e.message})`); }
-    }
-    if (executor.lane !== 'openrouter') log(orCands.length ? 'failover: no live OpenRouter lane — the honest usage-limit refusal stands' : 'failover: no OPENROUTER_API_KEY configured — the honest usage-limit refusal stands');
-  }
-  // The spawned agent and every tool authenticate from process.env — hand each the PROVEN-LIVE
-  // value, OVERWRITING whatever was there (a dead value present is exactly the failure mode).
-  if (a.ok) process.env.ANTHROPIC_API_KEY = a.val;
+  let dotenvText = '';
+  try { dotenvText = fs.readFileSync(path.join(REPO_ROOT, '.env'), 'utf8'); } catch { /* no .env in CI — env-only is the normal hosted case */ }
+  const { a, n, o, executor: lane } = await probeCredentials({ model, env: process.env, dotenvText, log });
+  executor = lane;
+  // The agent and every tool authenticate from process.env: hand each the PROVEN-live value, overwriting a dead one.
+  if (a.ok && executor.lane === 'anthropic') process.env.ANTHROPIC_API_KEY = a.val;
   if (n.ok) process.env.NETLIFY_AUTH_TOKEN = n.val;
   if (o.ok) process.env.OPENAI_API_KEY = o.val;
-  if (g.ok) process.env.GROK_AI_KEY = g.val;
-  for (const r of [a, n, o, g]) log(`credential preflight: ${r.ok ? '✓' : '✗'} ${r.label} — ${r.why}`);
-  if (!g.ok) log('credential preflight: WARN — Grok unavailable, images will use the gpt-image fallback');
+  for (const r of [a, n, o]) log(`credential preflight: ${r.ok ? '✓' : '✗'} ${r.label} — ${r.why}`);
   const fatal = [a, n, o].filter((r) => !r.ok);
   if (fatal.length) {
     const why = fatal.map((r) => `${r.label}: ${r.why}`).join('; ');
     log(`PREFLIGHT FAILED — dead/missing credentials, stopping before any cost is incurred: ${why}`);
-    const publicWhy = a.usageLimited
-      ? `We ran this build for free, and it's been genuinely popular — the community budget is used up for the moment (it resets monthly), not anything wrong with your repo. Nothing was built and nothing was charged. ${NPX_LINE}`
-      : 'A service credential this build needs is missing or expired. Nothing was built and nothing was charged. The operator has been alerted with specifics.';
-    await patchStatus(a.usageLimited ? 'Stopped before building: the free community budget is used up for the moment.' : 'Stopped before building: a required service credential is invalid.', 'failed', null, publicWhy);
-    await spawnAndWait('alert-owner', process.execPath, [
-      path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
-      '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),
-      '--submitter', submitter || '(none)',
-      '--build-id', buildId || '(none)',
-      '--run-url', runUrl || '(none)',
-      '--reason', `credential preflight failed: ${why}`,
-      '--elapsed-min', '0',
-    ], { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
-    process.exit(1);
+    await failBeforeBuild({
+      stepName: a.usageLimited ? 'Stopped before building: the free community budget is used up for the moment.' : 'Stopped before building: a required service credential is invalid.',
+      publicMessage: a.usageLimited
+        ? `We ran this build for free, and it's been genuinely popular — the community budget is used up for the moment (it resets monthly), not anything wrong with your repo. Nothing was built and nothing was charged. ${NPX_LINE}`
+        : 'A service credential this build needs is missing or expired. Nothing was built and nothing was charged. The operator has been alerted with specifics.',
+      reason: `credential preflight failed: ${why}`,
+    });
   }
-
-  // EMBEDDING SOURCE (2026-07-16 HF outage, build 79f135b3): station 1's KB build hard-requires
-  // a real embedding model (INV-06/07 — grounding is never fabricated). A cached model needs no
-  // network; otherwise huggingface.co must actually be up. Probe BOTH here, in seconds — the
-  // alternative was the agent discovering it 40 minutes in, on the clock and on the meter.
-  // The workflow warms kb/models-cache via actions/cache + kb/warm-model-cache.mjs, so the
-  // cached branch is the normal hosted case; this probe is the honest gate when it isn't.
-  const EMBED_MODEL_DIR = path.join(REPO_ROOT, 'kb', 'models-cache', 'Xenova', 'bge-small-en-v1.5');
-  let embed;
-  if (fs.existsSync(path.join(EMBED_MODEL_DIR, 'onnx', 'model_quantized.onnx'))) {
-    embed = { ok: true, why: 'model cached locally — KB build needs no network' };
-  } else {
-    // Source order mirrors kb/warm-model-cache.mjs: our own release asset first (github.com —
-    // the one origin an Actions runner can always reach; HF rate-limits runner IPs with 429,
-    // observed live 2026-07-17 run 29557533994), HF only as the last resort.
-    const probe = async (label, url) => {
-      try {
-        const r = await fetch(url, { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(8000) });
-        return r.ok ? { ok: true, why: `no local cache; ${label} reachable (HTTP ${r.status}) — model will download once` }
-          : { ok: false, why: `${label} HTTP ${r.status}` };
-      } catch (e) { return { ok: false, why: `${label} unreachable (${e.message})` }; }
-    };
-    const rel = await probe('release asset (github.com)', 'https://github.com/stuinfla/Repo-Explainer/releases/download/kb-models-v1/bge-small-en-v1.5.tgz');
-    if (rel.ok) embed = rel;
-    else {
-      const hf = await probe('huggingface.co', 'https://huggingface.co/Xenova/bge-small-en-v1.5/resolve/main/config.json');
-      embed = hf.ok ? hf : { ok: false, why: `no local model cache and no reachable source: ${rel.why}; ${hf.why}` };
-    }
-  }
+  const embed = await probeEmbedding({ cachedModelExists: fs.existsSync(path.join(REPO_ROOT, 'kb', 'models-cache', 'Xenova', 'bge-small-en-v1.5', 'onnx', 'model_quantized.onnx')) });
   log(`embedding preflight: ${embed.ok ? '✓' : '✗'} ${embed.why}`);
   if (!embed.ok) {
     log(`PREFLIGHT FAILED — no embedding source, stopping before any cost is incurred: ${embed.why}`);
-    await patchStatus('Stopped before building: the knowledge-base embedding model is unavailable.', 'failed', null,
-      'The embedding model this build grounds itself on has no local cache and its download source (huggingface.co) is unreachable — usually a temporary outage on their side. Nothing was built and nothing was charged. Please try again in a little while.');
-    await spawnAndWait('alert-owner', process.execPath, [
-      path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
-      '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),
-      '--submitter', submitter || '(none)',
-      '--build-id', buildId || '(none)',
-      '--run-url', runUrl || '(none)',
-      '--reason', `embedding preflight failed in seconds (not 40 minutes): ${embed.why}. Fix: none needed if HF recovers on its own; the workflow's actions/cache + kb/warm-model-cache.mjs step keeps this from recurring once any run has downloaded the model.`,
-      '--elapsed-min', '0',
-    ], { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
-    process.exit(1);
+    await failBeforeBuild({
+      stepName: 'Stopped before building: the knowledge-base embedding model is unavailable.',
+      publicMessage: 'The embedding model this build grounds itself on has no local cache and its download source (huggingface.co) is unreachable — usually a temporary outage on their side. Nothing was built and nothing was charged. Please try again in a little while.',
+      reason: `embedding preflight failed in seconds: ${embed.why}. The workflow's kb/warm-model-cache.mjs step seeds the cache first (sha256-pinned release asset, else Hugging Face), so reaching here means that seeding failed and Hugging Face is unreachable too; a later run recovers once either source is up.`,
+    });
   }
 }
 
-// THE CONCEPT TOURNAMENT (owner directive 2026-07-13): concepts compete as TEXT before any
-// expensive work — three models spec, a cheap judge ranks, the winner seeds build.json.concept.
-// Fail-open by design: a skipped/failed tournament logs loud and the agent invents the concept
-// itself (the old path); it never blocks a build. Skipped entirely on resume (concept exists).
-if (!JSON.parse(fs.readFileSync(buildJsonPath, 'utf8')).concept) {
+// ── CONCEPT TOURNAMENT: concepts compete as text before any expensive work. Fail-open: a skipped or
+// failed tournament logs loud and the agent invents the concept; skipped on resume (concept exists).
+if (!readBuild().concept) {
   log('concept tournament: starting (text-mode, pre-agent)');
   const tRes = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'concept-tournament.mjs'), buildDir],
     { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: 300_000 });
   if (tRes.status === 0) {
-    const seeded = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8')).concept;
+    const seeded = readBuild().concept;
     log(seeded?.tournament ? `concept tournament: winner ${seeded.tournament.winnerModel}` : 'concept tournament: skipped (agent will invent the concept)');
-  } else {
-    log(`concept tournament FAILED (exit ${tRes.status}) — proceeding, agent will invent the concept`);
-  }
+  } else log(`concept tournament FAILED (exit ${tRes.status}) — proceeding, agent will invent the concept`);
 }
-
-const prompt = `Use the explainmyrepo skill (skills/explainmyrepo/SKILL.md is the brain — read it, follow it) to build a bespoke explainer for this repo:
-
-TOKEN ECONOMY: skills/explainmyrepo/TOOLS-CONTRACT.md is the complete toolbox reference (every tool's own header docs: usage, flags, gotchas). Read THAT instead of tool source files — open a tool's source ONLY if the contract is genuinely ambiguous about something you need. Re-deriving tool interfaces from source has measured at ~25% of build spend; it is waste.
-
-  ${repoUrl}
-
-Build directory (already created, seeded with build.json): ${buildDir}
-Station 0–1 (validate + clone) is ALREADY DONE by the harness: the repo is cloned, verified, and pinned at ${buildDir}/repo. Do NOT re-run clone-repo, and do NOT touch repo.url in build.json.
-
-THE SOURCE-IDENTITY LAW (INV-21 — overrides every other instruction in this brief, including the workaround license below): the repo named above IS this build's identity. If its clone is missing, broken, or anything else makes it unusable, STOP and report ok:false with the specific reason. NEVER search for, substitute, fetch, or reconstruct a different repo or its README — an explainer of the wrong repo is fabrication, the one unforgivable output. There is no workaround for source identity.
-Ship mode: --ship-best-effort semantics — if you cannot reach the exemplar bar (mean>=90/min>=85/all six operators) after a reasonable refine attempt, ship the best HONEST version you have (the SHIP_OPERATORS bar: mean>=82, min>=70, real legible diagrams, comprehension operators YES) rather than nothing. The one thing you must NEVER ship broken is the mandatory architecture + flow diagrams (INV-18) — hold rather than ship if those didn't render as real vectors.
-Do NOT publish a separate GitHub repo for this build (skip that station — no write-scoped GitHub token is provisioned in this hosted context, by design).
-Do NOT run the notify station (station 9) — sending the submitter's email is handled OUTSIDE your process; you have no SMTP credentials and should not need them. Your job ends once quality-grade + deploy are done and build.json's publish.liveUrl is set.
-The refine loop is capped at 3 total quality-grade calls (1 initial + 2 refines) and this is now ENFORCED by the tool itself, not just this instruction — a 4th call returns the prior scorecard unchanged at zero cost rather than re-grading. Do not try to work around it. At the cap, RUN DEPLOY AND YOU ARE DONE.
-DELIVERY IS NO LONGER CONDITIONAL ON THE SCORE (ADR-0011, 2026-08-06). deploy.mjs refuses only on INTEGRITY — a page that did not assemble, a source-identity violation, or a missing scorecard. It does NOT refuse on a low grade. A below-bar page ships to its live URL and the requester gets an honest note naming the weakest axis and an offer to re-run. Before this change, 56 of 104 hosted builds delivered NOTHING at ~$5 each, because one weak axis could veto an otherwise-finished page — so the most valuable thing you can do at the cap is DELIVER, not agonise.
-Two consequences for how you work. FIRST: there is no post-cap rescue dance any more. Do not write quality.postCapManualFix, do not end with ok:false hoping a runner re-grade saves you, and do not try to force a deploy — there is nothing left to force past. Run deploy, confirm publish.liveUrl is set, report ok:true. SECOND, and more important: because the score no longer gates delivery, you have NOTHING to gain by making the page look better to the grader than it is. The scorecard is now DISCLOSURE — it goes to the requester verbatim. Grade-chasing, flattering self-assessments, and cosmetic changes aimed at the rubric rather than the reader are now pure waste and actively dishonest. Spend your remaining effort on what genuinely helps a stranger understand this repo, and let the number land where it honestly lands.
-
-You have an approximate budget of ${budgetMin} minutes and $${budgetUsd}. Track your own elapsed time and cost as you work. This repo's actual size/complexity is unknown to me in advance — YOU are the one who discovers it by reading the repo, so budget your own effort accordingly: for a small repo, take your time and polish; for a large/deep monorepo, work faster and be willing to cap exhaustiveness (e.g. don't try to full-text-sweep every file in a 10,000-file repo — sample the important ones: READMEs, top-level docs, the most-referenced components) rather than trying to be exhaustive and running out of budget.
-
-CRITICAL — never fail silently (this is INV-04 in the skill, restated because it is the single most important rule for this run): if a tool fails, or a repo's structure breaks an assumption (e.g. the dependency graph comes back empty, or the repo is unusually deep/large), do NOT just crash. STOP, THINK about why, and try a reasonable workaround — always WITHIN the pinned repo; the SOURCE-IDENTITY LAW above is never workaroundable — (e.g. hand-write a minimal-but-honest architecture note if the automated extractor genuinely cannot produce one for this repo's structure) before giving up. If you truly cannot produce a working page, say EXACTLY why in plain language as your final message — a specific, honest reason a human could act on, never a bare stack trace or a vague "something went wrong."
-
-At the end, print your final status as the LAST line of your response in this exact form (nothing after it):
-RESULT: {"ok": true, "liveUrl": "<url>"}   — on success
-RESULT: {"ok": false, "reason": "<specific honest reason>"}   — on failure`;
 
 log(`starting: ${repoUrl} (budget ${budgetMin}min / $${budgetUsd}, build dir ${buildDir})`);
 
-// SECURITY (flagged by automated review, confirmed real): the target repo is untrusted, internet-
-// submitted input, and this agent runs with bypassed permission checks. It must NOT see credentials
-// it has no legitimate need for — a malicious README/CONTEXT.md in a submitted repo is a realistic
-// prompt-injection vector, and a leaked token would be exfiltratable via the agent's own Bash access.
-// Build an explicit allowlist rather than forwarding process.env wholesale. Only what the TOOLS this
-// agent is told to invoke actually need: OpenAI (images + vision grading) and Netlify (deploy, scoped
-// to an isolated {repo}-explainer site per the approved architecture). ANTHROPIC_API_KEY is
-// unavoidable — `claude -p` needs it to authenticate its own reasoning in a fresh CI runner with no
-// existing OAuth session (the documented headless-auth path). Explicitly EXCLUDED: EXPLAINER_GH_TOKEN
-// /GITHUB_TOKEN (gist-write + repo-publish scope — this runner patches the status gist itself,
-// outside the agent, and publish-repo is disabled for hosted builds) and all SMTP/GMAIL creds
-// (notify is handled post-agent below, not by the agent).
-const AGENT_ENV_ALLOWLIST = ['PATH', 'HOME', 'LANG', 'TERM', 'TMPDIR', 'NODE_ENV', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'NETLIFY_AUTH_TOKEN'];
-const agentEnv = {};
-for (const key of AGENT_ENV_ALLOWLIST) if (process.env[key] !== undefined) agentEnv[key] = process.env[key];
-// --executor-auth subscription (owner ask 2026-07-15, verified live: headless `claude -p` with no
-// ANTHROPIC_API_KEY answers on the machine's logged-in Claude subscription session): for LOCAL,
-// OWNER-INITIATED builds only, strip the API key from the agent env so the executor's reasoning —
-// the $3-5 slice of every build — rides the subscription instead of metered billing. Hybrid by
-// design: the concept tournament and every OpenAI/Netlify tool still use API keys (raw API calls
-// have no subscription path). NEVER set this on CI/hosted builds — a fresh runner has no OAuth
-// session (it would just fail), and third-party traffic on a consumer plan violates its terms.
-if (args['executor-auth'] === 'subscription') {
-  delete agentEnv.ANTHROPIC_API_KEY;
-  log('executor-auth=subscription — agent reasoning rides the local Claude login; API keys stay with tournament/tools only');
-}
-// Not a secret — the INV-21 identity pin. clone-repo.mjs and deploy.mjs refuse to run against any
-// repo.url that doesn't match it, so even a misbehaving agent cannot swap the source mid-build.
-agentEnv.EXPLAINER_SUBMITTED_REPO = submittedRepoId;
-// EXECUTOR LANE WIRING: when the preflight engaged a failover lane, point the claude binary at
-// it. Claude Code sends ANTHROPIC_AUTH_TOKEN as a Bearer and ANTHROPIC_API_KEY as x-api-key —
-// set BOTH to the lane's key; the Anthropic-compatible endpoint takes what it needs. The cure
-// agent inherits agentEnv, so a cure runs on the same lane as the build it cures.
-if (executor.baseUrl) {
-  agentEnv.ANTHROPIC_BASE_URL = executor.baseUrl;
-  agentEnv.ANTHROPIC_API_KEY = executor.key;
-  agentEnv.ANTHROPIC_AUTH_TOKEN = executor.key;
-  log(`executor lane: ${executor.lane} (${executor.model}) via ${executor.baseUrl}`);
-}
+// --executor-auth subscription: LOCAL, owner-initiated builds only (a fresh CI runner has no OAuth
+// session, and third-party traffic on a consumer plan violates its terms).
+const subscription = args['executor-auth'] === 'subscription';
+if (subscription) log('executor-auth=subscription — agent reasoning rides the local Claude login; API keys stay with tournament/tools only');
+if (executor.baseUrl) log(`executor lane: ${executor.lane} (${executor.model}) via ${executor.baseUrl}`);
 
 const claudeBin = process.env.CLAUDE_BIN || 'claude';
-const child = spawn(claudeBin, [
-  '-p', prompt,
-  '--permission-mode', 'bypassPermissions',
-  '--bare',
-  '--output-format', 'stream-json',
-  '--verbose',
-  '--model', executor.model,
-  '--allowed-tools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep',
-  // Defense in depth beyond the env allowlist above: observed live in testing (2026-07-04) that the
-  // agent will happily `cat .env` if it perceives a missing credential and try to work around it —
-  // harmless in that specific local test (no .env exists in the production checkout at all — fresh
-  // clone via actions/checkout, .env is gitignored/never committed) but there's no reason to leave
-  // the door open rather than close it explicitly.
-  '--disallowed-tools', 'Read(./.env)', 'Read(./.env.*)', 'Read(**/.env)', 'Read(**/.env.*)',
-], {
-  cwd: REPO_ROOT,
-  env: agentEnv,
-  stdio: ['ignore', 'pipe', 'inherit'],
-});
+if (!maxBudgetArgs(budgetUsd).length) log(`WARN — --budget-usd "${args['budget-usd']}" is not a positive number; the main run has NO dollar ceiling`);
 
-// A missing/misconfigured `claude` binary previously crashed this whole process with an
-// unhandled 'error' throw and a raw Node stack trace — the exact "fail silently" this file's
-// own header comment forbids. spawnErrorMsg feeds the `reason` classification below; 'close'
-// never fires if spawn itself failed to start, so this also resolves exitCode instead of
-// hanging the build forever.
-let spawnErrorMsg = null;
-child.on('error', (e) => { spawnErrorMsg = e.message; log(`claude spawn FAILED TO START: ${e.message}`); });
+// Pre-agent work (clone, probes, tournament) is part of the budget: the agent gets what is left.
+const agentMs = agentWallMs({ budgetMin, startedAt });
+if (!agentMs) {
+  await failBeforeBuild({
+    stepName: 'Stopped before building: setup used the time budget.',
+    publicMessage: `Setup took longer than expected and left too little time to build this round — nothing was built. ${NPX_LINE}`,
+    reason: `pre-agent stages used ${elapsedMinutes(startedAt)} of the ${budgetMin}-minute budget; under ${MIN_AGENT_WALL_MS / 60_000} min left for the agent`,
+  });
+}
+const agentBudgetMin = Math.max(1, Math.floor(agentMs / 60_000));
+const spawnCtx = { claudeBin, executor, procEnv: process.env, submittedRepoId, subscription, cwd: REPO_ROOT };
+const mainSpawn = mainAgentSpawn({ ...spawnCtx, prompt: buildAgentPrompt({ repoUrl, buildDir, budgetMin: agentBudgetMin, budgetUsd }), budgetUsd });
+const { child, state: agentState, exited } = startAgent(mainSpawn.bin, mainSpawn.argv, mainSpawn.opts, log);
 
 let killedForBudget = false;
-let lastActivity = Date.now();
-let totalCostUsd = 0;
-let finalResultText = '';
-let sawResultEvent = false;
+const costMeter = createCostMeter(executor.model);
+if (!costMeter.known) log(`WARN — no rate for ${executor.model}; the streamed $ backstop is off, only --max-budget-usd guards the ceiling`);
 
-// Failure classification for the PUBLIC-facing message (owner mandate 2026-07-10: "don't just
-// fail silently — tell them why, and if it's a budget thing, tell them exactly that and point
-// to npx"). Distinct from `internalReason`, which carries the raw diagnostic for admin's eyes;
-// this is the honest, friendly line the submitter themselves sees and gets emailed.
-function classifyFailure(reason) {
-  const r = String(reason || '');
-  if (/credit balance|insufficient.*balance|billing|usage limits|regain access/i.test(r)) {
-    return `We ran this build for free, and it's been genuinely popular — the community budget is tapped out for the moment, not anything wrong with your repo. ${NPX_LINE}`;
-  }
-  if (/exceeded its.*budget|wall-clock/i.test(r)) {
-    return `Your repo needed more time than we could give it for free this round — not a failure of the build itself. ${NPX_LINE}`;
-  }
-  return `It didn't complete this time — not necessarily your repo's fault, our free hosted builds do sometimes hit a snag. ${NPX_LINE}`;
-}
-
-// The status gist is read by the submitter's browser — it gets a human progress line, never the
-// raw tool call (a reader watching their build saw `node tools/generate-image.mjs … PID=$!` as
-// the "step", 2026-07-09). The raw command still goes to the workflow log for debugging.
+// The status gist is read by the submitter's browser: a human progress line, never the raw tool call
+// (which still goes to the workflow log).
 function friendlyStep(name, input) {
   if (name === 'Bash') {
     const cmd = String(input?.command || '');
@@ -523,275 +239,69 @@ function friendlyStep(name, input) {
   return 'Thinking…';
 }
 
+const stopAgent = () => { child.kill('SIGTERM'); setTimeout(() => child.kill('SIGKILL'), 10_000); };
 const hardTimer = setTimeout(() => {
   killedForBudget = true;
-  log(`WALL-CLOCK BUDGET EXCEEDED (${budgetMin} min) — stopping the agent cleanly rather than letting the outer job get SIGKILLed.`);
-  child.kill('SIGTERM');
-  setTimeout(() => child.kill('SIGKILL'), 10_000);
-}, budgetMin * 60_000);
+  log(`WALL-CLOCK BUDGET EXCEEDED (${budgetMin} min, ${elapsedMinutes(startedAt)} used) — stopping the agent cleanly rather than letting the outer job get SIGKILLed.`);
+  stopAgent();
+}, agentMs);
 
-let buf = '';
-child.stdout.on('data', (chunk) => {
-  lastActivity = Date.now();
-  buf += chunk.toString('utf8');
-  const lines = buf.split('\n');
-  buf = lines.pop();
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    let evt;
-    try { evt = JSON.parse(line); } catch { continue; }
-    if (evt.type === 'assistant' && Array.isArray(evt.message?.content)) {
-      for (const block of evt.message.content) {
-        if (block.type === 'tool_use') {
-          const summary = block.name === 'Bash'
-            ? String(block.input?.command || '').slice(0, 140)
-            : `${block.name} ${JSON.stringify(block.input || {}).slice(0, 100)}`;
-          log(`→ ${summary}`);
-          patchStatus(friendlyStep(block.name, block.input));
-        }
-      }
-    } else if (evt.type === 'result') {
-      sawResultEvent = true;
-      totalCostUsd = evt.total_cost_usd || 0;
-      finalResultText = evt.result || '';
-      log(`agent finished: is_error=${evt.is_error} cost=$${totalCostUsd.toFixed(2)} turns=${evt.num_turns}`);
-      // Two builds failed on 2026-07-09 with nothing but "exited 1" in the log — when the
-      // session itself errors, its own words are the diagnosis. Log them.
-      if (evt.is_error) log(`agent error result: ${String(evt.result || '(no result text)').slice(0, 600)}`);
-    }
-  }
+const stream = createStreamHandler({
+  costMeter, budgetUsd, stop: stopAgent, log,
+  onToolUse: (block) => {
+    log(`→ ${block.name === 'Bash' ? String(block.input?.command || '').slice(0, 140) : `${block.name} ${JSON.stringify(block.input || {}).slice(0, 100)}`}`);
+    patchStatus(friendlyStep(block.name, block.input));
+  },
 });
+child.stdout.on('data', (chunk) => stream.feed(chunk));
 
-const exitCode = await new Promise((resolve) => {
-  if (spawnErrorMsg) { resolve(-1); return; }
-  child.on('close', resolve);
-  child.on('error', () => resolve(-1)); // covers an 'error' that fires after this Promise is built
-});
+const exitCode = await exited;
 clearTimeout(hardTimer);
-
-// ── Determine outcome ────────────────────────────────────────────────────────────────────────────
-const resultLineMatch = finalResultText.match(/RESULT:\s*(\{.*\})\s*$/s);
-let agentReported = null;
-if (resultLineMatch) { try { agentReported = JSON.parse(resultLineMatch[1]); } catch { /* fall through */ } }
-
-let liveUrl = agentReported?.ok ? agentReported.liveUrl : null;
-if (!liveUrl) {
-  // Cross-check against build.json directly — the agent's own final-line report is a courtesy,
-  // not the source of truth (INV-05's "eyes agree" principle: verify, don't just trust the claim).
-  try {
-    const ctx = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-    if (ctx.publish?.liveUrl && ctx.publish?.http200) liveUrl = ctx.publish.liveUrl;
-  } catch { /* build.json may not exist on a very early failure */ }
+const { killedForUsd, finalResultText, sawResultEvent } = stream.state;
+let totalCostUsd = stream.state.totalCostUsd;
+const spawnErrorMsg = agentState.spawnErrorMsg;
+if (!sawResultEvent && costMeter.usd > totalCostUsd) {
+  totalCostUsd = costMeter.usd; // killed/crashed before the final `result` event — the streamed estimate is the best figure
+  log(`no result event — cost taken from the streamed usage estimate: ~$${totalCostUsd.toFixed(2)}`);
 }
 
-// Source-identity re-verification at the exit boundary (INV-21, defense in depth vs a mid-build
-// swap): the repo the build ENDED on must be the repo the human submitted, or nothing ships.
-let identityViolation = null;
-try {
-  const finalCtx = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-  const finalId = repoId(finalCtx?.repo?.url);
-  if (finalId !== submittedRepoId) identityViolation = `build ended on "${finalCtx?.repo?.url}" but was submitted for ${submittedRepoId}`;
-} catch { /* unreadable build.json already fails the liveUrl check */ }
+// ── outcome: the agent's RESULT line is a courtesy; build.json is the truth ────────────────────────
+const agentReported = agentReportOf(finalResultText);
+let finalCtx = null;
+try { finalCtx = readBuild(); } catch { /* build.json may not exist on a very early failure */ }
+let liveUrl = liveUrlOf(finalCtx);
+const identityViolation = finalizeRun({ exitCode, spawnErrorMsg, liveUrl, finalCtx, submittedRepoId }).identityViolation;
 
-// THE CURE STAGE (2026-07-19) — the systemic fix for the 07/15–07/17 failure streak: the
-// pipeline was ONE-SHOT, so any unforeseen last-mile condition became a terminal user-visible
-// failure even with a finished, floor-clearing page on disk. This generalizes the 2026-07-15
-// operator-grade block (which fired only on quality.postCapManualFix — a key nothing ever taught
-// the agent to write, so it never fired in production): the runner now CLASSIFIES every unshipped
-// ending deterministically (bin/cure.mjs, unit-tested against the three real incident shapes) and
-// routes a NEAR-MISS — page already at/above the ship-floor mean, no slop axis, every blocker
-// nameable — through ONE bounded cure cycle: a narrow cure agent fixes ONLY the named weaknesses
-// (skipped when the main agent already fixed and documented via postCapManualFix), then ONE fresh
-// grade, then tools/deploy.mjs — the ship-bar rail stays the ONLY judge. Genuine below-bar
-// endings stay refused, honestly. Fires at most once per run; never on budget kills or crashes.
-// ADR-0011: `liveUrl` is no longer a reason to skip this block. Delivery is now unconditional on
-// quality, so a below-bar page arrives here ALREADY LIVE — and that is exactly the page the cure
-// lane exists to improve. classifyEndState distinguishes the two cases ('near-miss' = not yet
-// delivered, 'shipped-below-bar' = delivered and improvable); the redeploy is ratcheted so a live
-// page can only ever be replaced by a measurably better one.
-if (exitCode === 0 && !killedForBudget && !identityViolation) {
-  try {
-    const bc = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-    const endState = classifyEndState({
-      exitCode, killedForBudget, identityViolation, spawnError: spawnErrorMsg, liveUrl,
-      siteExists: fs.existsSync(path.join(buildDir, 'site', 'index.html')),
-      quality: bc.quality,
-    });
-    log(`cure stage: end-state classified as ${endState.cls}${endState.weaknesses ? ` (${endState.weaknesses.length} named weakness(es))` : ''}`);
+// ── THE CURE STAGE (bin/cure.mjs runCureStage): every unshipped or below-bar ending is classified
+// deterministically. A near-miss gets ONE bounded cycle: a narrow cure agent fixes ONLY the named
+// weaknesses, ONE fresh grade, then tools/deploy.mjs. A page already live is replaced only by a strictly
+// better verdict.
+const tool = (name) => spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', name), buildDir],
+  { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: name === 'deploy.mjs' ? CURE.DEPLOY_WALL_MS : CURE.GRADE_WALL_MS });
+const cure = await runCureStage({ buildDir, repoUrl, exitCode, killedForBudget, killedForUsd, identityViolation, spawnErrorMsg, liveUrl, totalCostUsd, budgetUsd }, {
+  readBuild, writeBuild: (o) => fs.writeFileSync(buildJsonPath, JSON.stringify(o, null, 2) + '\n'),
+  siteExists: () => fs.existsSync(path.join(buildDir, 'site', 'index.html')),
+  deploy: () => tool('deploy.mjs'), grade: () => tool('quality-grade.mjs'),
+  cureAgent: ({ prompt, remainingUsd }) => { const sp = cureAgentSpawn({ ...spawnCtx, prompt, remainingUsd }); return spawnSync(sp.bin, sp.argv, sp.opts); },
+  patchStatus, log,
+});
+liveUrl = cure.liveUrl;
+totalCostUsd = cure.totalCostUsd;
 
-    if (endState.cure === 'redeploy') {
-      // Graded PASS but undeployed (deploy-side infra hiccup) — one plain retry through the rail.
-      log('cure stage: page already passed the gate but never deployed — retrying deploy once');
-      const d = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'deploy.mjs'), buildDir],
-        { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: CURE.DEPLOY_WALL_MS });
-      const shipped = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-      if (d.status === 0 && shipped.publish?.liveUrl && shipped.publish?.http200) {
-        liveUrl = shipped.publish.liveUrl;
-        log(`cure stage: redeploy succeeded — ${liveUrl}`);
-      } else log(`cure stage: redeploy failed too (exit ${d.status}) — leaving run as failed`);
-    } else if ((endState.cure === 'fix-and-regrade' || endState.cure === 'improve-and-redeploy') && totalCostUsd < budgetUsd) {
-      await patchStatus('One fix from passing — running the automatic cure…');
-      const q = bc.quality;
-      const savedNote = q.postCapManualFix || null;
-      // 2026-08-06: this used to read `let cureAgentOk = !!savedNote` — i.e. if the MAIN agent wrote a
-      // note claiming it had fixed the problem, the independent cure agent was SKIPPED and the runner
-      // spent its single verification grade on the agent's own self-diagnosis. On 2026-08-03 that
-      // self-diagnosis was wrong (it moved the flow diagram INTO the form family the big-idea diagram
-      // already occupied, re-tripping the very cap it was trying to clear) and no second actor existed
-      // to catch it. That is the one-shot failure mode the cure stage was built to eliminate,
-      // reappearing one level up: an agent could disarm its own reviewer by writing a claim to disk.
-      // The cure agent now ALWAYS runs; a documented note is CONTEXT for it, never a substitute for it.
-      let cureAgentOk = false;
-      if (savedNote) log('cure stage: main agent documented a post-cap fix — passing it to the cure agent as context, NOT accepting it in place of one');
-      {
-        log(`cure stage: spawning the narrow cure agent (fix ONLY: ${endState.weaknesses.map((w) => `${w.device}/${w.name}`).join(', ')})`);
-        const curePrompt = buildCurePrompt({ repoUrl, buildDir, weaknesses: endState.weaknesses, quality: q });
-        const c = spawnSync(claudeBin, [
-          '-p', curePrompt, '--permission-mode', 'bypassPermissions', '--bare',
-          '--output-format', 'json', '--model', executor.model,
-          '--allowed-tools', 'Bash', 'Read', 'Write', 'Edit', 'Glob', 'Grep',
-          '--disallowed-tools', 'Read(./.env)', 'Read(./.env.*)', 'Read(**/.env)', 'Read(**/.env.*)',
-        ], { cwd: REPO_ROOT, env: agentEnv, encoding: 'utf8', timeout: CURE.AGENT_WALL_MS, maxBuffer: 32 * 1024 * 1024 });
-        try {
-          const res = JSON.parse(String(c.stdout || '').trim().split('\n').pop());
-          if (typeof res?.total_cost_usd === 'number') totalCostUsd += res.total_cost_usd;
-          log(`cure stage: cure agent exit ${c.status}, cost +$${(res?.total_cost_usd || 0).toFixed(2)}`);
-        } catch { log(`cure stage: cure agent exit ${c.status} (unparseable output — cost uncounted)`); }
-        cureAgentOk = c.status === 0;
-        if (!cureAgentOk) log('cure stage: cure agent failed — an unchanged page is not regraded (that would be dice-rolling, not verification)');
-      }
-      if (cureAgentOk) {
-        const before = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-        before.quality.iterations = before.quality.iterations - 1; // authorize exactly ONE verification grade
-        fs.writeFileSync(buildJsonPath, JSON.stringify(before, null, 2) + '\n');
-        const g = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'quality-grade.mjs'), buildDir],
-          { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: CURE.GRADE_WALL_MS });
-        const after = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-        if (savedNote) after.quality.postCapManualFix = savedNote; // quality-grade rewrites the slot; re-attach the record
-        after.quality.cure = {
-          authorizedBy: 'runner (deterministic near-miss classification, bin/cure.mjs)',
-          endState: endState.cls, weaknesses: endState.weaknesses.length,
-          cureAgentSpawned: true, mainAgentNote: Boolean(savedNote), gradeExit: g.status,
-        };
-        fs.writeFileSync(buildJsonPath, JSON.stringify(after, null, 2) + '\n');
-        if (g.status === 0) {
-          // THE RATCHET (ADR-0011 + 2026-08-06 adversarial review). When the page is ALREADY LIVE,
-          // a redeploy REPLACES something the customer already has at a URL they may already have
-          // shared. This project's own history records that the refine loop can regress, so an
-          // unconditional redeploy would let an automatic "cure" downgrade a delivered page.
-          // Therefore: measure, and only replace on a strictly better verdict. Delivery is a floor
-          // that is never given back — the cure may raise the page, never lower it.
-          const scoreOf = (qq) => {
-            const devs = Array.isArray(qq?.scorecard) ? qq.scorecard : [];
-            const axes = devs.flatMap((d2) => [...Object.values(d2.gateA || {}), ...Object.values(d2.gateB || {})])
-              .filter((n) => typeof n === 'number');
-            if (!axes.length) return null;
-            return { min: Math.min(...axes), mean: axes.reduce((a, b) => a + b, 0) / axes.length };
-          };
-          const wasLive = Boolean(liveUrl);
-          const pre = scoreOf(before.quality);
-          const post = scoreOf(after.quality);
-          const improved = !pre || !post
-            ? false
-            : (post.min > pre.min) || (post.min === pre.min && post.mean > pre.mean + 0.5);
-          if (wasLive && !improved) {
-            log(`cure stage: the cure did NOT improve the page (min ${pre?.min}→${post?.min}, mean ${pre?.mean?.toFixed(1)}→${post?.mean?.toFixed(1)}) `
-              + `— KEEPING the already-delivered version. A live page is never replaced by a worse one.`);
-          } else {
-            log(`cure stage: fresh verification grade complete (passed=${after.quality?.passed}${pre && post ? `, min ${pre.min}→${post.min}, mean ${pre.mean.toFixed(1)}→${post.mean.toFixed(1)}` : ''}) — delivering`);
-            const d = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'deploy.mjs'), buildDir],
-              { cwd: REPO_ROOT, env: process.env, stdio: ['ignore', 'pipe', 'inherit'], timeout: CURE.DEPLOY_WALL_MS });
-            const shipped = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-            if (d.status === 0 && shipped.publish?.liveUrl && shipped.publish?.http200) {
-              liveUrl = shipped.publish.liveUrl;
-              log(`cure stage: ${wasLive ? 'IMPROVED AND REDEPLOYED' : 'CURED AND SHIPPED'} — ${liveUrl}`);
-            } else if (wasLive) {
-              log(`cure stage: redeploy of the improved page failed (exit ${d.status}) — the originally delivered page is still live and untouched`);
-            } else {
-              log(`cure stage: deploy failed after the cure (exit ${d.status}) — integrity refusal stands, honestly`);
-            }
-          }
-        } else {
-          log(`cure stage: verification grade errored (exit ${g.status}) — run outcome unchanged`);
-        }
-      }
-    } else if (endState.cure === 'fix-and-regrade' || endState.cure === 'improve-and-redeploy') {
-      log(`cure stage: near-miss but $ budget already spent ($${totalCostUsd.toFixed(2)} of $${budgetUsd}) — holding honestly instead of overspending`);
-    }
-  } catch (e) { log(`cure stage: skipped on error (${e?.message || e}) — run outcome unchanged`); }
-}
+// ADVISORY claims check on the page that is actually live: lands in build.json `claims`, never blocks.
+if (exitCode === 0 && fs.existsSync(path.join(buildDir, 'site', 'index.html'))) recordClaims(buildDir, { root: REPO_ROOT, log });
 
-const budgetExceeded = killedForBudget;
-const ok = exitCode === 0 && !budgetExceeded && !!liveUrl && !identityViolation;
-const elapsedMin = ((Date.now() - (lastActivity - 0)) / 60000); // approx; refined below
-const reason = identityViolation
-  ? `SOURCE-IDENTITY VIOLATION: ${identityViolation} — treating any deploy from this run as invalid`
-  : spawnErrorMsg
-  ? `could not start the claude binary: ${spawnErrorMsg}`
-  : budgetExceeded
-  ? `exceeded its ${budgetMin}-minute budget before finishing`
-  : agentReported && agentReported.ok === false ? agentReported.reason
-  : exitCode !== 0 ? `claude process exited ${exitCode}`
-  : !liveUrl ? 'agent finished but no verified live URL was found in build.json'
-  : 'unknown';
+try { finalCtx = readBuild(); } catch { finalCtx = null; }
+const { ok, reason } = finalizeRun({ exitCode, killedForBudget, killedForUsd, spawnErrorMsg, agentReported, liveUrl, finalCtx, submittedRepoId, budgetMin, budgetUsd, totalCostUsd });
 
-// The status gist is each build's permanent public record, so the GRADES and the cost of
-// production travel with the result — the admin dashboard trends them across builds (owner
-// ask 2026-07-09: "grade every one 1-100 and tell yourself if you're getting better, worse,
-// or the same"). Extraction is defensive: a missing scorecard never blocks the ship.
-let scorecard = null;
-// ADR-0011 D4 (2026-08-06) — TRACK BELOW-BAR DELIVERIES. Removing the gate's teeth without building
-// the mechanism that replaces them is how a signal becomes decorative, and this repo has form: a
-// keystone test shipped red for a week, and the session hook printed its own defect daily for eight
-// days, both unread. So the disclosure that reaches the customer is also RECORDED here — which axis
-// held the page back, and what visual FORM each diagram actually took (ADR-0012 D4). Those two
-// together are what makes the INV-23 family taxonomy falsifiable: if the grader keeps calling two
-// diagrams same-form while the resolver recorded them as distinct families, the taxonomy is wrong
-// and the receipts will say so. Without this, that disagreement stays invisible forever.
-let publishDisclosure = null;
-let diagramForms = null;
-try {
-  const ctxAll = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-  const pub = ctxAll.publish || {};
-  publishDisclosure = {
-    belowBar: pub.belowBar === true,
-    graderUnavailable: pub.graderUnavailable === true,
-    weakest: pub.weakest || null,
-  };
-  const v = ctxAll.visuals || {};
-  diagramForms = Object.fromEntries(['architectureDiagram', 'flowDiagram', 'bigIdeaDiagram', 'insightDiagram']
-    .filter((k) => v[k]).map((k) => [k, { form: v[k].form ?? null, variant: v[k].formVariant ?? null }]));
-} catch { /* build.json unreadable — the liveUrl check already reflects that */ }
+// The status gist is each build's permanent public record: grades and cost travel with the result.
+// Which axis held a below-bar page back, and the FORM each diagram took, are recorded so the
+// "same form" taxonomy stays falsifiable (ADR-0011 D4 / ADR-0012 D4).
+const { publishDisclosure, diagramForms } = disclosureOf(finalCtx);
+const scorecard = scorecardOf(finalCtx, executor.lane);
 
-try {
-  const q = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8')).quality;
-  if (q && Array.isArray(q.scorecard) && q.scorecard.length) {
-    scorecard = {
-      passed: !!q.passed,
-      exemplary: !!q.exemplary,
-      belowBarDelivery: publishDisclosure,   // ADR-0011 D4
-      diagramForms,                          // ADR-0012 D4
-      executor: executor.lane, // which billing/endpoint lane built this — admin attributes grades + cost per lane
-
-      iterations: Number.isInteger(q.iterations) ? q.iterations : null,
-      gradedAt: q.gradedAt || null,
-      devices: q.scorecard.map((c) => ({
-        device: c.deviceLabel || c.device || null,
-        headline: c.headlineScore ?? null,
-        gateA: c.gateA || null,
-        gateB: c.gateB || null,
-        operators: c.operatorQuestions || null,
-      })),
-    };
-  }
-} catch { /* build.json unreadable — already reflected in the liveUrl check */ }
-
-// ADR-174 oracle feed (2026-07-15): the memory distiller PROMOTES patterns only from
-// execution-observed outcomes, judged by the `feedback` namespace — and no build ever wrote one,
-// so all 282 distilled patterns sat proxy-tier (promoted: 0). Every completed build now records
-// its MEASURED result (real vision-graded axes, verified deploy, cost) as a feedback entry.
-// Best-effort by design: ruflo is a machine-global binary, absent on CI runners (which have no
-// memory substrate anyway) — a miss must never touch the build outcome.
+// Feed the memory distiller one MEASURED outcome per build (ADR-174 oracle tier). Best-effort: the
+// ruflo binary is absent on CI runners, and telemetry never inverts a build outcome.
 try {
   const fb = {
     kind: 'explainer-build-outcome', repo: repoUrl, ok, reason: ok ? null : reason.slice(0, 400),
@@ -802,63 +312,43 @@ try {
   };
   const fbRes = spawnSync('ruflo', ['memory', 'store', '-k', `build-outcome-${buildId || Date.now()}`,
     '--value', JSON.stringify(fb), '--namespace', 'feedback'], { cwd: REPO_ROOT, timeout: 20_000, stdio: 'ignore' });
-  if (fbRes.status === 0) log('build outcome recorded to feedback namespace (ADR-174 oracle tier — distiller promotes from these)');
+  if (fbRes.status === 0) log('build outcome recorded to feedback namespace (ADR-174 oracle tier)');
 } catch { /* telemetry never inverts a build outcome */ }
 
 if (ok) {
   console.log(`LIVE: ${liveUrl}`);
   log(`SUCCESS — ${liveUrl} (cost $${totalCostUsd.toFixed(2)})`);
-  await patchStatus('Done — your explainer is live.', 'done',
-    { liveUrl, scorecard, costUsd: Math.round(totalCostUsd * 100) / 100 }, null);
-  // Notify runs HERE, not inside the agent (see the env allowlist above) — this is plain
-  // deterministic code, not an LLM interpreting untrusted repo content, so it's the safe place to
-  // hold SMTP creds. Non-blocking: a notify failure must never flip a successful build to failed.
-  if (submitter) {
-    const notifyEnv = { ...process.env, EMAIL_TO: submitter };
-    await spawnAndWait('notify', process.execPath, [path.join(REPO_ROOT, 'tools', 'notify.mjs'), buildDir], { cwd: REPO_ROOT, env: notifyEnv, stdio: 'inherit' });
-  }
+  await patchStatus('Done — your explainer is live.', 'done', { liveUrl, scorecard, costUsd: Math.round(totalCostUsd * 100) / 100 }, null);
+  // Notify runs HERE, not in the agent: this is deterministic code, the safe place to hold SMTP creds.
+  // A notify failure must never flip a successful build to failed.
+  if (submitter) await run('notify', process.execPath, [path.join(REPO_ROOT, 'tools', 'notify.mjs'), buildDir], { cwd: REPO_ROOT, env: { ...process.env, EMAIL_TO: submitter }, stdio: 'inherit' });
   process.exit(0);
-} else {
-  log(`FAILED — ${reason}`);
-  const publicMessage = classifyFailure(reason);
-  await patchStatus('The build could not finish.', 'failed', null, publicMessage, reason);
-  // Gate-refusal alerts must carry the grader's ACTUAL complaints (learned 2026-07-15:
-  // autonomous-wealth-builder's alert said "B5 stayed at 56/58" but not WHY, so the operator
-  // couldn't judge whether it was worth curing without re-running the whole build). Append the
-  // rationale of every floor-failing axis + false operator questions from the final scorecard.
-  let gateDetail = '';
-  try {
-    const q = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8')).quality;
-    for (const dev of q?.scorecard || []) {
-      for (const [axis, score] of Object.entries({ ...dev.gateA, ...dev.gateB })) {
-        if (score < 70) gateDetail += `\n[${dev.device} ${axis}=${score}] ${String(dev.rationales?.[axis] || '').slice(0, 500)}`;
-      }
-      const falseOps = Object.entries(dev.operatorQuestions || {}).filter(([, v]) => !v).map(([k]) => k);
-      if (falseOps.length) gateDetail += `\n[${dev.device} operators false] ${falseOps.join(', ')}`;
-    }
-  } catch { /* no scorecard — nothing to append */ }
-  const alertArgs = [
-    path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
-    '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),
-    '--submitter', submitter || '(none)',
-    '--build-id', buildId || '(none)',
-    '--run-url', runUrl || '(none)',
-    '--reason', gateDetail ? `${reason}\n\nGATE DETAIL (grader's own words):${gateDetail}` : reason,
-    '--elapsed-min', String(Math.round(budgetMin)),
-  ];
-  await spawnAndWait('alert-owner', process.execPath, alertArgs, { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
-  // The submitter used to hear NOTHING on failure beyond a status page most people stop
-  // watching after 20 minutes — the exact "silent failure" the owner flagged 2026-07-10.
-  // Non-blocking, mirrors alert-owner's own tolerance: an email failure must never invert
-  // the real build outcome.
-  if (submitter) {
-    const failNotifyArgs = [
-      path.join(REPO_ROOT, 'tools', 'notify-failure.mjs'),
-      '--repo', repoUrl.replace(/^https?:\/\/github\.com\//, ''),
-      '--to', submitter,
-      '--message', publicMessage,
-    ];
-    await spawnAndWait('notify-failure', process.execPath, failNotifyArgs, { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
-  }
-  process.exit(1);
 }
+
+log(`FAILED — ${reason}`);
+const publicMessage = classifyFailure(reason);
+await patchStatus('The build could not finish.', 'failed', null, publicMessage, reason);
+// The owner's alert carries the grader's ACTUAL complaints (every floor-failing axis + false operator
+// question), so the operator can judge whether a cure is worth it without re-running the build.
+let gateDetail = '';
+try {
+  for (const dev of finalCtx?.quality?.scorecard || []) {
+    for (const [axis, score] of Object.entries({ ...dev.gateA, ...dev.gateB })) {
+      if (score < 70) gateDetail += `\n[${dev.device} ${axis}=${score}] ${String(dev.rationales?.[axis] || '').slice(0, 500)}`;
+    }
+    const falseOps = Object.entries(dev.operatorQuestions || {}).filter(([, v]) => !v).map(([k]) => k);
+    if (falseOps.length) gateDetail += `\n[${dev.device} operators false] ${falseOps.join(', ')}`;
+  }
+} catch { /* no scorecard — nothing to append */ }
+await run('alert-owner', process.execPath, [
+  path.join(REPO_ROOT, 'tools', 'alert-owner.mjs'),
+  '--repo', repoSlug, '--submitter', submitter || '(none)', '--build-id', buildId || '(none)', '--run-url', runUrl || '(none)',
+  '--reason', gateDetail ? `${reason}\n\nGATE DETAIL (grader's own words):${gateDetail}` : reason,
+  '--elapsed-min', String(elapsedMinutes(startedAt)),
+], { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
+// The submitter hears about a failure by email too; non-blocking, like the alert.
+if (submitter) {
+  await run('notify-failure', process.execPath, [path.join(REPO_ROOT, 'tools', 'notify-failure.mjs'), '--repo', repoSlug, '--to', submitter, '--message', publicMessage],
+    { cwd: REPO_ROOT, env: process.env, stdio: 'inherit' });
+}
+process.exit(1);

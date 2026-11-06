@@ -3,7 +3,7 @@
 // Factored VERBATIM out of build-kb.mjs so external tools (delta builders, audits) can import
 // the REAL chunker instead of replicating it — replication drift was the corruption risk that
 // motivated issue #14's hash guard. Everything here is pure text ops + fs walking; no embedder,
-// no store. build-kb.mjs is the only in-repo consumer; the drop-in zips do not ship this file.
+// no store. Consumers: build-kb.mjs and index-primer.mjs; knowledge packs do not ship this file.
 //
 // Exports: CHUNK_CHARS, OVERLAP_CHARS, STRUCT_TARGET_CHARS, STRUCT_MIN_CHARS,
 //          windowChunk(), structureBoundaries(), chunk(), classifySourceType(), makeContext().
@@ -173,6 +173,7 @@ export function makeContext(target) {
   const sourceCounts = {};            // kind -> source-file count
   const ingestedPaths = new Set();    // absolute paths already ingested (md-sweep / literal de-dup)
   const fullBodyPaths = new Set();    // absolute paths ingested as full source bodies
+  const docBlockPaths = new Set();    // absolute paths whose leading doc block is already emitted
 
   function addDoc(relPath, kind, title, text, absPath) {
     const source_type = classifySourceType(relPath, kind);
@@ -192,6 +193,8 @@ export function makeContext(target) {
     alreadyIngested: (absPath) => ingestedPaths.has(absPath),
     isFullBody: (absPath) => fullBodyPaths.has(absPath),
     markFullBody: (absPath) => { if (absPath) fullBodyPaths.add(absPath); },
+    hasDocBlock: (absPath) => docBlockPaths.has(absPath),
+    markDocBlock: (absPath) => { if (absPath) docBlockPaths.add(absPath); },
     entries,
     sourceCounts,
   };

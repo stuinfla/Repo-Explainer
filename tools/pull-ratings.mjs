@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-// pull-ratings.mjs — the closing arc of the feedback loop (owner ask 2026-07-15: "capture their
-// 1-100 and comments in a closed loop you use to get smarter").
+// pull-ratings.mjs — closes the feedback loop: submitter ratings -> the learning store.
 //
 // Reads submitter ratings from the build-rating Netlify form (/rate.html) and stores each one
 // into the local learning store's `feedback` namespace via the GLOBAL ruflo binary — the same
@@ -19,16 +18,6 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-function envOrDotenv(name) {
-  if (process.env[name]) return process.env[name];
-  try {
-    const m = fs.readFileSync(path.join(ROOT, '.env'), 'utf8').match(new RegExp(`^${name}=("?)(.*?)\\1\\s*$`, 'm'));
-    return m?.[2] || null;
-  } catch { return null; }
-}
-// Verify-driven resolution (stored lesson, 2026-07-14 — and immediately violated by this tool's
-// first version, which grabbed a dead shell token over the live .env one): probe every candidate
-// source and use the first token that actually WORKS, never the first that merely exists.
 const SITE_ID = 'df4e3cd8-a71e-4668-8da7-c8d168edd341'; // the landing site (explainmyrepo.isovision.ai)
 function dotenvVal(name) {
   try {
@@ -36,6 +25,7 @@ function dotenvVal(name) {
     return m?.[2] || null;
   } catch { return null; }
 }
+// Probe every token candidate and use the first that actually WORKS (a dead shell token must not shadow a live .env one).
 const candidates = [process.env.NETLIFY_AUTH_TOKEN, dotenvVal('NETLIFY_AUTH_TOKEN')].filter(Boolean);
 if (!candidates.length) { console.error('pull-ratings: no NETLIFY_AUTH_TOKEN in env or .env'); process.exit(1); }
 let token = null, forms = null;
@@ -46,16 +36,18 @@ for (const cand of candidates) {
 }
 if (!token) { console.error('pull-ratings: every token candidate is dead'); process.exit(1); }
 const form = Array.isArray(forms) ? forms.find((f) => f.name === 'build-rating') : null;
-if (!form) { console.log(JSON.stringify({ ok: true, outputs: { ingested: 0, note: 'build-rating form not registered yet' } })); process.exit(0); }
+if (!form) { console.log(JSON.stringify({ ok: true, outputs: { ingested: 0, note: 'build-rating form not registered yet' }, error: null })); process.exit(0); }
 
-const rows = await (await fetch(`https://api.netlify.com/api/v1/forms/${form.id}/submissions`, { headers: { Authorization: `Bearer ${token}` } })).json();
+const subRes = await fetch(`https://api.netlify.com/api/v1/forms/${form.id}/submissions`, { headers: { Authorization: `Bearer ${token}` } });
+if (!subRes.ok) { console.error(`pull-ratings: submissions fetch failed (HTTP ${subRes.status})`); process.exit(1); }
+const rows = await subRes.json();
 let ingested = 0, skipped = 0, failed = 0;
 for (const s of rows) {
   const rec = {
     kind: 'human-rating',
     repo: s.data?.repo || null,
     buildId: s.data?.build_id || null,
-    score: s.data?.score != null ? Number(s.data.score) : null,
+    score: s.data?.score != null && s.data.score !== '' && Number.isFinite(Number(s.data.score)) ? Number(s.data.score) : null,
     thoughts: (s.data?.thoughts || '').slice(0, 2000) || null,
     email: s.data?.email || null,
     at: s.created_at,
@@ -68,5 +60,5 @@ for (const s of rows) {
   else if (/UNIQUE constraint/.test(out)) skipped++; // already ingested on a prior run
   else { failed++; console.error(`store failed for ${s.id}: ${out.trim().slice(0, 200)}`); }
 }
-console.log(JSON.stringify({ ok: failed === 0, outputs: { total: rows.length, ingested, skippedOrDup: skipped, failed } }));
+console.log(JSON.stringify({ ok: failed === 0, outputs: { total: rows.length, ingested, skippedOrDup: skipped, failed }, error: failed === 0 ? null : `${failed} rating(s) failed to store` }));
 process.exit(failed === 0 ? 0 : 1);

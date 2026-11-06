@@ -1,8 +1,4 @@
-// tests/run-tool.test.mjs — coverage for src/run-tool.mjs, the uniform station-invocation contract
-// (CONTRACT §b) the orchestrator uses to run every tools/*.mjs as a child process. Previously zero
-// test coverage. Includes a skipped regression test for a confirmed real bug: a tool that exits 0
-// but prints non-JSON stdout is currently misreported as a PASS (src/run-tool.mjs:46's `!result`
-// short-circuit) — see memory test-coverage-gap-2026-07-09, bug #3.
+// tests/run-tool.test.mjs — src/run-tool.mjs, the uniform station-invocation contract (CONTRACT §b).
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -61,12 +57,26 @@ test('runTool: a tool that outlives timeoutMs is killed and reported as a timeou
   assert.match(r.error, /timed out after 100ms/);
 });
 
-test(
-  'runTool: KNOWN BUG — exit 0 with non-JSON stdout is misreported as ok:true (silent-success gap)',
-  { skip: 'confirmed bug, src/run-tool.mjs:46 — unskip once the ok-check stops treating a missing result as a pass' },
-  () => {
-    const repoRoot = fixtureRepo({ 'silent-tool': "console.log('not json, just noise');" });
-    const r = runTool('silent-tool', buildDir(), { repoRoot, env: process.env });
-    assert.equal(r.ok, false, 'a tool that produced no usable JSON output must not be reported as a pass');
-  }
-);
+test('runTool: exit 0 with non-JSON stdout is NOT a pass (a tool with no result object has no verdict)', () => {
+  const repoRoot = fixtureRepo({ 'silent-tool': "console.log('not json, just noise');" });
+  const r = runTool('silent-tool', buildDir(), { repoRoot, env: process.env });
+  assert.equal(r.ok, false, 'a tool that produced no usable JSON output must not be reported as a pass');
+  assert.equal(r.code, 0);
+  assert.match(r.error, /exited 0 \(no JSON result on stdout\)/);
+});
+
+test('runTool: exit 0 with NO stdout at all is not a pass either', () => {
+  const repoRoot = fixtureRepo({ 'mute-tool': 'process.exit(0);' });
+  assert.equal(runTool('mute-tool', buildDir(), { repoRoot, env: process.env }).ok, false);
+});
+
+test('runTool: a bare JSON scalar or array on stdout is not a result object', () => {
+  const repoRoot = fixtureRepo({ 'num-tool': 'console.log("42");', 'arr-tool': 'console.log("[1,2]");' });
+  assert.equal(runTool('num-tool', buildDir(), { repoRoot, env: process.env }).ok, false);
+  assert.equal(runTool('arr-tool', buildDir(), { repoRoot, env: process.env }).ok, false);
+});
+
+test('runTool: a JSON result object without an ok field still passes on exit 0', () => {
+  const repoRoot = fixtureRepo({ 'plain-tool': 'console.log(JSON.stringify({ outputs: {} }));' });
+  assert.equal(runTool('plain-tool', buildDir(), { repoRoot, env: process.env }).ok, true);
+});

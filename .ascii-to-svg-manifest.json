@@ -1,0 +1,56 @@
+{
+  "version": "1.0.0",
+  "lastSync": "2026-11-05T19:40:31Z",
+  "diagrams": [
+    {
+      "id": "three-outputs",
+      "sourceFile": "README.md",
+      "sourceLine": 42,
+      "svgFile": "assets/diagrams/three-outputs.svg",
+      "asciiHash": "sha256:7082517f21d167c59b50d6abde2576e45af1403eedab8492e11877477d84b88f",
+      "svgHash": "sha256:2dadf13f32f4e295fac5349ce47ed1e74fc1a571a22f906de647e78c2887b7d3",
+      "diagramType": "flowchart",
+      "lastConverted": "2026-11-05T19:08:23Z"
+    },
+    {
+      "id": "stations",
+      "sourceFile": "README.md",
+      "sourceLine": 70,
+      "svgFile": "assets/diagrams/stations.svg",
+      "asciiHash": "sha256:dd9281870048657b723ef94cc813dff8205f3c9ae78976946726b6120fe1a581",
+      "svgHash": "sha256:295f1246180abfa142db95e9064df861b1447d33fb7cb6107a7c4906cc2877d8",
+      "diagramType": "architecture",
+      "lastConverted": "2026-11-05T19:08:23Z"
+    },
+    {
+      "id": "quality-gate",
+      "sourceFile": "README.md",
+      "sourceLine": 105,
+      "svgFile": "assets/diagrams/quality-gate.svg",
+      "asciiHash": "sha256:5ff394c8fac5028bd000d6bc2c9d3049f2f46cd42d836b76f456e0e0701f1d38",
+      "svgHash": "sha256:aa9cf10d6b700ba38f87d528b88ca0aa32c80792a05540eb72a64d18a9e316ec",
+      "diagramType": "flowchart",
+      "lastConverted": "2026-11-05T19:08:23Z"
+    },
+    {
+      "id": "learning-loop",
+      "sourceFile": "README.md",
+      "sourceLine": 136,
+      "svgFile": "assets/diagrams/learning-loop.svg",
+      "asciiHash": "sha256:345b491348a7383ef598b0f8ee7422fb536314b89eee21f365bfaba4755ede7f",
+      "svgHash": "sha256:8a6e6b453f4b94bfa87d3ecde1ede90f54ffd9cdcfbc27e399216c4c3348d2b8",
+      "diagramType": "flowchart",
+      "lastConverted": "2026-11-05T19:08:23Z"
+    },
+    {
+      "id": "two-doors",
+      "sourceFile": "README.md",
+      "sourceLine": 162,
+      "svgFile": "assets/diagrams/two-doors.svg",
+      "asciiHash": "sha256:22445671b2e3f554eefc3a6bd8fd1a49ad2c83fd5c7f036831774edc70ac8b51",
+      "svgHash": "sha256:858bb7f307f752ece197c6730e906476fed3e942145201b723d1eca6157d7109",
+      "diagramType": "architecture",
+      "lastConverted": "2026-11-05T19:08:23Z"
+    }
+  ]
+}

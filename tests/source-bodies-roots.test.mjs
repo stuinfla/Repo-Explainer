@@ -1,12 +1,6 @@
-// sourceBodies must honour EXPLICIT roots, not only a /src/ path convention.
-//
-// THE BUG (2026-09-17, ruvnet/mcp-studio): the rule's inScope() accepted a file only when its path
-// contained "/src/" or it was a root file (index.ts / main.rs / mod.rs). mcp-studio is a Next.js app
-// — its code lives in app/, lib/ and components/, with no src/ anywhere — so a target that listed
-// {"rule":"sourceBodies","roots":["app","lib","components"]} ingested ZERO source files and said
-// nothing. The KB came out as README + config only, and the page would have been written with no
-// grounding in the actual implementation (INV-06). Naming a root IS the scope decision; the /src/
-// heuristic is only the fallback for a target that named none. Tests/minified stay excluded either way.
+// sourceBodies must honour EXPLICIT roots, not only a /src/ path convention: a Next.js app keeps its code
+// in app/, lib/ and components/, and ingesting zero source silently is a KB with no grounding (INV-06).
+// Naming a root IS the scope decision; /src/ is only the fallback. Tests/minified stay out either way.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

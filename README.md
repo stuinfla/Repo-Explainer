@@ -4,15 +4,13 @@
 
 ### Point it at any GitHub repo. Get back an explainer a stranger — and their AI — actually understands.
 
-## 🌐 The website — there is only ONE
+## The website
 
 # → **[explainmyrepo.isovision.ai](https://explainmyrepo.isovision.ai)** ←
 
-This is the live site: the concept, the full process, and all six example explainers on one page.
+Paste a public repo's URL, get the page by email. Private repos and your own keys: use the command below.
 
-> **Heads up:** the old `repo-explainer-website.vercel.app` was an earlier draft that told people to run a command (`npx repo-explainer`) that was never published. It now **redirects here**. If you ever land on anything other than **explainmyrepo.isovision.ai**, you're on the wrong (old) page.
-
-*Complex repos deserve clear introductions. This builds them, then refuses to ship until they're good.*
+*Complex repos deserve clear introductions. This builds them, grades them honestly, and tells you the grade.*
 
 </div>
 
@@ -39,109 +37,164 @@ That's the bar. `explainmyrepo` exists to clear it, on every build.
 
 ---
 
-## What you get — three artifacts from one command
+## What you get from one command
 
-One command reads a repo and produces three things, each quality-gated:
+![One GitHub URL goes into explainmyrepo. Out come a live explainer page and a downloadable AI knowledge pack from either door, plus a GitHub repo you own from the local door.](assets/diagrams/three-outputs.svg)
 
-![One GitHub URL in, three quality-gated artifacts out: a live explainer page, a GitHub repo you own, and a downloadable AI knowledge pack.](assets/diagrams/three-outputs.svg)
+<details>
+<summary>ASCII Version (for AI/accessibility)</summary>
 
-1. **A live explainer web page** — the link you share. A bespoke, art-directed walkthrough with a real architecture diagram and a real data-flow diagram drawn from the code itself.
-2. **A GitHub repo you own** — you're invited as a collaborator on the explainer's own repo, so you can edit it. It's yours.
-3. **A downloadable AI knowledge pack** — a drop-in `.zip` containing a vector knowledge base of the repo, a search CLI, and an MCP server, so Claude Code or Cursor answer from the **real source** instead of guessing.
+```
+github.com/owner/name
+        |
+        v
+  explainmyrepo
+        |
+        +--> 1. a live explainer page          (both doors)  the link you share; diagrams drawn from the code
+        +--> 2. an AI knowledge pack           (both doors)  a .zip: vector KB + search CLI + MCP server
+        +--> 3. a GitHub repo you own          (local door only)  you are invited as collaborator
+```
 
----
+</details>
 
-## How it works — the process
-
-`explainmyrepo` is not a template filler and not a doc scraper. It's a single Claude Code **skill** that holds the judgment (the *brain*) plus small, pure **tools** that do the mechanics — with one data contract flowing between them. No brittle multi-phase pipeline.
-
-The brain runs the repo through an ordered sequence. Each step has one job:
-
-![The pipeline: read (identity-pinned clone + self-healing credential probe), compete (three models pitch concepts in text, a judge picks one), understand, conceive, author, visualize (bespoke animated SVGs, every image teaches), assemble, grade (worst animation frame included), ship (the verdict enforced as a deploy rail) — with a refine loop that reopens only the named weak slot, and a learning return: every outcome and reader grade feeds the store so the next build starts smarter.](assets/diagrams/pipeline.svg)
-
-1. **Read** — clone the **exact** repo (identity-pinned, so nothing can substitute a lookalike) and **live-probe every credential** before a cent is spent: the preflight walks each key's candidate sources and self-heals onto the first one that actually works.
-2. **Compete** — before any expensive work, **three frontier models fight in plain text** (Claude Sonnet, Claude Fable, GPT-5.6) to art-direct this repo: each pitches a visual metaphor, palette, hero animation, and story arc; an independent judge scores them swap-test-first and the winner's concept seeds the build. Premium creative judgment at *pennies*, so the expensive execution runs once, on the cheaper tier.
-3. **Understand** — build a real RVF vector knowledge base from the actual code: structure-aware chunks, local 384-dim embeddings (`bge-small-en-v1.5`), plus an extracted symbol index, dependency graph, and entrypoints. Then author a plain-language primer. Everything downstream is grounded in this KB — **no invented capabilities**.
-4. **Conceive** — validate the tournament's winning concept against the full KB and sharpen it with grounded specifics. The truth rails stay with the agent; the creativity already won its seat.
-5. **Author** — write the copy along a **comprehension arc** — the questions a newcomer actually asks, in order: *What world am I in? Why does this exist? What does it do? Why is it clever? How is it built? Could I use it? How do I start?* Every claim is traceable to a KB passage.
-6. **Visualize** — every image must **teach** (the swap test: if an image could ship unchanged on a different repo, it fails). Labeled, mechanism-bearing illustrations via `gpt-image-2`/Grok; **bespoke *animated* SVG diagrams** hand-authored per an archetype menu (journey · containment · field · fan · tree · exchange — **no two diagrams on one page may share a form**), with every label width-budgeted so text can never collide. The flow diagram must *perform* the repo's thesis in motion, not name stages. Architecture and data-flow diagrams are mandatory and drawn from the repo's *real* dependency graph — never invented.
-7. **Assemble** — render the page **once** onto a shared design system (with universal click-to-zoom on every figure), build the downloadable AI knowledge pack, and wire in SEO + social (JSON-LD, a 1200×630 social card, `llms.txt` for AI crawlers).
-8. **Grade** — the quality gate (see below). Real screenshots, both devices, every diagram at full size, and **animations sampled at multiple loop phases and judged at their worst frame**.
-9. **Ship** — the gate's verdict is enforced as a **deterministic rail at the deploy boundary** (its only override is human-only, terminal-gated — an agent cannot reach it). A refused build isn't garbage: it survives as an artifact with the grader's own words, and the runner can spend one trusted "operator's grade" on a documented post-cap fix. On success: deploy, verify HTTP 200, update the public status page with the full scorecard, and email you every link — including a one-click **grade-this-page** ask.
+1. **A live explainer web page** — a bespoke, art-directed walkthrough with an architecture diagram and a flow diagram drawn from the repo's real dependency graph and entrypoints, never invented.
+2. **A downloadable AI knowledge pack** — a `.zip` with a vector knowledge base of the repo, a search CLI and an MCP server, so Claude Code or Cursor answer from the **real source** instead of guessing.
+3. **A GitHub repo you own** *(local door only)* — the explainer gets its own repo and you are invited as a collaborator, so you can edit it.
 
 ---
 
-## The quality gate — why the output is a class above
+## How it works — one station table
 
-This is the part that makes the difference. A generic generator emits something and stops. `explainmyrepo` **does not ship until an independent critic and a set of operator questions both pass.**
+`explainmyrepo` is not a template filler. The judgment (understand, conceive, author, judge) is done by a model; small, deterministic **tools** do the mechanics; one `build.json` carries the data between them. The order of every step lives in **one file**, [`src/stations.mjs`](src/stations.mjs), and the CLI help, the `--from/--to/--only` checks and the tests all read it; a drift test fails if the hosted station table in `skills/explainmyrepo/SKILL.md` stops matching the hosted tool stations here (same set, same order).
 
-![The quality gate: real screenshots at 390px and 1440px go to an independent vision critic (Gate A substance, Gate B craft) and six operator questions; the bar is mean ≥ 90, min axis ≥ 85, all six YES — anything less loops back to refine the named weakness.](assets/diagrams/quality-gate.svg)
+![The station table in four phases: set up (clone-repo, kb:register, build-kb, concept-tournament), build and grade (primer, index-primer, concept, content, check-claims, visual-brief, generate-image, make-favicon, make-social-card, make-diagrams, assemble-page, make-pack, make-ask, quality-grade), ship (deploy, publish-repo, repo-seo, readme-enhance, notify) and follow-ups after delivery (make-overview, redeploy, republish). Solid stations stop the build on failure; dashed ones are advisory.](assets/diagrams/stations.svg)
 
-The gate renders the live page in a real browser at **390px (mobile)** and **1440px (desktop)**, takes full-page screenshots, and scores them on **two independent rubrics**:
+<details>
+<summary>ASCII Version (for AI/accessibility)</summary>
 
-- **Gate A — "Do they actually get it?"** (substance): visual effectiveness, storytelling, clueless-to-convinced, usefulness-to-*you*, completeness of the arc, and implementation confidence.
-- **Gate B — "Did someone who gives a shit make this?"** (craft / anti-slop): typography, alignment, spacing, polish, and imagery craft — including whether the diagrams are genuinely explanatory.
+```
+1 set up         clone-repo > kb:register > build-kb > concept-tournament (advisory)
+2 build + grade  primer > index-primer > concept > content > check-claims (advisory) > visual-brief
+                 > generate-image > make-favicon > make-social-card > make-diagrams > assemble-page
+                 > make-pack > make-ask (advisory, local) > quality-grade
+3 ship           deploy > publish-repo (local) > repo-seo (local) > readme-enhance (local, advisory) > notify (advisory)
+4 follow-ups     make-overview (local) > redeploy (local) > republish (local)     all advisory, after delivery
 
-The bar has **two tiers, both enforced in code**: the **exemplar bar** (mean ≥ 90, minimum axis ≥ 85, both devices) is what the refine loop climbs toward, and the **ship floor** (mean ≥ 82, minimum axis ≥ 70, all operator questions YES) is a hard rail at the deploy boundary — `deploy` recomputes it from the scorecard and refuses anything below it, no matter what any agent believes. The minimum-axis floor is the anti-slop catch: one weak axis (a raw ASCII diagram, a mood image that fails the swap test, an animation whose *worst sampled frame* has colliding text) fails the whole build. Every image is individually interrogated — what does a stranger learn from its pixels alone, and could it ship unchanged on a different repo?
+solid = a failure stops the build   dashed = advisory, the build carries on   L = local door only
+```
 
-On top of the numbers, the operator must answer **YES to all six questions** — a separate, independent gate:
+</details>
 
-1. Would this make me believe I understand this?
-2. Would this make it approachable?
-3. Would this explain it for somebody who doesn't understand it?
-4. Would it give me confidence I understand the architecture?
-5. Does it make me smile — "oh, that's cool"?
-6. Could someone who knows **nothing** about this domain read the first four sections and explain the problem and the solution back to me?
+In plain words:
 
-A single axis below the bar, or a single NO, names the exact weakness, reopens just that slot, re-renders, and re-grades. **Iterating over a few revisions is expected by design** — it's how the build climbs to genuinely high quality. Three sets of eyes see the same pixels: the vision-model critic, the operator, and finally you (the owner) on delivery. If a repo genuinely can't reach the bar, the build **says so honestly** rather than shipping slop and calling it done — and the honest refusal is preserved (site + scorecard + the grader's reasons) so a ten-minute cure beats a rebuild.
-
----
-
-## The factory learns — every build makes the next one better
-
-Most generators are amnesiac: build #100 is exactly as naive as build #1. This one closes the loop:
-
-![The learning loop: a shipped page emits its gate outcome and the reader's own 1-to-100 grade; both land in a measured-truth oracle store; patterns are distilled and promoted only when backed by outcomes; the recipe itself — the skill, the gate, the tools — carries the lessons into the next build.](assets/diagrams/learning-loop.svg)
-
-- **Two verdicts per page, side by side**: the machine grader's scorecard *and* the reader's own 1–100 + comments (every delivery email asks for it). The admin dashboard plots the synthesized score over time — the factory has to prove it's getting better, not claim it.
-- **Only measured truth is promoted**: build outcomes and human grades land in an oracle-tier learning store; patterns distilled from it are marked trustworthy only when execution-observed.
-- **Lessons live in the recipe, not in anyone's memory**: when a failure teaches something (an animation that hid its worst frame, a label that collided at column scale, a $0 pre-check that burned real grade budget), the *skill, the gate, or a tool* is changed the same day — so the fix fires on every future build even when nobody remembers the incident.
-
-The receipts are in the git log: the first fully-autonomous build after this week's lessons went **first-try exemplary — one grade pass, 37 minutes, zero human minutes**.
+1. **Read** — clone the **exact** repo (identity-pinned, so nothing can substitute a lookalike).
+2. **Compete** — before expensive work, three models (Claude Sonnet, Claude Fable, GPT-5.6) each pitch a visual metaphor, palette, hero animation and story arc in plain text; a judge picks one. It is a cheap step that fails open: it needs both an Anthropic and an OpenAI key, and when it skips, a single-shot concept is authored instead.
+3. **Understand** — build a real RVF vector knowledge base from the actual code (structure-aware chunks, local 384-dim embeddings, a symbol index, a dependency graph, entrypoints), then author a plain-language primer. Everything downstream is grounded in it.
+4. **Author** — write the copy along a comprehension arc for a curious fifteen-year-old: *What world am I in? Why does this exist? What does it do? Why is it clever? How is it built? Could I use it? How do I start?* An advisory check compares the page's citations and commands with the KB.
+5. **Visualize** — every image must teach (if it could ship unchanged on a different repo, it fails). Diagrams are **drawn by code** from the real graph, or from the structure the model authored; no two diagrams on a page share a form.
+6. **Assemble** — render the page once onto a shared design system and wire in SEO and social: JSON-LD, `llms.txt`, and a required, verified 1200×630 share card.
+7. **Grade** — the quality gate, below.
+8. **Ship** — deploy to its own Netlify site, verify it answers 200, and email you every link.
 
 ---
 
-## One brain, three doors
+## The quality gate — it tells you the truth
 
-The judgment lives in **one** place — a Claude Code skill. The same core is exposed through three thin adapters that each run the *identical* skill; none of them contains explainer logic of its own. Improve the brain once, and it improves everywhere.
+A generic generator emits something and stops. `explainmyrepo` renders the page in a real browser and grades it. **The gate advises; it does not veto** ([ADR-0011](docs/adr/0011-the-gate-advises-never-destroys.md)): a below-bar page is delivered with its weakest axis named, instead of the requester getting nothing.
 
-![One brain, three doors: the website builds public repos with zero keys; npx handles private repos and your own keys (one key — OpenAI — inside Claude Code); the Claude Code plugin runs it with a slash command.](assets/diagrams/three-doors.svg)
+![The quality gate: the page is rendered at 390px and 1440px, free jargon and reading-level checks run first, then a vision critic grades eleven axes and six operator questions. Exemplary is mean 90, minimum 85 and all six yes. A page at mean 82, minimum 70 and the five ship questions yes ships. Below that it still ships with its weakest axis disclosed. Deploy refuses only on integrity.](assets/diagrams/quality-gate.svg)
 
-- **Hosted website** — paste a GitHub URL in the browser. **Public repos, zero setup** — the easiest door.
-- **npx CLI** — the one-liner below. **Private repos and your own keys.**
-- **Claude Code plugin** — run it from inside Claude Code with a slash command.
+<details>
+<summary>ASCII Version (for AI/accessibility)</summary>
 
-**Pick your door with one question — is the repo public, and whose keys should do the work?**
-Public repo and you just want the page: use the website, done. Private repo, or you want it on
-your own accounts: use the CLI — and run it **inside a VS Code / Claude Code session**, in a
-project whose `.env` already holds your keys, so everything is picked up automatically.
+```
+1 render for real      390px phone + 1440px desktop, full-page screenshots
+2 free checks first    INV-20 unexplained jargon, INV-24 reads at fifteen (no model call)
+3 vision critic        11 axes (A1-A6 substance, B1-B5 craft) + six operator questions
+                       mean 79-85: graded twice, samples merged
+verdict
+  exemplary      mean 90+, min axis 85+, all six YES
+  ships          mean 82+, min axis 70+, five ship questions YES, both diagrams present
+  below the bar  still ships, its weakest axis named to the requester
+At most 3 grading passes. Deploy refuses only on integrity: unassembled page, a different repo
+than submitted, a page linking files it does not ship, or no scorecard with no recorded reason.
+```
+
+</details>
+
+The gate scores two independent rubrics:
+
+- **Gate A — "Do they actually get it?"** (substance): visual effectiveness, storytelling, clueless-to-convinced, usefulness to *you*, completeness of the arc, implementation confidence.
+- **Gate B — "Did someone who cares make this?"** (craft): typography, alignment, spacing, polish, and imagery craft, including whether the diagrams explain anything.
+
+Six operator questions sit beside the numbers (understand it? approachable? explainable to a novice? confident about the architecture? makes me smile? could a zero-knowledge reader follow the first four sections?). The minimum-axis floor is the anti-slop catch: one weak axis fails a tier no matter how good the mean is. The reader on every page is a curious fifteen-year-old, and two free checks measure that before a single vision token is spent.
 
 ---
 
-## Every explainer can answer follow-up questions
+## The factory learns
 
-Each page ends with an **Ask box**: type a question in plain words and get a short written answer, with
-numbered links to the exact files it came from. It searches the page and the repo's own files in the reader's
-browser, then a small model writes the answer through one central service (`ask-service/`) — the explainer stays
-a plain static site. If the service is down it shows the closest passages instead, and says so. Set
-`ASK_SIGNING_SECRET` (same value on the service and your build machine) to turn on written answers;
-`ASK_DISABLE=1` leaves the box off. Deploy also now refuses a page that links a file it does not ship.
-See `docs/adr/0016-ask-this-project.md`.
+![What each build leaves behind: its scorecard and cost, the reader's own grade, a local learning store, and changes to the skill, gate and tools.](assets/diagrams/learning-loop.svg)
+
+<details>
+<summary>ASCII Version (for AI/accessibility)</summary>
+
+```
+a shipped page --> scorecard, cost, weakest axis, diagram forms are recorded
+      |
+      v
+reader's own grade (1-100 + comments, linked from the delivery email; npm run pull-ratings ingests them)
+      |
+      v
+learning store (local ruflo memory namespace; the admin page plots the trend)
+      |
+      v
+the recipe changes: when a failure teaches something, the skill, the gate or a tool is changed
+```
+
+</details>
+
+Lessons live in the recipe (the skill, the gate, the tools), not in anyone's memory, so a fix fires on every later build.
+
+---
+
+## Two doors
+
+![Two doors, one station table: the local door (npx explainmyrepo, your keys, any repo) and the hosted door (the website, public repos, zero keys) read the same station table, run the same tools and apply the same quality gate.](assets/diagrams/two-doors.svg)
+
+<details>
+<summary>ASCII Version (for AI/accessibility)</summary>
+
+```
+                 src/stations.mjs + tools/*.mjs
+                    /                      \
+   local door                               hosted door
+   npx explainmyrepo <url>                  explainmyrepo.isovision.ai
+   your keys, any repo incl. private        zero keys, public repos only
+   src/orchestrator.mjs runs every          GitHub Action -> bin/agentic-runner.mjs: clone, credential
+   local station (authoring: src/brain.mjs) probes, concept tournament, then a headless agent that follows
+   also: explainer repo, Ask box,           skills/explainmyrepo/SKILL.md; the runner adds a bounded cure
+   video + infographic, README outreach     stage, the claims check and the delivery email
+                                            no GitHub repo, no Ask box yet
+```
+
+</details>
+
+**Pick your door with one question — is the repo public, and whose keys should do the work?** Public repo and you just want the page: use the website. Private repo, or you want it on your own accounts: use the CLI, and run it **inside a VS Code / Claude Code session** in a project whose `.env` already holds your keys, so everything is picked up automatically. (`/explainmyrepo <url>` inside Claude Code runs the same skill by hand.)
+
+The two doors stay in step by test, not by hope: `tests/two-doors-conform.test.mjs` pins the reader standard and the image rules in both places, and a drift test parses the hosted station table in `skills/explainmyrepo/SKILL.md` and fails unless it lists exactly the hosted tool stations of `src/stations.mjs`, in the same order (the brain stations and the runner's own prose are checked more loosely: each both-door station must be named somewhere the hosted agent reads).
+
+---
+
+## Local door: every explainer can answer follow-up questions
+
+Pages built by the **local door** end with an **Ask box**: type a question in plain words and get a short written answer with numbered links to the exact files it came from. It searches the page and the repo's own files in the reader's browser, then a small model writes the answer through one central service ([`ask-service/`](ask-service/README.md)), so the explainer itself stays a plain static site. If the service is down it shows the closest passages and says so. Set `ASK_SIGNING_SECRET` (the same value on the service and your build machine) to turn on written answers; `ASK_DISABLE=1` leaves the box off. The service screens every question and every answer with AIMDS and fails closed. Hosted-door builds do not get the box yet. Deploy also refuses a page that links a file it does not ship. See [ADR-0016](docs/adr/0016-ask-this-project.md).
+
+---
 
 ## Get started
 
 ```bash
-# Point it at any GitHub repo. Walk away. Get back a live page, a repo you own, and an AI pack.
+# Point it at any GitHub repo. Walk away. Get back a live page and an AI pack.
 npx explainmyrepo https://github.com/owner/repo
 ```
 
@@ -149,38 +202,33 @@ npx explainmyrepo https://github.com/owner/repo
 
 | For | What | Notes |
 |---|---|---|
-| The brain | `OPENROUTER_API_KEY`, **or** `ANTHROPIC_API_KEY`, **or nothing** if you're logged into Claude Code | any one of the three is enough. With an OpenRouter key the authoring runs on `z-ai/glm-5.2` — measured 15× cheaper than Sonnet 5 *and* higher-scoring on a blind art-direction A/B. Pin the old model with `EXPLAINMYREPO_AUTHORING=anthropic` |
-| Art + quality gate | `OPENAI_API_KEY` in `.env` | hero imagery and the vision grader |
-| **ImageMagick** | `magick` (v7) or `convert` (v6) on your `PATH` | **required** — the favicon station shells out to it and fails loudly without it. `brew install imagemagick` on macOS, `apt install imagemagick` on Debian/Ubuntu |
-| The live URL | `NETLIFY_AUTH_TOKEN` in `.env` — optional | skip with `--no-deploy` and you still get the complete page locally |
+| The brain | `ANTHROPIC_API_KEY`, **or** `OPENROUTER_API_KEY`, **or nothing** if you're logged into Claude Code | any one of the three is enough. With an Anthropic key (or Claude Code login) authoring runs on `claude-sonnet-5-5`. With **only** an OpenRouter key it runs on `z-ai/glm-5.3`; set `EXPLAINMYREPO_AUTHORING=openrouter` to choose it on purpose or `=anthropic` to refuse it |
+| Art + quality gate | `OPENAI_API_KEY` in `.env` | hero imagery (`gpt-image-2.5-flare`, falling back to `gpt-image-2`, then Grok when there is no OpenAI key or the OpenAI chain fails) and the vision grader |
+| **ImageMagick** | `magick` (v7) or `convert` (v6) on your `PATH` | **required** — the favicon and share-card stations shell out to it and fail loudly without it. `brew install imagemagick` on macOS, `apt install imagemagick` on Debian/Ubuntu |
+| The live URL | `NETLIFY_AUTH_TOKEN` in `.env` | required unless you pass `--no-deploy` (the preflight stops without it); with `--no-deploy` you still get the complete page locally |
 | Private repos | `gh auth login` | public repos need nothing |
 
-**The count, plainly:** website — **zero keys**. npx **inside Claude Code** (recommended) —
-**one key** (OpenAI); add a Netlify token only if you want the live URL. npx in a bare
-terminal — **two keys** (add Anthropic). Private repo — no extra key, just `gh auth login` once.
+**The count, plainly:** website — **zero keys**. npx **inside Claude Code** (recommended) — **one key** (OpenAI); add a Netlify token for the live URL (or pass `--no-deploy`). npx in a bare terminal — **two keys** (add Anthropic). Private repo — no extra key, just `gh auth login` once.
 
-**Recommended:** run it inside a **VS Code / Claude Code session** in a project whose `.env`
-already has these — nothing to export, nothing to paste, and Claude Code itself carries the
-brain on your existing subscription. In a bare terminal it works too; you'll just be told up
-front which keys to add.
+**Recommended:** run it inside a **VS Code / Claude Code session** in a project whose `.env` already has these — nothing to export, nothing to paste, and Claude Code itself carries the brain on your existing subscription.
 
-**What happens:** it reads the repo, understands it, art-directs and writes the page, generates the imagery and the real architecture + data-flow diagrams, grades the result on mobile and desktop until it clears the bar, then deploys it.
+**What you get back:** a live URL (in your terminal and by email), the downloadable AI pack, and on the local door a GitHub repo you're a collaborator on — plus the scorecard and both screenshots, so you're the final set of eyes.
 
-**What you get back:** a live URL (in your terminal and by email), a GitHub repo you're a collaborator on, and the downloadable AI knowledge pack — plus the scorecard and both screenshots, so you're the final set of eyes.
+> **Status:** `npx explainmyrepo` is **live on npm** (3.x). The hosted website is live at [explainmyrepo.isovision.ai](https://explainmyrepo.isovision.ai). Found it valuable? **[A star on this repo](https://github.com/stuinfla/Repo-Explainer)** genuinely helps. Hit a problem? **[Open an issue](https://github.com/stuinfla/Repo-Explainer/issues)** — happy to help fix it and make it better.
 
-> **Status:** `npx explainmyrepo` is **live on npm** (v0.2+). The hosted website is live at [explainmyrepo.isovision.ai](https://explainmyrepo.isovision.ai). Found it valuable? **[A star on this repo](https://github.com/stuinfla/Repo-Explainer)** genuinely helps. Hit a problem? **[Open an issue](https://github.com/stuinfla/Repo-Explainer/issues)** — happy to help fix it and make it better.
+**Don't want to pay per token for the authoring brain?** The same skill runs through a **Codex** session signed in with a ChatGPT subscription, which drops the text-model cost to $0 (only `gpt-image-2.5-flare` imagery stays metered). It also builds straight from a **local checkout**, so private source never leaves the machine. See [`docs/prompts/codex-explainer-build.md`](docs/prompts/codex-explainer-build.md) for the setup and a copy-paste prompt template.
 
-**Don't want to pay per token for the authoring brain?** The same skill runs through a **Codex** session signed in with a ChatGPT subscription, which drops the text-model cost to $0 (only `gpt-image-2` imagery stays metered, at cents per build). It also builds straight from a **local checkout**, so private source never leaves the machine. See [`docs/prompts/codex-explainer-build.md`](docs/prompts/codex-explainer-build.md) for the setup and a copy-paste prompt template.
+**Contacting maintainers.** After a local build ships, the readme-enhance station opens **one** friendly GitHub issue showing the maintainer a better README for their repo (their README exactly as written, plus an explainer link and diagrams), and offers a pull request only if they say yes. Never your own repo or a private one, one contact per repo, at most five a day. A single check-in note, sent only by running `npx explainmyrepo outreach followup` a week or more later, is posted only if they have not replied, and any maintainer-email draft goes to you, never to them. Switch it off with `--no-readme-pr` or `README_ENHANCE=0`. See [ADR-0015](docs/adr/0015-readme-outreach-issue-first.md).
 
 ---
 
 ## See a real one
 
-The agenticow explainer below was generated end to end from [`ruvnet/agenticow`](https://github.com/ruvnet/agenticow): a captivating hero, a plain-language walkthrough, **a real architecture diagram and data-flow diagram drawn from agenticow's own code**, concrete use-cases, and a one-click AI knowledge pack.
+The agenticow explainer above was generated end to end from [`ruvnet/agenticow`](https://github.com/ruvnet/agenticow): a captivating hero, a plain-language walkthrough, **an architecture diagram and a data-flow diagram drawn from agenticow's own code**, concrete use-cases, and a one-click AI knowledge pack.
 
-### [Open the live agenticow explainer →](https://stuinfla.github.io/Repo-Explainer/agenticow/)
+### [Open the live agenticow explainer →](https://agenticow-explainer.netlify.app/)
 
-The bar these are calibrated against — five hand-built explainers, five completely different looks, same engine, same gate:
+Earlier hand-built explainers the bar is calibrated against — five completely different looks, same engine, same gate:
 
 | | | |
 |---|---|---|
@@ -195,35 +243,43 @@ The bar these are calibrated against — five hand-built explainers, five comple
 
 | Layer | Tool |
 |---|---|
-| Concept tournament | Claude Sonnet 5 · Claude Fable 5 · GPT-5.6 competing in text; GPT-5.6 judging |
-| Knowledge base | RVF single-file vector DB (`@ruvector/rvf`) + `bge-small-en-v1.5` (local, 384-dim) |
-| Imagery | `gpt-image-2` / Grok (labeled, mechanism-bearing illustration) + bespoke hand-authored **animated SVG** diagrams (archetype-diverse, width-budgeted) |
-| Quality gate | Playwright dual-viewport render + GPT-5.6 vision grading (configurable) — every diagram at full size, animations at their worst sampled frame, ship floor enforced as a deploy rail |
-| Feedback + learning | Reader 1–100 grades beside machine grades on the admin; outcomes + grades feed an oracle-tier learning store |
-| Companions (local) | [HyperFrames](https://github.com/heygen-com/hyperframes) — the page's own gated assets re-rendered into a 30–40s trailer and a 10s social loop (16:9 + 9:16), locally, for ~$0 |
-| Hosting | Netlify by default (provider-agnostic adapter) |
+| Concept tournament | Claude Sonnet 5.5 · Claude Fable 5.1 · GPT-5.6 Sol competing in text; GPT-5.6 Terra judging |
+| Authoring brain | `claude-sonnet-5-5` by default; `z-ai/glm-5.3` via OpenRouter only as the sole credential or by opt-in |
+| Knowledge base | RVF single-file vector DB (`@ruvector/rvf`) + a local embedder named by each target's `embed` block (`bge-small-en-v1.5`, 384-dim, for every registered target) |
+| Imagery | `gpt-image-2.5-flare` at `xhigh`, then `gpt-image-2`, then Grok when there is no OpenAI key or the OpenAI chain fails (labeled, mechanism-bearing illustration) · diagrams drawn deterministically as SVG by `tools/make-diagrams.mjs` |
+| Quality gate | Playwright dual-viewport render + GPT-5.6 Sol vision grading (`QUALITY_VISION_MODEL`) — ship tier 82/70, exemplary tier 90/85, deploy refuses only on integrity |
+| Feedback + learning | Reader 1–100 grades beside machine grades; outcomes feed a local learning store |
+| Companions (local) | [HyperFrames](https://github.com/heygen-com/hyperframes) — a page's own assets re-rendered into a trailer and a social loop, locally |
+| Hosting | Netlify, one site per explainer |
 
-The full recipe lives in [`docs/adr/0005-skill-based-explainer-recipe.md`](docs/adr/0005-skill-based-explainer-recipe.md); the domain model in [`docs/ddd/explainmyrepo-recipe-domain.md`](docs/ddd/explainmyrepo-recipe-domain.md).
+Prices for `gpt-image-2.5-flare` are not published to us, so cost receipts say **unpriced** for it rather than guessing; rates for the Anthropic models come from third-party price lists, not a bill.
+
+The founding decision is [`docs/adr/0005-skill-based-explainer-recipe.md`](docs/adr/0005-skill-based-explainer-recipe.md) (read its banner first: later ADRs 0006–0016 supersede parts of it); the slot-by-slot data contract is [`tools/CONTRACT.md`](tools/CONTRACT.md); every tool's own header is collected in [`skills/explainmyrepo/TOOLS-CONTRACT.md`](skills/explainmyrepo/TOOLS-CONTRACT.md), which a test keeps in step with the tools.
 
 ## The Alive Kit — what a finished page can become (local runs only)
 
-A gated build's assets are reusable creative truth, so this repo can turn a finished
-explainer into **companion artifacts** — but only when you clone it and run them yourself,
-and only for capabilities that have actually been **proven**:
+A gated build's assets are reusable creative truth, so this repo can turn a finished explainer into **companion artifacts** — but only when you clone it and run them yourself, and only for capabilities that have actually been **proven**:
 
 ```
 npx explainmyrepo capabilities
 ```
 
-That command renders the verified-capability registry (`capabilities.json`) — the *only*
-source of what's enabled, so it can never overstate. Today it shows two ✓ (a shareable
-**trailer** and a 16:9 + 9:16 **social loop**, each verified end-to-end with recorded
-receipts, ~$0 to render) and two ○ that are specified but honestly *not enabled* until
-they pass their own supervised verification runs. Companions never run on the hosted door,
-never touch a build's artifacts, and can never block a page from shipping. Governance:
-[`docs/adr/0009-alive-kit-local-companions.md`](docs/adr/0009-alive-kit-local-companions.md).
+That command renders the verified-capability registry (`capabilities.json`) — the *only* source of what's enabled, so it can never overstate. Companions never run on the hosted door, never touch a build's artifacts, and can never block a page from shipping. Governance: [`docs/adr/0009-alive-kit-local-companions.md`](docs/adr/0009-alive-kit-local-companions.md).
 
 ---
+
+## Known limits
+
+Plainly, as of this release:
+
+- **The Ask box is local-door only.** Hosted-door pages do not have one yet.
+- **The hosted door cannot yet move deploy into the runner.** The hosted agent still runs `deploy` itself; the runner only retries and cures around it.
+- **Image prices are partly unknown.** `gpt-image-2.5-flare` has no known per-image price, so cost totals leave it out and say so.
+- **Story diagrams on a phone.** Every diagram is drawn twice, wide and as a 360px phone twin, and `make-diagrams` fails the step if any label would be under 11px on a 390px phone. The story diagrams (system map, decision) have been exercised on fewer real builds than the radial architecture map.
+- **Hero scenes are untested against a live model.** The local brain now authors an animated hero scene and a valid one replaces the raster hero, but the validator and repair pass have been proven on fixtures, not across real builds.
+- **Page weight is checked, not tuned.** `deploy` and the site check fail a page whose images total over 1.5 MB (lightbox originals are not counted) and warn when the first view (gzipped HTML + CSS + the images above the fold) passes 300 KB (`src/site-check.mjs`). Image files are not content-fingerprinted and `deploy` writes no `_headers` file, so pages use Netlify's default revalidating cache; fingerprinted long-cache filenames would need `tools/deploy.mjs` to emit a `_headers` file first, and that is not built.
+- **No branch protection on `main` yet.** CI runs on every pull request, but nothing forces it.
+- **Outreach response rates are unmeasured.** The ledger exists to find out; no claim is made yet.
 
 ## Credit
 

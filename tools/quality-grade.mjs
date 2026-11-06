@@ -1,49 +1,32 @@
 #!/usr/bin/env node
-// quality-grade.mjs — STATION 7 tool: the dual-gate completion criterion.
+// quality-grade.mjs — STATION 7 tool: the quality gate (it advises; deploy never refuses on a score, ADR-0011).
 //
-// CONTRACT: tools/CONTRACT.md (the one BuildContext, the uniform invocation/return
-// convention, PURE + FAIL-LOUD). Paired ADR-0005 Station 7 / "The QA System";
-// paired DDD §8.5 Scorecard + §12 (the QA dual-gate as first-class domain).
+// CONTRACT: tools/CONTRACT.md (one BuildContext, uniform invocation/return, PURE + FAIL-LOUD).
 //
-// JOB (one mechanical job): render the ALREADY-ASSEMBLED site LOCALLY in a real
-// browser (Playwright) at 390px (mobile) + 1440px (desktop), then grade it on two
-// independent channels that DON'T fight each other:
+// JOB: render the ASSEMBLED site locally in Playwright at 390px (mobile) and 1440px (desktop), then
+//   (0) two zero-token deterministic pre-checks on ladder rungs 1-4: INV-20 (unglossed acronyms) and
+//       INV-24 (reads at fifteen). A refusal records `quality.gateRefusal` and a FRESH slot (no scorecard);
+//   (1) INV-18 presence: a DOM check that the architecture and flow diagrams exist and are visible
+//       (the vision model is only asked whether they READ clearly);
+//   (2) craft + substance: the vision model (default gpt-5.6-sol) grades section crops against the
+//       verbatim rubric: A1-A6 substance + B1-B5 anti-slop (11 criteria, 0-100) + six operator questions.
+//       A device whose mean lands within 82+-3 is graded a second time and the two samples are merged.
 //
-//   (1) INV-18 PRESENCE — a deterministic DOM check (NOT the vision model). Playwright
-//       asserts the ARCHITECTURE diagram AND the PROCESS/DATA-FLOW diagram elements
-//       exist and are actually visible (rendered box > 0, not display:none) inside the
-//       mandatory #how-it-works block. Present/absent is decided HERE, in the DOM — the
-//       vision model is never asked "is it there?", only "does it read clearly?".
+// Tiers (pure, exported): SHIP = evaluateShipworthy (mean>=82, min>=70, five ship operators) AND INV-18;
+// EXEMPLARY = evaluatePass (mean>=90, min>=85, all six operators) AND INV-18. Both devices must pass.
+// A malformed grader reply is a LOUD failure, never a silent pass.
 //
-//   (2) CRAFT + SUBSTANCE — the GPT-4o vision grade against the VERBATIM Gate A/B
-//       rubric (A1..A5 substance + B1..B5 anti-slop, each 0–100), graded from a few
-//       FULL-RESOLUTION, viewport-height SECTION CROPS (hero · what-it-is · how-it-works
-//       · get-started · the-pack), NOT one giant full-page screenshot downscaled into
-//       mush. Each crop is capped at the device viewport so the model judges real,
-//       sharp pixels (typography, alignment, imagery craft, diagram legibility).
-//
-// headlineScore = MIN across all 10 criteria. A device passes iff headlineScore >= 95
-// AND INV-18 is clean (both diagrams DOM-present + DOM-visible + vision says each reads
-// clearly). The build passes iff BOTH devices pass. Malformed / missing per-criterion
-// scores → LOUD STOP, never a silent pass (ADR-0005 loud-fail postcondition; DDD §12.3).
-//
-// PURE: reads ONLY its declared slice of build.json (the `page` slot) + the
-//   OPENAI_API_KEY from the environment. Writes ONLY the `quality` slot + its two
-//   screenshots under <build-dir>/assets/. Never reads another tool's slot/files;
-//   never writes another tool's slot/files.
-// FAIL-LOUD: any failure → non-zero exit + a clear `error` string; never a silent
-//   PASS, never a placeholder scorecard.
+// Reads: the `page` slot, `visuals.flowDiagram` (is a flow expected?) and the prior `quality` slot
+//   (iterations, cost); OPENAI_API_KEY from env. Writes ONLY the `quality` slot + screenshots under <build-dir>/assets/.
 //
 // Usage: node tools/quality-grade.mjs <build-dir>
-//   env: OPENAI_API_KEY            (required — without it the page CANNOT be graded)
-//        QUALITY_VISION_MODEL      (optional, default "gpt-5.6-sol")
-//        OPENAI_BASE_URL           (optional, default "https://api.openai.com/v1")
+//   env: OPENAI_API_KEY (required) · QUALITY_VISION_MODEL (default "gpt-5.6-sol") · OPENAI_BASE_URL
 
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import https from 'node:https';   // #17.6 — fresh-socket retry escapes a poisoned connection pool
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 const _ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -80,8 +63,8 @@ function emit(ok, outputs, error) {
 const log = (msg) => process.stderr.write(`[quality-grade] ${msg}\n`);
 
 // ----------------------------------------------------------------------------
-// The dual-gate rubric — VERBATIM from ADR-0005 / DDD §12.2. Handed to the vision
-// model as a harsh critic. Do NOT paraphrase: this is load-bearing.
+// The dual-gate rubric (ADR-0005 / DDD §12.2, with the INV-22/INV-23 and ADR-0006 additions). Handed to the
+// vision model as a harsh critic. Do NOT paraphrase: this is load-bearing.
 // ----------------------------------------------------------------------------
 const RUBRIC = `You are an EXACTING design-and-substance critic grading a software-explainer web page.
 You are shown SEVERAL full-resolution, sharp SECTION CROPS of ONE page (in document
@@ -176,7 +159,7 @@ GATE B — "Did someone who gives a shit make this?" (craft / anti-slop):
 
 BEGINNER PERSONA PASS (ADR-0006 D4) — before answering the operator questions, re-read ONLY the crops
 whose label begins "LADDER RUNG" (there are four: hero, problem, what-it-is, insight), role-playing a
-smart developer from a DIFFERENT domain who knows NOTHING about this project's field. Note every
+curious fifteen-year-old who is bright and willing but knows NOTHING about this project's field. Note every
 sentence you could not follow and every term you would have to already know — judge questions (3) and
 (6) from that persona, not as yourself.
 
@@ -242,6 +225,10 @@ const RESPONSE_SPEC = `Return ONLY a JSON object, no prose, with EXACTLY this sh
 Every score is an integer 0–100. Every rationale is a non-empty string citing the crops.
 For clarity, judge legibility honestly — an illegible/garbled diagram is readsClearly:false.`;
 
+// Hard cap on grades per build (1 initial + 2 refines). Enforced here because a prompt instruction is advice:
+// live runs ran 4-6 refines. The orchestrator imports this value rather than copying it.
+export const MAX_QUALITY_ITERATIONS = 3;
+
 const CRITERIA_A = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6'];
 const CRITERIA_B = ['B1', 'B2', 'B3', 'B4', 'B5'];
 const OPERATOR_QUESTIONS = ['believeIUnderstand', 'approachable', 'explainsToNovice', 'architectureConfidence', 'makesMeSmile', 'zeroKnowledgeReader'];
@@ -254,19 +241,17 @@ const OPERATOR_QUESTIONS = ['believeIUnderstand', 'approachable', 'explainsToNov
 // Free to run; a violation fails the gate for zero vision tokens and feeds the
 // refine loop an operator:zeroKnowledgeReader note it knows how to act on.
 // ----------------------------------------------------------------------------
-// Cross-domain developer lingua franca — terms ANY smart developer knows, whatever
-// their domain (ADR-0006's reader model). Owner-tunable; keep it small.
+// Terms the reader is assumed to know without a gloss (a curious fifteen-year-old, ADR-0006 D8): everyday tech
+// words only. Owner-tunable; keep it small.
 export const INV20_WHITELIST = new Set([
   'AI', 'API', 'CLI', 'URL', 'HTTP', 'HTTPS', 'JSON', 'HTML', 'CSS', 'SDK',
   'README', 'FAQ', 'ID', 'UI', 'CPU', 'GPU', 'OS', 'IO', 'MIT', 'NPM', 'PR',
   'RAM', 'GB', 'MB', 'TB', // universal hardware units — NOT 'KB' (this product uses KB = knowledge base; it must be glossed)
 ]);
 // ALL-CAPS English words that are styling/emphasis, not acronyms.
-// An ordinary English word set in UPPERCASE is a STYLING choice (an eyebrow, a label), not an acronym.
-// The detector cannot tell them apart from shape alone, so the stopword list carries the ordinary words
-// we actually use in display type. 2026-07-12: the inlined hero animation tripped this with "INSIDE",
-// "MODEL" and "MOVE" — a false INV-20 failure that blocked the vision pass entirely. (It only surfaced
-// once an SVG was INLINED into the page; diagram text inside <img> is invisible to this scan.)
+// An ordinary English word set in UPPERCASE is a STYLING choice (an eyebrow, a label), not an acronym. The
+// detector cannot tell them apart from shape alone, so this list carries the ordinary words used in display
+// type (including text inside an inlined SVG scene, which the scan can see).
 const CAPS_STOPWORDS = new Set([
   'A', 'AN', 'THE', 'AND', 'OR', 'NOT', 'NO', 'YES', 'OK', 'ALL', 'ANY', 'ONE',
   'TWO', 'NEW', 'GET', 'RUN', 'SEE', 'HOW', 'WHY', 'WHAT', 'WHO', 'YOU', 'YOUR',
@@ -281,36 +266,35 @@ const CAPS_STOPWORDS = new Set([
   'LIVE', 'LOCAL', 'OFFLINE', 'ONLINE', 'PAGE', 'FILE', 'SIZE', 'TIME', 'COST',
 ]);
 
+// THE ladder: the four sections the RUBRIC's beginner-persona pass promises the grader it will see. The text
+// gate (extractRungText) and the vision gate (CROP_SECTIONS) are both derived from this one list, so they
+// cannot disagree on "the first four sections". `htmlId` is the <details id> in the page (null: the hero).
+export const LADDER = [
+  { key: 'hero',     htmlId: null,          selector: '.hero, #top',  label: 'LADDER RUNG 1 of 4 — Hero: the opening' },
+  { key: 'problem',  htmlId: 'problem',     selector: '#problem',     label: 'LADDER RUNG 2 of 4 — Problem: why this exists' },
+  { key: 'whatItIs', htmlId: 'what-it-is',  selector: '#what-it-is',  label: 'LADDER RUNG 3 of 4 — What it is: substance + the big-idea diagram' },
+  { key: 'insight',  htmlId: 'the-insight', selector: '#the-insight', label: 'LADDER RUNG 4 of 4 — The insight: the clever move' },
+];
+const LADDER_RUNGS = LADDER.map((r) => r.key);
+
 // Extract the visible text of ladder rungs 1-4 from the assembled page HTML.
 // hero is <section class="hero">…</section>; the rest are the assemble-page
 // <details class="section" id="…"> blocks (ARC ids: problem, what-it-is, the-insight).
 export function extractRungText(html) {
   const chunks = [];
-  const hero = html.match(/<section class="hero">[\s\S]*?<\/section>/);
-  if (hero) chunks.push(hero[0]);
-  for (const id of ['problem', 'what-it-is', 'the-insight']) {
-    const m = html.match(new RegExp(`<details class="section" id="${id}"[\\s\\S]*?<\\/details>`));
+  for (const r of LADDER) {
+    const m = r.htmlId === null
+      ? html.match(/<section class="hero">[\s\S]*?<\/section>/)
+      : html.match(new RegExp(`<details class="section" id="${r.htmlId}"[\\s\\S]*?<\\/details>`));
     if (m) chunks.push(m[0]);
   }
   return chunks.join('\n')
     .replace(/<script[\s\S]*?<\/script>/g, ' ')
     .replace(/<style[\s\S]*?<\/style>/g, ' ')
-    // A LOOPHOLE, closed 2026-07-13. INV-20 asks "would a newcomer hit a term they cannot decode?" — that
-    // is a question about what a reader SEES. Screen-reader-only text (assemble-page renders <caption> as
-    // class="visually-hidden") was being scanned, so glossing an acronym THERE satisfied the linter while a
-    // sighted reader still met bare "POST /agents/{id}/chat" and "Streaming SSE chat" with nothing to
-    // explain them. Two independent authors — a subagent and me — both reached for that caption as the
-    // place to put the gloss, which is the tell that the gate was rewarding the wrong thing. A check you
-    // can satisfy without helping the reader is worse than no check: it manufactures false confidence.
-    // Hidden text is now stripped BEFORE the scan, so a gloss only counts if the reader can actually read it.
+    // A gloss in screen-reader-only text does not help a sighted reader, so it must not satisfy the gate.
     .replace(/<[^>]*class="[^"]*\bvisually-hidden\b[^"]*"[^>]*>[\s\S]*?<\/[a-zA-Z]+>/g, ' ')
-    // BLOCK BOUNDARIES ARE SENTENCE BOUNDARIES (2026-09-17). Stripping tags with a bare space welded
-    // separate blocks into one run of words: on the RuView build, two button labels plus four table
-    // cells became a single "39-word sentence" and INV-24 failed a page that actually measured grade
-    // 7.8 with 16.9-word sentences. A gate that fires on page chrome teaches authors to distrust it.
-    // INV-20 is unaffected — an added full stop cannot hide or create an acronym.
-    // An inline SVG scene's <title>/<desc> is its accessible description, not visible copy — the alt-text
-    // rules already govern it, and scanning it double-counts one sentence as page prose.
+    // Block boundaries are sentence boundaries (else adjacent labels weld into one false "long sentence").
+    // An SVG scene's <title>/<desc> is its accessible description, not visible copy.
     .replace(/<(title|desc)[^>]*>[\s\S]*?<\/\1>/gi, ' ')
     .replace(/<\/(p|li|h[1-6]|td|th|tr|figcaption|caption|button|a|summary|div|section|blockquote|dt|dd|text|tspan)\s*>/gi, '. ')
     .replace(/<(br|hr)\s*\/?>/gi, '. ')
@@ -326,16 +310,13 @@ export function findUnexplainedAcronyms(text, whitelist = INV20_WHITELIST) {
     const tok = m[0];
     if (whitelist.has(tok) || CAPS_STOPWORDS.has(tok)) continue;
     if (/^\d+$/.test(tok.slice(1))) continue; // version-ish tokens like V2
-    // A gloss counts in any natural form, not just parentheses — the brain writes appositives
-    // ("…the gate-and-dynamics state, or GDN state") and the linter must not reject good copy.
-    // The compound suffix (?:-\w+)* lets a gloss attached to "ADR-001 (short for …)" clear the
-    // bare token — a reader who meets the expansion at first use is served, whichever form the id
-    // takes. Detector-truth fix in the file's own tradition (MODEL/MOVE, visually-hidden): it adds
-    // a way to SATISFY by genuinely glossing, never a way to skip the gloss.
+    // A gloss counts in any natural form (parenthetical, appositive, dash, comma); a compound id such as
+    // "ADR-001 (short for …)" is glossed by its expansion. Each form is a way to genuinely gloss, never to skip it.
     const acronymFirst = new RegExp(`\\b${tok}(?:-[A-Za-z0-9]+)*\\b\\s*\\(['"‘“]?[a-z]`); // "SSG (pre-building …)" / "ADR-001 ('short for …)"
     const glossFirst = new RegExp(`[a-z][^()]{2,80}\\(\\s*${tok}\\s*\\)`); // "static site generation (SSG)"
     const appositive = new RegExp(`[a-z][^.!?]{0,80},\\s+or\\s+(?:the\\s+)?${tok}\\b`); // "…state, or GDN state"
-    const dashGloss = new RegExp(`\\b${tok}\\b[^.!?—]{0,12}—\\s*[a-z]`);   // "GDN — the running signal …"
+    // "GDN — the running signal …" counts; "GNU — and then it stops" (a dash used as punctuation) does not.
+    const dashGloss = new RegExp(`\\b${tok}\\b(?:\\s+[a-z]+)?\\s*—\\s*(?!(?:and|but|or|so|then|which|it)\\b)[a-z]`);
     const commaGloss = new RegExp(`\\b${tok}\\b,\\s+(?:a|an|the)\\s+[a-z]`); // "GDN, the model's recurrent …"
     if (acronymFirst.test(text) || glossFirst.test(text) || appositive.test(text)
       || dashGloss.test(text) || commaGloss.test(text)) continue;
@@ -344,21 +325,8 @@ export function findUnexplainedAcronyms(text, whitelist = INV20_WHITELIST) {
   return [...violations].sort();
 }
 
-/**
- * The v1.7 exemplar-anchored gate rule (ADR-0005 §"The QA System" / DDD §12.3 / INV-05). PURE.
- * PASS iff meanScore >= 90 AND min (the worst axis — the anti-slop floor) >= 85 AND all six operator
- * yes/no questions are YES (the sixth, zeroKnowledgeReader, is ADR-0006 D4). INV-18 is AND-ed in separately by
- * buildScorecard. Anchored to the owner's own example sites (~88 headline / ~92 mean); a literal
- * "95 on every axis" is unreachable by an honest grader. Exported so the gate logic is unit-testable
- * without a network call or a browser.
- */
-// ── INV-24 ReadsAtFifteen (ADR-0006 v1.2.0) — DETERMINISTIC, runs with INV-20, costs zero tokens ──
-// The owner's verdict on two shipped pages, 2026-09-17: "it still feels like it's asking me to geek
-// out versus bringing it back to my level ... the whole point is to explain it like somebody is 15".
-// Measured on those pages' first four sections: mcp-studio read at grade 11.0 (25-word sentences),
-// ruos at grade 16.3 (39-word sentences). INV-20 could not see this — every acronym was glossed and
-// every sentence was still a three-clause pile. Vocabulary was never the whole problem; SHAPE was.
-// A 15-year-old reads at about grade 8, so the bar is grade <= 9.5 with no sentence over 30 words.
+// ── INV-24 ReadsAtFifteen (ADR-0006) — deterministic, zero tokens. A 15-year-old reads at about grade 8,
+// so the bar is grade <= 9.5 with no sentence over 30 words: sentence SHAPE, which INV-20 cannot see.
 const SYLL_RE = /[aeiouy]{1,2}/g;
 export function syllablesIn(word) {
   const w = String(word).toLowerCase().replace(/[^a-z]/g, '');
@@ -397,6 +365,10 @@ export function findReadabilityViolations(text, limits = READS_AT_FIFTEEN) {
   return out;
 }
 
+/**
+ * The EXEMPLARY tier (PURE): mean >= 90 AND min (worst axis) >= 85 AND all six operator questions true.
+ * INV-18 is AND-ed in by buildScorecard. A literal "95 on every axis" is unreachable by an honest grader.
+ */
 export function evaluatePass({ mean, min, operatorQuestions } = {}) {
   const ops = Array.isArray(operatorQuestions) ? operatorQuestions : [];
   return typeof mean === 'number' && typeof min === 'number'
@@ -405,19 +377,9 @@ export function evaluatePass({ mean, min, operatorQuestions } = {}) {
 }
 
 /**
- * The SHIP gate (the OPERATIONAL tier). `evaluatePass` above is the world-class ASPIRATION the refine
- * loop chases and that every scorecard reports the gap to — but holding a genuinely-good page forever
- * because it is "good, not the best reference site" means the tool never delivers. A page SHIPS when it
- * is solidly good AND carries no slop:
- *   - mean >= 82  (solidly good overall)
- *   - min (worst axis) >= 70  (no genuinely-weak / slop axis — INV-18 separately enforces real diagrams)
- *   - the five COMPREHENSION/SAFETY operators are YES (believeIUnderstand, approachable, explainsToNovice,
- *     makesMeSmile, zeroKnowledgeReader — the last is ADR-0006 D4: the first four sections must work for a
- *     reader with zero domain knowledge; shipping "technical-but-pretty" is the failure it exists to stop).
- *     `architectureConfidence` is INFORMATIONAL here, NOT a blocker: it is repo-dependent
- *     (a one-module library legitimately has little architecture to be "confident" about) and the
- *     architecture diagram's real legibility is already hard-gated by INV-18.
- * A shipped-but-not-exemplary page always carries its honest mean + the gap to 90 (never normalized up).
+ * The SHIP tier (PURE): mean >= 82, min >= 70, and the five ship operators YES. `architectureConfidence`
+ * is informational only (a one-module library has little architecture; INV-18 already gates the diagram).
+ * A shipped page that is not exemplary reports its honest mean, never normalised up.
  */
 export const SHIP_OPERATORS = ['believeIUnderstand', 'approachable', 'explainsToNovice', 'makesMeSmile', 'zeroKnowledgeReader'];
 export function evaluateShipworthy({ mean, min, operatorQuestions } = {}) {
@@ -427,6 +389,16 @@ export function evaluateShipworthy({ mean, min, operatorQuestions } = {}) {
   return typeof mean === 'number' && typeof min === 'number'
     && mean >= 82 && min >= 70
     && SHIP_OPERATORS.every((k) => o[k] === true);
+}
+
+/**
+ * Page-structure-only INV-18 check for the local door's hold decision (PURE): true iff EVERY device has an
+ * architecture diagram that is present and visible in the DOM. It deliberately ignores the vision model's
+ * "reads clearly" verdict, which must never be able to hold a finished page (ADR-0011).
+ */
+export function diagramsStructurallyPresent(scorecard) {
+  return Array.isArray(scorecard) && scorecard.length > 0
+    && scorecard.every((c) => c?.inv18?.architecturePresent === true && c?.inv18?.architectureVisible === true);
 }
 
 // ----------------------------------------------------------------------------
@@ -473,27 +445,8 @@ function startServer(rootDir) {
 // MANDATORY diagrams are captured separately as dedicated element crops (below) so the
 // grader always SEES them in full, not pushed off the bottom of a viewport.
 const HEADER_OFFSET = 90; // clears the sticky .site-head so the section heading is visible
-// 2026-07-12 — THE BUG THAT MADE explainsToNovice / zeroKnowledgeReader UNPASSABLE ON EVERY BUILD.
-// The prompt tells the grader "judge the novice operators on the first four crops (hero, problem,
-// what-it-is, insight)". This list did not contain #problem OR #the-insight — they were NEVER captured
-// and NEVER sent. So the model dutifully judged "can a newcomer follow this?" on whatever four images
-// arrived first, which were hero, what-it-is, get-started and then the ARCHITECTURE DIAGRAM — and then
-// (correctly, given what it was shown) reported that the reader meets "Rust engine" and "BitLinear"
-// before any plain-language grounding. The grounding WAS on the page, in the problem and insight
-// sections, which the grader was structurally incapable of seeing. Every rewrite of those sections was
-// therefore invisible to the gate, which is exactly why those two operators never moved no matter what
-// anyone wrote. The ladder rungs are now captured, in document order, and LABELLED as such.
-// The four ladder rungs the RUBRIC's beginner-persona pass PROMISES the grader it will be shown.
-// tests/ladder.test.mjs asserts CROP_SECTIONS actually captures every one of them: the text gate
-// (extractRungText) and the VISION gate must never again disagree about what 'the first four
-// sections' means — that divergence is what made the novice operators unpassable.
-const LADDER_RUNGS = ['hero', 'problem', 'whatItIs', 'insight'];
-
 const CROP_SECTIONS = [
-  { key: 'hero',       selector: '.hero, #top',   label: 'LADDER RUNG 1 of 4 — Hero: the opening', rung: true },
-  { key: 'problem',    selector: '#problem',      label: 'LADDER RUNG 2 of 4 — Problem: why this exists', rung: true },
-  { key: 'whatItIs',   selector: '#what-it-is',   label: 'LADDER RUNG 3 of 4 — What it is: substance + the big-idea diagram', rung: true },
-  { key: 'insight',    selector: '#the-insight',  label: 'LADDER RUNG 4 of 4 — The insight: the clever move', rung: true },
+  ...LADDER.map((r) => ({ key: r.key, selector: r.selector, label: r.label, rung: true })),
   { key: 'howItWorks', selector: '#how-it-works', label: 'BEYOND THE LADDER — How it works (may descend ONE technical level)' },
   // whole: A6 asks "could I actually DO this?" — it must see the complete example, not the first screenful.
   { key: 'getStarted', selector: '#get-started',  label: 'BEYOND THE LADDER — Get started: how to begin (FULL section)', whole: true },
@@ -638,13 +591,8 @@ async function renderDevice(chromium, url, device, assetsDir) {
     const domInv18 = await checkDiagramsInDom(page);
 
     const crops = [];
-    // (3a) SECTION crops. Default: a viewport-height segment anchored at the section top — sharp, never
-    // downscaled. But a section marked `whole: true` is captured as the FULL ELEMENT instead, because a
-    // viewport slice would cut it in half and the grader would mark down content it cannot see. This bit
-    // A6 (get-started) on mobile for every build: the section's runnable example, expected output and
-    // next-step all sit BELOW the fold of a 390x844 slice, so the grader — shown only the install line —
-    // correctly reported "does not show the complete runnable program". The program was always there. The
-    // crop ended above it. Same failure mode the diagram element-crops below already exist to prevent.
+    // (3a) SECTION crops: a viewport-height segment at the section top, or the FULL element when
+    // `whole: true` (a slice would hide content the grader then marks down).
     for (const sec of CROP_SECTIONS) {
       const loc = page.locator(sec.selector).first();
       if (!(await loc.count())) { log(`  crop ${sec.key}: selector "${sec.selector}" not found — skipped`); continue; }
@@ -666,6 +614,9 @@ async function renderDevice(chromium, url, device, assetsDir) {
       { idx: domInv18.flowIndex, key: 'flow', label: 'PROCESS / DATA-FLOW diagram — the runtime flow (how it works)' },
     ];
     const diagCrops = [];
+    // A figure taller than the viewport is shot with the sticky header scrolled on top of it; hide the header
+    // for the element crops only, so a diagram is judged on what it draws and not on a capture artifact.
+    await page.evaluate(() => { const st = document.createElement('style'); st.id = 'grade-hide-head'; st.textContent = '.site-head{visibility:hidden !important}'; document.head.appendChild(st); }).catch(() => {});
     for (const d of diagSpecs) {
       if (d.idx < 0) { log(`  diagram ${d.key}: no figure found in #how-it-works — skipped`); continue; }
       try {
@@ -692,12 +643,9 @@ async function renderDevice(chromium, url, device, assetsDir) {
         diagCrops.push({ key: `concept${i}`, label: `CONCEPT diagram (big-idea / insight) — must be a real DRAWN diagram (cards + arrows), NEVER typeset ASCII/box-characters`, path: cropPath });
       } catch (e) { log(`  concept${i}: capture failed (${e?.message || e}) — skipped`); }
     }
-    // (3d) THE ANIMATION WORST-FRAME RULE (owner incident 2026-07-15: agentic-kit graded
-    // exemplary while its hero animation was colliding text soup two seconds into the loop —
-    // the gate only ever saw one instant of a moving thing). Animated content is judged at its
-    // WORST sampled moment: capture the hero animation, when present, at three loop phases
-    // ~3s apart (its CSS timeline runs live in this browser) and put ALL THREE in front of the
-    // grader as one labelled sequence. Costs ~6s wall per device; buys the class of bug back.
+    await page.evaluate(() => document.getElementById('grade-hide-head')?.remove()).catch(() => {});
+    // (3d) WORST-FRAME RULE: the hero animation, when present, is captured at three loop phases ~3s apart
+    // and all three go to the grader (~6s per device); a moving thing is judged at its worst moment.
     const heroAnimEl = page.locator('.hero-refusal').first();
     const heroAnimCrops = [];
     if (await heroAnimEl.count()) {
@@ -733,21 +681,20 @@ async function renderDevice(chromium, url, device, assetsDir) {
 function isScore(n) { return typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 100; }
 function isText(s) { return typeof s === 'string' && s.trim().length > 0; }
 
-// A one-shot HTTPS POST on a GUARANTEED-FRESH socket (issue #17.6). Global fetch pools connections
-// per origin, so a corrupted session makes every retry fail identically — the reporter added retries
-// and still failed every time, which is what pointed at the pool rather than the network. keepAlive
-// false + a private Agent means this request cannot inherit a poisoned connection. Returns a
-// fetch-shaped object so the caller does not care which path produced it.
-function postJsonFreshSocket(url, { headers = {}, body } = {}) {
+// A one-shot POST on a guaranteed-fresh socket (keepAlive off, private Agent) so it cannot inherit a poisoned
+// pooled connection. http: or https: by the URL's protocol (OPENAI_BASE_URL may be a plain-http proxy); a
+// stalled socket is abandoned after `timeoutMs`. Returns a fetch-shaped object.
+export function postJsonFreshSocket(url, { headers = {}, body } = {}, timeoutMs = 120_000) {
   return new Promise((resolve, reject) => {
     const u = new URL(url);
-    const req = https.request({
+    const mod = u.protocol === 'http:' ? http : https;
+    const req = mod.request({
       hostname: u.hostname,
-      port: u.port || 443,
+      port: u.port || (mod === http ? 80 : 443),
       path: u.pathname + u.search,
       method: 'POST',
       headers: { ...headers, 'content-length': Buffer.byteLength(body) },
-      agent: new https.Agent({ keepAlive: false, maxSockets: 1 }),
+      agent: new mod.Agent({ keepAlive: false, maxSockets: 1 }),
     }, (res) => {
       const chunks = [];
       res.on('data', (c) => chunks.push(c));
@@ -756,24 +703,34 @@ function postJsonFreshSocket(url, { headers = {}, body } = {}) {
         resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, text: async () => text });
       });
     });
+    req.setTimeout(timeoutMs, () => req.destroy(new Error(`no response within ${timeoutMs}ms`)));
     req.on('error', reject);
     req.write(body);
     req.end();
   });
 }
 
-// Vision-grade cost ledger (2026-08-09). Grading is the second-biggest line item in a local build
-// and was entirely unaccounted; `build.json` had no cost field at all. Derived from published
-// gpt-5.6-sol rates rather than a reported charge — OpenAI does not return one — so it is labelled
-// `derived` in the receipt. Wrong-but-labelled beats absent: an absent number gets estimated by
-// whoever asks next, and estimates are how this got mis-stated twice.
+// Vision-grade cost ledger, derived from published rates (OpenAI returns no per-call charge). A model with
+// no known rate is UNPRICED (usd null), never $0.
 const VISION_RATES = { 'gpt-5.6-sol': [1.25, 10] };   // $/M in, $/M out
-const _visionSpend = { usd: 0, calls: 0, inTokens: 0, outTokens: 0, basis: 'derived' };
+const _visionSpend = { usd: 0, calls: 0, inTokens: 0, outTokens: 0, unpriced: false };
 function recordVisionSpend(model, usage) {
-  const [rin, rout] = VISION_RATES[model] || [0, 0];
+  const rate = VISION_RATES[model];
   const i = usage?.prompt_tokens || 0, o = usage?.completion_tokens || 0;
-  _visionSpend.usd += (i * rin + o * rout) / 1e6;
+  if (rate) _visionSpend.usd += (i * rate[0] + o * rate[1]) / 1e6; else _visionSpend.unpriced = true;
   _visionSpend.calls += 1; _visionSpend.inTokens += i; _visionSpend.outTokens += o;
+}
+// Cumulative across refine passes (the slot is rewritten each grade). Pure, exported for tests.
+export function visionCost(prev, spend, model) {
+  const unpriced = spend.unpriced || prev?.usd === null;
+  return {
+    usd: unpriced ? null : Math.round(((prev?.usd || 0) + spend.usd) * 1e6) / 1e6,
+    calls: (prev?.calls || 0) + spend.calls,
+    inTokens: (prev?.inTokens || 0) + spend.inTokens,
+    outTokens: (prev?.outTokens || 0) + spend.outTokens,
+    model,
+    basis: unpriced ? 'UNPRICED — no known rate for this vision model, usd not computed' : 'derived from published rates (OpenAI returns no per-call charge)',
+  };
 }
 
 async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
@@ -797,9 +754,7 @@ async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
   const body = {
     model,
     ...(isReasoning ? {} : { temperature: 0 }),
-    // Reasoning models spend hidden reasoning tokens out of this SAME budget before emitting the JSON.
-    // 2400 was too small (reasoning exhausted it → empty content). Give ample headroom and cap the
-    // reasoning depth — grading from a rubric is a low-reasoning task, so 'low' is faster AND cheaper.
+    // Reasoning tokens come out of this same budget; 2400 exhausted it (empty content), so leave headroom.
     ...(isReasoning ? { max_completion_tokens: 12000, reasoning_effort: 'low' } : { max_tokens: 2400 }),
     response_format: { type: 'json_object' },
     messages: [
@@ -808,14 +763,8 @@ async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
     ],
   };
 
-  // ── #17.5 + #17.6 (pacphi) ────────────────────────────────────────────────────────────────────
-  // #17.5: this call had NO retry at all, so a single network blip destroyed a fully rendered,
-  // fully cropped station — the most expensive point in the build to lose.
-  // #17.6 is the subtler half, and the reason a naive retry loop did not help the reporter: Node's
-  // global fetch keeps a POOLED connection per origin, and once that session is corrupted every
-  // subsequent request on it fails identically. The failure looks transient and is not: retrying
-  // over the same poisoned pool fails every time. So each attempt past the first gets a FRESH
-  // dispatcher, which is what actually makes the retry meaningful.
+  // Retry on a FRESH socket: the global fetch pools one connection per origin and a corrupted session fails
+  // every retry identically (issue #17.5/#17.6), so each attempt past the first bypasses the pool.
   let resp, lastErr;
   const DELAYS = [1_500, 5_000];
   for (let attempt = 0; attempt <= DELAYS.length; attempt++) {
@@ -829,11 +778,7 @@ async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
       body: JSON.stringify(body),
     };
     try {
-      // Attempt 0 uses global fetch (pooled, fast). Every RETRY goes over a brand-new socket via
-      // node:https with keepAlive off — that is what actually escapes a poisoned pool. undici's
-      // Agent would be the tidier tool but it is neither a Node builtin nor a dependency here
-      // (verified: `node:undici` -> ERR_UNKNOWN_BUILTIN_MODULE, `undici` -> ERR_MODULE_NOT_FOUND),
-      // and this fix must not add one to a package whose install footprint is a feature.
+      // Attempt 0: pooled global fetch. Retries: node:https, keepAlive off (undici is not a dependency).
       resp = attempt === 0
         ? await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, opts)
         : await postJsonFreshSocket(`${baseUrl.replace(/\/$/, '')}/chat/completions`, opts);
@@ -892,25 +837,15 @@ async function gradeCrops({ apiKey, model, baseUrl, crops, deviceLabel }) {
       flowNote: isText(clarity.flowNote) ? clarity.flowNote.trim() : '',
     },
     operatorQuestions: Object.fromEntries(OPERATOR_QUESTIONS.map((k) => [k, operatorQuestions[k] === true])),
+    // The INV-22 raster verdicts: without them applyRasterCap never sees a raster and the cap is dead.
+    rasters: Array.isArray(g.rasters) ? g.rasters : [],
   };
 }
 
-// ----------------------------------------------------------------------------
-// Assemble a per-device scorecard. headlineScore = MIN across all 10 criteria
-// (never the mean — DDD §12.3 / INV-05). INV-18 is the AND of the DETERMINISTIC DOM
-// verdict (present + visible, from checkDiagramsInDom) and the VISION clarity verdict
-// (reads-clearly). A device passes iff headlineScore >= 95 AND INV-18 is clean.
-// ----------------------------------------------------------------------------
-// INV-22 CAP AS ARITHMETIC (ADR-0012 D5, 2026-08-06). The rubric's raster cap is: if a raster fails
-// BOTH the takeaway test AND the swap test, B5 is capped at 55. Given the two verdicts that is pure
-// arithmetic — yet it was left to the same model that had already botched it once, in prose, as a
-// plea to please evaluate in the right order. On 2026-08-04 the grader capped B5 at 55 over an image
-// that plainly passed the takeaway test (labelled binders, a legible note reading "Signal Decay
-// Curve — worth keeping?", and the same note faded on the floor — the project's thesis in pixels)
-// and destroyed a $6.51 build. The verdicts stay stochastic; that part is irreducible. The CAP does
-// not. And because the grader still reports its own B5, a cap it applies while recording a PASS is
-// now a DETECTABLE, LOGGED disagreement instead of an invisible one.
-function applyRasterCap(deviceLabel, graded) {
+// INV-22 raster cap, as ARITHMETIC (ADR-0012 D5): B5 is capped at 55 only when a raster fails BOTH the
+// takeaway test and the swap test. The verdicts stay stochastic; the cap does not, and a cap/verdict
+// disagreement is logged instead of invisible (the 2026-08-04 misapplied-cap incident).
+export function applyRasterCap(deviceLabel, graded) {
   const rasters = Array.isArray(graded.rasters) ? graded.rasters : null;
   if (!rasters || !rasters.length) return { b5: graded.gateB.B5, capped: false, note: null };
   const isFail = (v) => String(v || '').trim().toUpperCase() === 'FAIL';
@@ -932,7 +867,55 @@ function applyRasterCap(deviceLabel, graded) {
   return { b5: reportedB5, capped: false, note: null };
 }
 
-function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths, flowExpected = true) {
+// ── Second opinion on borderline pages ────────────────────────────────────────────────────────────
+// One low-effort sample decides the 82 line, so a device whose mean lands within 82+-3 is graded a second
+// time; the cost doubles on those pages only. Pure helpers are exported so tests can stub the grader.
+export const BORDERLINE = { center: 82, band: 3 };
+const meanOf = (g) => {
+  const all = [...CRITERIA_A.map((k) => g.gateA[k]), ...CRITERIA_B.map((k) => g.gateB[k])];
+  return all.reduce((a, b) => a + b, 0) / all.length;
+};
+export function isBorderline(graded) {
+  const b5 = applyRasterCap('peek', graded).b5;   // judge the mean the scorecard will actually use
+  return Math.abs(meanOf({ gateA: graded.gateA, gateB: { ...graded.gateB, B5: b5 } }) - BORDERLINE.center) <= BORDERLINE.band;
+}
+const withCap = (deviceLabel, g) => {
+  const cap = applyRasterCap(deviceLabel, g);
+  if (cap.note) log(cap.note);
+  return { ...g, gateB: { ...g.gateB, B5: cap.b5 }, rasters: [] };
+};
+// Merge two raster-capped samples: scores are averaged (the per-axis median of two); a verdict that flips
+// between two looks at the same page is not a stable YES, so booleans must agree to stay true.
+export function mergeSamples(a, b) {
+  const avg = (x, y) => Object.fromEntries(Object.keys(x).map((k) => [k, Math.round((x[k] + y[k]) / 2)]));
+  const both = (x, y) => Object.fromEntries(Object.keys(x).map((k) => [k, x[k] === true && y[k] === true]));
+  const note = (key, ok) => (!ok.a ? a.clarity[key] : !ok.b ? b.clarity[key] : a.clarity[key]);
+  const arch = { a: a.clarity.architectureReadsClearly, b: b.clarity.architectureReadsClearly };
+  const flow = { a: a.clarity.flowReadsClearly, b: b.clarity.flowReadsClearly };
+  return {
+    gateA: avg(a.gateA, b.gateA), gateB: avg(a.gateB, b.gateB),
+    rationales: a.rationales,
+    clarity: {
+      architectureReadsClearly: arch.a && arch.b, architectureNote: note('architectureNote', arch),
+      flowReadsClearly: flow.a && flow.b, flowNote: note('flowNote', flow),
+    },
+    operatorQuestions: both(a.operatorQuestions, b.operatorQuestions),
+    rasters: [], samples: 2,
+  };
+}
+export async function gradeDevice(args, grade = gradeCrops) {
+  const first = await grade(args);
+  if (!isBorderline(first)) return first;
+  log(`${args.deviceLabel}: mean within ${BORDERLINE.center}+-${BORDERLINE.band} — taking a second grading sample`);
+  let second;
+  try { second = await grade(args); }
+  catch (e) { log(`${args.deviceLabel}: second sample failed (${e?.message || e}) — keeping the first`); return first; }
+  return mergeSamples(withCap(args.deviceLabel, first), withCap(args.deviceLabel, second));
+}
+
+// Per-device scorecard: headlineScore = MIN across the 11 criteria. INV-18 = DOM presence/visibility AND the
+// vision clarity verdict. `passed` = ship tier + INV-18; `exemplary` = world-class tier + INV-18.
+export function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths, flowExpected = true) {
   const rasterCap = applyRasterCap(deviceLabel, graded);
   if (rasterCap.note) log(rasterCap.note);
   graded.gateB.B5 = rasterCap.b5;
@@ -961,18 +944,16 @@ function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths
   const flowOk = !flowExpected || (inv18.flowPresent && inv18.flowVisible && inv18.flowReadsClearly);
   const inv18Ok = archOk && flowOk;
   inv18.passed = inv18Ok;
-  // Two tiers: `exemplary` = the world-class aspiration (drives the refine loop, reported as a gap);
-  // `passed` = the SHIP gate (genuinely-good + no-slop + INV-18). The tool ships on `passed`.
   const exemplary = evaluatePass({ mean: meanScore, min: headlineScore, operatorQuestions: opsArray }) && inv18Ok;
   const passed = evaluateShipworthy({ mean: meanScore, min: headlineScore, operatorQuestions }) && inv18Ok;
 
   const refineNotes = [];
-  // Per-axis: flag any axis below the 85 anti-slop floor (a hard fail — headline = the min).
+  // Per-axis: flag any axis below 85 (the exemplary floor; the ship bar is min >= 70, see evaluateShipworthy).
   for (const k of CRITERIA_A) if (graded.gateA[k] < 85) refineNotes.push({ device: deviceLabel, criterion: k, score: graded.gateA[k], saw: graded.rationales[k] });
   for (const k of CRITERIA_B) if (graded.gateB[k] < 85) refineNotes.push({ device: deviceLabel, criterion: k, score: graded.gateB[k], saw: graded.rationales[k] });
   // Overall: flag if the mean is below 90 (not yet as good as the example sites).
   if (meanScore < 90) refineNotes.push({ device: deviceLabel, criterion: 'MEAN', score: meanScore, saw: `overall mean ${meanScore} < 90 — not yet as good as the example sites; lift the weakest axes.` });
-  // Operator gate: any NO is a hard fail, named.
+  // Operator gate: every NO is named; the ship bar blocks on the SHIP_OPERATORS subset only.
   for (const k of OPERATOR_QUESTIONS) if (operatorQuestions[k] !== true) refineNotes.push({ device: deviceLabel, criterion: `operator:${k}`, score: 0, saw: `operator answered NO to "${k}" — the page does not yet satisfy this qualitative question.` });
   if (!inv18.architecturePresent) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `ARCHITECTURE diagram MISSING from the DOM (#how-it-works figure.diagram).` });
   else if (!inv18.architectureVisible) refineNotes.push({ device: deviceLabel, criterion: 'INV-18', score: 0, saw: `ARCHITECTURE diagram present in DOM but NOT visible (zero rendered box / hidden).` });
@@ -992,9 +973,9 @@ function buildScorecard(deviceLabel, graded, domInv18, screenshotPath, cropPaths
     inv18,
     meanScore,
     headlineScore,
-    normalizedHeadline: exemplary ? 95 : meanScore, // only a WORLD-CLASS build is normalized up; a shipped-good build reports its honest mean
     passed,        // SHIP gate (ship-worthy + INV-18)
-    exemplary,     // world-class aspiration (mean>=90, min>=85, all 5 operators) — the gap is reported even when shipped
+    samples: graded.samples || 1,
+    exemplary,     // world-class tier (mean>=90, min>=85, all 6 operators) — the gap is reported even when shipped
     screenshot: screenshotPath,
     gradedCrops: cropPaths,
   };
@@ -1033,79 +1014,62 @@ async function main() {
   // --- SECRET from env (never from build.json). No key → CANNOT evaluate → loud. ---
   const apiKey = loadOpenAiKey();
   if (!apiKey) return emit(false, {}, 'no OpenAI key found (set OPENAI_API_KEY / OPEN_AI_KEY in the environment or repo-root .env) — the page cannot be graded; refusing to emit a silent PASS');
-  const model = process.env.QUALITY_VISION_MODEL || 'gpt-5.6-sol'; // latest flagship vision model, VERIFIED live via GET /v1/models 2026-07-10 (gpt-5.5 superseded by the gpt-5.6 family — Sol/Terra/Luna — 2026-07-09; gpt-4o deprecated; never assume from training data)
+  const model = process.env.QUALITY_VISION_MODEL || 'gpt-5.6-sol';
   const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1';
 
-  // --- INV-20 UnexplainedAcronymZero (ADR-0006 D3) — deterministic, BEFORE the vision pass. ---
-  // A violation fails the gate for zero vision tokens; the note's criterion matches the refine
-  // loop's filter (^operator:) so a local refine pass re-authors the copy and tries again.
-  const inv20Violations = findUnexplainedAcronyms(extractRungText(fs.readFileSync(htmlPath, 'utf8')));
-  if (inv20Violations.length) {
-    log(`INV-20 FAIL: unexplained acronym(s) in ladder rungs 1-4: ${inv20Violations.join(', ')} — failing before the vision pass (zero tokens)`);
-    const refineNotes = [{
-      device: 'both', criterion: 'operator:zeroKnowledgeReader', score: 0,
-      note: `INV-20 UnexplainedAcronymZero: the first four sections (hero, problem, what-it-is, insight) use ${inv20Violations.join(', ')} with no plain-words gloss at first use. The reader is a smart developer from a DIFFERENT domain — define each term inline (e.g. "SSG (pre-building pages as plain files)") or replace it with plain language.`,
-    }];
-    // NO iteration charge and NO scorecard wipe (fixed 2026-07-15): the cap exists to bound the
-    // EXPENSIVE two-device vision round trip, but this path costs zero tokens — and on the
-    // autonomous-wealth-builder build it silently ate 2 of the 3 allowed grades, so the agent's
-    // real fixes were never vision-graded at all. A $0 refusal keeps the budget and the record.
+  // --- Deterministic pre-checks on ladder rungs 1-4 (INV-20 acronyms, INV-24 reading level), zero tokens. ---
+  // A refusal writes a FRESH slot (no scorecard: any older one graded a different copy) carrying
+  // `gateRefusal`, so deploy can disclose it and the cure can fix it. It charges NO iteration: the cap
+  // bounds the expensive vision round trip, and this path costs nothing.
+  const rungText = extractRungText(fs.readFileSync(htmlPath, 'utf8'));
+  const refuse = (extra, refineNotes) => {
+    const prev = ctx.quality || {};
     const quality = {
-      scorecard: ctx.quality?.scorecard || [], passed: false, exemplary: false,
-      iterations: Number.isInteger(ctx.quality?.iterations) ? ctx.quality.iterations : 0,
-      visionModel: model,
-      screenshots: ctx.quality?.screenshots || {}, pageHeights: ctx.quality?.pageHeights || {},
-      refineNotes,
-      inv20: { passed: false, violations: inv20Violations },
-      gradedAt: new Date().toISOString(),
+      scorecard: [], passed: false, exemplary: false,
+      iterations: Number.isInteger(prev.iterations) ? prev.iterations : 0,
+      visionModel: model, screenshots: {}, pageHeights: {}, refineNotes,
+      ...(prev.cost ? { cost: prev.cost } : {}),
+      ...extra, gradedAt: new Date().toISOString(),
     };
     ctx.quality = quality;
     try { fs.writeFileSync(buildJsonPath, JSON.stringify(ctx, null, 2) + '\n'); }
     catch (e) { return emit(false, {}, `could not write build.json: ${e?.message || e}`); }
     return emit(true, { quality, screenshots: {}, pageHeights: {}, passed: false, headline: {}, refineNoteCount: refineNotes.length }, null);
+  };
+
+  const inv20Violations = findUnexplainedAcronyms(rungText);
+  if (inv20Violations.length) {
+    log(`INV-20 FAIL: unexplained acronym(s) in ladder rungs 1-4: ${inv20Violations.join(', ')} — failing before the vision pass (zero tokens)`);
+    const note = `INV-20 UnexplainedAcronymZero: the first four sections (hero, problem, what-it-is, insight) use ${inv20Violations.join(', ')} with no plain-words gloss at first use. The reader is a curious fifteen-year-old (ADR-0006 D8) — define each term inline (e.g. "SSG (pre-building pages as plain files)") or replace it with plain language.`;
+    return refuse({
+      inv20: { passed: false, violations: inv20Violations },
+      gateRefusal: `INV-20 unexplained acronym(s): ${inv20Violations.join(', ')}`,
+    }, [{ device: 'both', criterion: 'operator:zeroKnowledgeReader', score: 0, note, saw: note }]);
   }
   log('INV-20 ok: no unexplained acronyms in ladder rungs 1-4');
 
-  // --- INV-24 ReadsAtFifteen (ADR-0006 v1.2.0) — deterministic, BEFORE the vision pass. ---
-  const rungText = extractRungText(fs.readFileSync(htmlPath, 'utf8'));
   const readViolations = findReadabilityViolations(rungText);
   if (readViolations.length) {
     const st = readingStats(rungText);
     log(`INV-24 FAIL: the first four sections read at grade ${st.grade} (avg ${st.avgWords} words/sentence) — failing before the vision pass (zero tokens)`);
-    const refineNotes = [{
-      device: 'both', criterion: 'operator:zeroKnowledgeReader', score: 0,
-      note: `INV-24 ReadsAtFifteen: the first four sections must be understandable by a curious 15-year-old. Measured: ${readViolations.join('; ')}. Fix the SHAPE, not just the words — one idea per sentence, most under 20 words, everyday comparisons instead of category vocabulary. Say plainly what it DOES FOR THE READER and why the trick is clever.`,
-    }];
-    const quality = {
-      scorecard: ctx.quality?.scorecard || [], passed: false, exemplary: false,
-      iterations: Number.isInteger(ctx.quality?.iterations) ? ctx.quality.iterations : 0,
-      visionModel: model,
-      screenshots: ctx.quality?.screenshots || {}, pageHeights: ctx.quality?.pageHeights || {},
-      refineNotes,
+    const note = `INV-24 ReadsAtFifteen: the first four sections must be understandable by a curious 15-year-old. Measured: ${readViolations.join('; ')}. Fix the SHAPE, not just the words — one idea per sentence, most under 20 words, everyday comparisons instead of category vocabulary. Say plainly what it DOES FOR THE READER and why the trick is clever.`;
+    return refuse({
       inv20: { passed: true, violations: [] },
       inv24: { passed: false, grade: st.grade, avgWords: st.avgWords, violations: readViolations },
-      gradedAt: new Date().toISOString(),
-    };
-    ctx.quality = quality;
-    try { fs.writeFileSync(buildJsonPath, JSON.stringify(ctx, null, 2) + '\n'); }
-    catch (e) { return emit(false, {}, `could not write build.json: ${e?.message || e}`); }
-    return emit(true, { quality, screenshots: {}, pageHeights: {}, passed: false, headline: {}, refineNoteCount: refineNotes.length }, null);
+      gateRefusal: `INV-24 reads above age 15: ${readViolations.join('; ')}`,
+    }, [{ device: 'both', criterion: 'operator:zeroKnowledgeReader', score: 0, note, saw: note }]);
   }
   log(`INV-24 ok: ladder rungs 1-4 read at grade ${readingStats(rungText).grade} (bar ${READS_AT_FIFTEEN.maxGrade})`);
 
-  // Hard cap on refine iterations (owner mandate 2026-07-10). SKILL.md has always said "do NOT run
-  // the refine loop more than twice" — but that was PROMPT-ONLY, nothing enforced it, and live
-  // production logs proved the agent ignores it under pressure: manjast/agentic-development-
-  // playbook ran 4 iterations, markt-heximal/oia-model ran 6. Each iteration pays a full two-device
-  // render + GPT vision-grade round trip — the actual dominant cost of a hosted build's wall-clock
-  // time, confirmed by profiling those exact runs (NOT model authoring speed, which is fast).
-  // Enforced here the same way INV-21 enforces source identity: a prompt instruction is advice; a
-  // tool that refuses to run again is a guarantee. This is also what makes the standard 40-minute
-  // budget sufficient without per-repo bumps — the loop can no longer run away with the clock.
-  const MAX_QUALITY_ITERATIONS = 3; // 1 initial grade + 2 refines, matching the SKILL.md guidance
+  // A prompt instruction is advice; a tool that refuses to run again is a guarantee (live runs ran 4-6 refines).
   const priorIterations = Number.isInteger(ctx.quality?.iterations) ? ctx.quality.iterations : 0;
   if (priorIterations >= MAX_QUALITY_ITERATIONS) {
     log(`REFINE CAP REACHED (${priorIterations}/${MAX_QUALITY_ITERATIONS}) — refusing to re-render/re-grade (zero additional cost/wall-clock). Returning the last scorecard as final.`);
+    // This copy cleared both pre-checks, so an earlier run's gateRefusal is no longer true.
+    if (ctx.quality && ctx.quality.gateRefusal) {
+      delete ctx.quality.gateRefusal;
+      try { fs.writeFileSync(buildJsonPath, JSON.stringify(ctx, null, 2) + '\n'); } catch { /* best-effort */ }
+    }
     const capped = { ...(ctx.quality || {}), capReached: true };
     return emit(true, {
       quality: capped,
@@ -1114,7 +1078,7 @@ async function main() {
       passed: !!capped.passed,
       headline: {},
       refineNoteCount: 0,
-      note: 'Refine iteration cap reached — this is the FINAL grade; do not call quality-grade again. Now RUN DEPLOY AND FINISH. Since ADR-0011 (2026-08-06) the score no longer gates delivery: deploy refuses only on integrity (unassembled page, identity violation, missing scorecard), never on a low grade, and a below-bar page ships with an honest note to the requester naming its weakest axis. There is no post-cap rescue protocol any more — do not write quality.postCapManualFix, do not end with ok:false hoping for a runner re-grade. This grade is DISCLOSURE, sent to the requester verbatim, so there is nothing to gain by flattering it.',
+      note: 'Refine iteration cap reached — this is the FINAL grade; do not call quality-grade again. Run deploy and finish: the score no longer gates delivery (ADR-0011), a below-bar page ships with an honest note, and this grade is disclosure sent to the requester verbatim.',
     }, null);
   }
 
@@ -1147,23 +1111,26 @@ async function main() {
   const screenshots = {};
   const pageHeights = {};
   try {
-    // Render both devices first (local Playwright work — kept sequential, simple & deterministic logs).
+    // Render both devices concurrently (they share only the static server). allSettled, not all: never close
+    // the server while the other browser is still open.
+    for (const d of DEVICES) log(`rendering ${d.label} → full-page artifact + section crops`);
+    const settled = await Promise.allSettled(DEVICES.map((d) => renderDevice(chromium, baseHref, d, assetsDir)));
+    const failedRender = settled.find((r) => r.status === 'rejected');
+    if (failedRender) throw failedRender.reason;
     const rendered = [];
-    for (const d of DEVICES) {
-      log(`rendering ${d.label} → full-page artifact + section crops`);
-      const { domInv18, fullPagePath, crops, pageHeight } = await renderDevice(chromium, baseHref, d, assetsDir);
+    for (let i = 0; i < DEVICES.length; i++) {
+      const d = DEVICES[i];
+      const { domInv18, fullPagePath, crops, pageHeight } = settled[i].value;
       screenshots[d.isMobile ? 'mobile' : 'desktop'] = fullPagePath;
       pageHeights[d.isMobile ? 'mobile' : 'desktop'] = pageHeight;
       log(`${d.label}: pageHeight=${pageHeight}px, crops=${crops.map((c) => c.key).join(',')}, DOM inv18 arch(present=${domInv18.architecturePresent},vis=${domInv18.architectureVisible}) flow(present=${domInv18.flowPresent},vis=${domInv18.flowVisible})`);
       rendered.push({ d, domInv18, fullPagePath, crops });
     }
 
-    // Grade both devices CONCURRENTLY — two independent vision-API round-trips with no data
-    // dependency between them; this was a serial for-loop, doubling every grade cycle's
-    // wall-clock for zero reason (pure concurrency win — same tokens, same $, same model).
+    // Grade both devices concurrently (independent vision round trips).
     log(`grading ${rendered.length} device(s) with ${model} concurrently …`);
     const gradedAll = await Promise.all(rendered.map((r) =>
-      gradeCrops({ apiKey, model, baseUrl, crops: r.crops, deviceLabel: r.d.label })
+      gradeDevice({ apiKey, model, baseUrl, crops: r.crops, deviceLabel: r.d.label })
     ));
     for (let i = 0; i < rendered.length; i++) {
       const r = rendered[i];
@@ -1174,15 +1141,21 @@ async function main() {
     }
   } catch (e) {
     started.server.close();
-    // ADR-0011 + 2026-08-06 review: a grader OUTAGE must not become a delivery outage. Removing the
-    // quality gate accidentally left the stochastic judge holding a veto via its own availability —
-    // the ADR's thesis inverted. Record the failure in build.json so tools/deploy.mjs can deliver the
-    // page honestly ("we could not grade this one") instead of the build dying with a finished page
-    // on disk. This tool still exits NON-ZERO: the grade genuinely did not happen and no caller
-    // should read this as success. It simply leaves an honest, machine-readable reason behind.
+    // ADR-0011: a grader OUTAGE must not become a delivery outage. Record why in build.json so deploy can
+    // deliver the page honestly as ungraded. Still exits NON-ZERO: the grade genuinely did not happen.
     try {
       const cur = JSON.parse(fs.readFileSync(buildJsonPath, 'utf8'));
-      cur.quality = { ...(cur.quality || {}), graderUnavailable: true, graderError: String(e?.message || e).slice(0, 300) };
+      // A FRESH slot: an older scorecard or gateRefusal belongs to an earlier copy. Budget and spend carry over.
+      const prev = cur.quality || {};
+      cur.quality = {
+        scorecard: [], passed: false, exemplary: false,
+        iterations: Number.isInteger(prev.iterations) ? prev.iterations : 0,
+        visionModel: model, screenshots, pageHeights, refineNotes: [],
+        inv20: { passed: true, violations: [] }, inv24: { passed: true, violations: [] },
+        ...(prev.cost ? { cost: prev.cost } : {}),
+        graderUnavailable: true, graderError: String(e?.message || e).slice(0, 300),
+        gradedAt: new Date().toISOString(),
+      };
       fs.writeFileSync(buildJsonPath, JSON.stringify(cur, null, 2) + '\n');
       log('recorded quality.graderUnavailable — the page may still be DELIVERED ungraded, with that stated plainly to the requester (ADR-0011)');
     } catch { /* build.json unwritable: nothing more we can do here, the non-zero exit still stands */ }
@@ -1198,23 +1171,14 @@ async function main() {
   const quality = {
     scorecard,
     passed,        // SHIP gate — ship-worthy + no-slop + INV-18, on both devices
-    exemplary,     // world-class aspiration cleared on both devices (mean>=90/min>=85/all-ops); gap reported otherwise
+    exemplary,     // world-class tier cleared on both devices; the gap is reported otherwise
     iterations: prevIterations + 1,
     visionModel: model,
     screenshots,
     pageHeights,
     refineNotes,
     gradedAt: new Date().toISOString(),
-    // Cost is CUMULATIVE across refine passes: this slot is rewritten each grade, so carry the prior
-    // total forward or a 3-pass build would report only its last pass and understate itself by ~3x.
-    cost: {
-      usd: Math.round(((ctx.quality?.cost?.usd || 0) + _visionSpend.usd) * 1e6) / 1e6,
-      calls: (ctx.quality?.cost?.calls || 0) + _visionSpend.calls,
-      inTokens: (ctx.quality?.cost?.inTokens || 0) + _visionSpend.inTokens,
-      outTokens: (ctx.quality?.cost?.outTokens || 0) + _visionSpend.outTokens,
-      model,
-      basis: 'derived from published rates (OpenAI returns no per-call charge)',
-    },
+    cost: visionCost(ctx.quality?.cost, _visionSpend, model),
   };
 
   // --- Merge ONLY the `quality` slot; every other slot is left intact. ---
@@ -1232,11 +1196,12 @@ async function main() {
   }, null);
 }
 
-// Auto-run ONLY when invoked directly (node tools/quality-grade.mjs <build-dir>). When this
-// module is IMPORTED (e.g. a calibration harness that reuses the verbatim rubric + grader to
-// validate the bands against a known-good page — CONTRACT (c), individually testable), the
-// exports below are available without firing main(). The brain's direct invocation is unchanged.
-const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+// Auto-run ONLY when invoked directly; importing this module (tests, calibration harness) fires nothing.
+// realpath on both sides: argv[1] is not symlink-resolved but import.meta.url is.
+const isDirectRun = (() => {
+  try { return !!process.argv[1] && fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url)); }
+  catch { return false; }
+})();
 if (isDirectRun) {
   main().catch((e) => emit(false, {}, `unexpected error: ${e?.stack || e?.message || e}`));
 }

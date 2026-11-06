@@ -1,13 +1,9 @@
-// src/readme-pr.mjs — the pull request the readme-enhance station sends (ADR-0015).
+// src/readme-pr.mjs — the issue/PR text the readme-enhance station sends (ADR-0015).
 //
 // PURE: builds the title/body and decides whether to send at all. No I/O. The station owns git and gh.
 //
-// THE TONE (owner-specified, 2026-10-10, after reviewing PR #447 on realiti4/claude-swap):
-//   a friendly person who thinks what the maintainer built is great and wants more people to see it —
-//   NOT a bot reporting a diff. Lead with thanks. Put the one-click link to the rendered README and a
-//   picture of it FIRST (the owner's note: "you're burying the lead"). Then the explainer page, with an
-//   image. Say plainly what changes and that nothing of theirs is removed. Ask them to check the
-//   diagrams. No pressure, and mean it: a closed PR is never re-sent (see decideSend).
+// Tone: thanks first, rendered-README link first, no pressure (a closed item is never re-sent; see
+// decideSend and ADR-0015 §5-6).
 //
 // Voice: the default opening is honest for ANY runner — it makes no claim about the runner's personal
 // experience. A runner who wants their own first-person voice sets README_PR_INTRO (markdown; {repo}
@@ -83,7 +79,7 @@ export function buildPrBody(o) {
   for (const f of o.files || []) out.push(`- \`${f}\``);
   out.push('');
   if (isIssue) {
-    out.push(`I haven't touched your repo. If you'd like this, say the word and I'll open a pull request with exactly that, or you're welcome to take whatever is useful. The diagrams were generated from your repo, and every claim on them was checked against your source, but please give them a quick accuracy check. If you'd rather not, closing this is completely fine, and I won't send another.`);
+    out.push(`I haven't touched your repo. If you'd like this, say the word and I'll open a pull request with exactly that, or you're welcome to take whatever is useful. The diagrams were generated from your repo, and every claim on them was checked against your source, but please give them a quick accuracy check. If you'd rather not, closing this is completely fine and I won't contact you again. Otherwise I'll check in once, about a week from now, and no more than that.`);
   } else {
     out.push(`The diagrams were generated from your repo, and every claim on them was checked against your source, but please give them a quick accuracy check before merging. Take it as is, tweak it, or ignore it. It's yours either way. If you'd rather not have it, closing this is completely fine, and I won't send another.`);
   }

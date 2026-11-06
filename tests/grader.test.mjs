@@ -1,50 +1,43 @@
-// Conformance test — INV-05 (the exemplar-anchored gate rule, ADR-0005 v1.7.0).
-//
-// The grader must expose a PURE, unit-testable pass-rule so the gate logic can be verified without
-// a network call or a browser. PASS iff: meanScore >= 90 AND headlineScore (min axis) >= 85 AND all
-// five operator yes/no questions are true. The OLD rule was headlineScore >= 95 (unreachable) with
-// no operator questions. This test FAILS RED until quality-grade.mjs exports evaluatePass().
-
+// The two pure tier rules. evaluateShipworthy is the SHIP gate (mean>=82, min>=70, five ship operators);
+// evaluatePass is the EXEMPLARY tier (mean>=90, min>=85, all six operators). Boundaries are pinned on both
+// sides, so a loosened threshold (or a 0/0 mutation) fails here.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { evaluatePass, evaluateShipworthy, SHIP_OPERATORS } from '../tools/quality-grade.mjs';
 
-// Six operators since ADR-0006 D4 added zeroKnowledgeReader to the owner gate.
-const ALL_YES = [true, true, true, true, true, true];
+const ALL_YES = [true, true, true, true, true, true];   // order: believeIUnderstand, approachable, explainsToNovice, architectureConfidence, makesMeSmile, zeroKnowledgeReader
 
-test('INV-05 — quality-grade exports a pure evaluatePass() implementing the v1.7 exemplar-anchored bar', async () => {
-  const mod = await import('../tools/quality-grade.mjs');
-  assert.equal(
-    typeof mod.evaluatePass, 'function',
-    'quality-grade.mjs must export evaluatePass({ mean, min, operatorQuestions }) — the v1.7 pass-rule is not yet implemented',
-  );
-
-  // A genuinely-good page (as good as the owner's photonlayer example: ~88 headline / ~92 mean).
-  assert.equal(mod.evaluatePass({ mean: 91, min: 86, operatorQuestions: ALL_YES }), true, 'a good page should PASS');
-
-  // The anti-slop floor: a single slop axis (a raw-ASCII diagram ~= 50) must fail even with a high mean.
-  assert.equal(mod.evaluatePass({ mean: 95, min: 50, operatorQuestions: ALL_YES }), false, 'a single slop axis (min 50) must FAIL');
-
-  // Overall not good enough (mean below 90) must fail.
-  assert.equal(mod.evaluatePass({ mean: 89, min: 86, operatorQuestions: ALL_YES }), false, 'mean < 90 must FAIL');
-
-  // A single operator NO (e.g. "no confidence I understand the architecture") must fail, regardless of scores.
-  assert.equal(mod.evaluatePass({ mean: 93, min: 88, operatorQuestions: [true, true, false, true, true, true] }), false, 'an operator NO must FAIL');
-
-  // The old >=95 floor is gone: a page that would have FAILED the old rule but clears the new bar passes.
-  assert.equal(mod.evaluatePass({ mean: 92, min: 88, operatorQuestions: ALL_YES }), true, 'min 88 (below old 95) now passes under the exemplar bar');
+test('EXEMPLARY tier: 90/85 is the boundary on both axes, and every one of six operators must be YES', () => {
+  assert.equal(evaluatePass({ mean: 90, min: 85, operatorQuestions: ALL_YES }), true);
+  assert.equal(evaluatePass({ mean: 89, min: 85, operatorQuestions: ALL_YES }), false, 'mean 89');
+  assert.equal(evaluatePass({ mean: 90, min: 84, operatorQuestions: ALL_YES }), false, 'min 84');
+  assert.equal(evaluatePass({ mean: 95, min: 50, operatorQuestions: ALL_YES }), false, 'a single slop axis fails despite a high mean');
+  for (let i = 0; i < 6; i++) {
+    const ops = ALL_YES.map((v, j) => (j === i ? false : v));
+    assert.equal(evaluatePass({ mean: 95, min: 90, operatorQuestions: ops }), false, `operator #${i + 1} NO must fail`);
+  }
+  assert.equal(evaluatePass({ mean: 95, min: 90, operatorQuestions: ALL_YES.slice(0, 5) }), false, 'a missing operator is not a YES');
+  assert.equal(evaluatePass({}), false);
 });
 
-// INV-20 compound-token gloss (2026-07-30, stuinfla-helix hold): "ADR-001 (short for
-// 'architecture decision record')" glosses the reader perfectly, but every matcher form
-// required the gloss adjacent to the BARE token — the build failed with mean 0 before the
-// vision pass. The fix recognizes a parenthetical gloss attached to a hyphenated compound
-// of the token. Both directions pinned: glossed compound clears, bare compound still fails.
-test('INV-20: a gloss attached to a compound token (ADR-001 (…)) clears the bare acronym', async () => {
-  const mod = await import('../tools/quality-grade.mjs');
-  assert.deepEqual(
-    mod.findUnexplainedAcronyms("a design record labeled ADR-001 (short for 'architecture decision record')"),
-    [], 'compound-attached gloss must satisfy INV-20');
-  assert.deepEqual(
-    mod.findUnexplainedAcronyms('The ADR-001 file governs this build.'),
-    ['ADR'], 'a bare compound with NO gloss must still be caught');
+test('SHIP tier: 82/70 is the boundary on both axes', () => {
+  const ops = Object.fromEntries(SHIP_OPERATORS.map((k) => [k, true]));
+  assert.equal(evaluateShipworthy({ mean: 82, min: 70, operatorQuestions: ops }), true);
+  assert.equal(evaluateShipworthy({ mean: 81, min: 70, operatorQuestions: ops }), false, 'mean 81');
+  assert.equal(evaluateShipworthy({ mean: 82, min: 69, operatorQuestions: ops }), false, 'min 69');
+  assert.equal(evaluateShipworthy({ mean: 0, min: 0, operatorQuestions: ops }), false, 'a 0/0 page must never ship');
+});
+
+test('SHIP tier: each of the five ship operators blocks; architectureConfidence does not', () => {
+  const ops = Object.fromEntries(SHIP_OPERATORS.map((k) => [k, true]));
+  for (const k of SHIP_OPERATORS) {
+    assert.equal(evaluateShipworthy({ mean: 90, min: 90, operatorQuestions: { ...ops, [k]: false } }), false, `${k}=false`);
+  }
+  assert.equal(evaluateShipworthy({ mean: 90, min: 90, operatorQuestions: { ...ops, architectureConfidence: false } }), true);
+});
+
+test('SHIP tier accepts the array form (order of the six operator questions) as well as the object form', () => {
+  assert.equal(evaluateShipworthy({ mean: 90, min: 90, operatorQuestions: ALL_YES }), true);
+  assert.equal(evaluateShipworthy({ mean: 90, min: 90, operatorQuestions: [true, true, true, true, true, false] }), false, 'zeroKnowledgeReader is the sixth');
+  assert.equal(evaluateShipworthy({ mean: 90, min: 90, operatorQuestions: [true, true, true, false, true, true] }), true, 'architectureConfidence is the fourth and informational');
 });
