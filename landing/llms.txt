@@ -1,0 +1,37 @@
+# explainmyrepo
+
+> explainmyrepo turns any public GitHub repository into three things: a designed, standalone explainer page a newcomer can understand, a GitHub repository you own for that page, and a downloadable AI knowledge pack (a real RVF vector knowledge base, a search CLI and an MCP server) so AI coding assistants answer about the project from its real source. It is open source (MIT), free to use, and needs no login. Built by Stuart Kerr at ISOvision.
+
+Key facts:
+- Public repos: paste `owner/name` and an email on the website; the build runs on the site's own keys and the link is emailed. Each email can request 5 free builds, and hosted capacity is limited each month.
+- Private repos: run `npx explainmyrepo <github-url>` inside VS Code / Claude Code with your own keys; the website only builds public repos.
+- Every claim on a generated page is traced to a passage in a knowledge base built from the repo's actual source. Each page must pass an independent vision critic plus six operator questions on mobile and desktop before it ships.
+- Most builds take 10 to 25 minutes; the largest repos can take longer than half an hour.
+
+## Use it
+
+- [Build an explainer for a public repo](https://explainmyrepo.isovision.ai/#get-started): paste a GitHub URL and an email, get the live link.
+- [Run it yourself with npx](https://explainmyrepo.isovision.ai/#get-started): `npx explainmyrepo <github-url>` for private repos or your own keys.
+- [Source code, issues and install docs](https://github.com/stuinfla/Repo-Explainer): MIT licensed; the npm package is `explainmyrepo`.
+
+## How it works
+
+- [Why READMEs lose readers](https://explainmyrepo.isovision.ai/#problem): the problem it solves for humans and for AI assistants.
+- [What you get](https://explainmyrepo.isovision.ai/#what-you-get): the live page, the repo you own, the AI knowledge pack.
+- [The build process](https://explainmyrepo.isovision.ai/#process): read, understand, conceive, author, visualize, grade, ship.
+- [The quality gate](https://explainmyrepo.isovision.ai/#gate): why it refuses to ship an ugly or unclear page.
+- [Frequently asked questions](https://explainmyrepo.isovision.ai/#faq): cost, limits, public versus private repos, build time.
+
+## Real examples
+
+- [agenticow](https://agenticow-explainer.netlify.app/): git for agent memory, copy-on-write vector branching.
+- [PhotonLayer](https://photonlayer-explainer.vercel.app/): optical AI, light computes the answer before any chip wakes up.
+- [ruqu](https://ruqu-explainer.vercel.app/): a quantum-computing simulator that runs in the browser.
+- [ruvn](https://ruvn-explainer.vercel.app/): turns a question into a graded, cited evidence dossier.
+- [MetaHarness](https://metaharness-explainer.vercel.app/): a factory for project-specific AI assistant harnesses.
+- [Agentic QE](https://agentic-qe-explainer.vercel.app/): a fleet of specialist AI agents for automated quality engineering.
+
+## Optional
+
+- [ISOvision](https://isovision.ai): the studio behind explainmyrepo.
+- [Stuart Kerr](https://stuart-kerr-card.netlify.app): author.

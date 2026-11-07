@@ -1,0 +1,8 @@
+# explainmyrepo.isovision.ai
+# Everything public is open to search engines and AI assistants on purpose:
+# the goal of this site is to be found, quoted and recommended accurately.
+User-agent: *
+Allow: /
+Disallow: /.netlify/functions/
+
+Sitemap: https://explainmyrepo.isovision.ai/sitemap.xml

@@ -24,3 +24,48 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+
+# ---- Headers --------------------------------------------------------------
+# Asset filenames are not fingerprinted, so no `immutable`: cache for a day and revalidate in the background.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Private working pages must never be indexed (they also carry a noindex meta).
+[[headers]]
+  for = "/admin.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+[[headers]]
+  for = "/rate.html"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+# ---- Source / config files must not be public -------------------------------
+# These sit inside the publish dir (landing/) and were being served as 200. Forced 404s;
+# deliberately NOT /.netlify/* (functions) and no catch-all (it would break form POSTs to /).
+[[redirects]]
+  from = "/package.json"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package-lock.json"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/netlify/*"
+  to = "/404.html"
+  status = 404
+  force = true
