@@ -206,3 +206,59 @@
   var el = document.querySelector('[data-wall-count]');
   if (el && n > 0) el.textContent = n;
 })();
+
+// Before/after compare slider + mobile sticky call-to-action.
+(function () {
+  'use strict';
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- compare slider: the range input drives --pos on the stage ------------
+  var cmp = document.querySelector('[data-cmp]');
+  var range = cmp && cmp.querySelector('[data-cmp-range]');
+  var stage = cmp && cmp.querySelector('.cmp-stage');
+  if (range && stage) {
+    var set = function (v) {
+      stage.style.setProperty('--pos', v + '%');
+      range.setAttribute('aria-valuetext', Math.round(v) + '% original README, ' + Math.round(100 - v) + '% explainer');
+    };
+    set(parseFloat(range.value) || 50);
+    var touched = false;
+    var stop = function () { touched = true; };
+    ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) { range.addEventListener(ev, stop, { passive: true }); });
+    range.addEventListener('input', function () { set(parseFloat(range.value)); });
+
+    // one gentle sweep the first time it scrolls into view, so people see it is interactive
+    if (!reduce && 'IntersectionObserver' in window) {
+      var sweepIo = new IntersectionObserver(function (entries) {
+        if (!entries[0].isIntersecting) return;
+        sweepIo.disconnect();
+        var start = null, dur = 1800;
+        (function frame(t) {
+          if (touched) return;
+          if (start === null) start = t;
+          var p = Math.min((t - start) / dur, 1);
+          var v = 50 + Math.sin(p * Math.PI * 2) * 22 * (1 - p * 0.3);
+          range.value = v; set(v);
+          if (p < 1) requestAnimationFrame(frame); else { range.value = 50; set(50); }
+        })(performance.now());
+      }, { threshold: 0.6 });
+      sweepIo.observe(stage);
+    }
+  }
+
+  // ---- sticky CTA: only after the hero form has scrolled away, hidden at the real form ----
+  var cta = document.querySelector('[data-sticky-cta]');
+  var heroForm = document.getElementById('hero-request');
+  var finalForm = document.getElementById('get-started');
+  if (cta && heroForm && finalForm && 'IntersectionObserver' in window) {
+    var heroSeen = true, finalSeen = false;
+    var render = function () {
+      var on = !heroSeen && !finalSeen;
+      cta.classList.toggle('show', on);
+      cta.setAttribute('aria-hidden', on ? 'false' : 'true');
+      cta.tabIndex = on ? 0 : -1;
+    };
+    new IntersectionObserver(function (e) { heroSeen = e[0].isIntersecting; render(); }).observe(heroForm);
+    new IntersectionObserver(function (e) { finalSeen = e[0].isIntersecting; render(); }).observe(finalForm);
+  }
+})();

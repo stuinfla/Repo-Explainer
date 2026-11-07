@@ -8,21 +8,37 @@
        Same measurement ID as isovision.ai: GA4 treats subdomains of one registrable
        domain as a single property, so this rolls up with the main site. Split them in
        reports with the built-in `hostname` dimension. -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VVRJM61MX7"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-VVRJM61MX7');
+    // Measured 2026-11-07 (Lighthouse, mobile): the 177 KB GA4 library was the heaviest script on the
+    // page and delayed LCP/TBT. The calls above are queued in dataLayer and replayed when the library
+    // arrives, so loading it once the page has painted and gone idle loses no page views.
+    window.addEventListener('load', function () {
+      var go = function () {
+        var s = document.createElement('script');
+        s.async = true; s.src = 'https://www.googletagmanager.com/gtag/js?id=G-VVRJM61MX7';
+        document.head.appendChild(s);
+      };
+      if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 3000 }); else setTimeout(go, 1500);
+    });
   </script>
 
-  <title>explainmyrepo — give any GitHub repo a front door this good</title>
-  <meta name="description" content="explainmyrepo points at any GitHub repo and builds a cinematic, art-directed explainer — the page you proudly forward, a repo you own, and a downloadable AI knowledge pack — that carries a stranger from 'never seen this' to 'I get it, and I want it.' One command: npx explainmyrepo <github-url>." />
+  <title>Turn a GitHub repo into an explainer page | explainmyrepo</title>
+  <meta name="description" content="Paste a public GitHub repo and get a designed explainer page, a repo you own and a downloadable AI knowledge pack. Open source, free, no login." />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
   <meta name="author" content="Stuart Kerr — ISOvision" />
   <meta name="theme-color" content="#07080c" />
   <link rel="canonical" href="https://explainmyrepo.isovision.ai/" />
+  <link rel="icon" href="/favicon.ico" sizes="48x48" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="assets/favicon.svg" />
+  <link rel="icon" href="assets/icon-32.png" sizes="32x32" type="image/png" />
+  <link rel="icon" href="assets/icon-192.png" sizes="192x192" type="image/png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <link rel="manifest" href="site.webmanifest" />
+  <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt — a plain-text summary for AI assistants" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
@@ -30,7 +46,9 @@
   <meta property="og:title" content="explainmyrepo — give any GitHub repo a front door this good" />
   <meta property="og:description" content="One command turns a repo into a cinematic, art-directed explainer page + a repo you own + a downloadable AI knowledge pack. From 'never seen this' to 'I want it.'" />
   <meta property="og:url" content="https://explainmyrepo.isovision.ai/" />
-  <meta property="og:image" content="https://explainmyrepo.isovision.ai/assets/og-card.png" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:image" content="https://explainmyrepo.isovision.ai/assets/og-card-1200.png" />
+  <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="explainmyrepo — a dense README refracting through a prism into a polished, art-directed explainer page and an AI knowledge pack." />
@@ -39,36 +57,155 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="explainmyrepo — give any GitHub repo a front door this good" />
   <meta name="twitter:description" content="Point it at any GitHub repo. Get back an explainer a stranger — and their AI — actually understands. Open source, free, no login." />
-  <meta name="twitter:image" content="https://explainmyrepo.isovision.ai/assets/og-card.png" />
+  <meta name="twitter:image" content="https://explainmyrepo.isovision.ai/assets/og-card-1200.png" />
   <meta name="twitter:image:alt" content="explainmyrepo — a dense README refracting through a prism into a polished explainer page." />
 
   <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&f[]=general-sans@400,500,600&display=swap" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" />
+  <!-- Fonts load without blocking first paint (measured: both stylesheets were render-blocking and the
+       hero image sat ~2.6 s unpainted on mobile). display=swap keeps text visible meanwhile. -->
+  <!-- Verified 2026-11-07: Fontshare's combined `f[]=clash-display&f[]=general-sans` URL returns ONLY Clash
+       Display, so General Sans (the body font) never loaded. Each family now has its own request. -->
+  <link rel="preload" as="style" href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <link rel="preload" as="style" href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript>
+    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap" />
+    <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" />
+  </noscript>
+  <link rel="preload" as="image" href="assets/ex-photonlayer.webp" type="image/webp" fetchpriority="high" />
   <link rel="stylesheet" href="styles.css" />
 
   <!-- Structured data -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "explainmyrepo",
-    "applicationCategory": "DeveloperApplication",
-    "applicationSubCategory": "Documentation generator",
-    "operatingSystem": "macOS, Linux, Windows (Node.js)",
-    "description": "explainmyrepo reads a GitHub repository and produces a standalone, art-directed explainer page, a GitHub repo you own, and a downloadable AI knowledge pack (an RVF vector knowledge base, search CLI and MCP server) — so a newcomer goes from 'never seen this' to 'I get it, and I want to use it.'",
-    "url": "https://explainmyrepo.isovision.ai/",
-    "softwareHelp": "https://explainmyrepo.isovision.ai/#get-started",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-    "author": {
-      "@type": "Organization",
-      "name": "ISOvision",
-      "url": "https://isovision.ai",
-      "founder": { "@type": "Person", "name": "Stuart Kerr" }
-    },
-    "creator": { "@type": "Person", "name": "Stuart Kerr" }
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://isovision.ai/#organization",
+        "name": "ISOvision",
+        "url": "https://isovision.ai",
+        "logo": "https://explainmyrepo.isovision.ai/assets/icon-512.png",
+        "founder": { "@id": "https://explainmyrepo.isovision.ai/#stuart-kerr" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://explainmyrepo.isovision.ai/#stuart-kerr",
+        "name": "Stuart Kerr",
+        "url": "https://stuart-kerr-card.netlify.app",
+        "sameAs": ["https://github.com/stuinfla"],
+        "worksFor": { "@id": "https://isovision.ai/#organization" }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://explainmyrepo.isovision.ai/#website",
+        "url": "https://explainmyrepo.isovision.ai/",
+        "name": "explainmyrepo",
+        "description": "Turn any public GitHub repo into a designed explainer page, a repo you own and a downloadable AI knowledge pack.",
+        "inLanguage": "en",
+        "publisher": { "@id": "https://isovision.ai/#organization" }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://explainmyrepo.isovision.ai/#webpage",
+        "url": "https://explainmyrepo.isovision.ai/",
+        "name": "Turn a GitHub repo into an explainer page | explainmyrepo",
+        "isPartOf": { "@id": "https://explainmyrepo.isovision.ai/#website" },
+        "about": { "@id": "https://explainmyrepo.isovision.ai/#software" },
+        "primaryImageOfPage": {
+          "@type": "ImageObject",
+          "url": "https://explainmyrepo.isovision.ai/assets/og-card-1200.png",
+          "width": 1200,
+          "height": 630
+        },
+        "inLanguage": "en"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://explainmyrepo.isovision.ai/#software",
+        "name": "explainmyrepo",
+        "url": "https://explainmyrepo.isovision.ai/",
+        "applicationCategory": "DeveloperApplication",
+        "applicationSubCategory": "Documentation generator",
+        "operatingSystem": "macOS, Linux, Windows (Node.js)",
+        "softwareVersion": "3.0.0",
+        "license": "https://opensource.org/licenses/MIT",
+        "isAccessibleForFree": true,
+        "description": "explainmyrepo reads a GitHub repository and produces a standalone, designed explainer page, a GitHub repo you own, and a downloadable AI knowledge pack (an RVF vector knowledge base, a search CLI and an MCP server), so a newcomer goes from 'never seen this' to 'I get it, and I want to use it.'",
+        "featureList": [
+          "Designed, standalone explainer page for any public GitHub repo",
+          "A GitHub repository you own for the generated page",
+          "Downloadable AI knowledge pack: RVF vector knowledge base, search CLI and MCP server",
+          "Independent quality gate: vision critic plus six operator questions on mobile and desktop",
+          "Runs from the website for public repos or via npx for private repos"
+        ],
+        "image": "https://explainmyrepo.isovision.ai/assets/og-card-1200.png",
+        "screenshot": "https://explainmyrepo.isovision.ai/assets/ex-agenticow.webp",
+        "codeRepository": "https://github.com/stuinfla/Repo-Explainer",
+        "downloadUrl": "https://www.npmjs.com/package/explainmyrepo",
+        "sameAs": ["https://github.com/stuinfla/Repo-Explainer", "https://www.npmjs.com/package/explainmyrepo"],
+        "softwareHelp": "https://explainmyrepo.isovision.ai/#faq",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" },
+        "author": { "@id": "https://isovision.ai/#organization" },
+        "creator": { "@id": "https://explainmyrepo.isovision.ai/#stuart-kerr" }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://explainmyrepo.isovision.ai/#faq-page",
+        "isPartOf": { "@id": "https://explainmyrepo.isovision.ai/#webpage" },
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is explainmyrepo?",
+            "acceptedAnswer": { "@type": "Answer", "text": "explainmyrepo reads a GitHub repository and builds three things: a designed, standalone explainer page, a GitHub repo you own for that page, and a downloadable AI knowledge pack. The page is written for someone who has never seen your project, and every claim traces back to the repo's real source." }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I turn a GitHub repo into an explainer page?",
+            "acceptedAnswer": { "@type": "Answer", "text": "If the repo is public, paste owner/name or the GitHub URL and your email into the form at the top of this page, and we build it and email you the live link. If it is private, run npx explainmyrepo <github-url> inside VS Code or Claude Code with your own keys." }
+          },
+          {
+            "@type": "Question",
+            "name": "Is explainmyrepo free?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. It is open source (MIT) and needs no login. Hosted builds for public repos run on our own keys, so each email can request 5 free builds and capacity is limited each month. After that, run it yourself with your own API keys." }
+          },
+          {
+            "@type": "Question",
+            "name": "How long does a build take?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Most builds finish in 10 to 25 minutes, and the largest repos can run past half an hour. You can close the tab: if you leave your email, we send the link when it is ready." }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it work on private repos?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Not through the website, which only builds public repos because it publishes a public page. For a private repo you own, run npx explainmyrepo <github-url> inside VS Code or Claude Code with your own keys and GitHub login." }
+          },
+          {
+            "@type": "Question",
+            "name": "What is in the AI knowledge pack?",
+            "acceptedAnswer": { "@type": "Answer", "text": "A drop-in .zip containing a real RVF vector knowledge base built from your repo, a search CLI and an MCP server, so tools like Claude Code or Cursor answer questions about your project from its real source instead of guessing." }
+          },
+          {
+            "@type": "Question",
+            "name": "Will it make things up about my project?",
+            "acceptedAnswer": { "@type": "Answer", "text": "It is built to avoid that. The page is written from a knowledge base of your actual source, and before anything ships an independent vision critic and six operator questions must pass on both mobile and desktop. If a repo cannot clear that bar, it says so instead of shipping a weak page." }
+          },
+          {
+            "@type": "Question",
+            "name": "Who owns the result?",
+            "acceptedAnswer": { "@type": "Answer", "text": "You do. You are invited as a collaborator on the explainer's own GitHub repository, so you can edit it any time. It is separate from your app's repo." }
+          },
+          {
+            "@type": "Question",
+            "name": "What do I need to run it myself?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Node.js and an OpenAI key (imagery and the quality gate). Inside Claude Code the writing runs on your Claude login, so no Anthropic key is needed. A Netlify token is optional: without it you still get the complete page locally." }
+          }
+        ]
+      }
+    ]
   }
   </script>
 </head>
@@ -109,6 +246,7 @@
         <a href="#process">The process</a>
         <a href="#gate">The gate</a>
         <a href="#examples">Examples</a>
+        <a href="#faq">FAQ</a>
         <a href="https://github.com/stuinfla/Repo-Explainer" target="_blank" rel="noopener" aria-label="explainmyrepo source code on GitHub">GitHub <span aria-hidden="true">&#8599;</span></a>
         <a class="nav-cta" href="#get-started">Get started <span aria-hidden="true">&rarr;</span></a>
       </nav>
@@ -135,10 +273,9 @@
 
           <p class="lede reveal-up" data-d="5">
             Point <strong>explainmyrepo</strong> at any GitHub repo. It reads the
-            <em>real source</em> and builds a cinematic, art-directed explainer —
-            the page you proudly forward, a repo you own, and a downloadable AI
-            knowledge pack — carrying a stranger from <em>&ldquo;never seen this&rdquo;</em>
-            all the way to <em>&ldquo;oh, I get it. I want this.&rdquo;</em>
+            <em>real source</em> and builds a designed explainer page, a repo you own
+            and a downloadable AI knowledge pack &mdash; so a stranger goes from
+            <em>&ldquo;never seen this&rdquo;</em> to <em>&ldquo;oh, I get it. I want this.&rdquo;</em>
           </p>
         </div>
 
@@ -154,7 +291,7 @@
             </div>
             <figure class="deck-card deck-front">
               <span class="frame-bar" aria-hidden="true"><i class="d r"></i><i class="d y"></i><i class="d g"></i><span class="frame-url">photonlayer-explainer&nbsp;·&nbsp;live</span></span>
-              <img class="show-img" src="assets/ex-photonlayer.webp" width="1120" height="700" decoding="async"
+              <img class="show-img" src="assets/ex-photonlayer.webp" width="1120" height="700" decoding="async" fetchpriority="high"
                    alt="A real explainer page that explainmyrepo generated for the PhotonLayer repo: a bold headline 'The lens already did the thinking', a prism splitting white light into a rainbow, and an independent-explainer provenance line." />
             </figure>
           </div>
@@ -232,14 +369,45 @@
       </div>
     </section>
 
+    <!-- ===================== BEFORE / AFTER ===================== -->
+    <!-- The product's whole argument in one interaction, built from two REAL artifacts of the same repo:
+         a screenshot of ruvnet/agenticow's GitHub README (assets/readme-before.webp, a plain crop) and the
+         explainer explainmyrepo generated from it (assets/ex-agenticow.webp). Nothing here is mocked. -->
+    <section class="band compare" id="before-after" aria-labelledby="cmp-h">
+      <div class="wrap">
+        <div class="section-head reveal-up">
+          <p class="kicker"><span class="kicker-dot" aria-hidden="true"></span> Before &rarr; after</p>
+          <h2 id="cmp-h">The same repo. <span class="prism-text">Two very different first impressions.</span></h2>
+          <p class="sub">Left: the GitHub README of <code>ruvnet/agenticow</code>, as a stranger first meets it. Right: the explainer explainmyrepo built from the same source. Drag the handle to compare.</p>
+        </div>
+        <figure class="cmp reveal-up" data-cmp>
+          <div class="cmp-stage">
+            <img class="cmp-img cmp-after" src="assets/ex-agenticow.webp" width="1120" height="700" loading="lazy" decoding="async"
+                 alt="The explainer page explainmyrepo generated for the agenticow repo: a dark teal hero reading 'Branch a million-vector memory in 0.5 ms and 162 bytes' beside a glowing generative branching-network diagram." />
+            <img class="cmp-img cmp-before" src="assets/readme-before.webp" width="1120" height="700" loading="lazy" decoding="async"
+                 alt="The top of the ruvnet/agenticow GitHub README: a long centred title, an intro line, a row of badges and links, and the start of a dark banner image." />
+            <span class="cmp-tag cmp-tag-before" aria-hidden="true">Before &middot; the README</span>
+            <span class="cmp-tag cmp-tag-after" aria-hidden="true">After &middot; the explainer</span>
+            <span class="cmp-handle" aria-hidden="true"><i></i></span>
+            <input class="cmp-range" type="range" min="0" max="100" step="1" value="50" data-cmp-range
+                   aria-label="Compare the GitHub README (left) with the explainer page explainmyrepo generated (right)" />
+          </div>
+          <figcaption>Same repo, same facts.
+            <a href="https://agenticow-explainer.netlify.app/" target="_blank" rel="noopener">Open the full explainer <span aria-hidden="true">&#8599;</span></a>
+            &middot; <a href="https://github.com/ruvnet/agenticow" target="_blank" rel="noopener">See the README on GitHub <span aria-hidden="true">&#8599;</span></a></figcaption>
+        </figure>
+      </div>
+    </section>
+
     <!-- ===================== PROBLEM ===================== -->
     <section class="band problem" id="problem" aria-labelledby="problem-h">
       <div class="wrap reveal-up">
         <p class="kicker"><span class="kicker-dot" aria-hidden="true"></span> Why this exists</p>
-        <h2 id="problem-h" class="big-quote">
+        <h2 id="problem-h" class="visually-hidden">Why great GitHub repos lose readers, and why AI assistants guess</h2>
+        <p class="big-quote">
           Great tools ship with READMEs written by people who already get it — so a
           curious developer hits a wall of jargon and <span class="prism-text">quietly closes the tab.</span>
-        </h2>
+        </p>
         <div class="problem-foot">
           <p>It isn&rsquo;t that the tool is bad. The <em>introduction</em> is. Engineers ship
             things assuming people already know why they&rsquo;d care — and they usually don&rsquo;t.
@@ -403,7 +571,7 @@
                 <text x="369" y="207" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="12" fill="#3df2c7">≥ 90</text>
               </g>
               <line class="g-flow f2" x1="230" y1="252" x2="230" y2="278" stroke="#3df2c7" stroke-width="2"/>
-              <!-- five checks -->
+              <!-- six checks -->
               <g class="g-step" style="--i:2">
                 <rect x="40" y="280" width="380" height="44" rx="10" fill="#0f1422" stroke="rgba(255,255,255,.12)"/>
                 <text x="58" y="300" class="g-label" font-family="'JetBrains Mono',monospace" font-size="11" fill="#9da3b8">6 operator questions</text>
@@ -428,7 +596,7 @@
             </svg>
           </figure>
 
-          <!-- right: the five questions, verbatim -->
+          <!-- right: the six questions, verbatim -->
           <div class="gate-questions reveal-up">
             <p class="gq-lead">On both devices, the operator must answer <strong>YES</strong> to all six — looking at the real screenshots:</p>
             <ol class="questions">
@@ -487,7 +655,7 @@
             <figcaption id="seen-art-t" class="visually-hidden">A bare text link versus the rich link-preview card explainmyrepo generates.</figcaption>
             <div class="link-bare">
               <span class="lb-label">without it</span>
-              <a class="lb-link" href="#seen" onclick="return false;">https://github.com/you/your-project</a>
+              <span class="lb-link">https://github.com/you/your-project</span>
             </div>
             <div class="link-arrow" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
@@ -638,12 +806,15 @@
         <div class="wall reveal-up" data-d="7" aria-labelledby="wall-h">
           <div class="wall-head">
             <h3 id="wall-h">The wall &mdash; fresh off the press</h3>
-            <!-- Social proof stays TRUTHFUL by construction: the shipped-page count is computed
-                 from this very list at render time, and the people/build figures are the real
-                 admin totals (26 developers / 48 builds as of 2026-07-15). -->
-            <p><b><span data-wall-count>a dozen</span> bespoke pages shipped</b> for dozens of developers
-            &mdash; each one positioning a repo the way a README never could. Different people, different
-            repos, one quality gate. Yours takes about half an hour.</p>
+            <!-- Social proof stays TRUTHFUL by construction: the shipped-page count is computed from this
+                 very list at render time (app.js fills [data-wall-count]); the static number below is the
+                 no-JS / crawler fallback and equals the list length (19 on 2026-11-07). No developer or
+                 build totals are claimed here because they are not derivable from the page. Build time
+                 is measured: 93 successful hosted builds, median ~22 min, p90 ~35 min (GitHub Actions
+                 run history, 2026-06-26..11-05); the 10-25 min range is what most builds fall in. -->
+            <p><b><span data-wall-count>19</span> bespoke pages shipped</b>
+            &mdash; each one positioning a repo the way a README never could. Different repos, one
+            quality gate. Yours usually takes 10&ndash;25 minutes.</p>
           </div>
           <ul class="wall-list">
             <li><a href="https://ruview-explainer.netlify.app/" target="_blank" rel="noopener"><img class="wall-face" src="https://github.com/ruvnet.png?size=48" alt="" loading="lazy" width="26" height="26" /><span class="wall-repo">RuView</span><span class="wall-owner">ruvnet</span><span class="wall-go" aria-hidden="true">&#8599;</span></a></li>
@@ -666,7 +837,7 @@
             <li><a href="https://chalk-explainer.netlify.app/" target="_blank" rel="noopener"><img class="wall-face" src="https://github.com/sindresorhus.png?size=48" alt="" loading="lazy" width="26" height="26" /><span class="wall-repo">chalk</span><span class="wall-owner">sindresorhus</span><span class="wall-go" aria-hidden="true">&#8599;</span></a></li>
             <li><a href="https://agenticow-explainer.netlify.app/" target="_blank" rel="noopener"><img class="wall-face" src="https://github.com/ruvnet.png?size=48" alt="" loading="lazy" width="26" height="26" /><span class="wall-repo">agenticow</span><span class="wall-owner">ruvnet</span><span class="wall-go" aria-hidden="true">&#8599;</span></a></li>
           </ul>
-          <p class="wall-cta">Yours belongs up here. <a href="#get-started">Build it</a> &mdash; if it passes the gate, it joins the wall.</p>
+          <p class="wall-cta">Yours belongs up here. <a href="#get-started">Build yours</a> &mdash; if it passes the gate, it joins the wall.</p>
         </div>
       </div>
     </section>
@@ -706,7 +877,7 @@
                 <button class="btn btn-primary" type="submit">Build my explainer <span class="arr" aria-hidden="true">&rarr;</span></button>
                 <p class="fb-note" role="status" data-rq-status></p>
               </div>
-              <p class="rq-expect"><span class="hn-dot" aria-hidden="true"></span> This runs a full AI build &mdash; it can take <strong>up to ~15 minutes</strong>. Keep this page open to watch it happen, or just leave your email and we&rsquo;ll send the link when it&rsquo;s ready.</p>
+              <p class="rq-expect"><span class="hn-dot" aria-hidden="true"></span> This runs a full AI build &mdash; most builds take <strong>10&ndash;25 minutes</strong> (the biggest repos can run past half an hour). Keep this page open to watch it happen, or just leave your email and we&rsquo;ll send the link when it&rsquo;s ready.</p>
             </form>
 
             <div class="rq-progress" data-rq-progress hidden>
@@ -714,7 +885,7 @@
               <div class="rq-progtext">
                 <h3>Building your explainer&hellip;</h3>
                 <p class="rq-progline" data-rq-progline>Starting up&hellip;</p>
-                <p class="rq-progsub">This takes a few minutes. You can safely leave &mdash; we&rsquo;ll email you the link too.</p>
+                <p class="rq-progsub">This usually takes 10&ndash;25 minutes. You can safely leave &mdash; we&rsquo;ll email you the link too.</p>
               </div>
             </div>
 
@@ -760,6 +931,59 @@
           </div>
         </div>
         <p class="visually-hidden" id="copy-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <!-- ===================== FAQ ===================== -->
+    <!-- Answers are sourced from this page's own claims, package.json (MIT, npm name), build.js
+         (5 free builds per email, monthly cap, public-only door) and measured build durations.
+         The FAQPage JSON-LD in <head> repeats these answers word for word. -->
+    <section class="band faq" id="faq" aria-labelledby="faq-h">
+      <div class="wrap">
+        <div class="section-head reveal-up">
+          <p class="kicker"><span class="kicker-dot" aria-hidden="true"></span> Questions</p>
+          <h2 id="faq-h">What people ask <span class="prism-text">before they build.</span></h2>
+          <p class="sub">Straight answers about cost, limits, private repos and what you actually get.</p>
+        </div>
+
+        <div class="faq-list reveal-up">
+          <details class="faq-item">
+            <summary><h3>What is explainmyrepo?</h3></summary>
+            <p>explainmyrepo reads a GitHub repository and builds three things: a designed, standalone explainer page, a GitHub repo you own for that page, and a downloadable AI knowledge pack. The page is written for someone who has never seen your project, and every claim traces back to the repo&rsquo;s real source.</p>
+          </details>
+          <details class="faq-item">
+            <summary><h3>How do I turn a GitHub repo into an explainer page?</h3></summary>
+            <p>If the repo is public, paste <code>owner/name</code> or the GitHub URL and your email into the form at the top of this page, and we build it and email you the live link. If it is private, run <code>npx explainmyrepo &lt;github-url&gt;</code> inside VS&nbsp;Code or Claude&nbsp;Code with your own keys.</p>
+          </details>
+          <details class="faq-item">
+            <summary><h3>Is explainmyrepo free?</h3></summary>
+            <p>Yes. It is open source (MIT) and needs no login. Hosted builds for public repos run on our own keys, so each email can request 5 free builds and capacity is limited each month. After that, run it yourself with your own API keys.</p>
+          </details>
+          <details class="faq-item">
+            <summary><h3>How long does a build take?</h3></summary>
+            <p>Most builds finish in 10 to 25 minutes, and the largest repos can run past half an hour. You can close the tab: if you leave your email, we send the link when it is ready.</p>
+          </details>
+          <details class="faq-item">
+            <summary><h3>Does it work on private repos?</h3></summary>
+            <p>Not through the website, which only builds public repos because it publishes a public page. For a private repo you own, run <code>npx explainmyrepo &lt;github-url&gt;</code> inside VS&nbsp;Code or Claude&nbsp;Code with your own keys and GitHub login.</p>
+          </details>
+          <details class="faq-item">
+            <summary><h3>What is in the AI knowledge pack?</h3></summary>
+            <p>A drop-in <code>.zip</code> containing a real RVF vector knowledge base built from your repo, a search CLI and an MCP server, so tools like Claude&nbsp;Code or Cursor answer questions about your project from its real source instead of guessing.</p>
+          </details>
+          <details class="faq-item">
+            <summary><h3>Will it make things up about my project?</h3></summary>
+            <p>It is built to avoid that. The page is written from a knowledge base of your actual source, and before anything ships an independent vision critic and six operator questions must pass on both mobile and desktop. If a repo cannot clear that bar, it says so instead of shipping a weak page.</p>
+          </details>
+          <details class="faq-item">
+            <summary><h3>Who owns the result?</h3></summary>
+            <p>You do. You are invited as a collaborator on the explainer&rsquo;s own GitHub repository, so you can edit it any time. It is separate from your app&rsquo;s repo.</p>
+          </details>
+          <details class="faq-item">
+            <summary><h3>What do I need to run it myself?</h3></summary>
+            <p>Node.js and an OpenAI key (imagery and the quality gate). Inside Claude&nbsp;Code the writing runs on your Claude login, so no Anthropic key is needed. A Netlify token is optional: without it you still get the complete page locally.</p>
+          </details>
+        </div>
       </div>
     </section>
 
@@ -867,11 +1091,15 @@
       <p class="foot-credit">
         Built with care by <strong><a href="https://stuart-kerr-card.netlify.app" rel="author noopener" target="_blank">Stuart Kerr</a></strong> at
         <a href="https://isovision.ai" rel="noopener" target="_blank">ISOvision</a>.
-        <span class="foot-fine">Open source on <a href="https://github.com/stuinfla/Repo-Explainer" rel="noopener" target="_blank">GitHub</a> — found it valuable? <a href="https://github.com/stuinfla/Repo-Explainer" rel="noopener" target="_blank">A star</a> genuinely helps. Hit a snag? <a href="https://github.com/stuinfla/Repo-Explainer/issues" rel="noopener" target="_blank">Open an issue</a> — happy to help fix it.</span>
+        <span class="foot-fine">Open source on <a href="https://github.com/stuinfla/Repo-Explainer" rel="noopener" target="_blank">GitHub</a> — found it valuable? <a href="https://github.com/stuinfla/Repo-Explainer" rel="noopener" target="_blank">Star it on GitHub</a> &mdash; it genuinely helps. Hit a snag? <a href="https://github.com/stuinfla/Repo-Explainer/issues" rel="noopener" target="_blank">Open an issue</a> — happy to help fix it.</span>
         <span class="foot-fine">&copy; 2026 <a href="https://isovision.ai" rel="noopener" target="_blank">isovision.ai</a> · Complex repos deserve clear introductions.</span>
       </p>
     </div>
   </footer>
+
+  <!-- Mobile-only persistent call to action: appears once the hero form has scrolled away and hides
+       again while a build form is on screen. Pure enhancement; see app.js [data-sticky-cta]. -->
+  <a class="sticky-cta" href="#hero-request" data-sticky-cta aria-hidden="true" tabindex="-1">Build my explainer <span aria-hidden="true">&rarr;</span></a>
 
   <script src="app.js" defer></script>
   <script>
