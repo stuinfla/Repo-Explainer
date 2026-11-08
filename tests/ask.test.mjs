@@ -7,10 +7,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { signAskToken, verifyAskToken, isHost } from '../src/ask-token.mjs';
+import { signAskToken, isHost } from '../src/ask-token.mjs';
 import { extractSections, inject, finalize, PLACEHOLDER } from '../src/ask.mjs';
 import { checkSite, blockingFailures } from '../src/site-check.mjs';
-import { verifyToken, buildPassages, takeSlot } from '../ask-service/netlify/functions/ask.mjs';
+import { pngBuffer } from './helpers/png.mjs';
+import { verifyToken, buildPassages, takeSlot, isHost as serviceIsHost } from '../ask-service/netlify/functions/ask.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SECRET = 'test-secret-test-secret-test-secret';
@@ -18,13 +19,18 @@ const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'ask-test-'));
 
 const PAGE = (extra = '') => `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Demo explainer</title>
 <meta name="description" content="A demo explainer page long enough to pass the check"><meta name="viewport" content="width=device-width">
-<meta property="og:title" content="x"><meta property="og:description" content="x"><meta property="og:image" content="x"><meta name="twitter:card" content="x">
+<meta property="og:title" content="Demo explainer"><meta property="og:description" content="A demo"><meta property="og:url" content="https://demo-explainer.netlify.app/"><meta property="og:image" content="https://demo-explainer.netlify.app/assets/card.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Demo explainer"><meta name="twitter:image" content="https://demo-explainer.netlify.app/assets/card.png">
 </head><body><header class="site-head"><nav class="nav-links" aria-label="Sections"><a href="#a">A</a></nav></header><main id="main">
 <details class="section" id="get-started" open><summary><span class="head-text"><h2>Two minutes to start</h2><span class="q">How do I start?</span></span></summary>
 <div class="body"><p class="lead-in">You need Node.js 22 or newer and npm to run this project on your own computer.</p><pre class="code-block"><code>npx demo setup</code></pre>
 <ol><li><strong>Run the command above.</strong> It lists your tools and asks before it changes anything at all.</li></ol></div></details>${extra}
 </main><footer class="explainer-footer" role="contentinfo">f</footer></body></html>`;
-const writeSite = (dir, extra) => { fs.writeFileSync(path.join(dir, 'index.html'), PAGE(extra)); };
+const CARD = pngBuffer(1200, 630);
+const writeSite = (dir, extra) => {
+  fs.writeFileSync(path.join(dir, 'index.html'), PAGE(extra));
+  fs.mkdirSync(path.join(dir, 'assets'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'assets', 'card.png'), CARD);
+};
 const passages = (dir, n = 60) => {
   const f = path.join(dir, 'p.jsonl');
   fs.writeFileSync(f, Array.from({ length: n }, (_, i) => JSON.stringify({ id: String(i), text: `Doc ${i} text about installing and running thing ${i}.`, path: i % 2 ? `docs/d${i}.md` : `src/s${i}.ts`, title: `Doc ${i}` })).join('\n'));
@@ -32,34 +38,41 @@ const passages = (dir, n = 60) => {
 };
 
 // ---------- the signed credential ----------
-test('token: round-trips for the host it was issued for', () => {
+// The signer (src/ask-token.mjs) and the only verifier that runs (the service's verifyToken) are tested together.
+test('token: signed here, verified by the service, for the host it was issued for', () => {
   const t = signAskToken('demo-explainer.netlify.app', SECRET);
-  assert.equal(verifyAskToken(t, SECRET), 'demo-explainer.netlify.app');
-  assert.equal(verifyToken(t, SECRET), 'demo-explainer.netlify.app');   // the service's copy agrees
+  assert.equal(verifyToken(t, SECRET), 'demo-explainer.netlify.app');
 });
-test('token: a forged, re-hosted or wrong-secret token is refused', () => {
+test('token: a forged, re-hosted or wrong-secret token is refused by the service', () => {
   const t = signAskToken('demo-explainer.netlify.app', SECRET);
   const [h, sig] = t.split('.');
   const evil = `${Buffer.from('evil.example.com').toString('base64url')}.${sig}`;   // valid signature, someone else's host
-  assert.equal(verifyAskToken(evil, SECRET), null);
-  assert.equal(verifyAskToken(t, 'a-different-secret-a-different-secret'), null);
-  assert.equal(verifyAskToken(`${h}.${sig.slice(0, -2)}xx`, SECRET), null);
-  assert.equal(verifyAskToken('garbage', SECRET), null);
-  assert.equal(verifyAskToken(`${t}.extra`, SECRET), null);
-  assert.equal(verifyAskToken(t, ''), null);
-});
-test('service verifyToken: refuses forged, re-hosted and wrong-secret tokens (its own copy of the check)', () => {
-  const t = signAskToken('demo-explainer.netlify.app', SECRET);
-  const [, sig] = t.split('.');
-  assert.equal(verifyToken(`${Buffer.from('evil.example.com').toString('base64url')}.${sig}`, SECRET), null);
+  assert.equal(verifyToken(evil, SECRET), null);
   assert.equal(verifyToken(t, 'a-different-secret-a-different-secret'), null);
+  assert.equal(verifyToken(`${h}.${sig.slice(0, -2)}xx`, SECRET), null);
+  assert.equal(verifyToken('garbage', SECRET), null);
   assert.equal(verifyToken('x.y', SECRET), null);
+  assert.equal(verifyToken(`${t}.extra`, SECRET), null);
+  assert.equal(verifyToken(t, ''), null);
   assert.equal(verifyToken(t, undefined), null);
 });
 test('token: refuses to sign anything that is not a bare hostname or with a weak secret', () => {
   for (const bad of ['https://x.netlify.app', 'x.netlify.app/path', 'x.netlify.app:8080', 'user@x.netlify.app', '', 'localhost']) assert.throws(() => signAskToken(bad, SECRET), /hostname/);
   assert.throws(() => signAskToken('x.netlify.app', 'short'), /24 characters/);
   assert.ok(isHost('a-b.c.netlify.app'));
+});
+
+// The service is its own Netlify site and cannot import src/, so the two implementations are held together here:
+// every host the signer accepts must verify, and every host the signer refuses must be refused by the service too.
+test('token contract: signer and service agree on which hosts are valid, over a corpus that includes the edge cases', () => {
+  const corpus = ['a-b.c.netlify.app', 'demo-explainer.netlify.app', 'x.io', '1.2.io', 'a'.repeat(63) + '.netlify.app', 'a'.repeat(120), `${'a'.repeat(60)}.${'b'.repeat(59)}`,
+    'UPPER.netlify.app', 'Upper.netlify.app', '-lead.netlify.app', 'trail-.netlify.app', 'a..b.app', '.a.app', 'a.app.', 'x.netlify.app:8080', 'x.netlify.app/p', 'u@x.netlify.app', 'x y.app', 'localhost', '', ' ', 'münchen.de', 'x.app\n', 12, null, undefined, {}];
+  for (const h of corpus) {
+    assert.equal(serviceIsHost(h), isHost(h), `isHost disagrees for ${JSON.stringify(h)}`);
+    if (isHost(h)) assert.equal(verifyToken(signAskToken(h, SECRET), SECRET), h, `a signed token for ${h} must verify`);
+    else assert.throws(() => signAskToken(h, SECRET), /hostname/);
+  }
+  assert.ok(corpus.filter(isHost).length >= 5 && corpus.filter((h) => !isHost(h)).length >= 15, 'corpus must exercise both sides');
 });
 
 // ---------- the service builds passages itself; the browser cannot supply text ----------
@@ -139,7 +152,7 @@ test('finalize: with a secret the page carries a token for the real host; withou
   const ha = fs.readFileSync(path.join(a, 'index.html'), 'utf8');
   assert.ok(!ha.includes(PLACEHOLDER));
   const tok = ha.match(/data-token="([^"]+)"/)[1];
-  assert.equal(verifyAskToken(tok, SECRET), 'demo-explainer.netlify.app');
+  assert.equal(verifyToken(tok, SECRET), 'demo-explainer.netlify.app');
   const b = tmp(); writeSite(b); inject({ siteDir: b, passagesPath: passages(b), repo: 'o/demo', name: 'Demo' });
   const r = finalize(b, 'demo-explainer.netlify.app', '');
   assert.equal(r.ask, 'closest-passages-only');
@@ -164,8 +177,8 @@ test('site check: a good page passes; each kind of broken page is caught', () =>
 test('site check: a leftover credential placeholder blocks, unless deploy is about to fill it', () => {
   const d = tmp(); writeSite(d); inject({ siteDir: d, passagesPath: passages(d), repo: 'o/demo', name: 'Demo' });
   assert.ok(blockingFailures(checkSite(d)).some((f) => /placeholder/.test(f.msg)));
-  process.env.ASK_CHECK_ALLOW_PLACEHOLDER = '1';
-  try { assert.equal(blockingFailures(checkSite(d)).length, 0); } finally { delete process.env.ASK_CHECK_ALLOW_PLACEHOLDER; }
+  assert.equal(blockingFailures(checkSite(d, { allowAskPlaceholder: true })).length, 0);
+  assert.equal(process.env.ASK_CHECK_ALLOW_PLACEHOLDER, undefined, 'the allowance is an option, never process state');
 });
 
 // ---------- the station, as a child process (the way the orchestrator runs it) ----------
@@ -179,5 +192,11 @@ test('make-ask station: skips cleanly with no knowledge base; adds the box when 
   const out = JSON.parse(r.stdout.trim().split('\n').pop());
   assert.equal(out.ok, true); assert.equal(out.outputs.ask.passages, 60);
   assert.ok(fs.readFileSync(path.join(site, 'index.html'), 'utf8').includes('id="ask"'));
-  assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'build.json'), 'utf8')).ask.passages, 60);
+  const slot = () => JSON.parse(fs.readFileSync(path.join(root, 'build.json'), 'utf8')).ask;
+  assert.equal(slot().passages, 60);
+  assert.equal(slot().skipped, undefined, 'a re-run after a skip must not keep the old skipped reason');
+  // and the other way round: a later skip must not keep a stale "passages: 60"
+  r = spawnSync(process.execPath, [path.join(HERE, '..', 'tools', 'make-ask.mjs'), root], { encoding: 'utf8', env: { ...process.env, ASK_DISABLE: '1' } });
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(slot(), { skipped: 'ASK_DISABLE=1' });
 });

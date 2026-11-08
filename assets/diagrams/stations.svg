@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 692" width="600" height="692" role="img" aria-labelledby="stations-t stations-d" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">
+  <title id="stations-t">The one station table</title>
+  <desc id="stations-d">The build is one ordered list of stations in four phases: set up, build and grade, ship, and follow-ups after delivery. Solid outline stations stop the build if they fail; dashed outline stations are advisory. Stations marked L run on the local door only.</desc>
+  <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#64748b"/></marker></defs>
+  <rect x="0" y="0" width="600" height="692" rx="16" fill="#0f172a" stroke="#1e293b"/>
+  <text x="300" y="34" fill="#7dd3fc" font-size="16" font-weight="bold" text-anchor="middle">one station table (src/stations.mjs)</text>
+  <rect x="20" y="54" width="560" height="94" rx="10" fill="#111c33" stroke="#1e293b" stroke-width="1.5"/>
+  <text x="34" y="78" fill="#7dd3fc" font-size="15" font-weight="bold">1 · set up</text>
+  <text x="136.75" y="78" fill="#94a3b8" font-size="13">clone the exact repo, build the KB</text>
+  <g data-station="clone-repo" data-fatal="true" data-doors="local,hosted">
+  <rect x="34" y="94" width="97" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="43" y="113" fill="#e2e8f0" font-size="13">clone-repo</text>
+  </g>
+  <g data-station="kb:register" data-fatal="true" data-doors="local,hosted">
+  <rect x="139" y="94" width="105" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="148" y="113" fill="#e2e8f0" font-size="13">kb:register</text>
+  </g>
+  <g data-station="build-kb" data-fatal="true" data-doors="local,hosted">
+  <rect x="252" y="94" width="81" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="261" y="113" fill="#e2e8f0" font-size="13">build-kb</text>
+  </g>
+  <g data-station="concept-tournament" data-fatal="false" data-doors="local,hosted">
+  <rect x="341" y="94" width="160" height="28" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="350" y="113" fill="#e2e8f0" font-size="13">concept-tournament</text>
+  </g>
+  <line x1="300" y1="148" x2="300" y2="164" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="20" y="168" width="560" height="202" rx="10" fill="#111c33" stroke="#1e293b" stroke-width="1.5"/>
+  <text x="34" y="192" fill="#7dd3fc" font-size="15" font-weight="bold">2 · build + grade</text>
+  <text x="200.275" y="192" fill="#94a3b8" font-size="13">author, draw, assemble, pack, grade</text>
+  <g data-station="primer" data-fatal="true" data-doors="local,hosted">
+  <rect x="34" y="208" width="66" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="43" y="227" fill="#e2e8f0" font-size="13">primer</text>
+  </g>
+  <g data-station="index-primer" data-fatal="true" data-doors="local,hosted">
+  <rect x="108" y="208" width="113" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="117" y="227" fill="#e2e8f0" font-size="13">index-primer</text>
+  </g>
+  <g data-station="concept" data-fatal="true" data-doors="local,hosted">
+  <rect x="229" y="208" width="74" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="238" y="227" fill="#e2e8f0" font-size="13">concept</text>
+  </g>
+  <g data-station="content" data-fatal="true" data-doors="local,hosted">
+  <rect x="311" y="208" width="74" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="320" y="227" fill="#e2e8f0" font-size="13">content</text>
+  </g>
+  <g data-station="check-claims" data-fatal="false" data-doors="local,hosted">
+  <rect x="393" y="208" width="113" height="28" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="402" y="227" fill="#e2e8f0" font-size="13">check-claims</text>
+  </g>
+  <g data-station="visual-brief" data-fatal="true" data-doors="local,hosted">
+  <rect x="34" y="244" width="113" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="43" y="263" fill="#e2e8f0" font-size="13">visual-brief</text>
+  </g>
+  <g data-station="generate-image" data-fatal="true" data-doors="local,hosted">
+  <rect x="155" y="244" width="129" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="164" y="263" fill="#e2e8f0" font-size="13">generate-image</text>
+  </g>
+  <g data-station="make-favicon" data-fatal="true" data-doors="local,hosted">
+  <rect x="292" y="244" width="113" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="301" y="263" fill="#e2e8f0" font-size="13">make-favicon</text>
+  </g>
+  <g data-station="make-social-card" data-fatal="true" data-doors="local,hosted">
+  <rect x="413" y="244" width="144" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="422" y="263" fill="#e2e8f0" font-size="13">make-social-card</text>
+  </g>
+  <g data-station="make-diagrams" data-fatal="true" data-doors="local,hosted">
+  <rect x="34" y="280" width="121" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="43" y="299" fill="#e2e8f0" font-size="13">make-diagrams</text>
+  </g>
+  <g data-station="assemble-page" data-fatal="true" data-doors="local,hosted">
+  <rect x="163" y="280" width="121" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="172" y="299" fill="#e2e8f0" font-size="13">assemble-page</text>
+  </g>
+  <g data-station="make-pack" data-fatal="true" data-doors="local,hosted">
+  <rect x="292" y="280" width="89" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="301" y="299" fill="#e2e8f0" font-size="13">make-pack</text>
+  </g>
+  <g data-station="make-ask" data-fatal="false" data-doors="local">
+  <rect x="389" y="280" width="97" height="28" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="398" y="299" fill="#e2e8f0" font-size="13">make-ask L</text>
+  </g>
+  <g data-station="quality-grade" data-fatal="true" data-doors="local,hosted">
+  <rect x="34" y="316" width="121" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="43" y="335" fill="#e2e8f0" font-size="13">quality-grade</text>
+  </g>
+  <line x1="300" y1="370" x2="300" y2="386" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="20" y="390" width="560" height="94" rx="10" fill="#111c33" stroke="#1e293b" stroke-width="1.5"/>
+  <text x="34" y="414" fill="#7dd3fc" font-size="15" font-weight="bold">3 · ship</text>
+  <text x="118.6" y="414" fill="#94a3b8" font-size="13">deploy, then tell people</text>
+  <g data-station="deploy" data-fatal="true" data-doors="local,hosted">
+  <rect x="34" y="430" width="66" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="43" y="449" fill="#e2e8f0" font-size="13">deploy</text>
+  </g>
+  <g data-station="publish-repo" data-fatal="true" data-doors="local">
+  <rect x="108" y="430" width="129" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="117" y="449" fill="#e2e8f0" font-size="13">publish-repo L</text>
+  </g>
+  <g data-station="repo-seo" data-fatal="true" data-doors="local">
+  <rect x="245" y="430" width="97" height="28" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="254" y="449" fill="#e2e8f0" font-size="13">repo-seo L</text>
+  </g>
+  <g data-station="readme-enhance" data-fatal="false" data-doors="local">
+  <rect x="350" y="430" width="129" height="28" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="359" y="449" fill="#e2e8f0" font-size="13">readme-enhance L</text>
+  </g>
+  <g data-station="notify" data-fatal="false" data-doors="local,hosted">
+  <rect x="487" y="430" width="66" height="28" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="496" y="449" fill="#e2e8f0" font-size="13">notify</text>
+  </g>
+  <line x1="300" y1="484" x2="300" y2="500" stroke="#64748b" stroke-width="2" marker-end="url(#arr)"/>
+  <rect x="20" y="504" width="560" height="94" rx="10" fill="#111c33" stroke="#1e293b" stroke-width="1.5"/>
+  <text x="34" y="528" fill="#7dd3fc" font-size="15" font-weight="bold">4 · follow-ups</text>
+  <text x="173.05" y="528" fill="#94a3b8" font-size="13">after delivery, never block it</text>
+  <g data-station="make-overview" data-fatal="false" data-doors="local">
+  <rect x="34" y="544" width="136" height="28" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="43" y="563" fill="#e2e8f0" font-size="13">make-overview L</text>
+  </g>
+  <g data-station="redeploy" data-fatal="false" data-doors="local">
+  <rect x="178" y="544" width="97" height="28" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="187" y="563" fill="#e2e8f0" font-size="13">redeploy L</text>
+  </g>
+  <g data-station="republish" data-fatal="false" data-doors="local">
+  <rect x="283" y="544" width="105" height="28" rx="6" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="292" y="563" fill="#e2e8f0" font-size="13">republish L</text>
+  </g>
+  <rect x="34" y="614" width="22" height="14" rx="4" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/>
+  <text x="64" y="626" fill="#94a3b8" font-size="13">solid: a failure stops the build</text>
+  <rect x="34" y="638" width="22" height="14" rx="4" fill="#0f172a" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="64" y="650" fill="#94a3b8" font-size="13">dashed: advisory, the build carries on</text>
+  <text x="34" y="674" fill="#94a3b8" font-size="13">L: local door only</text>
+</svg>

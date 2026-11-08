@@ -10,13 +10,10 @@
 //   TS/JS: import scan of the source tree (no madge dependency required) → module/package graph
 //          (internal edges between componentRoots packages via workspace imports + external deps
 //          from each package.json).
-//   Python: pyproject.toml workspace/member discovery + import scan → package dependency graph.
-//           This matters for repos such as the-goodies: treating an unsupported ecosystem as an
-//           empty graph used to force an authored list into a nested-box renderer, which looked like
-//           random concentric boxes rather than architecture.
+//   Python: pyproject.toml workspace/member discovery + import scan → package dependency graph
+//           (an unsupported ecosystem must not become an empty graph).
 //
-// Repo shape is DATA (kb.config.mjs target: repoDir, scopeExclude, componentRoots). Ships in the
-// drop-in for-ai/. NO repo name is baked in here.
+// Repo shape is DATA (kb.config.mjs target: repoDir, scopeExclude, componentRoots).
 //
 // Usage: node kb/dep-graph.mjs --target ruqu  | node kb/dep-graph.mjs ruqu
 
@@ -152,8 +149,7 @@ function tsGraph(repoDir, skip, componentRoots) {
   const pkgDirs = [];
   for (const r of [...(componentRoots || ['packages']), 'cli', 'apps', 'npm/packages', '.']) {
     const abs = path.join(repoDir, r);
-    // componentRoots can be AI-authored (kb:register) and may name a FILE (execa's "index.js"
-    // crashed readdirSync here, run 28666874765) — only directories are scannable roots.
+    // componentRoots can be AI-authored (kb:register) and may name a FILE — only directories are scannable roots.
     if (!fs.existsSync(abs) || !fs.statSync(abs).isDirectory()) continue;
     if (fs.existsSync(path.join(abs, 'package.json'))) { pkgDirs.push(abs); continue; }
     for (const d of fs.readdirSync(abs, { withFileTypes: true })) {

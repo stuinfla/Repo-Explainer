@@ -2,14 +2,19 @@
 
 **Status**: Accepted (converged after adversarial review round, Fable 5 vs GPT-5.6-Sol, 2026-07-24)
 **Date**: 2026-07-24
-**Updated**: 2026-07-24
+**Updated**: 2026-11-05
 **Authors**: Claude Code (Fable 5), directed by Stuart Kerr; adversarial reviewer GPT-5.6-Sol (codex)
 **Prompted by**: [GitHub issue #14](https://github.com/stuinfla/Repo-Explainer/issues/14) (Jordi Izquierdo, Data Driven Solutions) — heavy user, 15,316-chunk corpus, ~50 min local embed per rebuild, ~99% of it recomputing unchanged vectors
 **Supersedes**: None
 **Related ADRs**: ADR-0001 (repo-primer recipe; chunker D5, single-384 v1.3.1), ADR-0007 (source identity invariant)
-**Code touchpoints**: `kb/build-kb.mjs` (`--delta`), new `kb/chunker.mjs`, new `kb/store-set.mjs`, `kb/index-primer.mjs` (idempotent replace + metadata fix), `tests/kb-delta.e2e.mjs`
+**Code touchpoints**: `kb/build-kb.mjs` (`--delta`), new `kb/chunker.mjs`, new `kb/store-set.mjs`, `kb/index-primer.mjs` (idempotent replace + metadata fix), `tests-e2e/kb-delta.e2e.test.mjs`
 
 ---
+
+> **Note (3.0.1, 2026-11-05).** The end-to-end test is `tests-e2e/kb-delta.e2e.test.mjs`. It moved out of
+> `npm test` (which runs `tests/*.test.mjs`) and runs with `npm run test:e2e` (`tests-e2e/*.test.mjs`).
+> `@ruvector/rvf` is now `^0.4.2` (`package.json`); the 0.3.0 `metadata` regression described below is the
+> reason D0 exists.
 
 ## Context
 
@@ -82,8 +87,9 @@ delta tools import the *real* chunker; the drift risk the issue's replica guarde
 disappears by construction. Zero behavior change — proven by byte-comparing full-build
 sidecars before and after the factoring.
 
-`make-dropin.mjs` is unaffected: the drop-in ships `ask-kb.mjs` / `kb-mcp-server.mjs` /
-`kb.config.mjs` / `resolve-deps.mjs`, none of which import the chunker.
+The pack is unaffected: it ships `ask-kb.mjs` / `kb-mcp-server.mjs` /
+`kb.config.mjs` / `resolve-deps.mjs`, none of which import the chunker. *(2026-11-05: `kb/make-dropin.mjs`
+is gone; `tools/make-pack.mjs` builds the pack with the same four engine files.)*
 
 ### D2 — `--delta` on `build-kb.mjs`, invalidating at FILE granularity
 

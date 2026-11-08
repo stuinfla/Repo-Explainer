@@ -19,7 +19,7 @@ const STATION = path.join(HERE, '..', 'tools', 'readme-enhance.mjs');
 const PLAIN_README = '# claude-swap\n\nMulti-account switcher for Claude Code.\n\n## Installation\n\n```bash\nuv tool install claude-swap\n```\n';
 const ASCII_README = '# pipe\n\nA tiny pipeline.\n\n## Flow\n\n```text\n┌─────┐   ┌─────┐\n│ in  │ ─▶│ out │\n└─────┘   └─────┘\n```\n';
 
-function makeBuild({ readme = PLAIN_README, publish = {}, repo = {}, leaveOutDiagrams = false } = {}) {
+function makeBuild({ readme = PLAIN_README, publish = {}, repo = {}, leaveOutDiagrams = false, hero = null } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rest-'));
   const clone = path.join(dir, 'repo');
   fs.mkdirSync(clone);
@@ -31,6 +31,7 @@ function makeBuild({ readme = PLAIN_README, publish = {}, repo = {}, leaveOutDia
     repo: { owner: 'realiti4', name: 'claude-swap', slug: 'claude-swap', clonePath: clone, defaultBranch: 'main', ...repo },
     publish: { liveUrl: 'https://claude-swap-explainer.netlify.app', explainerRepoUrl: 'https://github.com/stuinfla/realiti4-claude-swap-explainer', ...publish },
     visuals: leaveOutDiagrams ? {} : {
+      ...(hero ? { hero } : {}),
       architectureDiagram: { svgPath: 'assets/architecture.svg', altText: 'What claude-swap plugs into. Accounts feed one engine that drives the CLI, a dashboard and a menu bar.' },
       flowDiagram: { svgPath: 'assets/flow.svg', altText: 'The moment claude-swap switches you. Work is over the line, personal has the most headroom and is picked.' },
     },
@@ -102,6 +103,7 @@ test('ASCII README: diagrams are converted in place and the fallback graphics ar
 
 test('pr channel: wording switches to a PR and notes the issue it follows up', () => {
   const { dir } = makeBuild();
+  fs.writeFileSync(path.join(dir, 'ledger.jsonl'), JSON.stringify({ type: 'sent', repo: 'realiti4/claude-swap', kind: 'issue', number: 12, url: 'https://github.com/realiti4/claude-swap/issues/12', ts: new Date().toISOString() }) + '\n');
   // dry run skips the fork/push, which is exactly what we want here: only the text is under test
   const r = runStation(dir, { README_OUTREACH: 'pr', README_ENHANCE_ISSUE: '12' });
   assert.equal(r.build.readmePr.kind, 'pr');
@@ -180,8 +182,22 @@ test('the cap is configurable and sends resume under it', () => {
 
 test('the PR follow-up is NOT blocked by the one-contact rule (it is the second step of the same contact)', () => {
   const { dir } = makeBuild();
-  seed(dir, [sentRow('realiti4/claude-swap', 48)]);
+  seed(dir, [{ ...sentRow('realiti4/claude-swap', 48), number: 3 }]);
   const r = runStation(dir, { README_OUTREACH: 'pr', README_ENHANCE_ISSUE: '3' });
   assert.equal(r.build.readmePr.prUrl, 'dry-run');
   assert.equal(r.build.readmePr.kind, 'pr');
+});
+
+test('hero image in the issue is the real file name (never a hard-coded hero.png) and absent for a scene hero', () => {
+  const raster = makeBuild({ hero: { file: 'assets/hero-final.webp' } });
+  runStation(raster.dir);
+  const withRaster = fs.readFileSync(path.join(raster.dir, 'readme-proposal', 'ISSUE.md'), 'utf8');
+  assert.match(withRaster, /\(https:\/\/raw\.githubusercontent\.com\/stuinfla\/realiti4-claude-swap-explainer\/main\/assets\/hero-final\.webp\)/);
+  assert.doesNotMatch(withRaster, /assets\/hero\.png/);
+
+  const scene = makeBuild({ hero: { file: 'assets/hero-scene-static.png', rasterSkipped: 'scene' } });
+  runStation(scene.dir);
+  const noHero = fs.readFileSync(path.join(scene.dir, 'readme-proposal', 'ISSUE.md'), 'utf8');
+  assert.doesNotMatch(noHero, /explainer page\]\(/, 'a scene hero ships no raster, so the message must not link a broken image');
+  assert.doesNotMatch(noHero, /hero-scene-static/);
 });

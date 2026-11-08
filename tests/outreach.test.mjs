@@ -8,6 +8,10 @@ import path from 'node:path';
 import {
   ledgerPath, readLedger, appendLedger, sentInLast24h, underDailyCap, priorContacts, classifyResponse, summarize,
 } from '../src/outreach.mjs';
+import { followupsDue as fuDue, lastContact, renderFollowup as fuRender } from '../src/outreach-followup.mjs';
+import { pickMaintainerEmail as pickMail, renderEmail as mailRender } from '../src/outreach-mail.mjs';
+import { followupCommand, snapshotFromGh } from '../src/outreach-cli.mjs';
+import { buildPrBody } from '../src/readme-pr.mjs';
 
 const NOW = Date.parse('2026-10-10T12:00:00Z');
 const hoursAgo = (h) => new Date(NOW - h * 3_600_000).toISOString();
@@ -93,21 +97,11 @@ test('summarize: an empty ledger is 0%, never NaN', () => {
   assert.equal(summarize([]).responseRate, 0);
 });
 
-// ── follow-up, contact line, review mail (owner's rules 2026-10-14) ──────────────────────────────────────
-import { followupsDue as fuDue, lastContact, renderFollowup as fuRender } from '../src/outreach-followup.mjs';
-import { pickMaintainerEmail as pickMail, renderEmail as mailRender } from '../src/outreach-mail.mjs';
-import { followupCommand } from '../src/outreach-cli.mjs';
-import { buildPrBody } from '../src/readme-pr.mjs';
-import { test as t2 } from 'node:test';
-import a2 from 'node:assert/strict';
-import fs2 from 'node:fs';
-import os2 from 'node:os';
-import path2 from 'node:path';
-
+// ── follow-up, contact line, review mail ──────────────────────────────────────
 const DAY = 86_400_000;
 const mkSent = (repo, n, daysAgo, now, extra = {}) => ({ type: 'sent', ts: new Date(now - daysAgo * DAY).toISOString(), repo, kind: 'issue', url: `https://github.com/${repo}/issues/${n}`, number: n, liveUrl: 'https://x.netlify.app', ...extra });
 
-t2('followupsDue: waits a week from the LAST message, once, issues only', () => {
+test('followupsDue: waits a week from the LAST message, once, issues only', () => {
   const now = Date.parse('2026-10-30T00:00:00Z');
   const rows = [
     mkSent('a/young', 1, 3, now), mkSent('a/old', 2, 8, now), mkSent('a/pr', 3, 9, now, { kind: 'pr' }),
@@ -115,65 +109,63 @@ t2('followupsDue: waits a week from the LAST message, once, issues only', () => 
     { type: 'update', ts: new Date(now - 2 * DAY).toISOString(), url: 'https://github.com/a/updated/issues/4', repo: 'a/updated' },
     mkSent('a/done', 5, 20, now), { type: 'followup', url: 'https://github.com/a/done/issues/5' },
   ];
-  a2.deepEqual(fuDue(rows, now).map((d) => d.repo), ['a/old']);
-  a2.equal(lastContact(rows).find((c) => c.repo === 'a/updated').lastTs, now - 2 * DAY);
+  assert.deepEqual(fuDue(rows, now).map((d) => d.repo), ['a/old']);
+  assert.equal(lastContact(rows).find((c) => c.repo === 'a/updated').lastTs, now - 2 * DAY);
 });
 
-t2('followupCommand: posts one note when unanswered, stays quiet when answered, never twice', () => {
+test('followupCommand: posts one note when unanswered, stays quiet when answered, never twice', () => {
   const now = Date.parse('2026-10-30T00:00:00Z');
-  const dir = fs2.mkdtempSync(path2.join(os2.tmpdir(), 'fu-'));
-  const file = path2.join(dir, 'outreach.jsonl');
-  fs2.writeFileSync(file, [mkSent('o/quiet', 7, 8, now), mkSent('o/talked', 8, 8, now)].map((r) => JSON.stringify(r)).join('\n') + '\n');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fu-'));
+  const file = path.join(dir, 'outreach.jsonl');
+  fs.writeFileSync(file, [mkSent('o/quiet', 7, 8, now), mkSent('o/talked', 8, 8, now)].map((r) => JSON.stringify(r)).join('\n') + '\n');
   const posted = [];
   const view = (e) => (e.repo === 'o/talked'
     ? { state: 'OPEN', createdAt: new Date(now - 8 * DAY).toISOString(), comments: [{ author: { login: 'o' } }], reactionGroups: [] }
     : { state: 'OPEN', createdAt: new Date(now - 8 * DAY).toISOString(), comments: [], reactionGroups: [] });
   const env = { EMR_OUTREACH_LEDGER: file, OUTREACH_CONTACT: 'Jo · +1 555 0100 · jo@example.com' };
   const r1 = followupCommand({ env, view, post: (e, b) => posted.push({ url: e.url, b }), now, write: () => {} });
-  a2.equal(r1.posted.length, 1);
-  a2.equal(r1.quiet.length, 1);
-  a2.ok(posted[0].b.includes('jo@example.com') && posted[0].b.includes('only trying to be helpful'));
+  assert.equal(r1.posted.length, 1);
+  assert.equal(r1.quiet.length, 1);
+  assert.ok(posted[0].b.includes('jo@example.com') && posted[0].b.includes('only trying to be helpful'));
   const r2 = followupCommand({ env, view, post: (e, b) => posted.push({ url: e.url, b }), now, write: () => {} });
-  a2.equal(r2.due, 0);
-  a2.equal(posted.length, 1, 'never posts twice');
+  assert.equal(r2.due, 0);
+  assert.equal(posted.length, 1, 'never posts twice');
 });
 
-t2('copy: contact line appears, and no message vouches for itself', () => {
+test('copy: contact line appears, and no message vouches for itself', () => {
   const contact = 'Jo · +1 555 0100 · jo@example.com';
   const issue = buildPrBody({ repoName: 'x', liveUrl: 'https://l', readmeUrl: 'https://r', mode: 'link-only', addedLines: 3, files: [], kind: 'issue', signoff: 'Jo', contact });
   const fu = fuRender({ repoName: 'x', liveUrl: 'https://l', contact });
   const mail = mailRender({ name: 'x', to: 'm@e.co', liveUrl: 'https://l', fromName: 'Jo', contact }).body;
   for (const t of [issue, fu, mail]) {
-    a2.ok(t.includes('jo@example.com'));
-    for (const w of ['safe', 'clean', 'secure', 'trusted', 'virus', 'malware-free', "don't worry", 'no risk']) a2.ok(!t.toLowerCase().includes(w), `banned: ${w}`);
+    assert.ok(t.includes('jo@example.com'));
+    for (const w of ['safe', 'clean', 'secure', 'trusted', 'virus', 'malware-free', "don't worry", 'no risk']) assert.ok(!t.toLowerCase().includes(w), `banned: ${w}`);
   }
-  a2.ok(!buildPrBody({ repoName: 'x', liveUrl: 'https://l', readmeUrl: 'https://r', mode: 'link-only', addedLines: 3, files: [], kind: 'issue' }).includes('Questions are welcome'), 'no contact, no line');
+  assert.ok(!buildPrBody({ repoName: 'x', liveUrl: 'https://l', readmeUrl: 'https://r', mode: 'link-only', addedLines: 3, files: [], kind: 'issue' }).includes('Questions are welcome'), 'no contact, no line');
 });
 
-t2('pickMaintainerEmail skips noreply and bots', () => {
+test('pickMaintainerEmail skips noreply and bots', () => {
   const c = (e) => ({ commit: { author: { email: e } } });
-  a2.equal(pickMail([c('1+x@users.noreply.github.com'), c('dev@x.io'), c('dev@x.io'), c('bot@y.io')]), 'dev@x.io');
-  a2.equal(pickMail([c('noreply@github.com')]), null);
+  assert.equal(pickMail([c('1+x@users.noreply.github.com'), c('dev@x.io'), c('dev@x.io'), c('bot@y.io')]), 'dev@x.io');
+  assert.equal(pickMail([c('noreply@github.com')]), null);
 });
 
-import { rewriteReadme as rw2 } from '../src/readme-ascii.mjs';
-t2('rewriteReadme: hero image sits under the explainer link and strips cleanly on a re-run', () => {
-  const md = '# Proj\n\nIntro text.\n';
-  const a = rw2(md, { liveUrl: 'https://l.app', repoName: 'Proj', svgDir: 'docs/explainer', hero: { rel: 'docs/explainer/overview.jpg', alt: 'How Proj works' } });
-  a2.ok(a.markdown.includes('[![How Proj works](docs/explainer/overview.jpg)](https://l.app)'));
-  a2.ok(a.markdown.indexOf('overview.jpg') < a.markdown.indexOf('Intro text.'));
-  const again = rw2(a.markdown, { liveUrl: 'https://l.app', repoName: 'Proj', svgDir: 'docs/explainer', hero: { rel: 'docs/explainer/overview.jpg', alt: 'How Proj works' } });
-  a2.equal((again.markdown.match(/overview\.jpg/g) || []).length, 1, 'one hero, not two');
-  const none = rw2(md, { liveUrl: 'https://l.app', repoName: 'Proj', svgDir: 'docs/explainer' });
-  a2.ok(!none.markdown.includes('overview.jpg'));
+test('pickMaintainerEmail: EVERY bot pattern is individually load-bearing (the bot is the most frequent author)', () => {
+  const c = (e) => ({ commit: { author: { email: e } } });
+  const bots = ['noreply@x.io', 'no-reply@x.io', '123+someone@users.noreply.github.com', '49699333+dependabot[bot]@users.noreply.github.com',
+    'thing[bot]@x.io', 'bot@y.io', 'dependabot-preview@x.io', 'renovate@x.io', 'github-actions@x.io'];
+  for (const bot of bots) {
+    const commits = [c(bot), c(bot), c(bot), c('dev@x.io')];
+    assert.equal(pickMail(commits), 'dev@x.io', `${bot} outnumbers the human 3:1 yet must be skipped`);
+  }
+  assert.equal(pickMail([c('not-an-email'), c('')]), null);
 });
 
-import { snapshotFromGh } from '../src/outreach-cli.mjs';
-t2('our own update/follow-up comments never count as a reply', () => {
+test('our own update/follow-up comments never count as a reply', () => {
   const j = { state: 'OPEN', createdAt: '2026-10-13T00:00:00Z', comments: [{ author: { login: 'stuinfla' } }, { author: { login: 'StuInfla' } }], reactionGroups: [] };
   const mine = snapshotFromGh(j, 'morluto', 'stuinfla');
-  a2.equal(mine.comments, 0);
-  a2.equal(classifyResponse(mine, Date.parse('2026-10-14T00:00:00Z')).label, 'waiting');
+  assert.equal(mine.comments, 0);
+  assert.equal(classifyResponse(mine, Date.parse('2026-10-14T00:00:00Z')).label, 'waiting');
   const theirs = snapshotFromGh({ ...j, comments: [...j.comments, { author: { login: 'morluto' } }] }, 'morluto', 'stuinfla');
-  a2.equal(classifyResponse(theirs).label, 'replied');
+  assert.equal(classifyResponse(theirs).label, 'replied');
 });

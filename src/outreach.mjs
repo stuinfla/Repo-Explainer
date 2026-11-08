@@ -4,9 +4,9 @@
 // responds, (b) a daily cap holds, and (c) we never contact the same repo twice. The owner's rule:
 // "make sure you always track these and see if people respond and react to them."
 //
-// One append-only JSONL file. Entries are never edited; a later `status` record supersedes an earlier
-// one for the same URL. Pure helpers + two tiny file functions (read/append) so the CLI and the
-// station share ONE definition.
+// One append-only JSONL file. Entries are never edited; `status` lines are an audit trail of what each
+// check found. Pure helpers + two tiny file functions (read/append) so the CLI and the station share
+// ONE definition.
 
 import fs from 'node:fs';
 import path from 'node:path';

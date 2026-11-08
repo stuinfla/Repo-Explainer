@@ -8,7 +8,7 @@ subscription, and Codex itself becomes the brain. Authoring and grading then cos
 the flat subscription you already pay for.
 
 This is not a new pipeline. It is the same skill (`skills/explainmyrepo/SKILL.md`) entered through
-a different door, which is exactly what INV-08 ("one brain, many doors") anticipates.
+a different host: the skill is the hosted door's brain, and Codex can run it the same way a headless agent does.
 
 ---
 
@@ -25,18 +25,21 @@ The npx CLI knocks on the metered doors. A Codex session knocks on the subscript
 
 Codex is a coding agent, not an image model, so it does not produce imagery. It does not need to:
 `tools/generate-image.mjs` calls the OpenAI image API directly. Codex conducts, the tool paints.
-Codex *does* accept image input (`codex --image`), so it can read the rendered screenshots and run
-the Gate A/B quality grade itself.
+Codex *does* accept image input (`codex --image`), so it can read the rendered screenshots and give its
+own Gate A/B judgment as a second opinion. (`tools/quality-grade.mjs` still makes its own metered vision
+call; see below.)
 
 ### What each step costs
 
 | Step | Engine | Cost |
 |---|---|---|
-| Understand, author, grade | Codex on a ChatGPT subscription | $0 marginal |
-| Embeddings for the KB | `bge-small-en-v1.5`, runs locally | $0 |
-| Imagery (hero, problem, use-case) | `gpt-image-2` via the OpenAI API | cents per image |
+| Understand, author, your own grade | Codex on a ChatGPT subscription | $0 marginal |
+| The `quality-grade` tool's vision call | the vision model named by `QUALITY_VISION_MODEL`, via the OpenAI API | metered, per grading call |
+| Embeddings for the KB | the model named in the target's `embed` block (`bge-small-en-v1.5` for registered targets), runs locally | $0 |
+| Imagery (hero, problem, use-case) | `gpt-image-2.5-flare` at `xhigh`, falling back to `gpt-image-2`, via the OpenAI API | metered; the flare price is **unknown** (receipts say UNPRICED, never $0) |
 
-Image generation is the only unavoidable metered spend, and it lands well under $1 per build.
+Image generation and the tool's vision grading are the metered spend. Neither has a measured per-build total
+for the flare engine, so no dollar figure is claimed here; read the build's receipt.
 
 ---
 
@@ -146,18 +149,19 @@ Do NOT run tools/clone-repo.mjs and do NOT touch the network. Prepare the source
 
 Then resume at SKILL.md Station 1: register a "{{SLUG}}" target in kb/kb.config.mjs
 (copy an existing target's shape; set repoDir to the ABS path above and the embed block
-to Xenova/bge-small-en-v1.5, 384-dim — SKILL.md explains why the explicit embed block is
-required), run node tools/build-kb.mjs "$BUILD", author + index the primer, then proceed
+to Xenova/bge-small-en-v1.5, 384-dim — build-kb refuses a target with no embed block), run node tools/build-kb.mjs "$BUILD", author + index the primer, then proceed
 concept → content → visual-brief → images/diagrams → assemble → grade.
 
 ── OVERRIDE 2: MODEL ROUTING (subscription first, minimise API) ──────────────
 YOU (Codex, on the ChatGPT subscription) do ALL authoring and ALL quality judgment: the
 primer, concept, content, visual briefs, and the Gate A/B + six operator questions.
 Images are made by tools/generate-image.mjs via OPENAI_API_KEY in .env — expected and
-fine (a few cents each). For grading, run node tools/quality-grade.mjs "$BUILD" to RENDER
-the 390px + 1440px screenshots; then OPEN those PNGs under "$BUILD/assets/" and grade them
-YOURSELF against the verbatim Gate A/B rubric in SKILL.md, writing the quality slot.
-Refine-loop until BOTH devices clear: mean ≥ 90, min axis ≥ 85, all six operator YES.
+fine. For grading, run node tools/quality-grade.mjs "$BUILD": it renders the 390px + 1440px
+screenshots AND grades them with its own metered vision call, writing the quality slot (there is no
+render-only mode). Then OPEN those PNGs under "$BUILD/assets/" and judge them YOURSELF against the
+verbatim Gate A/B rubric in SKILL.md as a second opinion; if you disagree with the tool, say so.
+Refine-loop (the tool enforces a cap of 3 grading calls) aiming for the EXEMPLARY bar on BOTH devices:
+mean ≥ 90, min axis ≥ 85, all six operator YES. The SHIP tier is mean ≥ 82, min ≥ 70.
 
 ── OVERRIDE 3: SHIP OR HOLD ──────────────────────────────────────────────────
 If the source repo is PRIVATE: stop after the quality gate passes. Do NOT run deploy,
@@ -184,9 +188,10 @@ locally.
 
 ## Notes and limits
 
-- **Private repos stay private.** Nothing is cloned and nothing is deployed under Override 3. The
-  source never leaves the machine except as imagery prompts, which describe the concept rather than
-  the code.
+- **Private repos stay unpublished, not off the network.** Nothing is cloned and nothing is deployed under
+  Override 3, but the Codex session itself reads the source and sends it to OpenAI under your ChatGPT account;
+  the image prompts go to the image API; and `quality-grade` uploads screenshots of the built page (which
+  quote your source) to the OpenAI vision API. If the source must not reach OpenAI at all, do not use this flow.
 - **Grading calibration.** The numeric bar (mean ≥ 90, min axis ≥ 85) was tuned against the vision
   grader in `tools/quality-grade.mjs`. A different grader is a different harsh critic, so treat the
   first Codex-graded build as a recalibration point rather than a like-for-like score.

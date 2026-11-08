@@ -4,7 +4,7 @@
 // (src/smtp.mjs) so they can forward it if they choose. Copy never vouches for itself.
 
 export function pickMaintainerEmail(commits) {
-  const bad = /noreply|no-reply|users\.noreply\.github\.com|\[bot\]|bot@|dependabot|renovate|github-actions/i;
+  const bad = /noreply|no-reply|\[bot\]|bot@|dependabot|renovate|github-actions/i;
   const counts = new Map();
   for (const c of Array.isArray(commits) ? commits : []) {
     const email = (c?.commit?.author?.email || c?.author?.email || '').trim().toLowerCase();

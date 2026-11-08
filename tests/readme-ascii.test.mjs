@@ -210,3 +210,24 @@ test('rewrite: GUARD — a diagram inside a LONGER fence is not double-processed
   assert.equal(r.diagrams.length, 1);
   assert.ok(r.markdown.includes('````text'));
 });
+
+test('rewriteReadme: hero image sits under the explainer link and strips cleanly on a re-run', () => {
+  const md = '# Proj\n\nIntro text.\n';
+  const a = rewriteReadme(md, { liveUrl: 'https://l.app', repoName: 'Proj', svgDir: 'docs/explainer', hero: { rel: 'docs/explainer/overview.jpg', alt: 'How Proj works' } });
+  assert.ok(a.markdown.includes('[![How Proj works](docs/explainer/overview.jpg)](https://l.app)'));
+  assert.ok(a.markdown.indexOf('overview.jpg') < a.markdown.indexOf('Intro text.'));
+  const again = rewriteReadme(a.markdown, { liveUrl: 'https://l.app', repoName: 'Proj', svgDir: 'docs/explainer', hero: { rel: 'docs/explainer/overview.jpg', alt: 'How Proj works' } });
+  assert.equal((again.markdown.match(/overview\.jpg/g) || []).length, 1, 'one hero, not two');
+  const none = rewriteReadme(md, { liveUrl: 'https://l.app', repoName: 'Proj', svgDir: 'docs/explainer' });
+  assert.ok(!none.markdown.includes('overview.jpg'));
+});
+
+test('fallback block lands AFTER a multi-line intro paragraph, never inside it; rewrite is idempotent and strips back to the original', () => {
+  const orig = '# x\n\nFirst line of the intro\nsecond line of the same paragraph.\n\n## Install\n\nrun it\n';
+  const o = { liveUrl: 'https://x.app', repoName: 'x', svgDir: 'docs/explainer', fallback: [{ alt: 'Arch', rel: 'docs/explainer/a.svg' }, { alt: 'Flow', rel: 'docs/explainer/f.svg' }] };
+  const once = rewriteReadme(orig, o);
+  assert.equal(once.mode, 'fallback');
+  assert.ok(once.markdown.includes('First line of the intro\nsecond line of the same paragraph.\n'), 'the owner\'s paragraph stays contiguous');
+  assert.equal(rewriteReadme(once.markdown, o).markdown, once.markdown);
+  assert.equal(stripEnhancements(once.markdown), orig, 'stripping returns the owner\'s README byte-for-byte (no stray blank line)');
+});

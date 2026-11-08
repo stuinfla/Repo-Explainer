@@ -1,6 +1,6 @@
 // src/outreach-followup.mjs — one gentle check-in per issue (pure helpers; the CLI does the I/O).
 //
-// Owner's rule (2026-10-14): post the work, track it, and if nobody has answered after a week send ONE short
+// The rule (ADR-0015): post the work, track it, and if nobody has answered after a week send ONE short
 // note saying we are only trying to help and how to reach us. Never more than one. Silent if they replied
 // or closed the issue. Reads the same ledger the readme-enhance station writes (src/outreach.mjs).
 

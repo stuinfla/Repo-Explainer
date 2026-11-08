@@ -1,123 +1,53 @@
-// Conformance test — INV-15 (StructuralDiagramsAsSVG) + INV-18 (ArchitectureAndFlowRequired).
-//
-// THE keystone test. It encodes the exact failure the owner caught: make-diagrams emitted raw
-// ASCII rendered as SVG <text> inside one background <rect>, NOT a real vector diagram with node
-// boxes and connectors. A real diagram (post-fix, via the ascii-to-svg skill) draws node boxes
-// (multiple <rect>) and/or connectors (<path>/<line>/<polyline>). This test FAILS RED against the
-// current tool and turns GREEN only when make-diagrams produces genuine vectors.
+// INV-15 / INV-18: architecture and flow are drawn as real vectors (boxes + connectors), a graph that says nothing is
+// not drawn, and the four concept slots take distinct archetypes. Fixtures run through the real tool.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { makeBuild, runTool, svgOf, cleanup } from './helpers/diagram-build.mjs';
 
-const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const TOOL = path.join(REPO, 'tools', 'make-diagrams.mjs');
+const CONCEPTS = {
+  bigIdeaDiagram: { rows: [{ items: ['A', 'B', 'C'], connect: true }] },
+  insightDiagram: { rows: [{ items: ['the one clever move', 'its result'], connect: true }] },
+};
+// 3 components, 2 internal deps (app -> core -> util) + authored rows for the two judgment diagrams
+const makeFixture = () => makeBuild({ visuals: CONCEPTS });
+// 0 internal edges: a dependency map here would show nothing
+const makeDegenerateFixture = () => makeBuild({ nodes: ['thing', 'thing-monorepo'], edges: [], visuals: CONCEPTS });
+// ruos's real shape: nodes: []
+const makeZeroNodeFixture = () => makeBuild({ nodes: [], edges: [], visuals: CONCEPTS });
+const runMakeDiagrams = (dir) => { const r = runTool(dir); if (r.status !== 0) { const e = new Error(r.out); e.stdout = r.stdout; e.stderr = r.stderr; throw e; } return r; };
+const withVisuals = (dir, extra) => {
+  const bj = path.join(dir, 'build.json');
+  const b = JSON.parse(fs.readFileSync(bj, 'utf8'));
+  Object.assign(b.visuals, extra);
+  fs.writeFileSync(bj, JSON.stringify(b, null, 2));
+};
 
-// Self-contained fixture: a minimal-but-real kb extraction (3 components, 2 internal deps) +
-// brain-authored ASCII for the two judgment diagrams, so make-diagrams has everything it needs.
-function makeFixture() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'emr-diag-'));
-  const kb = path.join(dir, 'kb');
-  fs.mkdirSync(kb, { recursive: true });
-  fs.writeFileSync(path.join(kb, 'dep-graph.json'), JSON.stringify({
-    nodes: [{ name: 'app' }, { name: 'core' }, { name: 'util' }],
-    internalEdges: [{ from: 'app', to: 'core' }, { from: 'core', to: 'util' }],
-    componentCount: 3, internalEdgeCount: 2, ecosystems: ['node'],
-    externalDepNames: ['left-pad'], externalDepCount: 1,
-  }));
-  fs.writeFileSync(path.join(kb, 'entrypoints.json'), JSON.stringify({
-    install: ['npm i'],
-    commands: [{ category: 'build', cmd: 'npm run build' }, { category: 'test', cmd: 'npm test' }],
-    binaries: [{ name: 'fixrepo' }], quickstart: ['npx fixrepo'], workspace: { kind: 'single' },
-  }));
-  fs.writeFileSync(path.join(kb, 'symbols.json'), JSON.stringify({ count: 10, byCrate: { core: 5 } }));
-  fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify({
-    understanding: { repoName: 'fixrepo' },
-    kb: {
-      depGraphPath: path.join(kb, 'dep-graph.json'),
-      entrypointsPath: path.join(kb, 'entrypoints.json'),
-      symbolsPath: path.join(kb, 'symbols.json'),
-    },
-    visuals: {
-      bigIdeaDiagram: { ascii: 'Big Idea\n[A] -> [B] -> [C]' },
-      insightDiagram: { ascii: 'The Insight\nthe one clever move' },
-    },
-  }, null, 2));
-  return dir;
-}
-
-function runMakeDiagrams(dir) {
-  return execFileSync(process.execPath, [TOOL, dir], { stdio: ['ignore', 'pipe', 'pipe'] });
-}
-
-test('INV-18 — make-diagrams renders the ARCHITECTURE diagram as REAL vectors (node boxes + connectors), not raw ASCII as <text>', () => {
+test('INV-18 — the ARCHITECTURE diagram is real vectors: one card per module and one connector per dependency, not ASCII-as-text', () => {
   const dir = makeFixture();
-  runMakeDiagrams(dir);
-  const svg = fs.readFileSync(path.join(dir, 'assets', 'architecture.svg'), 'utf8');
-
-  const rects = (svg.match(/<rect\b/g) || []).length;
-  const connectors = (svg.match(/<(path|line|polyline|polygon)\b/g) || []).length;
-  const texts = (svg.match(/<text\b/g) || []).length;
-
-  // ASCII-as-text == exactly ONE <rect> (the background card) + many <text> + ZERO connectors.
-  // A real architecture diagram draws a box per component and a line/arrow per dependency.
-  assert.ok(
-    rects >= 2 || connectors >= 1,
-    `architecture.svg is ASCII-as-text, not a real diagram: ${rects} <rect>, ${connectors} connectors, ${texts} <text>. ` +
-    'A real diagram needs node boxes (>=2 <rect>) or connectors (<path>/<line>). This is exactly the failure the owner caught.',
-  );
+  try {
+    runMakeDiagrams(dir);
+    const svg = svgOf(dir, 'architecture.svg');
+    for (const n of ['app', 'core', 'util']) assert.ok(svg.includes(`>${n}<`), `module ${n} must be drawn as a labelled card`);
+    assert.equal((svg.match(/<path class="flow-line"/g) || []).length, 2, 'one connector per internal dependency (app->core, core->util)');
+    assert.ok((svg.match(/<rect\b/g) || []).length >= 4, 'the background card plus a card per module');
+  } finally { cleanup(dir); }
 });
 
-test('INV-18 — make-diagrams renders the PROCESS/DATA-FLOW diagram as REAL vectors (steps + arrows), not raw ASCII as <text>', () => {
+test('INV-18 — the PROCESS/DATA-FLOW diagram is real vectors: one card per lifecycle stage joined by arrows, not ASCII-as-text', () => {
   const dir = makeFixture();
-  runMakeDiagrams(dir);
-  const svg = fs.readFileSync(path.join(dir, 'assets', 'flow.svg'), 'utf8');
-
-  const rects = (svg.match(/<rect\b/g) || []).length;
-  const connectors = (svg.match(/<(path|line|polyline|polygon)\b/g) || []).length;
-  const texts = (svg.match(/<text\b/g) || []).length;
-
-  assert.ok(
-    rects >= 2 || connectors >= 1,
-    `flow.svg is ASCII-as-text, not a real diagram: ${rects} <rect>, ${connectors} connectors, ${texts} <text>. ` +
-    'A real flow diagram needs step boxes (>=2 <rect>) or arrows (<path>/<line>).',
-  );
+  try {
+    runMakeDiagrams(dir);
+    const svg = svgOf(dir, 'flow.svg');
+    for (const st of ['INSTALL', 'BUILD', 'RUN', 'VERIFY']) assert.ok(svg.includes(`>${st}<`), `stage ${st} must be drawn as a card`);
+    assert.ok((svg.match(/<(path|line)\b/g) || []).length >= 3, 'the stages are joined by connectors');
+    assert.ok((svg.match(/<rect\b/g) || []).length >= 5, 'the background card plus a card per stage');
+  } finally { cleanup(dir); }
 });
 
-// ── REGRESSION: a diagram must CARRY INFORMATION or not be drawn (2026-07-12) ─────────────────────
-// chalk, stronghold, agenticow AND ternlight each shipped a gorgeous, animated "N modules · 0
-// internal links" — a truthful picture of an EMPTY GRAPH. "Grounded in the repo's real structure" is
-// necessary, not sufficient: it is entirely possible to draw an accurate picture of nothing. The
-// renderer drew whatever the graph handed it and nobody asked whether the graph SAID anything.
-function makeDegenerateFixture() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'emr-degen-'));
-  const kb = path.join(dir, 'kb');
-  fs.mkdirSync(kb, { recursive: true });
-  fs.writeFileSync(path.join(kb, 'dep-graph.json'), JSON.stringify({
-    nodes: [{ name: 'thing' }, { name: 'thing-monorepo' }],
-    internalEdges: [],                       // <- 0 edges: a dependency map here shows NOTHING
-    componentCount: 2, internalEdgeCount: 0, ecosystems: ['rust'],
-    externalDepNames: ['libm'], externalDepCount: 1,
-  }));
-  fs.writeFileSync(path.join(kb, 'entrypoints.json'), JSON.stringify({
-    install: ['cargo build'], commands: [{ category: 'test', cmd: 'cargo test' }],
-    binaries: [], quickstart: [], workspace: { kind: 'single' },
-  }));
-  fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify({
-    understanding: { repoName: 'thing' },
-    kb: { depGraphPath: path.join(kb, 'dep-graph.json'), entrypointsPath: path.join(kb, 'entrypoints.json') },
-    visuals: {
-      bigIdeaDiagram: { ascii: 'Big Idea\n[A] -> [B]' },
-      insightDiagram: { ascii: 'The Insight\nclever' },
-    },
-  }, null, 2));
-  return dir;
-}
-
+// A diagram must CARRY INFORMATION or not be drawn: an accurate picture of an empty graph is still a picture of nothing.
 test('a dep-graph with 0 internal edges REFUSES to draw a dependency map (no picture of nothing)', () => {
   const dir = makeDegenerateFixture();
   assert.throws(() => runMakeDiagrams(dir), (err) => {
@@ -148,20 +78,7 @@ test('a degenerate dep-graph WITH authored concept rows renders the concept, not
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
-// ── ZERO NODES is the most degenerate graph of all, not a different failure (2026-09-17) ─────────
-// ruvnet/ruos (one Rust binary + SKILL.md files) produced a dep-graph with nodes: []. The brain had
-// authored architecture rows, but an older guard ("dep-graph has no nodes") fired BEFORE the
-// 0-edge demotion above could run, so the build died at Station 4 with its answer already written.
-// A graph with no nodes has no edges; it must take the same path as the pair of tests above.
-function makeZeroNodeFixture() {
-  const dir = makeDegenerateFixture();
-  fs.writeFileSync(path.join(dir, 'kb', 'dep-graph.json'), JSON.stringify({   // ruos's real shape
-    ecosystems: [], componentCount: 0, internalEdgeCount: 0, externalDepCount: 0,
-    nodes: [], internalEdges: [], externalDeps: {}, externalDepNames: [],
-  }));
-  return dir;
-}
-
+// A graph with no nodes has no edges: it takes the same path as the 0-edge tests above.
 test('a dep-graph with ZERO nodes WITH authored concept rows renders the concept (ruos regression)', () => {
   const dir = makeZeroNodeFixture();
   const bj = path.join(dir, 'build.json');
@@ -192,10 +109,7 @@ test('a dep-graph with ZERO nodes and NO authored rows still fails LOUD, naming 
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
-// ── REGRESSION: the hero animation is PER-REPO and must never be borrowed (2026-07-12) ────────────
-// For about twenty minutes the animation's content (ternlight's own ternary weights, "it never
-// multiplies", "4.6 MB") was a CONSTANT inside make-diagrams — which would have stapled ternlight's
-// animation onto every other repo's hero. Same class of defect as shipping a lookalike repo.
+// The hero animation is PER-REPO content: never a constant borrowed from another repo.
 test('no visuals.heroAnim => NO animation is emitted (never another repo\'s)', () => {
   const dir = makeFixture();                       // fixture has no heroAnim
   runMakeDiagrams(dir);
@@ -231,40 +145,16 @@ test('the hero animation renders THIS repo\'s authored content, with no ternligh
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
-// ── REGRESSION: the four concept slots must render as DISTINCT archetypes (2026-07-18) ─────────────
-// Before this, EVERY concept-rendered diagram drew ONE vertical card-column. On a repo where multiple
-// slots demote to concept (bissanmu/spring3-legacy-web: flow + big-idea + insight all did), three
-// diagrams shared one visual form and the imagery-craft grade fell below the ship-bar floor (B5 58/60
-// < 70), so deploy.mjs refused to publish a fully-built page. Each key now owns a distinct archetype:
-// column (bigIdea) · ribbon (flow) · orbit (insight) · strata (architecture).
-function makeAllConceptFixture() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'emr-forms-'));
-  const kb = path.join(dir, 'kb');
-  fs.mkdirSync(kb, { recursive: true });
-  // 0 internal edges -> architecture demotes to concept; entrypoints present + authored flow rows ->
-  // flow demotes to concept too. So all four slots render via renderConcept and must NOT share a form.
-  fs.writeFileSync(path.join(kb, 'dep-graph.json'), JSON.stringify({
-    nodes: [{ name: 'a' }, { name: 'b' }], internalEdges: [],
-    componentCount: 2, internalEdgeCount: 0, ecosystems: ['node'],
-    externalDepNames: ['dep'], externalDepCount: 1,
-  }));
-  fs.writeFileSync(path.join(kb, 'entrypoints.json'), JSON.stringify({
-    install: ['npm i'], commands: [{ category: 'build', cmd: 'npm run build' }],
-    binaries: [{ name: 'x' }], quickstart: ['npx x'], workspace: { kind: 'single' },
-  }));
-  const chain = (items) => ({ rows: [{ items, connect: true }] });
-  fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify({
-    understanding: { repoName: 'fourforms' },
-    kb: { depGraphPath: path.join(kb, 'dep-graph.json'), entrypointsPath: path.join(kb, 'entrypoints.json') },
-    visuals: {
-      architectureDiagram: chain(['outer layer', 'middle layer', 'inner core']),
-      flowDiagram: chain(['input', 'transform', 'output']),
-      bigIdeaDiagram: chain(['idea A', 'idea B', 'idea C']),
-      insightDiagram: chain(['the move', 'result one', 'result two']),
-    },
-  }, null, 2));
-  return dir;
-}
+// A repo where several slots draw as concept diagrams must not show one visual form repeatedly (INV-23).
+// 0 internal edges -> architecture draws as a concept; authored flow rows -> flow does too. All four slots render
+// via renderConcept and must NOT share a form.
+const chain = (items) => ({ rows: [{ items, connect: true }] });
+const makeAllConceptFixture = () => makeBuild({ nodes: ['a', 'b'], edges: [], repoName: 'fourforms', visuals: {
+  architectureDiagram: chain(['outer layer', 'middle layer', 'inner core']),
+  flowDiagram: chain(['input', 'transform', 'output']),
+  bigIdeaDiagram: chain(['idea A', 'idea B', 'idea C']),
+  insightDiagram: chain(['the move', 'result one', 'result two']),
+} });
 
 test('the four concept slots render as DISTINCT archetypes (no shared vertical-card form)', () => {
   const dir = makeAllConceptFixture();
@@ -278,8 +168,7 @@ test('the four concept slots render as DISTINCT archetypes (no shared vertical-c
   }
   assert.equal(new Set(Object.values(arch)).size, 4,
     `all four concept diagrams must use DISTINCT archetypes — this is the whole fix. Got ${JSON.stringify(arch)}`);
-  // Nested frames assert literal containment, so since 2026-09-20 (0258c2d) architecture only gets
-  // 'strata' when its authored text actually claims containment. This fixture claims nothing.
+  // Nested frames assert literal containment: architecture only gets 'strata' when its authored text claims it. This one does not.
   assert.deepEqual(arch,
     { architectureDiagram: 'orbit', flowDiagram: 'ribbon', bigIdeaDiagram: 'column', insightDiagram: 'grid' },
     'each diagram key must map to its assigned archetype');

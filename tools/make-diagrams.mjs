@@ -1,46 +1,51 @@
 #!/usr/bin/env node
-// make-diagrams.mjs — Station 4 structural-SVG rung (tools/ CONTRACT.md row 4)
+// make-diagrams.mjs — Station 4: draw the page's diagrams as real, dark glassmorphic SVGs (never ASCII-as-text).
 //
-// JOB (ADR-0005 Station 4 + INV-18 + DDD §13 INV-15): produce the structural-diagram SVGs as REAL,
-// BEAUTIFUL vector diagrams — dark, layered/isometric, glassmorphic glowing cards on a dark gradient
-// canvas — NOT raw ASCII as <text>, and NOT a flat freshman wireframe. The MANDATORY architecture
-// diagram (grounded in the REAL kb dep-graph + symbols) is drawn as a LAYERED STACK (entry → core →
-// foundation → external) of glowing glass slabs with glowing connectors; the MANDATORY process/data-
-// flow diagram (grounded in the REAL kb entrypoints) is drawn as a STEPPED VERTICAL PATH with depth
-// and glowing arrows. big-idea & aha-insight diagrams are drawn from brain-authored structure.
+// READS  build.json: kb.depGraphPath / kb.entrypointsPath / kb.symbolsPath, concept.palette, repo.clonePath
+//        (only to verify story claims), and visuals.<key>.{rows, title, altText} for the four slots plus
+//        visuals.systemMap, visuals.decision and visuals.heroAnim.
+// WRITES assets/{architecture,flow,big-idea,insight}.svg  AND their phone twins assets/<name>.m.svg,
+//        assets/hero-scene.svg | refusal.svg (+ refusal.m.svg) for heroAnim, and merges
+//        visuals.<key> = { svgPath, mobileSvgPath, altText, asciiFallback, form, formVariant, mobileLabelPx, ... }
+//        (+ the authored rows/title round-tripped, so a re-run redraws identically) and visuals.heroAnim.
 //
-// STYLE (the fix for the owner's "flat boxes on light = garbage" note): dark gradient background
-// (#0b1018 → #070a10) with a soft top spotlight + faint dot grid; glassmorphic translucent cards
-// (semi-transparent fills + subtle light strokes + a glass sheen); colored glow via an SVG blur
-// filter (a blurred accent aura is drawn behind each lit element); vibrant accent colours pulled from
-// the brain's concept.palette (accent / accent-2 / accent-3) that read well on dark; white/light text;
-// monospace technical eyebrow + caption. Methodology mirrors the ascii-to-svg skill (parse → elements
-// → pixel positions → render shapes then connectors → xmllint validate) with a custom dark/glow style.
+// EVERY diagram is drawn TWICE from ONE model: a wide canvas and a 360-wide portrait canvas (one column, no text under
+// 13 units = 11.3px on a 390px phone). The page swaps them with <picture><source media>; mobileLabelPx is measured on
+// the phone twin and the step FAILS, after one corrective re-flow, if any text is under MOBILE_FLOOR_PX (11).
 //
-// ACCESSIBILITY: every SVG keeps an ASCII/textual fallback in <title>/<desc>, and build.json carries
-// altText + asciiFallback next to each rendered SVG — the ASCII source is a FEATURE (for humans AND AI).
+// WHAT IS DRAWN, per slot (the first that applies wins):
+//   1. a verified story diagram (visuals.systemMap -> architecture slot, visuals.decision -> flow slot);
+//   2. architecture: a RADIAL hub-and-spokes dependency map from the real dep-graph (the most depended-on
+//      module in the middle, up to ARCH_MAX_NODES modules in all); flow: a vertical build-lifecycle card
+//      stack from the real entrypoints (skipped for a library with no entrypoints);
+//   3. otherwise an authored concept diagram from visuals.<key>.rows. Architecture falls here when the dep-graph
+//      has 0 edges, flow when the brain authored a real runtime flow.
+// Each slot gets a distinct form family (resolveForms, INV-23); a collision dies loudly before any SVG is written.
 //
-// CONTRACT: uniform `node tools/make-diagrams.mjs <build-dir>`; reads ONLY its declared slice
-// (kb.depGraphPath/.entrypointsPath/.symbolsPath + visuals.<key>.{ascii,altText} + concept.palette);
-// writes ONLY visuals.architectureDiagram/.flowDiagram/.bigIdeaDiagram/.insightDiagram + the four .svg;
-// PURE (no network); FAIL LOUD (non-zero + clear reason, never a silent placeholder); idempotent.
+// PURE (no network); FAIL LOUD (non-zero exit + a reason, never a placeholder); idempotent.
+// stdout: one JSON { ok, outputs, error }; stderr: diagnostics. Design history: ADR-0012, 0013, 0014.
+// Code: tools/diagrams/ (draw kit, desktop + phone renderers, models, story, legibility).
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { tune } from '../src/story-diagrams-mobile.mjs';
 import {
-  renderSystemMap, renderDecision, validateSystemMap, validateDecision, verifySystemMap, verifyDecision,
-  describeSystemMap, describeDecision,
-} from '../src/story-diagrams.mjs';
-
-const TOOL = 'make-diagrams';
-
-function die(error) {
-  process.stdout.write(JSON.stringify({ ok: false, outputs: {}, error }) + '\n');
-  process.stderr.write(`${TOOL}: ${error}\n`);
-  process.exit(1);
-}
-const warn = (msg) => process.stderr.write(`${TOOL}: warning: ${msg}\n`);
+  TOOL, die, warn, PAL, setPalette, wrapSvg,
+} from './diagrams/draw.mjs';
+import { renderArchitectureRadial, renderFlow } from './diagrams/arch-flow.mjs';
+import { renderArchitectureMobile, renderFlowMobile } from './diagrams/mobile.mjs';
+import { renderConcept } from './diagrams/concept.mjs';
+import { renderConceptMobile } from './diagrams/mobile-concept.mjs';
+import { renderRefusal, renderRefusalMobile } from './diagrams/refusal.mjs';
+import { validateHeroScene, sceneAltText } from './diagrams/scene.mjs';
+import {
+  buildArchModel, buildFlowModel, DIAGRAMS, CONTAINMENT_CLAIM, resolveForms, defaultAltText,
+} from './diagrams/models.mjs';
+import { makeRepoReaders, storyFor, STORY_SLOT, authoredRows, correctedCaption } from './diagrams/story.mjs';
+import {
+  labelPx, findTextOverlaps, drawMobileChecked, reportLegibility,
+} from './diagrams/legibility.mjs';
 
 function loadJson(file, label) {
   let raw;
@@ -57,914 +62,6 @@ function resolveKbPath(p, buildDir) {
   return null;
 }
 
-const escapeXml = (s) =>
-  String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const clip = (s, n) => { s = String(s == null ? '' : s); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
-
-// ── colour utilities ─────────────────────────────────────────────────────────────────────────────
-function hx(h) {
-  h = String(h || '').trim().replace('#', '');
-  if (h.length === 3) h = h.split('').map((c) => c + c).join('');
-  if (!/^[0-9a-fA-F]{6}$/.test(h)) return [124, 92, 255];
-  return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
-}
-const toHex = (rgb) => '#' + rgb.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
-const mix = (a, b, t) => { const A = hx(a), B = hx(b); return toHex(A.map((v, i) => v + (B[i] - v) * t)); };
-const tint = (hex, a) => { const [r, g, b] = hx(hex); return `rgba(${r},${g},${b},${a})`; };
-// lift a possibly-dim brand colour so it pops on a near-black canvas
-function vivid(hex) {
-  const [r, g, b] = hx(hex);
-  const max = Math.max(r, g, b);
-  if (max >= 150) return hex;             // already bright enough
-  const k = 175 / Math.max(1, max);        // scale up toward a luminous version
-  return toHex([r * k, g * k, b * k]);
-}
-
-// ── palette: vibrant accents (themed from concept.palette) on a FIXED dark canvas ─────────────────
-function resolvePalette(concept) {
-  const p = concept && typeof concept === 'object' ? concept.palette : null;
-  const g = (k) => (p && typeof p[k] === 'string' && p[k].trim()) ? p[k].trim() : null;
-  // dark-friendly, luminous default spectrum: cyan · violet · emerald · pink · amber · blue
-  const DEF = ['#22d3ee', '#a78bfa', '#34d399', '#f472b6', '#fbbf24', '#60a5fa'];
-  const brand = [g('accent'), g('accent-2'), g('accent-3'), g('accent-4'), g('spectrum')].filter(Boolean).map(vivid);
-  const accents = (brand.length ? [...brand, ...DEF] : DEF).slice(0, 6);
-  return {
-    accents,
-    primary: accents[0],
-    bgTop: '#0b1018', bgMid: '#0a0e15', bgBot: '#070a10',
-    ink: '#f1f5f9', sub: '#aab6c8', muted: '#7c8aa0',
-    glass: 'rgba(255,255,255,0.05)', glassStroke: 'rgba(255,255,255,0.10)', edge: 'rgba(255,255,255,0.16)',
-    extern: '#7587a0',
-  };
-}
-let PAL = resolvePalette(null);
-const accent = (i) => PAL.accents[((i % PAL.accents.length) + PAL.accents.length) % PAL.accents.length];
-
-// ── text metrics + emit ───────────────────────────────────────────────────────────────────────────
-const FH = 'ui-sans-serif,system-ui,-apple-system,&quot;Segoe UI&quot;,Roboto,sans-serif';
-const FM = 'ui-monospace,SFMono-Regular,&quot;SF Mono&quot;,Menlo,Monaco,Consolas,monospace';
-const measure = (s, size, { bold = false, mono = false } = {}) =>
-  String(s == null ? '' : s).length * size * (mono ? 0.6 : bold ? 0.6 : 0.55);
-function txt(x, y, s, o = {}) {
-  const { size = 14, fill = PAL.ink, weight = 400, anchor = 'start', mono = false, ls, opacity, dom, extra, cls } = o;
-  return `<text${cls ? ` class="${cls}"` : ''} x="${x}" y="${y}" font-family="${mono ? FM : FH}" font-size="${size}" font-weight="${weight}"`
-    + ` fill="${fill}" text-anchor="${anchor}"${dom ? ` dominant-baseline="${dom}"` : ''}`
-    + `${ls != null ? ` letter-spacing="${ls}"` : ''}${opacity != null ? ` opacity="${opacity}"` : ''}${extra ? ` ${extra}` : ''}>${escapeXml(s)}</text>`;
-}
-
-// ── shared visual primitives (glassmorphic + glow) ─────────────────────────────────────────────────
-function defs(pal) {
-  return `  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0.3" y2="1">
-      <stop offset="0" stop-color="${pal.bgTop}"/><stop offset="0.55" stop-color="${pal.bgMid}"/><stop offset="1" stop-color="${pal.bgBot}"/>
-    </linearGradient>
-    <radialGradient id="spot" cx="0.5" cy="0.02" r="0.8">
-      <stop offset="0" stop-color="${tint(pal.primary, 0.1)}"/><stop offset="0.5" stop-color="${tint(pal.primary, 0.025)}"/><stop offset="1" stop-color="rgba(0,0,0,0)"/>
-    </radialGradient>
-    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="rgba(255,255,255,0.09)"/><stop offset="0.5" stop-color="rgba(255,255,255,0.015)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/>
-    </linearGradient>
-    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-      <circle cx="1" cy="1" r="1" fill="rgba(255,255,255,0.014)"/>
-    </pattern>
-    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="11"/></filter>
-    <filter id="glowS" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="4"/></filter>
-    <filter id="cardSh" x="-40%" y="-50%" width="180%" height="210%">
-      <feDropShadow dx="0" dy="6" stdDeviation="11" flood-color="#000000" flood-opacity="0.34"/>
-    </filter>
-  </defs>`;
-}
-
-function background(W, H, pal) {
-  return [
-    `  <rect x="0" y="0" width="${W}" height="${H}" fill="url(#bg)"/>`,
-    `  <rect x="0" y="0" width="${W}" height="${H}" fill="url(#spot)"/>`,
-    `  <rect x="0" y="0" width="${W}" height="${H}" fill="url(#grid)"/>`,
-  ].join('\n');
-}
-
-// a glassmorphic rounded panel with a colored glow aura, a darker extruded base (depth), and a sheen.
-function glassPanel(x, y, w, h, col, { r = 16, fillA = 0.16, depth = 10, aura = 0.5 } = {}) {
-  const parts = [];
-  if (aura) parts.push(`  <rect x="${x - 5}" y="${y - 3}" width="${w + 10}" height="${h + 10}" rx="${r + 4}" fill="${col}" opacity="${(aura * 0.5).toFixed(3)}" filter="url(#glow)"/>`);
-  if (depth) parts.push(`  <rect x="${x}" y="${y + depth}" width="${w}" height="${h}" rx="${r}" fill="${tint(mix(col, '#000000', 0.6), 0.85)}"/>`);
-  parts.push(`  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${tint(col, fillA)}" stroke="${tint(col, 0.42)}" stroke-width="1.25" filter="url(#cardSh)"/>`);
-  parts.push(`  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="url(#sheen)"/>`);
-  // a whisper of a top-edge highlight (restraint — no glossy bevel)
-  parts.push(`  <path d="M ${x + r} ${y + 1.25} H ${x + w - r}" stroke="rgba(255,255,255,0.14)" stroke-width="1" fill="none" stroke-linecap="round"/>`);
-  return parts.join('\n');
-}
-
-// a darker "glass chip" (component / token) that sits on top of a panel — readable white label
-function glassChip(x, y, w, h, col, label, sub, { r = 12 } = {}) {
-  const cx = x + 18;
-  const parts = [];
-  parts.push(`  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="rgba(11,15,23,0.7)" stroke="${tint(col, 0.45)}" stroke-width="1.25" filter="url(#cardSh)"/>`);
-  parts.push(`  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="url(#sheen)" opacity="0.4"/>`);
-  // a pulsing node dot — every card's "alive" signal, independent of whether it has any edges
-  parts.push(`  <circle class="node-pulse" cx="${cx}" cy="${y + h / 2}" r="4.5" fill="${col}" opacity="0.4" filter="url(#glowS)"/>`);
-  parts.push(`  <circle cx="${cx}" cy="${y + h / 2}" r="3.2" fill="${mix(col, '#ffffff', 0.35)}"/>`);
-  const tx = cx + 16;
-  if (sub) {
-    parts.push(txt(tx, y + h / 2 - 6, label, { size: 15.5, weight: 700, fill: PAL.ink }));
-    parts.push(txt(tx, y + h / 2 + 13, sub, { size: 11, mono: true, fill: PAL.sub }));
-  } else {
-    parts.push(txt(tx, y + h / 2, label, { size: 15.5, weight: 700, fill: PAL.ink, dom: 'central' }));
-  }
-  return parts.join('\n');
-}
-
-// glowing connector beam (vertical or horizontal) with a chevron arrowhead at the destination
-function beam(x1, y1, x2, y2, col, delay = null) {
-  const ang = Math.atan2(y2 - y1, x2 - x1);
-  const ax = x2 - Math.cos(ang) * 0, ay = y2 - Math.sin(ang) * 0;
-  const wing = 9;
-  const lx = ax - Math.cos(ang - 0.5) * wing, ly = ay - Math.sin(ang - 0.5) * wing;
-  const rx = ax - Math.cos(ang + 0.5) * wing, ry = ay - Math.sin(ang + 0.5) * wing;
-  const bright = mix(col, '#ffffff', 0.25);
-  const delayAttr = delay != null ? ` style="animation-delay:${delay.toFixed(2)}s"` : '';
-  return [
-    `  <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="9" opacity="0.3" filter="url(#glow)" stroke-linecap="round"/>`,
-    `  <line class="flow-line"${delayAttr} x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${bright}" stroke-width="2.4" stroke-linecap="round"/>`,
-    `  <path d="M ${lx.toFixed(1)} ${ly.toFixed(1)} L ${ax.toFixed(1)} ${ay.toFixed(1)} L ${rx.toFixed(1)} ${ry.toFixed(1)}" fill="none" stroke="${bright}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`,
-  ].join('\n');
-}
-
-function header(cx, top, eyebrow, title, pal) {
-  const out = [];
-  out.push(txt(cx, top + 14, eyebrow, { size: 13, mono: true, fill: pal.primary, weight: 600, anchor: 'middle', ls: 3 }));
-  out.push(`  <text x="${cx}" y="${top + 50}" font-family="${FH}" font-size="30" font-weight="800" fill="${pal.primary}" text-anchor="middle" opacity="0.45" filter="url(#glowS)">${escapeXml(title)}</text>`);
-  out.push(txt(cx, top + 50, title, { size: 30, weight: 800, fill: pal.ink, anchor: 'middle' }));
-  out.push(`  <line x1="${cx - 34}" y1="${top + 68}" x2="${cx + 34}" y2="${top + 68}" stroke="${pal.primary}" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>`);
-  return out.join('\n');
-}
-
-// Traveling-dash flow animation on connector lines — added 2026-07-12. Purposeful, not
-// decorative: these diagrams' whole job is showing dependency/process DIRECTION, and a
-// static arrow asks the reader to mentally simulate motion that isn't there. This shows it.
-// Baked directly into the SVG (not page CSS) because these files are embedded via <img> —
-// external stylesheets can't reach inside them. Respects prefers-reduced-motion natively
-// (SVG <style> supports the same media query as any stylesheet).
-// 2026-07-12, round 2: the first pass (thin-line dash only) was too weak to register, and on
-// diagrams with zero dependency edges (this real repo's architecture graph: 2 modules, 0 links)
-// there was literally nothing for it to animate — a real miss, not just subtlety. Fixed with a
-// SECOND, independent animation on the node/badge glow circles — present on EVERY card and EVERY
-// flow step regardless of edge count, so it can never go silent. Bold on purpose: opacity 0.35->1
-// AND a 1.5x scale pulse, not a flicker.
-const FLOW_STYLE = `  <style>
-    .flow-line { stroke-dasharray: 8 10; stroke-width: 3; animation: flow-dash 1.1s linear infinite; }
-    @keyframes flow-dash { to { stroke-dashoffset: -36; } }
-    .node-pulse { transform-box: fill-box; transform-origin: center; animation: node-pulse 2.1s cubic-bezier(0.4,0,0.2,1) infinite; }
-    @keyframes node-pulse { 0%, 100% { opacity: 0.35; transform: scale(1); } 50% { opacity: 1; transform: scale(1.6); } }
-    @media (prefers-reduced-motion: reduce) { .flow-line, .node-pulse { animation: none; } }
-  </style>`;
-
-// ── THE REFUSAL (hero animation) ────────────────────────────────────────────────────────────────
-// Motion that carries the ARGUMENT, not decoration. Every previous attempt animated the chrome —
-// crawling dashed lines — and rightly read as filler. This performs the single idea the whole page
-// rests on, above the fold, in nine seconds and no words from the reader:
-//   the model's messy decimal weights SNAP to −1 / 0 / +1  →  each becomes subtract / skip / add
-//   →  the multiply sign is struck through and dies  →  "it never multiplies."
-// One shared 9s timeline (every element keys off the same duration, expressing its beat as a
-// percentage) so nothing can drift out of phase on a long-running loop — the failure mode you get
-// from per-element durations + delays. Honours prefers-reduced-motion by settling on the END state
-// (ternary values + ops visible, multiply already dead), which is the state that carries the meaning.
-// THIS IS PER-REPO CONTENT AND MUST COME FROM build.json — NEVER a constant in this file.
-// (2026-07-12: it WAS a constant here for about twenty minutes — ternlight's own ternary weights,
-// hardcoded — which would have stapled ternlight's animation onto every other repo's hero. Same class
-// of defect as shipping a lookalike repo. The brain authors `visuals.heroAnim`; no heroAnim, no band.)
-// Shape:
-//   visuals.heroAnim = {
-//     label:  'The numbers inside the model',            // what the strip is showing
-//     chips:  [{ before:'0.0731', after:'0', op:'skip', kind:'zero'|'neg'|'pos' }, ... 3-6 of them],
-//     verdict:{ label:'The one expensive move', symbol:'×', dead:'never used' },  // the thing REMOVED
-//     kicker: 'it never multiplies — and that is why it fits in 4.6 MB',
-//   }
-// The shape is generic on purpose: it animates a BEFORE -> AFTER transformation plus the cost it kills.
-// That is a shape most interesting repos have (the trick they pull), not a ternary-specific one.
-const REFUSAL_W = 1180, REFUSAL_H = 300;
-
-function renderRefusal(pal, spec) {
-  const chips = (Array.isArray(spec.chips) ? spec.chips : []).slice(0, 6)
-    .map((c) => ({ dec: String(c.before ?? ''), tern: String(c.after ?? ''), op: String(c.op ?? ''), kind: c.kind || 'zero' }))
-    .filter((c) => c.dec && c.tern);
-  if (chips.length < 3) die('visuals.heroAnim.chips needs at least 3 entries of { before, after, op, kind } — refusing to draw a half-empty animation');
-  const CW = 148, CH = 68, GAP = 22;
-  const n = chips.length;
-  const stripW = n * CW + (n - 1) * GAP;
-  const x0 = 56, yChip = 96;
-  const colOf = (k) => (k === 'pos' ? pal.accents[0] : k === 'neg' ? (pal.accents[2] || pal.accents[1]) : pal.muted);
-
-  const css = [];
-  const body = [background(REFUSAL_W, REFUSAL_H, pal)];
-
-  body.push(txt(x0, 52, String(spec.label || 'Before'), { size: 12.5, mono: true, weight: 700, fill: pal.muted, anchor: 'start', ls: 2.2 }));
-
-  chips.forEach((c, i) => {
-    const x = x0 + i * (CW + GAP), cx = x + CW / 2, col = colOf(c.kind);
-    // each chip snaps on its own beat, staggered across 18%→38% of the shared timeline
-    const t0 = 18 + i * 4;              // snap start, %
-    const t1 = t0 + 5;                  // snap end, %
-    const tOp = t1 + 6;                 // the op word lands after the snap
-    body.push(glassPanel(x, yChip, CW, CH, col, { r: 14, fillA: 0.16, depth: 8, aura: 0.45 }));
-    // decimal (fades OUT on the snap) and ternary value (pops IN) share the chip's centre
-    body.push(txt(cx, yChip + CH / 2, c.dec, { size: 19, mono: true, weight: 600, fill: pal.ink, anchor: 'middle', dom: 'central', cls: `dec d${i}` }));
-    body.push(txt(cx, yChip + CH / 2, c.tern, { size: 26, weight: 800, fill: col, anchor: 'middle', dom: 'central', cls: `ter t${i}` }));
-    body.push(txt(cx, yChip + CH + 40, c.op, { size: 15.5, mono: true, weight: 700, fill: col, anchor: 'middle', cls: `op o${i}` }));
-    css.push(
-      // before-value fully clears (opacity 0) BEFORE the after-value appears — no frame shows both
-      // overlapping in the shared chip centre (the vision grader's worst-frame rule caught the collision).
-      `@keyframes dec${i}{0%,${t0}%{opacity:1;transform:scale(1)}${t0 + 3}%,100%{opacity:0;transform:scale(0.82)}}`,
-      `@keyframes ter${i}{0%,${t0 + 3}%{opacity:0;transform:scale(0.6)}${t1 + 2}%{opacity:1;transform:scale(1.18)}${t1 + 6}%,100%{opacity:1;transform:scale(1)}}`,
-      `@keyframes op${i}{0%,${tOp}%{opacity:0;transform:translateY(6px)}${tOp + 5}%,100%{opacity:1;transform:translateY(0)}}`,
-      `.d${i}{animation:dec${i} 9s linear infinite}`,
-      `.t${i}{animation:ter${i} 9s cubic-bezier(.2,1.6,.35,1) infinite}`,
-      `.o${i}{animation:op${i} 9s ease-out infinite}`,
-    );
-  });
-
-  // the verdict panel: the multiply sign, struck out and killed
-  const vx = x0 + stripW + 54, vcx = vx + 92;
-  const V = spec.verdict || {};
-  body.push(txt(vcx, 52, String(V.label || 'The expensive move'), { size: 12.5, mono: true, weight: 700, fill: pal.muted, anchor: 'middle', ls: 2.2 }));
-  body.push(txt(vcx, yChip + CH / 2, String(V.symbol || '\u00d7'), { size: 74, weight: 800, fill: pal.ink, anchor: 'middle', dom: 'central', cls: 'mul' }));
-  body.push(`  <line class="strike" x1="${vcx - 46}" y1="${yChip + CH / 2 + 34}" x2="${vcx + 46}" y2="${yChip + CH / 2 - 34}" stroke="${pal.accents[0]}" stroke-width="6" stroke-linecap="round"/>`);
-  body.push(txt(vcx, yChip + CH + 40, String(V.dead || 'never used'), { size: 15.5, mono: true, weight: 700, fill: pal.accents[0], anchor: 'middle', cls: 'verdict' }));
-
-  body.push(txt(REFUSAL_W / 2, 258, String(spec.kicker || ''), { size: 17, weight: 700, fill: pal.ink, anchor: 'middle', cls: 'kicker' }));
-
-  css.push(
-    // the strike is DRAWN across the × (dash-offset), then the × dies back
-    `.strike{stroke-dasharray:130;stroke-dashoffset:130;animation:strike 9s ease-in-out infinite}`,
-    `@keyframes strike{0%,58%{stroke-dashoffset:130}68%,100%{stroke-dashoffset:0}}`,
-    `.mul{transform-box:fill-box;transform-origin:center;animation:mul 9s ease-in-out infinite}`,
-    `@keyframes mul{0%,58%{opacity:0.95;transform:scale(1)}70%{opacity:0.95;transform:scale(1)}78%,100%{opacity:0.16;transform:scale(0.9)}}`,
-    `@keyframes verdict{0%,72%{opacity:0;transform:translateY(6px)}80%,100%{opacity:1;transform:translateY(0)}}`,
-    `.verdict{animation:verdict 9s ease-out infinite}`,
-    `@keyframes kicker{0%,80%{opacity:0}88%,100%{opacity:1}}`,
-    `.kicker{animation:kicker 9s ease-out infinite}`,
-    // transforms must pivot on each glyph, not the SVG origin
-    `.dec,.ter,.op,.verdict,.kicker{transform-box:fill-box;transform-origin:center}`,
-    // reduced motion: settle on the END state — the meaning, with no movement
-    `@media (prefers-reduced-motion:reduce){.dec,.ter,.op,.mul,.strike,.verdict,.kicker{animation:none}`
-      + `.dec{opacity:0}.ter,.op,.verdict,.kicker{opacity:1}.mul{opacity:0.16}.strike{stroke-dashoffset:0}}`,
-  );
-
-  const style = `  <style>\n    ${css.join('\n    ')}\n  </style>`;
-  const desc = `${spec.label || 'Before'}: ${chips.map((c) => `${c.dec} becomes ${c.tern} (${c.op})`).join('; ')}. `
-    + `${(spec.verdict || {}).label || 'The expensive move'} — shown as "${(spec.verdict || {}).symbol || '\u00d7'}" — is struck through and goes dark: `
-    + `${(spec.verdict || {}).dead || 'never used'}. ${spec.kicker || ''}`;
-  return { W: REFUSAL_W, H: REFUSAL_H, body: body.join('\n'), desc, style };
-}
-
-function wrapSvg(W, H, body, title, desc, ascii, extraStyle) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="d-title d-desc">
-  <title id="d-title">${escapeXml(title)}</title>
-  <desc id="d-desc">${escapeXml(desc)}</desc>
-${ascii ? `  <metadata><![CDATA[\n${String(ascii).replace(/]]>/g, ']]&gt;')}\n]]></metadata>\n` : ''}${FLOW_STYLE}
-${extraStyle || ''}
-${defs(PAL)}
-${body}
-</svg>
-`;
-}
-
-const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-
-// a directional dependency edge: a smooth bezier that LEAVES the source straight down and ARRIVES at
-// the target straight down, so a downward chevron arrowhead is always correct. Glow underlay + bright core.
-function curve(x1, y1, x2, y2, col, { w = 1.9, op = 0.82, glow = true, delay = null } = {}) {
-  const dy = Math.max(18, (y2 - y1) * 0.26);           // gentler bend = less awkward tracing
-  const tip = y2, base = y2 - 10;                      // stop the line at the arrowhead base, tip at the node
-  const d = `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${x1.toFixed(1)} ${(y1 + dy).toFixed(1)}, ${x2.toFixed(1)} ${(tip - dy).toFixed(1)}, ${x2.toFixed(1)} ${base.toFixed(1)}`;
-  const bright = mix(col, '#ffffff', 0.2);
-  const delayAttr = delay != null ? ` style="animation-delay:${delay.toFixed(2)}s"` : '';
-  const parts = [];
-  if (glow) parts.push(`  <path d="${d}" fill="none" stroke="${col}" stroke-width="${w + 2}" opacity="0.06" filter="url(#glow)"/>`);
-  parts.push(`  <path class="flow-line"${delayAttr} d="${d}" fill="none" stroke="${bright}" stroke-width="${w}" opacity="${op}" stroke-linecap="round"/>`);
-  const aw = 6, ah = 9.5;                              // crisp solid triangular arrowhead = unambiguous direction
-  parts.push(`  <path d="M ${(x2 - aw).toFixed(1)} ${(tip - ah).toFixed(1)} L ${x2.toFixed(1)} ${tip.toFixed(1)} L ${(x2 + aw).toFixed(1)} ${(tip - ah).toFixed(1)} Z" fill="${bright}" opacity="${op}"/>`);
-  return parts.join('\n');
-}
-
-// ── ARCHITECTURE: a real layered-DAG dependency map — nodes placed by topological depth, every REAL
-// module→module edge drawn as a directional connector, the most-depended-on module marked as the core ──
-const AR = { CHIP_H: 62, CHIP_MINW: 150, CHIP_MAXW: 254, CHIP_GAP: 34,
-  ROW_GAP: 104, TOP: 144, BOTTOM: 96, LEFT: 156, RIGHT: 78, EXT_GAP: 66, EXT_H: 90 };
-
-function archChipW(it) {
-  const lw = measure(clip(it.label, 26), 15, { bold: true });
-  const sw = it.sub ? measure(clip(it.sub, 30), 11, { mono: true }) : 0;
-  return clamp(Math.ceil(Math.max(lw, sw)) + 58, AR.CHIP_MINW, AR.CHIP_MAXW);
-}
-
-function bandName(i, total) {
-  if (total <= 1) return 'MODULES';
-  if (i === 0) return 'ENTRY';
-  if (i === total - 1) return 'FOUNDATION';
-  if (total === 3) return 'CORE';
-  if (total === 4) return i === 1 ? 'CORE' : 'SERVICES';
-  return `TIER ${i}`;
-}
-
-// even fan-out/fan-in: spread an edge's departure (or arrival) point across the node's edge so each
-// connector gets its own port and the arrowheads never pile onto one ambiguous point
-function portX(box, list, e) {
-  const n = list.length, idx = list.indexOf(e);
-  if (n <= 1) return box.cx;
-  const inset = Math.min(28, box.w * 0.34);
-  return (box.x + inset) + ((box.x + box.w - inset) - (box.x + inset)) * (idx / (n - 1));
-}
-
-function renderArchitecture(eyebrow, title, model, caption, pal) {
-  const rows = model.rows, edges = model.edges;
-  // MOBILE-FIRST layout (INV-18, 2026-07-30 stuinfla-helix hold — arithmetic, not taste: a
-  // 12-node tier laid in one line drove the square canvas to ~1300 units; at a 390px render
-  // that is ~3px text). Two changes: (a) wide tiers WRAP onto continuation lines budgeted to
-  // WRAP_W, (b) the canvas is PORTRAIT (content-sized), never forced square — a phone renders
-  // width-fit, so canvas width alone decides legibility.
-  const WRAP_W = 560;
-  const TT = rows.length;                       // logical tiers (depth bands)
-  const vrows = [];                             // visual rows: { items, tier }
-  rows.forEach((r, ti) => {
-    let line = [], w = 0;
-    for (const it of r) {
-      const cwChip = archChipW(it);
-      if (line.length && w + AR.CHIP_GAP + cwChip > WRAP_W) { vrows.push({ items: line, tier: ti }); line = []; w = 0; }
-      w += (line.length ? AR.CHIP_GAP : 0) + cwChip;
-      line.push(it);
-    }
-    if (line.length) vrows.push({ items: line, tier: ti });
-  });
-  const firstOfTier = new Map();                // tier -> visual row index of its first line
-  vrows.forEach((v, i) => { if (!firstOfTier.has(v.tier)) firstOfTier.set(v.tier, i); });
-  const total = vrows.length;
-  const rowW = vrows.map((v) => v.items.reduce((s, it) => s + archChipW(it), 0) + AR.CHIP_GAP * (v.items.length - 1));
-  const maxRowW = Math.max(AR.CHIP_MINW * 2 + AR.CHIP_GAP, ...rowW);
-  const extH = model.ext ? AR.EXT_GAP + AR.EXT_H : 0;
-  const cw = AR.LEFT + maxRowW + AR.RIGHT;
-  const ch = AR.TOP + total * AR.CHIP_H + (total - 1) * AR.ROW_GAP + extH + AR.BOTTOM;
-  const centerX = AR.LEFT + maxRowW / 2;
-  const body = [background(cw, ch, pal), '  <g>', header(centerX, 30, eyebrow, title, pal)];
-
-  // place every node and remember its anchor box (colour = its TIER's accent, not its visual line)
-  const pos = {};
-  vrows.forEach((v, i) => {
-    const y = AR.TOP + i * (AR.CHIP_H + AR.ROW_GAP);
-    let x = centerX - rowW[i] / 2;
-    for (const it of v.items) {
-      const w = archChipW(it);
-      pos[it.name] = { x, y, w, cx: x + w / 2, top: y, bot: y + AR.CHIP_H, col: accent(v.tier), it };
-      x += w + AR.CHIP_GAP;
-    }
-  });
-
-  // assign each node's edges to distinct ports (sorted toward their neighbour) before drawing
-  const outg = {}, inc = {};
-  for (const e of edges) { (outg[e.from] = outg[e.from] || []).push(e); (inc[e.to] = inc[e.to] || []).push(e); }
-  for (const k in outg) outg[k].sort((a, b) => (pos[a.to] ? pos[a.to].cx : 0) - (pos[b.to] ? pos[b.to].cx : 0));
-  for (const k in inc) inc[k].sort((a, b) => (pos[a.from] ? pos[a.from].cx : 0) - (pos[b.from] ? pos[b.from].cx : 0));
-
-  // REAL dependency edges drawn FIRST (behind the cards) — each module→module link, coloured by
-  // source, and REVEALED IN SEQUENCE (staggered delay) so the animation traces "here's what depends
-  // on what" one link at a time instead of every edge flickering together.
-  edges.forEach((e, ei) => {
-    const a = pos[e.from], b = pos[e.to];
-    if (!a || !b) return;
-    const sx = portX(a, outg[e.from], e), tx = portX(b, inc[e.to], e);
-    const edgeDelay = (ei % 6) * 0.35;
-    body.push(b.top > a.bot
-      ? curve(sx, a.bot + 3, tx, b.top - 3, a.col, { glow: false, delay: edgeDelay })
-      : curve(sx, a.bot + 3, tx, b.bot + 3, a.col, { w: 1.6, op: 0.55, glow: false, delay: edgeDelay }));
-  });
-
-  // left depth axis — a real "deeper = more foundational / more depended-on" gauge, not a bolted-on rail
-  const axX = AR.LEFT - 34;
-  const firstY = AR.TOP + AR.CHIP_H / 2, lastRowY = AR.TOP + (total - 1) * (AR.CHIP_H + AR.ROW_GAP) + AR.CHIP_H / 2, midY = (firstY + lastRowY) / 2;
-  body.push(`  <line x1="${axX}" y1="${firstY}" x2="${axX}" y2="${lastRowY + 16}" stroke="rgba(255,255,255,0.13)" stroke-width="1.5" stroke-dasharray="2 6"/>`);
-  body.push(`  <path d="M ${axX - 5} ${lastRowY + 10} L ${axX} ${lastRowY + 18} L ${axX + 5} ${lastRowY + 10} Z" fill="rgba(255,255,255,0.28)"/>`);
-  body.push(txt(26, midY, 'DEPENDENCY DEPTH', { size: 10.5, mono: true, weight: 700, fill: pal.muted, ls: 2, anchor: 'middle', dom: 'central', extra: `transform="rotate(-90 26 ${midY.toFixed(1)})"` }));
-  for (const [ti, vi] of firstOfTier) {   // one band dot + label per TIER, at its first visual line
-    const y = AR.TOP + vi * (AR.CHIP_H + AR.ROW_GAP) + AR.CHIP_H / 2, col = accent(ti);
-    body.push(`  <circle cx="${axX}" cy="${y}" r="4.5" fill="${col}" filter="url(#glowS)"/>`);
-    body.push(`  <circle cx="${axX}" cy="${y}" r="3" fill="${mix(col, '#ffffff', 0.4)}"/>`);
-    body.push(txt(axX - 13, y, bandName(ti, TT), { size: 11.5, mono: true, weight: 700, fill: col, ls: 1.2, anchor: 'end', dom: 'central' }));
-  }
-
-  // nodes — the hub gets a crisp ring + faint accent wash (a clear focal point, NOT a blurred fog cloud)
-  for (const r of rows) for (const it of r) {
-    const p = pos[it.name];
-    body.push(glassChip(p.x, p.top, p.w, AR.CHIP_H, p.col, clip(it.label, 26), it.sub ? clip(it.sub, 30) : ''));
-    if (it.isHub) {
-      // a faint accent wash + a crisp ring mark the core, with a small inline CORE tag (no slapped-on pill)
-      body.push(`  <rect x="${p.x}" y="${p.top}" width="${p.w}" height="${AR.CHIP_H}" rx="12" fill="${tint(p.col, 0.07)}"/>`);
-      body.push(`  <rect x="${(p.x - 4).toFixed(1)}" y="${(p.top - 4).toFixed(1)}" width="${p.w + 8}" height="${AR.CHIP_H + 8}" rx="16" fill="none" stroke="${p.col}" stroke-width="1.5" opacity="0.7"/>`);
-      body.push(`  <rect x="${(p.x + p.w - 52).toFixed(1)}" y="${(p.top - 11).toFixed(1)}" width="52" height="20" rx="6" fill="rgba(11,15,23,0.95)" stroke="${tint(p.col, 0.5)}" stroke-width="1"/>`);
-      body.push(`  <path d="M ${(p.x + p.w - 40).toFixed(1)} ${(p.top - 1).toFixed(1)} l 3.5 -3.5 l 3.5 3.5 l -3.5 3.5 Z" fill="${p.col}"/>`);
-      body.push(txt(p.x + p.w - 30, p.top - 1, 'CORE', { size: 9.5, mono: true, weight: 800, fill: mix(p.col, '#ffffff', 0.3), ls: 1, dom: 'central' }));
-    }
-  }
-
-  // external-dependency band — a slim row in the SAME glass language (just dimmer), not a foreign grey slab
-  if (model.ext) {
-    const ey = AR.TOP + total * AR.CHIP_H + (total - 1) * AR.ROW_GAP + AR.EXT_GAP;
-    const eh = 64, ew = clamp(maxRowW, 340, 540), ex = centerX - ew / 2, lc = accent(TT - 1);
-    body.push(`  <rect x="${ex}" y="${ey}" width="${ew}" height="${eh}" rx="14" fill="rgba(11,15,23,0.55)" stroke="${tint(lc, 0.28)}" stroke-width="1.25"/>`);
-    body.push(`  <rect x="${ex}" y="${ey}" width="4" height="${eh}" rx="2" fill="${tint(lc, 0.6)}"/>`);
-    body.push(txt(ex + 22, ey + 25, 'EXTERNAL PACKAGES', { size: 10.5, mono: true, weight: 700, fill: pal.muted, ls: 1.5 }));
-    body.push(txt(ex + 22, ey + 47, clip(model.ext.names.join('   ·   '), 52), { size: 13, weight: 500, fill: pal.sub }));
-    body.push(txt(ex + ew - 20, ey + 36, `${model.ext.count} deps`, { size: 11.5, mono: true, fill: pal.muted, anchor: 'end', dom: 'central' }));
-  }
-
-  // legend (explains the arrows + the CORE mark) above the stats caption. Centre it on the CANVAS
-  // (not the content column) and font-fit it to the canvas width, so the fixed ~577px legend string
-  // can never spill past the edges on a small repo whose square canvas is narrower than the legend
-  // (the chalk overflow bug: content-centred at x≈323 left only 245px on the right → "depende‑[d-on]" cut).
-  const legY = ch - AR.BOTTOM + 34;
-  const legCx = cw / 2;                     // canvas centre (portrait canvas: canvas == content width)
-  const legAvail = cw - 32;                 // usable width: a 16px margin each side
-  const fitMono = (s, base) => { const w = measure(s, base, { mono: true }); return w <= legAvail ? base : Math.max(9, +(base * legAvail / w).toFixed(2)); };
-  const legend = 'arrow points from a module to what it depends on    ◆ CORE = most depended-on';
-  body.push(txt(legCx, legY, legend, { size: fitMono(legend, 12.5), mono: true, fill: pal.sub, anchor: 'middle' }));
-  if (caption) { const c = clip(caption, 96); body.push(txt(legCx, legY + 26, c, { size: fitMono(c, 12.5), mono: true, fill: pal.muted, anchor: 'middle' })); }
-  body.push('  </g>');
-  const desc = `${title}: ${rows.map((r, i) => `${bandName(i, TT)} [${r.map((it) => it.name).join(', ')}]`).join(' → ')}; ${edges.length} real dependency edges, core = ${model.hub || 'n/a'}.`;
-  return { W: cw, H: ch, body: body.join('\n'), desc };
-}
-
-// ── FLOW: a real data-flow pipeline. Each stage card shows the transformation it performs (verb +
-// command) and the data it consumes/produces (IN → OUT); plain arrows carry that data to the next
-// stage — NO duplicate wire labels (the OUT chip already names what flows on, so we don't restate it) ─
-const FL = { CARD_W: 664, CARD_H: 108, VGAP: 62, TOP: 150, BOTTOM: 92, TOK_H: 40 };
-
-// a label that rides ON a connector wire — names the actual artifact handed from one stage to the next,
-// so the pipeline visibly CARRIES data (the OUT of a stage becomes the input the next consumes)
-// ── GROUNDED RADIAL ARCHITECTURE (ADR-0012, review finding 4 — 2026-08-06) ───────────────────────
-// A dependency map genuinely IS a hub-and-spokes structure: buildArchModel already computes `hub` as
-// the module the most others depend on. Drawing it radially is therefore MORE faithful than the
-// vertical tier-stack, not a compromise — and it frees the vertical-stack family for renderFlow,
-// which keeps its full IN/OUT artifact annotations and is semantically exact for a sequence.
-//
-// WHY THIS EXISTS: the first INV-23 fix pinned architecture to vertical-stack and demoted FLOW. That
-// forced a long flow chain onto a 1385px ribbon (3.66px labels at 390px) and, once the ribbon was
-// banned for width, onto `strata` — which draws a SEQUENCE as concentric containment, a claim its own
-// asciiFallback contradicts. Every one of those problems traces to pinning the wrong diagram. Moving
-// the pin dissolves all of them at once.
-//
-// Grounding is untouched: real modules, real dependent counts, real edges, real external packages.
-const RD = { HUBW: 268, HUBH: 92, SATW: 196, SATH: 76, TOP: 132, R: 214, PAD: 46, EXT_H: 62 };
-
-function renderArchitectureRadial(eyebrow, title, model, caption, pal) {
-  const all = model.rows.flat();
-  const hubItem = all.find((it) => it.isHub) || all[0];
-  // Satellites ordered by dependents desc, so the most structurally important sit centre-fan.
-  const sats = all.filter((it) => it !== hubItem).slice(0, 9);
-  const m = sats.length;
-  // GEOMETRY, rewritten 2026-08-06 after LOOKING at two renders. A pure arc CANNOT guarantee spacing:
-  // at radius 214 with a 1.8 rad fan, adjacent satellites are 1.8/(m-1)*214 apart — 128px for m=4 —
-  // while a card is 196px wide, so they overlapped every time. Tuning the radius or the spread only
-  // moves which m collides. Collision-freedom has to be a PROPERTY of the layout, not a lucky
-  // constant: satellites are placed in centred ROWS of at most PER_ROW, each joined to the hub by its
-  // own spoke. Reads as hub-and-spokes (one core, lines radiating to everything that depends on it),
-  // stays portrait for mobile, and two cards can never overlap by construction.
-  const PER_ROW = 3, HGAP = 26, VGAP = 40;
-  const perRow = Math.min(PER_ROW, Math.max(1, m));
-  const rowsOfSats = [];
-  for (let i = 0; i < m; i += perRow) rowsOfSats.push(sats.slice(i, i + perRow));
-  const W = Math.round(Math.max(
-    perRow * RD.SATW + (perRow - 1) * HGAP + RD.PAD * 2,
-    RD.HUBW + RD.PAD * 2,
-    Math.ceil(measure(title, 30, { bold: true })) + 150));
-  const cx = W / 2, cyHub = RD.TOP + RD.HUBH / 2;
-
-  const pos = new Map();
-  pos.set(hubItem.name, { x: cx, y: cyHub, w: RD.HUBW, h: RD.HUBH, col: accent(0), hub: true });
-  const geo = [];
-  let satY = cyHub + RD.HUBH / 2 + VGAP + RD.SATH / 2;
-  rowsOfSats.forEach((row) => {
-    const rowW = row.length * RD.SATW + (row.length - 1) * HGAP;
-    let x = cx - rowW / 2 + RD.SATW / 2;
-    row.forEach((it) => {
-      const idx = sats.indexOf(it);
-      const g = { it, x, y: satY, col: accent(idx + 1) };
-      pos.set(it.name, { x, y: satY, w: RD.SATW, h: RD.SATH, col: g.col, hub: false });
-      geo.push(g);
-      x += RD.SATW + HGAP;
-    });
-    satY += RD.SATH + VGAP;
-  });
-
-  const lowest = geo.length ? Math.max(...geo.map((g) => g.y)) : cyHub;
-  const extBand = model.ext ? RD.EXT_H + 26 : 0;
-  const contentH = (geo.length ? lowest + RD.SATH / 2 : cyHub + RD.HUBH / 2) + 24 + extBand;
-  const cb = captionBlock(cx, contentH, W, caption, pal, 92);
-  const H = contentH + cb.band;
-
-  const body = [background(W, H, pal), header(cx, 30, eyebrow, title, pal)];
-
-  // REAL dependency edges — every edge whose BOTH ends are drawn. An arrow points from a module to
-  // what it depends on, exactly as the tier-stack renderer states in its legend.
-  const drawn = new Set();
-  for (const e of model.edges) {
-    const a = pos.get(e.from), b = pos.get(e.to);
-    if (!a || !b) continue;
-    const key = `${e.from}\u0000${e.to}`;
-    if (drawn.has(key)) continue;
-    drawn.add(key);
-    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
-    const k0 = (a.h / 2 + 6) / d, k1 = (d - b.h / 2 - 6) / d;
-    body.push(curve(a.x + dx * k0, a.y + dy * k0, a.x + dx * k1, a.y + dy * k1, mix(a.col, b.col, 0.5), { w: 1.7, op: 0.7 }));
-  }
-
-  for (const g of geo) {
-    const x = g.x - RD.SATW / 2, y = g.y - RD.SATH / 2;
-    body.push(glassPanel(x, y, RD.SATW, RD.SATH, g.col, { r: 14, fillA: 0.15, depth: 6, aura: 0.38 }));
-    const lines = fitLines(g.it.label, RD.SATW - 24, 14.5, 2);
-    const y0 = g.y - (lines.length - 1) * 9 - (g.it.sub ? 8 : 0);
-    lines.forEach((ln, k) => body.push(txt(g.x, y0 + k * 18, ln, { size: 14.5, weight: 700, fill: pal.ink, anchor: 'middle', dom: 'central' })));
-    if (g.it.sub) body.push(txt(g.x, g.y + RD.SATH / 2 - 15, clip(g.it.sub, 26), { size: 11, fill: pal.sub, anchor: 'middle', dom: 'central' }));
-  }
-
-  // hub last so it sits above every edge
-  const hx = cx - RD.HUBW / 2, hy = cyHub - RD.HUBH / 2;
-  body.push(glassPanel(hx, hy, RD.HUBW, RD.HUBH, accent(0), { r: 18, fillA: 0.22, depth: 9, aura: 0.6 }));
-  body.push(txt(cx, cyHub - 10, clip(hubItem.label, 24), { size: 18, weight: 800, fill: pal.ink, anchor: 'middle', dom: 'central' }));
-  if (hubItem.sub) body.push(txt(cx, cyHub + 14, clip(hubItem.sub, 30), { size: 11.5, fill: pal.sub, anchor: 'middle', dom: 'central' }));
-  body.push(txt(cx + RD.HUBW / 2 - 34, cyHub - RD.HUBH / 2 + 14, 'CORE', { size: 9.5, mono: true, weight: 700, fill: accent(0), anchor: 'middle', dom: 'central', ls: 1.2 }));
-
-  if (model.ext) {
-    const ey = contentH - extBand + 6, ew = Math.min(W - RD.PAD * 2, 460), ex = cx - ew / 2;
-    body.push(glassPanel(ex, ey, ew, RD.EXT_H, PAL.extern, { r: 12, fillA: 0.08, depth: 0, aura: 0 }));
-    body.push(txt(ex + 16, ey + 22, 'EXTERNAL PACKAGES', { size: 9.5, mono: true, weight: 700, fill: pal.muted, ls: 1.4 }));
-    body.push(txt(ex + 16, ey + 43, clip(model.ext.names.join(' · '), 46), { size: 12, fill: pal.sub }));
-    body.push(txt(ex + ew - 16, ey + 43, `${model.ext.count} deps`, { size: 11, mono: true, fill: pal.muted, anchor: 'end' }));
-  }
-
-  body.push(cb.svg);
-  const desc = `${title}: ${hubItem.label} is the core module the most others depend on; `
-    + `${sats.map((s) => `${s.label}${s.sub ? ` (${s.sub})` : ''}`).join(', ')}`
-    + `${model.ext ? `; external packages: ${model.ext.names.join(', ')}` : ''}. `
-    + `Each line runs from a module to what it depends on.`;
-  return { W, H, body: body.join('\n'), desc };
-}
-
-function wireTag(cx, midY, text, col) {
-  const w = Math.ceil(measure(text, 11, { mono: true })) + 24, h = 22, x = cx - w / 2;
-  return [
-    `  <rect x="${x.toFixed(1)}" y="${(midY - h / 2).toFixed(1)}" width="${w}" height="${h}" rx="${h / 2}" fill="rgba(8,11,17,0.94)" stroke="${tint(col, 0.5)}" stroke-width="1"/>`,
-    txt(cx, midY, text, { size: 11, mono: true, fill: mix(col, '#ffffff', 0.4), anchor: 'middle', dom: 'central' }),
-  ].join('\n');
-}
-
-// a rounded glass "endpoint" pill for the SOURCE input and the final RESULT
-function tokenPill(cx, y, kind, label, col) {
-  const kw = Math.ceil(measure(kind, 11, { mono: true })) + 16;
-  const w = kw + Math.ceil(measure(label, 12.5, { mono: true })) + 50;
-  const x = cx - w / 2;
-  return [
-    `  <rect x="${x.toFixed(1)}" y="${y}" width="${w}" height="${FL.TOK_H}" rx="${FL.TOK_H / 2}" fill="rgba(255,255,255,0.04)" stroke="${tint(col, 0.5)}" stroke-width="1.25"/>`,
-    `  <rect x="${x.toFixed(1)}" y="${y}" width="${w}" height="${FL.TOK_H}" rx="${FL.TOK_H / 2}" fill="url(#sheen)" opacity="0.4"/>`,
-    `  <circle cx="${(x + 18).toFixed(1)}" cy="${(y + FL.TOK_H / 2).toFixed(1)}" r="3.4" fill="${col}" filter="url(#glowS)"/>`,
-    txt(x + 30, y + FL.TOK_H / 2, kind, { size: 11, mono: true, weight: 800, fill: col, ls: 1.2, dom: 'central' }),
-    txt(x + 30 + kw, y + FL.TOK_H / 2, label, { size: 12.5, mono: true, fill: PAL.ink, dom: 'central' }),
-  ].join('\n');
-}
-
-function flowCard(x, y, col, n, s, delay = null) {
-  const w = FL.CARD_W, h = FL.CARD_H;
-  const parts = [glassPanel(x, y, w, h, col, { r: 16, fillA: 0.07, depth: 6, aura: 0.16 })];
-  // number badge — pulses on a delay so stage N "activates" after stage N-1, telling the real
-  // execution-order story instead of a uniform decorative flicker.
-  const bx = x + 50, by = y + h / 2;
-  const delayAttr = delay != null ? ` style="animation-delay:${delay.toFixed(2)}s"` : '';
-  parts.push(`  <circle class="node-pulse"${delayAttr} cx="${bx}" cy="${by}" r="22" fill="${col}" opacity="0.28" filter="url(#glowS)"/>`);
-  parts.push(`  <circle cx="${bx}" cy="${by}" r="20" fill="${tint(col, 0.2)}" stroke="${col}" stroke-width="1.75"/>`);
-  parts.push(txt(bx, by + 1, String(n), { size: 20, weight: 800, fill: mix(col, '#ffffff', 0.55), anchor: 'middle', dom: 'central' }));
-  // stage name + the transformation verb
-  const tx = x + 88;
-  parts.push(txt(tx, y + 34, s.name, { size: 18, weight: 800, fill: PAL.ink, ls: 0.4 }));
-  parts.push(txt(tx, y + 55, clip(s.verb, 40), { size: 12.5, fill: PAL.sub }));
-  // the command that does it
-  const cy = y + 68, cw = w - (tx - x) - 214;
-  parts.push(`  <rect x="${tx}" y="${cy}" width="${cw}" height="28" rx="7" fill="rgba(0,0,0,0.42)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`);
-  parts.push(txt(tx + 12, cy + 19, '$ ' + clip(s.cmd, 36), { size: 12, mono: true, fill: mix(col, '#ffffff', 0.5) }));
-  // IN → OUT (the data this stage consumes and produces — the actual transformation)
-  const iox = x + w - 196;
-  parts.push(`  <line x1="${iox - 18}" y1="${y + 18}" x2="${iox - 18}" y2="${y + h - 18}" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>`);
-  parts.push(txt(iox, y + 42, 'IN', { size: 10.5, mono: true, weight: 700, fill: PAL.muted, ls: 1.5, dom: 'central' }));
-  parts.push(txt(iox + 34, y + 42, clip(s.in, 22), { size: 12, mono: true, fill: PAL.sub, dom: 'central' }));
-  // a downward transform-arrow (IN becomes OUT) — not a sideways chevron that reads like a shell prompt
-  const axc = iox + 7;
-  parts.push(`  <path d="M ${axc} ${y + 50} V ${y + 60}" stroke="${tint(col, 0.55)}" stroke-width="1.4" stroke-linecap="round"/>`);
-  parts.push(`  <path d="M ${axc - 3.5} ${y + 56} L ${axc} ${y + 60.5} L ${axc + 3.5} ${y + 56}" fill="none" stroke="${tint(col, 0.55)}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>`);
-  parts.push(txt(iox + 34, y + h - 42, 'OUT', { size: 10.5, mono: true, weight: 700, fill: col, ls: 1.5, dom: 'central', anchor: 'start' }));
-  parts.push(txt(iox + 34, y + h - 24, clip(s.out, 22), { size: 12, mono: true, weight: 600, fill: mix(col, '#ffffff', 0.4), dom: 'central' }));
-  return parts.join('\n');
-}
-
-function renderFlow(eyebrow, title, model, caption, pal) {
-  const steps = model.steps, n = steps.length;
-  const cw = FL.CARD_W + 108;
-  const ch = FL.TOP + FL.TOK_H + (n + 1) * FL.VGAP + n * FL.CARD_H + FL.TOK_H + FL.BOTTOM;
-  // PORTRAIT canvas (INV-18, 2026-07-30): the flow is a single vertical spine — padding it out to a
-  // square multiplied the width ~1.6x and shrank every label below mobile legibility for no reason.
-  const cardX = (cw - FL.CARD_W) / 2, spine = cardX + FL.CARD_W / 2;
-  const body = [background(cw, ch, pal), '  <g>', header(spine, 30, eyebrow, title, pal)];
-
-  // Staggered activation delay: stage N's beam-in + badge fire STEP later than stage N-1's, so the
-  // loop reads as one token/request traveling the pipeline in real execution order, not everything
-  // flickering at once. STEP tuned to the beam (1.1s) + pulse (2.1s) durations so the wave is legible.
-  const STEP = 0.55;
-  let y = FL.TOP;
-  body.push(tokenPill(spine, y, 'SOURCE', model.source, accent(0)));
-  y += FL.TOK_H;
-  for (let i = 0; i < n; i++) {
-    const wcol = mix(accent(Math.max(0, i - 1)), accent(i), 0.5);
-    body.push(beam(spine, y + 4, spine, y + FL.VGAP - 4, wcol, i * STEP));
-    // the wire carries the artifact the previous stage produced (its OUT) into this one — data, moving
-    if (i >= 1) body.push(wireTag(spine, y + FL.VGAP / 2, clip(steps[i - 1].out, 22), wcol));
-    y += FL.VGAP;
-    body.push(flowCard(cardX, y, accent(i), i + 1, steps[i], i * STEP + STEP * 0.4));
-    y += FL.CARD_H;
-  }
-  body.push(beam(spine, y + 4, spine, y + FL.VGAP - 4, accent(n - 1), n * STEP));
-  body.push(wireTag(spine, y + FL.VGAP / 2, clip(steps[n - 1].out, 22), accent(n - 1)));
-  y += FL.VGAP;
-  body.push(tokenPill(spine, y, 'RESULT', model.result, accent(n - 1)));
-
-  if (caption) body.push(txt(spine, ch - FL.BOTTOM + 46, clip(caption, 88), { size: 12, mono: true, fill: pal.muted, anchor: 'middle' }));
-  body.push('  </g>');
-  const desc = `${title}: ${model.source} ⟶ ${steps.map((s) => `${s.name} (${s.in} → ${s.out})`).join(' ⟶ ')} ⟶ ${model.result}.`;
-  return { W: cw, H: ch, body: body.join('\n'), desc };
-}
-
-// ── CONCEPT ARCHETYPES (big-idea / insight / demoted architecture / demoted flow) ──────────────────
-// ONE rows-model, FOUR distinct visual forms, so no two concept-rendered diagrams share a SHAPE
-// (INV-23: rails on truth, never on form). renderConcept dispatches on `variant`, assigned per diagram
-// KEY in the DIAGRAMS table: column (bigIdea) · ribbon (flow) · orbit (insight) · strata (architecture).
-// WHY (2026-07-18): before this, every concept slot drew the SAME centered vertical card-column. On a
-// repo where 2-3 slots demote to concept (bissanmu/spring3-legacy-web: flow+big-idea+insight all did),
-// that repetition read as one form three times and tanked the imagery-craft grade (B5 58/60 < floor 70),
-// so deploy.mjs's ship-bar rail refused to publish. The house style (glassmorphic dark) stays shared on
-// purpose; only the LAYOUT diverges — which is the axis the grader was penalising.
-const C = { CARD_H: 78, VGAP: 50, GAP_PLAIN: 30, TOP: 132, BOTTOM: 72, PADX: 30, MINW: 280, MAXW: 580 };
-
-function cwidth(label) { return Math.min(C.MAXW, Math.max(C.MINW, Math.ceil(measure(clip(label, 54), 18.5, { bold: true })) + C.PADX * 2)); }
-
-// word-wrap a string to at most `maxChars` per line (used to keep a caption inside the canvas width)
-function wrapText(text, maxChars) {
-  const cap = Math.max(8, maxChars);
-  const words = String(text).trim().split(/\s+/).filter(Boolean);
-  const out = [];
-  let cur = '';
-  for (const w of words) {
-    if (!cur) cur = w;
-    else if (cur.length + 1 + w.length <= cap) cur += ' ' + w;
-    else { out.push(cur); cur = w; }
-  }
-  if (cur) out.push(cur);
-  return out.length ? out : [''];
-}
-
-// flatten a rows-model into ordered steps, marking which connect to the next with an arrow
-function conceptSteps(rows, title) {
-  rows = rows.filter((r) => r && Array.isArray(r.items) && r.items.length);
-  if (!rows.length) rows = [{ items: [{ label: title }] }];
-  const steps = [];
-  rows.forEach((r) => r.items.forEach((it, i) => steps.push({
-    label: it.label, colorIdx: it.colorIdx, arrow: !!(r.connectWithin && i < r.items.length - 1),
-  })));
-  return { rows, steps };
-}
-
-// caption: WRAP to the real canvas width (mono) so it can never spill past the edges; returns the
-// caption SVG plus the bottom-band height to add under the diagram content (min = minPad).
-function captionBlock(cx, contentH, availW, caption, pal, minPad) {
-  const FS = 13, CW = FS * 0.6, LH = FS * 1.5;
-  if (!caption) return { svg: '', band: minPad };
-  const cap = Math.max(16, Math.floor((availW - 104) / CW));
-  let lines = wrapText(caption, cap);
-  if (lines.length > 3) { lines = lines.slice(0, 3); lines[2] = clip(lines[2] + ' …', cap); }
-  const parts = [];
-  let y = contentH + 34 + FS;
-  for (const l of lines) { parts.push(txt(cx, y, l, { size: FS, mono: true, fill: pal.muted, anchor: 'middle' })); y += LH; }
-  return { svg: parts.join('\n'), band: Math.max(minPad, 34 + lines.length * LH + 22) };
-}
-
-// wrap a label to fit inside a card of inner width `innerW` at font `fs`, capped at `maxLines` (… on overflow)
-function fitLines(label, innerW, fs, maxLines) {
-  const perLine = Math.max(6, Math.floor(innerW / (fs * 0.55)));
-  let lines = wrapText(clip(label, perLine * maxLines), perLine);
-  if (lines.length > maxLines) { lines = lines.slice(0, maxLines); lines[maxLines - 1] = clip(lines[maxLines - 1] + ' …', perLine); }
-  return lines;
-}
-
-// VARIANT 1 — column: the original centered VERTICAL chain of glass cards joined by glowing down-arrows.
-function conceptColumn(eyebrow, title, steps, caption, pal) {
-  const n = steps.length;
-  const maxW = Math.max(C.MINW, ...steps.map((s) => cwidth(s.label)));
-  const gaps = steps.slice(0, -1).reduce((t, s) => t + (s.arrow ? C.VGAP : C.GAP_PLAIN), 0);
-  const cw = maxW + 140;
-  const contentH = C.TOP + n * C.CARD_H + gaps;       // canvas through the bottom of the last card
-  // PORTRAIT canvas — width = the card column (or the title, whichever is wider), NOT a forced square,
-  // so the cards stay flush to the frame on a phone instead of floating in dead side-margins.
-  const titleMinW = Math.ceil(measure(title, 30, { bold: true })) + 120;
-  const W = Math.max(cw, titleMinW);
-  const mid = cw / 2, ox = (W - cw) / 2;
-  const cb = captionBlock(mid, contentH, W, caption, pal, C.BOTTOM);
-  const H = contentH + cb.band;
-  const body = ['  <!-- concept archetype: column -->', background(W, H, pal),
-    `  <g transform="translate(${ox.toFixed(1)},0)">`, header(mid, 30, eyebrow, title, pal)];
-  let y = C.TOP;
-  const geo = steps.map((s, i) => { const g = { ...s, y, col: accent(s.colorIdx != null ? s.colorIdx : i) }; y += C.CARD_H + (s.arrow ? C.VGAP : C.GAP_PLAIN); return g; });
-  for (let i = 0; i < geo.length - 1; i++) if (geo[i].arrow) body.push(beam(mid, geo[i].y + C.CARD_H + 6, mid, geo[i + 1].y - 6, mix(geo[i].col, geo[i + 1].col, 0.5)));
-  for (const g of geo) {
-    const w = cwidth(g.label), x = mid - w / 2;
-    body.push(glassPanel(x, g.y, w, C.CARD_H, g.col, { r: 18, fillA: 0.18, depth: 8, aura: 0.5 }));
-    body.push(txt(mid, g.y + C.CARD_H / 2, clip(g.label, 54), { size: 18.5, weight: 700, fill: pal.ink, anchor: 'middle', dom: 'central' }));
-  }
-  body.push(cb.svg, '  </g>');
-  return { W, H, body: body.join('\n') };
-}
-
-// VARIANT 2 — ribbon: a horizontal LEFT→RIGHT sequence, cards joined by glowing right-arrows. Reads as
-// a pipeline — a landscape shape distinct from the vertical column — so a demoted data-flow never mirrors
-// big-idea. Labels wrap to fit inside each card.
-const RB = { CARD_H: 118, HGAP: 60, TOP: 156, PADX: 64, MINW: 158, MAXW: 300 };
-function ribW(label) { return clamp(Math.ceil(measure(clip(label, 34), 15.5, { bold: true })) + 46, RB.MINW, RB.MAXW); }
-function conceptRibbon(eyebrow, title, steps, caption, pal) {
-  const n = steps.length;
-  // Four-stage Big Idea handoffs must remain readable after fitting to a 390px phone. The general
-  // ribbon's 300px cards produce a 1385px canvas and 2-3px mobile text. Use compact fixed cards for
-  // this one grounded handoff: the labels wrap, while the arrows and left-to-right meaning stay clear.
-  const compactHandoff = eyebrow === 'THE BIG IDEA' && n === 4;
-  const ws = compactHandoff ? steps.map(() => 170) : steps.map((s) => ribW(s.label));
-  const hgap = compactHandoff ? 34 : RB.HGAP;
-  const rowW = ws.reduce((a, b) => a + b, 0) + hgap * (n - 1);
-  const titleMinW = Math.ceil(measure(title, 30, { bold: true })) + 120;
-  const W = Math.max(rowW + (compactHandoff ? 34 : RB.PADX) * 2, titleMinW);
-  const cardY = RB.TOP, contentH = cardY + RB.CARD_H;
-  const cb = captionBlock(W / 2, contentH, W, caption, pal, 84);
-  const H = contentH + cb.band;
-  const body = ['  <!-- concept archetype: ribbon -->', background(W, H, pal), header(W / 2, 30, eyebrow, title, pal)];
-  let x = (W - rowW) / 2;
-  const geo = steps.map((s, i) => { const g = { ...s, x, w: ws[i], col: accent(s.colorIdx != null ? s.colorIdx : i) }; x += ws[i] + hgap; return g; });
-  for (let i = 0; i < n - 1; i++) if (geo[i].arrow) body.push(beam(geo[i].x + geo[i].w + 6, cardY + RB.CARD_H / 2, geo[i + 1].x - 6, cardY + RB.CARD_H / 2, mix(geo[i].col, geo[i + 1].col, 0.5)));
-  for (const g of geo) {
-    body.push(glassPanel(g.x, cardY, g.w, RB.CARD_H, g.col, { r: 16, fillA: 0.16, depth: 8, aura: 0.4 }));
-    const lines = fitLines(g.label, g.w - 30, 15, 3);
-    const startY = cardY + RB.CARD_H / 2 - (lines.length - 1) * 11;
-    lines.forEach((ln, k) => body.push(txt(g.x + g.w / 2, startY + k * 22, ln, { size: 15, weight: 700, fill: pal.ink, anchor: 'middle', dom: 'central' })));
-  }
-  body.push(cb.svg);
-  return { W, H, body: body.join('\n') };
-}
-
-// VARIANT 3 — orbit: a central KEYSTONE card with the remaining ideas as satellites on a ring, each
-// joined to the hub by a glowing beam. For "the insight" — the one clever move and what radiates from it.
-const OB = { HUBW: 300, HUBH: 98, SATW: 220, SATH: 82, TOP: 128, R: 250, PAD: 56 };
-function conceptOrbit(eyebrow, title, steps, caption, pal) {
-  const hub = steps[0], sats = steps.slice(1), m = sats.length;
-  // Satellites FAN DOWNWARD from the hub (angle 0 = straight down, spreading left/right). This is the
-  // fix for the 2-satellite case: a top+bottom placement read as a vertical line (mimicking the column
-  // archetype). A downward fan always reads as hub-and-spoke, distinct from every other variant.
-  const spread = m <= 1 ? 0 : Math.min(2.5, 0.6 + 0.5 * m);   // total fan angle in radians
-  const angOf = (i) => (m <= 1 ? 0 : (i / (m - 1) - 0.5) * spread);
-  const maxOff = m ? Math.sin(spread / 2) * OB.R : 0;
-  const W = Math.round(Math.max(2 * (maxOff + OB.SATW / 2) + OB.PAD * 2, Math.ceil(measure(title, 30, { bold: true })) + 160));
-  const cx = W / 2, cyHub = OB.TOP + OB.HUBH / 2;
-  const hubCol = accent(hub.colorIdx != null ? hub.colorIdx : 0);
-  const geo = sats.map((s, i) => {
-    const a = angOf(i);
-    return { ...s, sx: cx + Math.sin(a) * OB.R, sy: cyHub + Math.cos(a) * OB.R, col: accent(s.colorIdx != null ? s.colorIdx : i + 1) };
-  });
-  const lowest = geo.length ? Math.max(...geo.map((g) => g.sy)) : cyHub;
-  const contentH = (geo.length ? lowest + OB.SATH / 2 : cyHub + OB.HUBH / 2) + 20;
-  const cb = captionBlock(cx, contentH, W, caption, pal, 84);
-  const H = contentH + cb.band;
-  const body = ['  <!-- concept archetype: orbit -->', background(W, H, pal), header(cx, 30, eyebrow, title, pal)];
-  // beams hub → satellite (behind every card), leaving the hub's bottom edge and stopping short of the card
-  for (const g of geo) {
-    const dx = g.sx - cx, dy = g.sy - cyHub, d = Math.hypot(dx, dy) || 1, k = (d - OB.SATH / 2 - 4) / d;
-    body.push(beam(cx, cyHub + OB.HUBH / 2 - 8, cx + dx * k, cyHub + dy * k, mix(hubCol, g.col, 0.5)));
-  }
-  for (const g of geo) {
-    const x = g.sx - OB.SATW / 2, y = g.sy - OB.SATH / 2;
-    body.push(glassPanel(x, y, OB.SATW, OB.SATH, g.col, { r: 15, fillA: 0.15, depth: 6, aura: 0.4 }));
-    const lines = fitLines(g.label, OB.SATW - 26, 13.5, 3);
-    const sy0 = g.sy - (lines.length - 1) * 10;
-    lines.forEach((ln, k) => body.push(txt(g.sx, sy0 + k * 20, ln, { size: 13.5, weight: 600, fill: pal.ink, anchor: 'middle', dom: 'central' })));
-  }
-  // the hub last, so it sits above every beam
-  const hx = cx - OB.HUBW / 2, hy = cyHub - OB.HUBH / 2;
-  body.push(glassPanel(hx, hy, OB.HUBW, OB.HUBH, hubCol, { r: 20, fillA: 0.22, depth: 9, aura: 0.62 }));
-  const hubLines = fitLines(hub.label, OB.HUBW - 34, 17, 2);
-  const hy0 = cyHub - (hubLines.length - 1) * 12;
-  hubLines.forEach((ln, k) => body.push(txt(cx, hy0 + k * 24, ln, { size: 17, weight: 800, fill: pal.ink, anchor: 'middle', dom: 'central' })));
-  body.push(cb.svg);
-  return { W, H, body: body.join('\n') };
-}
-
-// VARIANT 4 — strata: concentric NESTED frames, outermost idea to innermost, each labelled at its top
-// band, with a pulsing marker so it stays "alive". Reads as "layers, one built inside another" — for a
-// demoted architecture (how it is built) when the dep-graph is too trivial to draw as a real map.
-const ST = { TOP: 150, SIZE: 640, SIDEPAD: 92 };
-function conceptStrata(eyebrow, title, steps, caption, pal) {
-  const items = steps.slice(0, 6);
-  const n = items.length;
-  // inset tuned so the INNERMOST frame stays wide enough to read a 2-line label (the old 1-line clip
-  // truncated inner labels to "Your page -…"). Keep the innermost side ≈ 200px minimum.
-  const inset = n > 1 ? Math.min(52, (ST.SIZE / 2 - 102) / (n - 1)) : 0;
-  const W = ST.SIZE + ST.SIDEPAD * 2, cx = W / 2;
-  const contentH = ST.TOP + ST.SIZE + 20;
-  const cb = captionBlock(cx, contentH, W, caption, pal, 84);
-  const H = contentH + cb.band;
-  const body = ['  <!-- concept archetype: strata -->', background(W, H, pal), header(cx, 30, eyebrow, title, pal)];
-  items.forEach((s, i) => {
-    const side = ST.SIZE - 2 * inset * i;
-    const x = cx - side / 2, y = ST.TOP + inset * i;
-    const col = accent(s.colorIdx != null ? s.colorIdx : i);
-    const r = Math.max(14, 26 - i * 2);
-    if (i === 0) body.push(`  <rect x="${(x - 5).toFixed(1)}" y="${(y - 5).toFixed(1)}" width="${side + 10}" height="${side + 10}" rx="${r + 4}" fill="${col}" opacity="0.16" filter="url(#glow)"/>`);
-    body.push(`  <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${side}" height="${side}" rx="${r}" fill="${tint(col, 0.09)}" stroke="${tint(col, 0.5)}" stroke-width="1.5"/>`);
-    body.push(`  <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${side}" height="${side}" rx="${r}" fill="url(#sheen)" opacity="0.3"/>`);
-    // label rides the top band of each frame, wrapped to at most 2 lines so inner frames stay legible
-    const lines = fitLines(s.label, side - 64, 13, 2);
-    const startY = y + 20, dotx = cx - side / 2 + 22;
-    body.push(`  <circle class="node-pulse" cx="${dotx.toFixed(1)}" cy="${startY.toFixed(1)}" r="4.5" fill="${col}" opacity="0.4" filter="url(#glowS)"/>`);
-    body.push(`  <circle cx="${dotx.toFixed(1)}" cy="${startY.toFixed(1)}" r="3" fill="${mix(col, '#ffffff', 0.4)}"/>`);
-    lines.forEach((ln, k) => body.push(txt(cx, startY + k * 17, ln, { size: 13, weight: 700, fill: pal.ink, anchor: 'middle', dom: 'central' })));
-  });
-  body.push(cb.svg);
-  return { W, H, body: body.join('\n') };
-}
-
-// VARIANT 5 — grid: the ribbon's left→right reading, WRAPPED into rows of at most three.
-// WHY IT EXISTS (2026-08-06, found by rendering the real page at 390px and LOOKING at it): with four
-// families and four slots, a page where radial, containment and vertical-stack are all taken leaves a
-// long chain only the ribbon — and the ribbon's width grows with item count (4 items = 949px), so it
-// lands on a phone at ~5px text. The resolver's "better an illegible diagram than none" fallback
-// fired exactly as written and produced exactly that, on the insight slot, in a real page.
-// The honest fix is not a smarter fallback but the fifth family the taxonomy was missing: the rubric's
-// own vocabulary already names it a FIELD ("containment, journey, field, fan…"). A wrapped grid IS a
-// field — structurally distinct from a single run, and portrait by construction because the ROW WIDTH
-// is bounded rather than the item count.
-const GR = { PER_ROW: 3, HGAP: 22, VGAP: 30, TOP: 150, PADX: 52, MINW: 168, MAXW: 260, CARD_H: 104 };
-function gridW(label) { return clamp(Math.ceil(measure(clip(label, 30), 15, { bold: true })) + 44, GR.MINW, GR.MAXW); }
-
-function conceptGrid(eyebrow, title, steps, caption, pal) {
-  const perRow = Math.min(GR.PER_ROW, Math.max(1, steps.length));
-  const rows = [];
-  for (let i = 0; i < steps.length; i += perRow) rows.push(steps.slice(i, i + perRow));
-  const cellW = Math.max(...steps.map((s) => gridW(s.label)));
-  const rowW = perRow * cellW + (perRow - 1) * GR.HGAP;
-  const W = Math.round(Math.max(rowW + GR.PADX * 2, Math.ceil(measure(title, 30, { bold: true })) + 120));
-  const cx = W / 2;
-  const contentH = GR.TOP + rows.length * GR.CARD_H + (rows.length - 1) * GR.VGAP + 16;
-  const cb = captionBlock(cx, contentH, W, caption, pal, 84);
-  const H = contentH + cb.band;
-  const body = ['  <!-- concept archetype: grid -->', background(W, H, pal), header(cx, 30, eyebrow, title, pal)];
-  let y = GR.TOP, idx = 0;
-  for (const row of rows) {
-    const thisW = row.length * cellW + (row.length - 1) * GR.HGAP;
-    let x = cx - thisW / 2;
-    row.forEach((st, k) => {
-      const col = accent(st.colorIdx != null ? st.colorIdx : idx);
-      // an arrow to the next card IN THIS ROW keeps the left→right reading a chain deserves
-      if (k < row.length - 1 && st.arrow !== false) {
-        body.push(beam(x + cellW + 3, y + GR.CARD_H / 2, x + cellW + GR.HGAP - 3, y + GR.CARD_H / 2, col));
-      }
-      body.push(glassPanel(x, y, cellW, GR.CARD_H, col, { r: 15, fillA: 0.16, depth: 7, aura: 0.4 }));
-      const lines = fitLines(st.label, cellW - 26, 15, 4);
-      const y0 = y + GR.CARD_H / 2 - (lines.length - 1) * 10;
-      lines.forEach((ln, j) => body.push(txt(x + cellW / 2, y0 + j * 20, ln, { size: 15, weight: 700, fill: pal.ink, anchor: 'middle', dom: 'central' })));
-      x += cellW + GR.HGAP;
-      idx++;
-    });
-    y += GR.CARD_H + GR.VGAP;
-  }
-  body.push(cb.svg);
-  return { W, H, body: body.join('\n') };
-}
-
-// dispatcher — same rows-model, distinct SHAPE per `variant` (default 'column' keeps old behaviour).
-function renderConcept(eyebrow, title, rows, caption, pal, variant = 'column') {
-  const { rows: rws, steps } = conceptSteps(rows, title);
-  const desc = `${title}: ${rws.map((r) => r.items.map((it) => it.label).join(r.connectWithin ? ' → ' : ', ')).join(' / ')}`;
-  const fn = variant === 'ribbon' ? conceptRibbon
-    : variant === 'grid' ? conceptGrid
-      : variant === 'orbit' ? conceptOrbit
-        : variant === 'strata' ? conceptStrata
-        : conceptColumn;
-  const r = fn(eyebrow, title, steps, caption, pal);
-  return { W: r.W, H: r.H, body: r.body, desc };
-}
-
-// (REMOVED) renderAsciiMono/wrapMono — these typeset the brain's ASCII VERBATIM as a picture of ASCII,
-// which is slop. big-idea & insight are now DRAWN as real glass concept-cards via renderConcept (above)
-// from a structured rows model (brain emits visuals.<key>.rows). Legacy .ascii is parsed by asciiRows()
-// into that same structured model — so even old builds render as real cards, never as typeset ASCII.
-
 function assertXmllintClean(svgPath, key) {
   try { execFileSync('xmllint', ['--noout', svgPath], { stdio: ['ignore', 'ignore', 'pipe'] }); }
   catch (e) {
@@ -974,465 +71,64 @@ function assertXmllintClean(svgPath, key) {
   }
 }
 
-function symbolCountFor(node, sym) {
-  if (!sym || !sym.byCrate || !node) return null;
-  const bc = sym.byCrate, cands = [node.name];
-  if (node.manifest) { const dir = String(node.manifest).replace(/\\/g, '/').replace(/\/[^/]+$/, ''); if (dir) cands.push(dir); }
-  for (const c of cands) if (c && Object.prototype.hasOwnProperty.call(bc, c) && typeof bc[c] === 'number') return bc[c];
-  return null;
-}
+const mobileName = (file) => file.replace(/\.svg$/, '.m.svg');
 
-// ── ARCHITECTURE model from the REAL dep-graph: topological layers + the actual module→module edges ─
-// Assign each module a depth = longest path from a source, so EVERY internal edge points downward and
-// the wiring (who depends on whom, what's a hub, what's a shared leaf) is visible — not invented.
-function longestPathLayers(names, edges) {
-  const succ = {}, indeg = {}, layer = {};
-  names.forEach((n) => { succ[n] = []; indeg[n] = 0; layer[n] = 0; });
-  for (const e of edges) { if (succ[e.from] && layer[e.to] != null) { succ[e.from].push(e.to); indeg[e.to]++; } }
-  const ind = { ...indeg };
-  const q = names.filter((n) => ind[n] === 0);
-  let seen = 0;
-  while (q.length) { const n = q.shift(); seen++; for (const m of succ[n]) { if (layer[m] < layer[n] + 1) layer[m] = layer[n] + 1; if (--ind[m] === 0) q.push(m); } }
-  if (seen < names.length) { for (let it = 0; it < names.length; it++) for (const e of edges) if (layer[e.to] < layer[e.from] + 1) layer[e.to] = layer[e.from] + 1; }
-  return layer;
-}
-
-// crossing-reduction: order each row by the average position of its neighbours in the adjacent row
-function orderRows(rows, edges) {
-  const pos = {}; rows.forEach((r) => r.forEach((n, i) => { pos[n.name] = i; }));
-  const pred = {}, succ = {};
-  for (const e of edges) { (pred[e.to] = pred[e.to] || []).push(e.from); (succ[e.from] = succ[e.from] || []).push(e.to); }
-  const bary = (n, map) => { const ps = map[n.name]; if (!ps || !ps.length) return pos[n.name]; return ps.reduce((s, p) => s + (pos[p] ?? 0), 0) / ps.length; };
-  for (let pass = 0; pass < 3; pass++) {
-    for (let i = 1; i < rows.length; i++) { rows[i].sort((a, b) => bary(a, pred) - bary(b, pred)); rows[i].forEach((n, k) => { pos[n.name] = k; }); }
-    for (let i = rows.length - 2; i >= 0; i--) { rows[i].sort((a, b) => bary(a, succ) - bary(b, succ)); rows[i].forEach((n, k) => { pos[n.name] = k; }); }
+// Draw one slot that has no verified story: its grounded renderer, or the concept renderer from authored rows.
+// Returns the wide rendering and `mobile`, a thunk that draws the SAME model on the phone canvas.
+function drawSlot(spec, existing, decision, c) {
+  const asConcept = (spec.grounded === 'architecture' && c.archDegenerate) || (spec.grounded === 'flow' && c.flowAuthored);
+  if (spec.grounded === 'architecture' && !asConcept) {
+    const eyebrow = `${c.name.toUpperCase()} · DEPENDENCY MAP`, title = 'Module dependency map';
+    const rendered = renderArchitectureRadial(eyebrow, title, c.archModel, c.archCaption, PAL);
+    return { rendered, mobile: () => renderArchitectureMobile(eyebrow, title, c.archModel, c.archCaption, PAL), asciiSrc: null, conceptBack: null,
+      altText: defaultAltText(spec, c.dg, c.ep, c.name, rendered.desc, c.archModel, false), strictOverlap: true };
   }
-}
-
-function buildArchModel(dg, sym) {
-  const all = (Array.isArray(dg.nodes) ? dg.nodes : []).filter((n) => n && n.name);
-  const nameSet = new Set(all.map((n) => n.name));
-  const seenE = new Set();
-  let edges = (Array.isArray(dg.internalEdges) ? dg.internalEdges : [])
-    .filter((e) => e && e.from && e.to && e.from !== e.to && nameSet.has(e.from) && nameSet.has(e.to))
-    .filter((e) => { const k = e.from + '\x00' + e.to; if (seenE.has(k)) return false; seenE.add(k); return true; });
-
-  // full-graph degree → keep the most-connected modules when there are too many to draw legibly
-  const fIn = {}, fOut = {};
-  for (const e of edges) { fIn[e.to] = (fIn[e.to] || 0) + 1; fOut[e.from] = (fOut[e.from] || 0) + 1; }
-  const fdeg = (n) => (fIn[n.name] || 0) + (fOut[n.name] || 0);
-  const CAP = Number(process.env.ARCH_MAX_NODES) || 12;  // dense monorepos: fewer nodes = legible labels on mobile (INV-18). Default unchanged.
-  let nodes = all, trimmed = 0;
-  if (all.length > CAP) {
-    nodes = [...all].sort((a, b) => fdeg(b) - fdeg(a) || (fIn[b.name] || 0) - (fIn[a.name] || 0)).slice(0, CAP);
-    const keep = new Set(nodes.map((n) => n.name));
-    edges = edges.filter((e) => keep.has(e.from) && keep.has(e.to));
-    trimmed = all.length - nodes.length;
+  if (spec.grounded === 'flow' && !asConcept) {
+    const eyebrow = `${c.name.toUpperCase()} · LIFECYCLE`, title = 'Build & run lifecycle';
+    const rendered = renderFlow(eyebrow, title, c.flowModel, c.flowCaption, PAL);
+    return { rendered, mobile: () => renderFlowMobile(eyebrow, title, c.flowModel, c.flowCaption, PAL), asciiSrc: null, conceptBack: null,
+      altText: defaultAltText(spec, c.dg, c.ep, c.name, rendered.desc, c.archModel, false) };
   }
-
-  // degrees on the shown subgraph drive layering, labels and hub detection
-  const inDeg = {}, outDeg = {};
-  nodes.forEach((n) => { inDeg[n.name] = 0; outDeg[n.name] = 0; });
-  for (const e of edges) { inDeg[e.to]++; outDeg[e.from]++; }
-  const plur = (k, w) => `${k} ${w}${k === 1 ? '' : 's'}`;
-  const symAnn = (n) => { const k = symbolCountFor(n, sym); return k != null ? `${k} sym` : ''; };
-
-  let rows;
-  if (!edges.length) {
-    // standalone: no internal edges — lay the modules out as a wrapped grid of independent components
-    const per = Math.min(4, Math.max(2, Math.ceil(Math.sqrt(nodes.length))));
-    rows = [];
-    for (let i = 0; i < nodes.length; i += per) rows.push(nodes.slice(i, i + per));
-  } else {
-    const layer = longestPathLayers(nodes.map((n) => n.name), edges);
-    const maxL = Math.max(0, ...nodes.map((n) => layer[n.name]));
-    rows = [];
-    for (let l = 0; l <= maxL; l++) rows.push([]);
-    nodes.forEach((n) => rows[layer[n.name]].push(n));
-    rows = rows.filter((r) => r.length);
-    orderRows(rows, edges);
+  // concept diagram: real glass cards from the structured rows (never typeset ASCII)
+  let rows = authoredRows(existing);
+  if (!rows.length && spec.grounded) {
+    die(`${spec.key}: this repo's dep-graph has ${c.totalModules} module(s) and 0 internal edges, so a dependency map would show nothing. `
+      + `Author visuals.${spec.key}.rows — the CONCEPT of how the thing is built (the 3-4 parts a reader must hold in their head, in order) — `
+      + `not the package wiring, and not a paragraph. Shape: one connected chain is ONE row of many items, e.g. `
+      + `"rows":[{"items":["your text","tokenizer","ternary engine","384 numbers"],"connect":true}]. `
+      + `Refusing to ship a diagram of an empty graph.`);
   }
-
-  // the hub = the module the most others depend on (ties → highest total degree)
-  let hub = null, hubScore = -1;
-  for (const n of nodes) { const sc = (inDeg[n.name] || 0) * 2 + (outDeg[n.name] || 0); if ((inDeg[n.name] || 0) > 0 && sc > hubScore) { hubScore = sc; hub = n.name; } }
-
-  // attach display metadata to each node
-  for (const r of rows) for (const it of r) {
-    const id = it.name, di = inDeg[id] || 0, dout = outDeg[id] || 0;
-    it.isHub = id === hub;
-    it.isEntry = di === 0 && dout > 0;
-    it.isLeaf = dout === 0 && di > 0;
-    const sub = it.isEntry
-      ? ['entry', dout ? `uses ${dout}` : '', symAnn(it)].filter(Boolean).join(' · ')
-      : [it.isLeaf ? 'shared' : null, plur(di, 'dependent'), symAnn(it)].filter(Boolean).join(' · ');
-    // display name drops a shared @scope/ prefix (keeps the distinguishing part legible); name stays canonical
-    it.label = id.replace(/^@[^/]+\//, ''); it.sub = sub || symAnn(it) || '';
-  }
-
-  const extNames = Array.isArray(dg.externalDepNames) ? dg.externalDepNames.slice(0, 5) : [];
-  const ext = extNames.length ? { names: extNames, count: dg.externalDepCount ?? extNames.length } : null;
-  return { rows, edges, ext, hub, trimmed };
+  if (!rows.length) die(`missing structure for ${spec.key}: ${spec.title} needs visuals.${spec.key}.rows — the brain must author it`);
+  const eyebrow = spec.grounded ? `${c.name.toUpperCase()} · ${spec.conceptEyebrow}` : spec.conceptEyebrow;
+  const heading = (typeof existing.title === 'string' && existing.title.trim()) ? existing.title.trim() : spec.conceptHeading;
+  const rawCap = (typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText.trim() : null;
+  const cap = correctedCaption(spec, decision, rawCap, rows);
+  const rendered = renderConcept(eyebrow, heading, rows, cap, PAL, decision.variant, spec.key);
+  // round-trip the structured source + heading so a re-run (e.g. a refine loop) redraws identically without a brain call
+  const conceptBack = { rows: rows.map((r) => ({ items: r.items.map((it) => it.label), connect: r.connectWithin })), title: heading };
+  const asciiSrc = rows.map((r) => r.items.map((it) => it.label).join(r.connectWithin ? ' -> ' : '   ·   ')).join('\n');
+  // a corrected caption must reach the accessible text too, or a screen reader hears a structure the page never drew
+  const altText = (cap && cap !== rawCap) ? cap : (rawCap || defaultAltText(spec, c.dg, c.ep, c.name, rendered.desc, c.archModel, true));
+  // a phone draws every chain top to bottom, so a visible "left-to-right" claim is restated, not left false
+  const phoneCap = cap ? cap.replace(/left[- ]to[- ]right/gi, 'top-to-bottom') : cap;
+  return { rendered, mobile: () => renderConceptMobile(eyebrow, heading, rows, phoneCap, PAL, decision.variant), asciiSrc, conceptBack, altText };
 }
 
-// ── PROCESS / DATA-FLOW model from the entrypoints: each stage carries the artifact it consumes and
-// produces (derived from the detected ecosystem), so the diagram shows DATA MOVING, not a command list ─
-function ecoOf(dg) {
-  const e = (Array.isArray(dg.ecosystems) ? dg.ecosystems : []).map((s) => String(s).toLowerCase());
-  if (e.includes('node') || e.includes('npm')) return 'node';
-  if (e.includes('rust') || e.includes('cargo')) return 'rust';
-  if (e.includes('python') || e.includes('pip')) return 'python';
-  return 'generic';
-}
-
-function artifactModel(eco) {
-  const M = {
-    node: {
-      source: 'package.json + src/', sourceLabel: 'repo source',
-      install: { verb: 'resolve + download dependencies', in: 'package.json + lock', out: 'node_modules/' },
-      build: { verb: 'compile + bundle the source', in: 'src/ + node_modules/', out: 'dist/ bundle' },
-      run: { verb: 'execute the entry point', in: 'dist/ + CLI args', out: 'program output' },
-      verify: { verb: 'run the test suite', in: 'dist/ + test specs', out: 'pass / fail report' },
-    },
-    rust: {
-      source: 'Cargo.toml + src/', sourceLabel: 'repo source',
-      install: { verb: 'resolve the crate graph', in: 'Cargo.toml + lock', out: 'cargo cache' },
-      build: { verb: 'compile the workspace', in: 'src/ + crates', out: 'target/release/' },
-      run: { verb: 'execute the binary', in: 'target/ + args', out: 'program output' },
-      verify: { verb: 'run cargo test', in: 'crates + tests', out: 'pass / fail report' },
-    },
-    python: {
-      source: 'pyproject + pkg/', sourceLabel: 'repo source',
-      install: { verb: 'install dependencies', in: 'pyproject + lock', out: 'site-packages/' },
-      build: { verb: 'build the package', in: 'pkg/ source', out: 'wheel / dist' },
-      run: { verb: 'run the entry point', in: 'pkg + CLI args', out: 'program output' },
-      verify: { verb: 'run the test suite', in: 'pkg + tests', out: 'pass / fail report' },
-    },
-    generic: {
-      source: 'source tree', sourceLabel: 'repo source',
-      install: { verb: 'install dependencies', in: 'manifest', out: 'dependencies' },
-      build: { verb: 'build the artifacts', in: 'source', out: 'build output' },
-      run: { verb: 'run the program', in: 'build + args', out: 'program output' },
-      verify: { verb: 'run the tests', in: 'tests', out: 'pass / fail' },
-    },
-  };
-  return M[eco] || M.generic;
-}
-
-function buildFlowModel(ep, dg) {
-  const A = artifactModel(ecoOf(dg));
-  const pick = (cat) => { const c = (Array.isArray(ep.commands) ? ep.commands : []).find((x) => x && x.category === cat); return c ? c.cmd : null; };
-  const binNames = (Array.isArray(ep.binaries) ? ep.binaries : []).map((b) => b && b.name).filter(Boolean);
-  const installCmd = (Array.isArray(ep.install) && ep.install[0]) || pick('install');
-  const buildCmd = pick('build');
-  const runCmd = (binNames[0] && `${binNames[0]} ...`) || pick('run') || (Array.isArray(ep.quickstart) && ep.quickstart[0]) || null;
-  const testCmd = pick('test');
-  const steps = [];
-  if (installCmd) steps.push({ name: 'INSTALL', ...A.install, cmd: installCmd });
-  if (buildCmd) steps.push({ name: 'BUILD', ...A.build, cmd: buildCmd });
-  if (runCmd) steps.push({ name: 'RUN', ...A.run, cmd: runCmd });
-  if (testCmd) steps.push({ name: 'VERIFY', ...A.verify, cmd: testCmd });
-  if (!steps.length && Array.isArray(ep.quickstart) && ep.quickstart[0]) steps.push({ name: 'RUN', ...A.run, cmd: ep.quickstart[0] });
-  if (steps.length < 2) steps.push({ name: 'RESULT', verb: 'produces the entry artifact', in: steps[0] ? steps[0].out : 'build', out: binNames.length ? `bin: ${binNames.slice(0, 2).join(', ')}` : 'output', cmd: binNames[0] || 'run' });
-  const result = binNames.length ? `${binNames.slice(0, 2).join(', ')} ready` : steps[steps.length - 1].out;
-  return { steps, source: A.source, sourceLabel: A.sourceLabel, result };
-}
-
-// ── BIG-IDEA / INSIGHT: parse brain ASCII into colour-cycled chip rows + arrows ───────────────────
-function asciiRows(ascii) {
-  const lines = String(ascii).replace(/\r\n?/g, '\n').split('\n').map((l) => l.trim()).filter(Boolean);
-  if (!lines.length) return { title: 'Diagram', rows: [] };
-  const title = lines[0];
-  const body = lines.slice(1).length ? lines.slice(1) : lines;
-  const rows = body.map((line) => {
-    const parts = line.split(/\s*(?:->|→|=>|\|>)\s*/).map((p) => p.replace(/^[[(<{]+|[\])>}]+$/g, '').trim()).filter(Boolean);
-    if (parts.length > 1) return { items: parts.map((p, i) => ({ label: p, colorIdx: i })), connectWithin: true };
-    return { items: [{ label: line.replace(/^[[(<{]+|[\])>}]+$/g, '').trim() || line }] };
-  });
-  return { title, rows };
-}
-
-// ── FORM FAMILIES (INV-23, ADR-0012) ─────────────────────────────────────────────────────────────
-// The COARSE layout shape a vision grader actually compares. It does not see "dependency graph" vs
-// "runtime sequence"; it sees "a vertical column of rounded boxes joined by downward arrows" — twice —
-// and caps B5 at 60 (quality-grade.mjs:158), which is BELOW the 70 ship floor, so the page becomes
-// unshippable no matter how good the other nine axes are.
-//
-// WHY THIS EXISTS (2026-08-06, PolymathWizard/BHIL-Colophon-Spec, runs 30857458852 + 30865218481):
-// the previous design assigned one distinct `conceptVariant` per KEY and reasoned that "pairwise
-// distinctness holds either way". It does not. That reasoning covered only the four CONCEPT variants
-// among themselves and never considered `renderArchitecture` and `renderFlow` — separate functions,
-// outside the variant table, BOTH of which emit a vertical card-stack since the 2026-07-30 portrait
-// (INV-18 mobile) fix. Any repo with a real dep-graph and a real flow got two vertical stacks and a
-// guaranteed refusal. Verified by rendering both SVGs from the failed build and looking at them.
-//
-// The cure is not a better static table — a static table cannot know which slots demote at runtime.
-// It is a RESOLVER: every slot declares the family it WOULD emit, collisions are resolved by priority
-// against an ordered preference list, and the emitted set is ASSERTED pairwise-distinct before a
-// single byte of SVG is written. This is a property code can decide for free; paying a stochastic
-// vision call to discover it — and paying a whole rebuild to react — was the actual defect.
-const FORM = {
-  VSTACK: 'vertical-stack',   // renderArchitecture · renderFlow · conceptColumn
-  HRUN: 'horizontal-run',     // conceptRibbon   — a pipeline reads L→R
-  RADIAL: 'radial',           // conceptOrbit    — hub + satellites
-  CONTAINMENT: 'containment', // conceptStrata   — nested frames
-  GRID: 'grid',               // conceptGrid     — a wrapped FIELD of cards
-};
-const VARIANT_FAMILY = { column: FORM.VSTACK, ribbon: FORM.HRUN, orbit: FORM.RADIAL, strata: FORM.CONTAINMENT, grid: FORM.GRID };
-
-// conceptPrefs = ordered preference list of archetypes for this slot when it renders (or demotes) to
-// renderConcept. The resolver walks it and takes the first family not already claimed, so a slot always
-// lands on a SEMANTICALLY sensible shape rather than whatever is left over.
-const DIAGRAMS = [
-  // Architecture is grounded-pinned: INV-18 mandates a real dependency map, and the portrait stack is
-  // the mobile-correct geometry. It claims VSTACK first and never yields it.
-  // NOTE the trailing 'column' on every list. VSTACK is only occupied when a GROUNDED renderer claims
-  // it, so when nothing is grounded (a 0-edge graph with authored rows everywhere) it is free — and a
-  // list that never offers it starves the fourth slot. Caught by the all-demoted case in
-  // tests/diagram-form-diversity.test.mjs before this ever reached a build.
-  // groundedFamily = the family this slot's GROUNDED renderer emits. Declaring it removes the old
-  // "grounded slots race for vertical-stack" rule, which forced whichever grounded slot lost the race
-  // into a concept archetype it had no business wearing.
-  { key: 'architectureDiagram', file: 'architecture.svg', title: 'Architecture', grounded: 'architecture',
-    groundedFamily: FORM.RADIAL,
-    conceptEyebrow: 'ARCHITECTURE', conceptHeading: 'How it is built', conceptPrefs: ['strata', 'orbit', 'grid', 'ribbon', 'column'] },
-  // A pipeline IS a left→right run, so 'ribbon' is the semantically right demotion for flow — not the
-  // 'column' it used to take, which is the exact family grounded-architecture already occupies.
-  { key: 'flowDiagram', file: 'flow.svg', title: 'Process / Data Flow', grounded: 'flow',
-    groundedFamily: FORM.VSTACK,
-    conceptEyebrow: 'DATA FLOW', conceptHeading: 'What happens to your data', conceptPrefs: ['ribbon', 'column', 'grid', 'strata', 'orbit'] },
-  // Big Idea explains a relationship or handoff. It must not claim literal containment from its own
-  // authored wording; prefer a connected sequence, then other non-containment relationship forms.
-  { key: 'bigIdeaDiagram', file: 'big-idea.svg', title: 'Big Idea', grounded: null,
-    conceptEyebrow: 'THE BIG IDEA', conceptHeading: 'How it all fits together', conceptPrefs: ['ribbon', 'grid', 'column', 'orbit'] },
-  { key: 'insightDiagram', file: 'insight.svg', title: 'The Insight', grounded: null,
-    conceptEyebrow: 'THE INSIGHT', conceptHeading: 'The clever move', conceptPrefs: ['orbit', 'ribbon', 'grid', 'strata', 'column'] },
-];
-
-// A grounded flow that must yield VSTACK keeps its REAL model — the same source, stage names and result
-// derived from the repo's actual entrypoints — re-expressed as a concept chain. Grounding is preserved;
-// only the SHAPE changes. One connected chain is ONE row of N items (see the note in main()).
-function flowRowsFromModel(model) {
-  if (!model || !Array.isArray(model.steps) || !model.steps.length) return null;
-  const labels = [model.source, ...model.steps.map((s) => s && s.name), model.result]
-    .map((l) => (l == null ? '' : String(l).trim())).filter(Boolean);
-  if (labels.length < 2) return null;
-  return [{ items: labels.map((label, i) => ({ label, colorIdx: i })), connectWithin: true }];
-}
-
-// THE RESOLVER. Input: the slots that will actually render, each declaring whether it renders grounded.
-// Output: a per-key decision { family, variant, demotedForForm } with a PAIRWISE-DISTINCT family set.
-// Deterministic and total: same inputs always produce the same assignment, and it never returns a
-// colliding set — it throws instead, so a form collision can never again reach the vision grader.
-// MEASURED, 2026-08-06 (adversarial review finding, then verified by rendering): conceptRibbon lays
-// its cards out in ONE horizontal row, so its canvas width grows with item count — 3 items = 731px,
-// 4 = 949px, 5 = 1167px, 6 = 1385px. Every other archetype stays portrait regardless of length
-// (orbit 806px, strata 824px for the same 6-item chain). Diagrams fit to width on a 390px phone, so a
-// 1385px ribbon renders its 13px labels at ~3.7px — against the 568px grounded architecture diagram
-// that graded as legible, that is 2.4x the width and ~40% the text size. The 2026-07-30 portrait work
-// exists precisely to stop that. So: a ribbon is only offered for a SHORT chain.
-const RIBBON_MAX_ITEMS = 3;
-// Nested frames assert literal containment. They are valid only when the authored takeaway explicitly
-// says that one thing is inside/contains another. A title such as 'How it all fits together' is not
-// evidence of containment; using strata there turns an ordinary relationship into meaningless boxes.
-// One definition of "this text claims containment", used both to GROUND a nested-frames diagram and to
-// notice an author claim the page no longer draws.
-const CONTAINMENT_CLAIM = /\b(?:nested|concentric|contain(?:s|ing|ed)?|inside|within)\b/i;
-function containmentIsGrounded(slot) {
-  // A Big Idea's own prose is not independent evidence that containment exists. The renderer must
-  // not turn its self-authored shape claim into permission to draw that same shape. Big Idea is a
-  // relationship/handoff slot unless a future source-backed model supplies explicit containment.
-  if (slot.key === 'bigIdeaDiagram') return false;
-  return slot.semanticContainment === true;
-}
-function ribbonIsSafe(slot) {
-  // Big Idea handoffs commonly have four grounded stages. Four is still readable in the dedicated
-  // ribbon renderer and is preferable to falsely implying containment. Other slots keep the tighter cap.
-  const max = slot.key === 'bigIdeaDiagram' ? 4 : RIBBON_MAX_ITEMS;
-  return !Number.isInteger(slot.chainLength) || slot.chainLength <= max;
-}
-
-// A grid only EARNS its own family when it actually wraps. With items <= PER_ROW it draws a single
-// row of cards — which is a ribbon in disguise, and would sit alongside a real ribbon looking
-// identical while the resolver cheerfully recorded two distinct families. That is precisely the
-// false-confidence failure mode review finding 1 warned about, so guard it at the source rather than
-// discovering it in a grader verdict later.
-function gridIsDistinct(slot) {
-  return Number.isInteger(slot.chainLength) && slot.chainLength > GR.PER_ROW;
-}
-
-function resolveForms(slots) {
-  const taken = new Map();   // family -> key that claimed it
-  const out = {};
-  // Pass 1 — each grounded slot claims the family ITS OWN renderer emits. Architecture is radial
-  // (hub-and-spokes, which is what a dependency graph actually is) and flow is a vertical stack, so
-  // they no longer compete and NEITHER has to demote. Before 2026-08-06 both raced for vertical-stack
-  // and the loser was pushed into a concept archetype that misdescribed it — a sequence drawn as
-  // containment, or a 1385px ribbon illegible on a phone.
-  for (const s of slots) {
-    if (!s.grounded) continue;
-    const fam = s.groundedFamily || FORM.VSTACK;
-    if (!taken.has(fam)) { taken.set(fam, s.key); out[s.key] = { family: fam, variant: null, demotedForForm: false }; }
-  }
-  // Pass 2 — everything else (including a grounded slot that lost the VSTACK race) takes the first
-  // free family from its own preference list.
-  for (const s of slots) {
-    if (out[s.key]) continue;
-    const prefs = (s.conceptPrefs || [])
-      .filter((v) => v !== 'ribbon' || ribbonIsSafe(s))
-      .filter((v) => v !== 'grid' || gridIsDistinct(s))
-      .filter((v) => v !== 'strata' || containmentIsGrounded(s));
-    // If filtering left nothing, fall back to the unfiltered list: an illegible diagram is bad, but
-    // refusing to draw one at all is worse, and INV-18 requires the mandatory diagrams to exist.
-    const pick = prefs.find((v) => !taken.has(VARIANT_FAMILY[v]))
-      || (s.conceptPrefs || []).find((v) => !taken.has(VARIANT_FAMILY[v]));
-    if (!pick) die(`${s.key}: no distinct diagram form remains (claimed: ${[...taken.keys()].join(', ')}). `
-      + `Every archetype is already used by another diagram — refusing to draw two diagrams of the same shape (INV-23).`);
-    taken.set(VARIANT_FAMILY[pick], s.key);
-    out[s.key] = { family: VARIANT_FAMILY[pick], variant: pick, demotedForForm: Boolean(s.grounded) };
-  }
-  // THE ASSERTION — the whole point. Pairwise distinctness is proven here, not hoped for downstream.
-  const fams = Object.values(out).map((d) => d.family);
-  if (new Set(fams).size !== fams.length) {
-    die(`INV-23 form resolver produced a colliding set (${fams.join(', ')}) — this is a bug in resolveForms, not in the repo being explained.`);
-  }
-  return out;
-}
-
-function defaultAltText(spec, dg, ep, name, fallbackDesc, archModel, asConcept) {
-  // a demoted grounded diagram is a concept drawing now — never describe it as a dependency map / pipeline
-  if (asConcept) return fallbackDesc || `${spec.title} diagram for ${name}`;
-  if (spec.grounded === 'architecture') {
-    const ecos = (Array.isArray(dg.ecosystems) ? dg.ecosystems : []).join('/') || 'one ecosystem';
-    const hub = archModel && archModel.hub ? `, with ${archModel.hub} as the core module the most others depend on` : '';
-    return `${name} module dependency map: ${dg.componentCount ?? (Array.isArray(dg.nodes) ? dg.nodes.length : 0)} components across ${ecos} wired by ${dg.internalEdgeCount ?? 0} internal dependencies, drawn as a layered graph where each arrow points from a module to what it depends on (top entry points down to shared foundation libraries)${hub}.`;
-  }
-  if (spec.grounded === 'flow') {
-    const bins = (Array.isArray(ep.binaries) ? ep.binaries : []).map((b) => b && b.name).filter(Boolean).slice(0, 3).join(', ');
-    return `${name} build & run lifecycle: the repo source flows through install (→ dependencies), build (→ compiled artifacts), run the entry point${bins ? ` (${bins})` : ''}, and verify (→ pass/fail), with each stage's input and output artifact labelled so you can see what changes at every step.`;
-  }
-  return fallbackDesc || `${spec.title} diagram for ${name}`;
-}
-
-// ── DETERMINISTIC LEGIBILITY MEASUREMENT (ADR-0012 D5) ───────────────────────────────────────────
-// Diagrams fit to width on a phone, so a diagram's on-screen text size is a pure function of its
-// canvas width — knowable here, for free, before a single vision token is spent. Measured on the real
-// BHIL page (figure.diagram boundingBox = 312px at a 390px viewport):
-//     architecture 732px -> 5.5px · flow 611px -> 6.6px · big-idea 824px -> 4.9px · insight 928px -> 4.4px
-// and the ribbon that this session's first fix produced: 1385px -> 2.9px.
-//
-// NOTE WHAT IS *NOT* CLAIMED. There is no code-enforced absolute floor in this repo, and the four
-// shipped diagrams above sit at 4.4-6.6px — small, because the page gives every diagram a tap-to-zoom
-// lightbox. So an absolute threshold here would be an invented number dressed as a standard, and the
-// first version of this comment nearly asserted one from memory.
-//
-// What IS defensible is RELATIVE: a diagram far worse than its siblings on the same page is an
-// outlier the page's own design does not account for, and that is exactly what the 1385px ribbon was
-// (2.9px against siblings at 4.4-6.6). So: measure every diagram, RECORD the number in build.json so
-// the distribution becomes data rather than opinion (the ADR-0011 D4 pattern), and warn only on a
-// clear outlier. When enough builds carry these numbers, a real floor can be set from evidence.
-const MOBILE_CONTENT_PX = 312;      // measured, not assumed — see above
-const OUTLIER_RATIO = 0.62;         // flag a diagram below 62% of its siblings' median
-
-function legibilityOf(svg) {
-  const m = /viewBox="0 0 ([0-9.]+)/.exec(svg);
-  if (!m) return null;
-  const W = Number(m[1]);
-  const sizes = [...svg.matchAll(/font-size="([0-9.]+)"/g)].map((x) => Number(x[1]));
-  // eyebrows and captions are deliberately small mono; the CARD LABELS are what must read.
-  const labels = sizes.filter((x) => x > 12);
-  if (!labels.length || !W) return null;
-  return Math.round((Math.min(...labels) * (MOBILE_CONTENT_PX / W)) * 100) / 100;
-}
-
-function reportLegibility(merged) {
-  const entries = Object.entries(merged).filter(([, v]) => v && typeof v.mobileLabelPx === 'number');
-  if (entries.length < 2) return;
-  const vals = entries.map(([, v]) => v.mobileLabelPx).sort((a, b) => a - b);
-  const median = vals[Math.floor(vals.length / 2)];
-  process.stderr.write(`${TOOL}: mobile label size @${MOBILE_CONTENT_PX}px — `
-    + `${entries.map(([k, v]) => `${k.replace('Diagram', '')} ${v.mobileLabelPx}px`).join(' · ')}\n`);
-  for (const [k, v] of entries) {
-    if (v.mobileLabelPx < median * OUTLIER_RATIO) {
-      warn(`${k}: ${v.mobileLabelPx}px labels on mobile is a clear OUTLIER against its siblings (median ${median}px). `
-        + `Its canvas is disproportionately wide, so it will read worse than every other diagram on the page.`);
-    }
-  }
-}
-
-
-// ── STORY DIAGRAMS (ADR-0014) ────────────────────────────────────────────────────────────────────────
-// The brain may author `visuals.systemMap` and `visuals.decision`. They REPLACE the dependency-graph
-// drawing in the architecture / flow slots ONLY when every claim in them is confirmed against the real
-// cloned repo by THIS tool (a quote that is really in the file; a "no" that is a zero-hit search).
-// Anything unverifiable is dropped, and a model that cannot be drawn falls back to the grounded graph
-// diagram — never to an unverified claim, and never a failed build (ADR-0011).
-const STORY_SLOT = { architectureDiagram: 'systemMap', flowDiagram: 'decision' };
-const SEARCH_SKIP = new Set(['.git', 'node_modules', '.venv', 'venv', 'dist', 'build', '__pycache__', '.next', 'target']);
-
-function makeRepoReaders(buildJson, buildDir) {
-  const cp = buildJson.repo && buildJson.repo.clonePath;
-  const root = cp ? (path.isAbsolute(cp) ? cp : path.resolve(buildDir, cp)) : null;
-  if (!root || !fs.existsSync(root)) return null;
-  const read = (file) => {
-    if (typeof file !== 'string' || path.isAbsolute(file) || file.split(/[\\/]/).includes('..')) return null;
-    try {
-      const full = path.join(root, file);
-      const st = fs.statSync(full);
-      return st.isFile() && st.size <= 2_000_000 ? fs.readFileSync(full, 'utf8') : null;
-    } catch { return null; }
-  };
-  const search = (terms) => {
-    const needles = terms.map((t) => String(t).toLowerCase());
-    const hits = [];
-    let files = 0;
-    const walk = (dir) => {
-      let ents; try { ents = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
-      for (const e of ents) {
-        if (hits.length >= 20 || files > 6000) return;
-        if (e.isDirectory()) { if (!SEARCH_SKIP.has(e.name)) walk(path.join(dir, e.name)); continue; }
-        if (!e.isFile()) continue;
-        files++;
-        const full = path.join(dir, e.name);
-        let st; try { st = fs.statSync(full); } catch { continue; }
-        if (st.size > 1_000_000) continue;
-        let txt; try { txt = fs.readFileSync(full, 'utf8'); } catch { continue; }
-        if (txt.includes('\u0000')) continue;
-        const lines = txt.split('\n');
-        for (let i = 0; i < lines.length && hits.length < 20; i++) {
-          const l = lines[i].toLowerCase();
-          if (needles.some((n) => l.includes(n))) hits.push({ file: path.relative(root, full), line: i + 1 });
-        }
-      }
-    };
-    walk(root);
-    return hits;
-  };
-  return { read, search };
-}
-
-function storyFor(key, visualsIn, readers) {
-  const slot = STORY_SLOT[key];
-  const model = slot && visualsIn[slot];
-  if (!model || typeof model !== 'object') return null;
-  if (!readers) { warn(`${slot}: no cloned repo to verify against — using the grounded graph diagram`); return null; }
+// Draw + prove the phone twin (one corrective re-flow, then a loud failure). `render(scale)` returns the finished SVG.
+function phoneTwin(key, render) {
   try {
-    if (slot === 'systemMap') {
-      const bad = validateSystemMap(model);
-      if (bad.length) { warn(`systemMap rejected: ${bad.join('; ')}`); return null; }
-      const { model: ok, notes } = verifySystemMap(model, readers);
-      notes.forEach((n) => warn(`systemMap: ${n}`));
-      if (!ok.worksWith.items.length) { warn('systemMap: no "works with" claim could be verified — using the grounded graph diagram'); return null; }
-      return { svg: renderSystemMap(ok), altText: `${ok.title}. ${describeSystemMap(ok)}`, kind: 'systemMap', notes,
-        evidence: ok.worksWith.items.map((x) => ({ name: x.name, status: x.status, evidence: x.evidence })) };
-    }
-    const bad = validateDecision(model);
-    if (bad.length) { warn(`decision rejected: ${bad.join('; ')}`); return null; }
-    const v = verifyDecision(model, readers);
-    if (!v.ok) { warn(v.note); return null; }
-    return { svg: renderDecision(model), altText: `${model.title}. ${describeDecision(model)}`, kind: 'decision', notes: [],
-      evidence: [{ rule: model.rule }] };
-  } catch (e) { warn(`${slot} could not be drawn (${e.message}) — using the grounded graph diagram`); return null; }
+    return drawMobileChecked(key, (scale) => {
+      tune.wrap = scale;
+      try { return render(); } finally { tune.wrap = 1; }
+    });
+  } catch (e) { return die(e.message); }
+}
+
+function writeSvg(assetsDir, file, svg, key) {
+  const p = path.join(assetsDir, file);
+  fs.writeFileSync(p, svg, 'utf8');
+  assertXmllintClean(p, key);
+  return p;
 }
 
 function main() {
@@ -1451,10 +147,8 @@ function main() {
   const dgPath = resolveKbPath(kb.depGraphPath, buildDir);
   if (!dgPath) die(`architecture diagram cannot be produced: kb.depGraphPath not found (${kb.depGraphPath ?? 'unset'}) — refusing to invent module structure`);
   const dg = loadJson(dgPath, 'dep-graph');
-  // Only a MALFORMED graph dies here. Zero nodes is the most degenerate graph, not a different failure:
-  // it has 0 edges, so it takes the authored-concept path below — which still dies loud, naming
-  // architectureDiagram.rows, if the brain authored none. (ruvnet/ruos, 2026-09-17: rows were authored,
-  // but this guard fired first and the build died with its answer already written.)
+  // Only a MALFORMED graph dies here. Zero nodes is the most degenerate graph, not a different failure: it has
+  // 0 edges, so it takes the authored-concept path below (which dies naming architectureDiagram.rows if none).
   if (!Array.isArray(dg.nodes)) die(`architecture diagram cannot be produced: dep-graph is malformed — no nodes array (${dgPath})`);
 
   const epPath = resolveKbPath(kb.entrypointsPath, buildDir);
@@ -1462,10 +156,9 @@ function main() {
   const ep = loadJson(epPath, 'entrypoints');
   const hasFlow = (Array.isArray(ep.install) && ep.install.length) || (Array.isArray(ep.commands) && ep.commands.length)
     || (Array.isArray(ep.binaries) && ep.binaries.length) || (Array.isArray(ep.quickstart) && ep.quickstart.length);
-  // A pure library (e.g. a Rust crate workspace) has no runtime entrypoints — skip the flow diagram rather than
-  // crash the build or invent a fake flow. The architecture diagram (grounded in the real dep-graph) still ships.
+  // A pure library has no runtime entrypoints: skip the flow diagram rather than invent one (a verified decision story still draws).
   const skipFlow = !hasFlow;
-  if (skipFlow) warn(`no runtime entrypoints (install/commands/binaries/quickstart) in ${epPath} — library repo; skipping flow diagram, architecture diagram still produced`);
+  if (skipFlow) warn(`no runtime entrypoints (install/commands/binaries/quickstart) in ${epPath} — library repo; skipping the lifecycle flow diagram, architecture diagram still produced`);
 
   const symPath = resolveKbPath(kb.symbolsPath, buildDir);
   let sym = null;
@@ -1475,7 +168,7 @@ function main() {
   const name = (buildJson.understanding && buildJson.understanding.repoName)
     || (buildJson.repo && buildJson.repo.name) || dg.metaName || ep.metaName || dg.target || 'this repo';
 
-  PAL = resolvePalette(buildJson.concept);
+  setPalette(buildJson.concept);
   process.stderr.write(`${TOOL}: palette accents ${PAL.accents.slice(0, 3).join(', ')}${buildJson.concept && buildJson.concept.palette ? ' (themed from concept.palette)' : ' (vivid default)'} — dark/glow renderer\n`);
 
   const assetsDir = path.join(buildDir, 'assets');
@@ -1483,6 +176,8 @@ function main() {
 
   const visualsIn = (buildJson.visuals && typeof buildJson.visuals === 'object') ? buildJson.visuals : {};
   const storyReaders = (visualsIn.systemMap || visualsIn.decision) ? makeRepoReaders(buildJson, buildDir) : null;
+  // verified story diagrams, decided up front: a story slot never needs rows, a graph with edges or runtime entrypoints
+  const stories = Object.fromEntries(Object.keys(STORY_SLOT).map((k) => [k, storyFor(k, visualsIn, storyReaders)]));
   const merged = {};
 
   // captions (mono, lowercase, reference-style)
@@ -1491,227 +186,103 @@ function main() {
   const flowModel = skipFlow ? null : buildFlowModel(ep, dg);
   const totalModules = dg.componentCount ?? dg.nodes.length;
   const archCaption = `${totalModules} modules · ${dg.internalEdgeCount ?? archModel.edges.length} internal links · ${ecos}`
-    + (archModel.trimmed ? `  ·  showing the ${totalModules - archModel.trimmed} most-connected` : '');
+    + (archModel.trimmed ? `  ·  showing the ${archModel.nodes.length} most-connected` : '');
 
-  // A dependency map with NO internal edges is a picture of nothing: chalk, stronghold, agenticow and
-  // ternlight each shipped a beautifully-styled "N modules · 0 internal links" — decoration around an
-  // empty statement, because the renderer drew whatever the graph gave it and never asked whether the
-  // graph said anything. Same principle the flow diagram already applies above (skipFlow refuses to
-  // invent a runtime flow for a library): a diagram must carry information or it must not be drawn.
-  // Here we don't skip — INV-18 requires an architecture diagram — we DEMOTE to the concept renderer
-  // and draw what the repo actually IS, from rows the brain authored. Trivial graph => explain the
-  // idea, not the (nonexistent) wiring.
+  // A dependency map with NO internal edges is a picture of nothing, so it is not drawn: the slot demotes to the
+  // concept renderer and draws what the repo IS, from rows the brain authored (INV-18 still requires a diagram).
   const archDegenerate = archModel.edges.length === 0;
   if (archDegenerate) warn(`dep-graph has 0 internal edges (${totalModules} module${totalModules === 1 ? '' : 's'}) — a dependency map would show nothing; drawing the authored CONCEPT architecture instead`);
 
-  // The flow model is derived from install/build/run/test commands — that is a BUILD LIFECYCLE, not the
-  // runtime data-flow its old "Data-flow pipeline" title claimed. Shipping it under that title is what the
-  // vision grader kept catching as a caption/content mismatch. Prefer a real runtime flow the brain
-  // authored; only fall back to the lifecycle, and when we do, NAME IT HONESTLY.
-  const flowAuthored = Array.isArray((visualsIn.flowDiagram || {}).rows) && visualsIn.flowDiagram.rows.length > 0;
+  // The flow model is a BUILD LIFECYCLE (install/build/run/test), not a runtime data flow, and is named as such.
+  // A real runtime flow the brain authored (rows) is preferred; the lifecycle is the fallback.
+  const flowAuthored = authoredRows(visualsIn.flowDiagram).length > 0;
   const flowCaption = flowModel ? `${flowModel.steps.length} stages · derived from the project's ${ecos} entrypoints` : null;
 
-  // ── INV-23 FORM RESOLUTION (ADR-0012) ──────────────────────────────────────────────────────────
-  // Decided ONCE, for the whole page, BEFORE anything renders. Each slot declares the family it would
-  // emit; the resolver guarantees the emitted set is pairwise distinct or dies loudly. This is free and
-  // deterministic, and it replaces the old arrangement where a ~$0.30 vision call discovered the
-  // collision and a whole rebuild cycle reacted to it — usually too late, at the refine cap.
-  const renderSlots = DIAGRAMS
-    .filter((spec) => !(spec.grounded === 'flow' && skipFlow))
-    .map((spec) => ({
+  // ── INV-23 FORM RESOLUTION (ADR-0012): decided ONCE for the whole page, before anything renders ──
+  const active = DIAGRAMS.filter((spec) => !(spec.grounded === 'flow' && skipFlow && !stories[spec.key]));
+  const renderSlots = active.map((spec) => {
+    const authored = authoredRows(visualsIn[spec.key]);
+    return {
       key: spec.key,
       conceptPrefs: spec.conceptPrefs,
       groundedFamily: spec.groundedFamily,
-      // Containment is a factual relationship, not a decorative layout choice. Permit nested frames
-      // only when the authored takeaway explicitly claims a real inside/contains relationship.
+      // nested frames only when the authored takeaway says one thing contains another
       semanticContainment: CONTAINMENT_CLAIM.test(String(((visualsIn[spec.key] || {}).altText) || '')),
-      // How many cards this slot would draw if it demotes — the ribbon's width, and therefore its
-      // mobile legibility, is a direct function of this.
-      chainLength: (() => {
-        const authored = (visualsIn[spec.key] || {}).rows;
-        if (Array.isArray(authored) && authored.length) return Math.max(...authored.map((r) => (Array.isArray(r.items) ? r.items.length : 0)));
-        if (spec.grounded === 'flow' && flowModel) return (flowRowsFromModel(flowModel) || [{ items: [] }])[0].items.length;
-        return null;
-      })(),
-      // "grounded" here = this slot WOULD draw its real model (a vertical card-stack) if form allowed.
+      // cards this slot would draw as a concept diagram: a ribbon's width, and its phone legibility, scale with it
+      chainLength: authored.length ? Math.max(...authored.map((r) => r.items.length)) : null,
+      // "grounded" = this slot draws its own real model (radial map / lifecycle stack)
       grounded: (spec.grounded === 'architecture' && !archDegenerate)
         || (spec.grounded === 'flow' && !flowAuthored && Boolean(flowModel)),
-    }));
+    };
+  });
   const forms = resolveForms(renderSlots);
-  process.stderr.write(`${TOOL}: INV-23 forms — ${Object.entries(forms)
-    .map(([k, d]) => `${k.replace('Diagram', '')}:${d.family}${d.demotedForForm ? ' (demoted for form)' : ''}`).join(' · ')}\n`);
+  process.stderr.write(`${TOOL}: INV-23 forms — ${Object.entries(forms).map(([k, d]) => `${k.replace('Diagram', '')}:${d.family}`).join(' · ')}\n`);
 
-  for (const spec of DIAGRAMS) {
-    if (spec.grounded === 'flow' && skipFlow) continue;  // library repo: no runtime flow to draw
+  for (const spec of active) {
     const existing = (visualsIn[spec.key] && typeof visualsIn[spec.key] === 'object') ? visualsIn[spec.key] : {};
     const decision = forms[spec.key];
-    let rendered, asciiSrc = null, conceptBack = null, formCorrectedAlt = null;
-    // A grounded diagram falls through to the CONCEPT renderer when its grounded model has nothing to
-    // say (architecture with 0 edges), when the brain authored something truer (a real runtime flow),
-    // or when the INV-23 resolver could not give it a distinct SHAPE (another slot already holds the
-    // vertical stack). The third case keeps the REAL model and changes only its layout.
-    const asConcept = (spec.grounded === 'architecture' && archDegenerate)
-      || (spec.grounded === 'flow' && flowAuthored)
-      || decision.demotedForForm;
-    if (spec.grounded === 'architecture' && !asConcept) {
-      rendered = renderArchitectureRadial(`${name.toUpperCase()} · DEPENDENCY MAP`, 'Module dependency map', archModel, archCaption, PAL);
-    } else if (spec.grounded === 'flow' && !asConcept) {
-      // honest title: this model IS the build lifecycle (install → build → run → verify), so say so.
-      rendered = renderFlow(`${name.toUpperCase()} · LIFECYCLE`, 'Build & run lifecycle', flowModel, flowCaption, PAL);
-    } else {
-      // big-idea / insight: DRAW real glass concept-cards from a structured rows model (renderConcept) —
-      // never typeset ASCII. Prefer the brain's structured .rows; otherwise parse a legacy .ascii source
-      // into the SAME model so older builds still render as real cards, not a picture of ASCII.
-      let rows = null;
-      if (Array.isArray(existing.rows) && existing.rows.length) {
-        rows = existing.rows.map((r) => ({
-          items: (Array.isArray(r.items) ? r.items : [])
-            .map((it, i) => (typeof it === 'string' ? { label: it, colorIdx: i } : { label: it && it.label, colorIdx: (it && it.colorIdx != null) ? it.colorIdx : i }))
-            .filter((it) => it.label && String(it.label).trim()),
-          connectWithin: r && r.connect !== false,
-        })).filter((r) => r.items.length);
-      }
-      // A grounded flow demoted purely for FORM keeps its real, entrypoint-derived model — same source,
-      // same stage names, same result — re-expressed as a connected concept chain. It is not falling
-      // back to something invented; it is the same truth in a shape that does not duplicate another
-      // diagram. Only reached when the resolver could not hand it the vertical stack.
-      if ((!rows || !rows.length) && spec.grounded === 'flow' && decision.demotedForForm) {
-        rows = flowRowsFromModel(flowModel);
-        if (rows) warn(`flowDiagram demoted to '${decision.variant}' for INV-23 form diversity — real flow model preserved as a ${rows[0].items.length}-item chain`);
-      }
-      if ((!rows || !rows.length) && spec.grounded) {
-        // A DEMOTED grounded diagram must have authored ROWS. Never fall back to .ascii here: for these
-        // keys the stored ascii/asciiFallback is a prose *description* (round-tripped by this tool as the
-        // accessible text), so accepting it typesets a paragraph as a picture — the exact slop the concept
-        // renderer exists to prevent. Structure or nothing.
-        // NOTE the shape: renderConcept stacks items VERTICALLY and only draws a connecting arrow between
-        // items *within the same row*. So a connected chain is ONE row of N items — NOT N rows of one item
-        // (that renders as four floating cards with no arrows, which reads as a bulleted list, not a structure).
-        die(`${spec.key}: this repo's dep-graph has ${totalModules} module(s) and 0 internal edges, so a dependency map would show nothing. `
-          + `Author visuals.${spec.key}.rows — the CONCEPT of how the thing is built (the 3-4 parts a reader must hold in their head, in order) — `
-          + `not the package wiring, and not a paragraph. Shape: one connected chain is ONE row of many items, e.g. `
-          + `"rows":[{"items":["your text","tokenizer","ternary engine","384 numbers"],"connect":true}]. `
-          + `Refusing to ship a diagram of an empty graph.`);
-      }
-      if (!rows || !rows.length) {
-        const ascii = (typeof existing.ascii === 'string' && existing.ascii.trim()) ? existing.ascii
-          : (typeof existing.asciiFallback === 'string' && existing.asciiFallback.trim()) ? existing.asciiFallback : null;
-        if (!ascii) die(`missing structure for ${spec.key}: ${spec.title} needs visuals.${spec.key}.rows (preferred) or a legacy .ascii source — the brain must author it`);
-        asciiSrc = ascii;
-        rows = asciiRows(ascii).rows;
-      }
-      if (!rows.length) die(`could not build a concept model for ${spec.key}: no usable rows/items`);
-      const eyebrow = spec.grounded ? `${name.toUpperCase()} · ${spec.conceptEyebrow}` : spec.conceptEyebrow;
-      const heading = (typeof existing.title === 'string' && existing.title.trim()) ? existing.title.trim()
-        : spec.conceptHeading;
-      // the brain's altText is the one-line TAKEAWAY — render it as the caption so the diagram tells a story
-      // The brain often writes a FORM CLAIM into its alt text ("drawn as a hub with three satellites",
-      // "drawn as a vertical chain of five stages"). That was safe when the form was a static per-key
-      // constant. It is not safe now: the resolver decides the form at RUNTIME, so an authored claim
-      // can describe a shape that was never drawn — and this string is BOTH the visible caption and
-      // the accessible text, so the page would assert one structure in pixels and a different one to
-      // a screen reader. Seen live on 2026-08-06: an insight slot resolved to `grid` while its caption
-      // still read "drawn as a hub with three satellites". Strip the stale claim and state the truth.
-      const FORM_PHRASE = {
-        [FORM.RADIAL]: 'drawn as a hub with its related parts radiating from it',
-        [FORM.VSTACK]: 'drawn as a vertical chain, top to bottom',
-        [FORM.HRUN]: 'drawn as a left-to-right run',
-        [FORM.CONTAINMENT]: 'drawn as nested frames, outermost to innermost',
-        [FORM.GRID]: 'drawn as a field of cards, read left to right and wrapping',
-      };
-      // Rewrite ONLY a claim that genuinely CONTRADICTS the chosen form. The first version replaced
-      // every "drawn as …" clause and made two accurate, richer descriptions ("a vertical chain of
-      // five short stages", "one outlined file containing two zones stacked inside it") generic — a
-      // fix that damaged the thing it was protecting. An unrecognisable or ambiguous claim is left in
-      // the author's own words: silence is better than boilerplate.
-      const FORM_CUES = [
-        [FORM.RADIAL, /\bhub\b|satellite|radiat|spoke/i],
-        [FORM.CONTAINMENT, /nested|concentric|containing|contains|inside|within/i],
-        [FORM.GRID, /\bgrid\b|\bfield\b|wrapp?ed|tiles?\b/i],
-        [FORM.HRUN, /left[- ]to[- ]right|horizontal|across the|single row/i],
-        [FORM.VSTACK, /vertical|top to bottom|stacked|down the|column/i],
-      ];
-      const rawCap = (typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText.trim() : null;
-      let cap = rawCap
-        ? rawCap.replace(/,?\s*drawn as [^:;.]+/i, (mm) => {
-          const hits = FORM_CUES.filter(([, re]) => re.test(mm)).map(([fam]) => fam);
-          const claimed = hits.length === 1 ? hits[0] : null;   // ambiguous => trust the author
-          const truth = FORM_PHRASE[decision.family];
-          if (!claimed || claimed === decision.family || !truth) return mm;
-          warn(`${spec.key}: authored alt text claimed a ${claimed} form but the resolver drew ${decision.family} — rewrote "${mm.trim()}"`);
-          return `, ${truth}`;
-        })
-        : null;
-      // A Big Idea drawn as a left-to-right handoff says so — but ONLY when the author wrote nothing, or
-      // claimed a containment the page does not draw. An ACCURATE description stays in the author's own
-      // words (ADR-0012). Decided here, BEFORE drawing, so the visible caption and the accessible <desc>
-      // cannot disagree (upstream's first cut fixed only <desc> and left "containing two zones" on screen).
-      if (spec.key === 'bigIdeaDiagram' && decision.family === FORM.HRUN && (!rawCap || CONTAINMENT_CLAIM.test(rawCap))) {
-        cap = `A left-to-right handoff: ${rows.map((r) => r.items.map((it) => it.label).join(' → ')).join('; ')}.`;
-      }
-      formCorrectedAlt = (cap && cap !== rawCap) ? cap : null;  // the caption AND <desc> must agree
-      rendered = renderConcept(eyebrow, heading, rows, cap, PAL, decision.variant);
-      // round-trip the structured source + heading so re-running this station (e.g. a refine loop) redraws
-      // identically WITHOUT a fresh brain call — and never reverts to the generic title.
-      conceptBack = { rows: rows.map((r) => ({ items: r.items.map((it) => it.label), connect: r.connectWithin })), title: heading };
-      // textual fallback (accessibility / AI) — synthesize from the structured rows when there is no ASCII
-      if (!asciiSrc) asciiSrc = rows.map((r) => r.items.map((it) => it.label).join(r.connectWithin ? ' -> ' : '   ·   ')).join('\n');
+    const story = stories[spec.key];
+    const drawn = story ? null : drawSlot(spec, existing, decision, { name, dg, ep, archModel, flowModel, archCaption, flowCaption, archDegenerate, flowAuthored, totalModules });
+    const altText = story ? story.altText : drawn.altText;
+    const slug = spec.file.replace(/\.svg$/, '');
+    const wrap = (r, id) => wrapSvg({ id, W: r.W, H: r.H, body: r.body, title: `${name} — ${spec.title}`, desc: altText, ascii: drawn.asciiSrc || r.desc });
+    const svg = story ? story.svg : wrap(drawn.rendered, `dg-${slug}`);
+    const svgPath = writeSvg(assetsDir, spec.file, svg, spec.key);
+
+    // the wide architecture map is the one grounded layout whose labels are placed from real module names: no two may collide
+    if (drawn && drawn.strictOverlap) {
+      const clash = findTextOverlaps(svg);
+      if (clash.length) die(`${spec.key}: labels overlap on the dependency map — ${clash.slice(0, 3).map(([a, b]) => `"${a}" / "${b}"`).join('; ')}`);
+    } else if (!story) {
+      findTextOverlaps(svg).slice(0, 3).forEach(([a, b]) => warn(`${spec.key}: labels "${a}" and "${b}" overlap on the wide canvas`));
     }
-    // formCorrectedAlt first: if the authored claim contradicted the drawn form we rewrote it, and
-    // the ACCESSIBLE text must carry the correction too. Fixing only the visible caption would leave
-    // a screen reader hearing a structure the page never drew — the same lie, told more quietly.
-    const altText = formCorrectedAlt
-      || ((typeof existing.altText === 'string' && existing.altText.trim()) ? existing.altText : defaultAltText(spec, dg, ep, name, rendered.desc, archModel, asConcept));
-    const story = storyFor(spec.key, visualsIn, storyReaders);
-    const finalAlt = story ? story.altText : altText;
-    const svg = story ? story.svg : wrapSvg(rendered.W, rendered.H, rendered.body, `${name} — ${spec.title}`, altText, asciiSrc || rendered.desc);
-    const svgPath = path.join(assetsDir, spec.file);
-    fs.writeFileSync(svgPath, svg, 'utf8');
-    assertXmllintClean(svgPath, spec.key);
-    // `form` travels with the diagram so the INV-23 guarantee is AUDITABLE after the fact: a test can
-    // assert the emitted set is pairwise distinct, and a grader verdict of "two same-form diagrams" can
-    // be checked against what was actually drawn instead of being taken on faith.
-    merged[spec.key] = { svgPath, altText: finalAlt, asciiFallback: story ? story.altText : (asciiSrc || rendered.desc), format: 'svg-vector-dark', xmllintOK: true,
-      form: story ? story.kind : decision.family, formVariant: story ? story.kind : decision.variant, mobileLabelPx: legibilityOf(svg), ...(conceptBack || {}),
+
+    // the PHONE twin, drawn from the same model, measured, and required to clear the floor
+    const twin = phoneTwin(spec.key, () => (story ? story.mobile() : wrap(drawn.mobile(), `dg-${slug}-m`)));
+    const mobileSvgPath = writeSvg(assetsDir, mobileName(spec.file), twin.svg, `${spec.key} (phone)`);
+    if (twin.pass === 2) warn(`${spec.key}: the phone layout needed its corrective re-flow`);
+    // `form` travels with the diagram so INV-23 is AUDITABLE after the fact (a test, or a grader verdict, can check what was drawn)
+    merged[spec.key] = { svgPath, mobileSvgPath, altText, asciiFallback: story ? story.altText : (drawn.asciiSrc || drawn.rendered.desc), format: 'svg-vector-dark', xmllintOK: true,
+      form: story ? story.kind : decision.family, formVariant: story ? story.kind : decision.variant,
+      mobileLabelPx: twin.px, desktopLabelPx: labelPx(svg), ...(story ? {} : (drawn.conceptBack || {})),
       ...(story ? { story: story.kind, storyEvidence: story.evidence, storyNotes: story.notes } : {}) };
   }
 
-  reportLegibility(merged);
+  reportLegibility(TOOL, merged);
 
-  // THE REFUSAL — the hero animation. Emitted ONLY when the brain authored `visuals.heroAnim` for THIS
-  // repo. No heroAnim => no band. It must never fall back to another repo's animation, and there is no
-  // generic default worth showing: an animation that does not perform THIS project's one idea is the
-  // decoration we spent all of 2026-07-12 removing.
+  // THE HERO ANIMATION — emitted ONLY when the brain authored `visuals.heroAnim` for THIS repo; never another repo's.
+  // heroAnim.sceneSvg (INV-23's bespoke scene) is validated and installed as the band; otherwise the chips band is drawn.
   const animSpec = (visualsIn.heroAnim && typeof visualsIn.heroAnim === 'object') ? visualsIn.heroAnim : null;
-  // INV-23's BESPOKE SCENE, previously documented but unimplemented (2026-09-17). SKILL.md says a repo
-  // whose trick is spatial or mechanical gets an authored animated SVG scene and that "the chips band is
-  // the fallback for repos whose trick is genuinely abstract" — but the only code path here built chips,
-  // so every spatial repo either got value-flipping chips that did not fit or (ruos) no animation at all.
-  // When the brain authors `visuals.heroAnim.sceneSvg`, that file IS the band: validated, never invented.
-  if (animSpec && typeof animSpec.sceneSvg === 'string' && animSpec.sceneSvg.trim()) {
-    const srcPath = path.isAbsolute(animSpec.sceneSvg) ? animSpec.sceneSvg : path.join(buildDir, animSpec.sceneSvg);
-    if (!fs.existsSync(srcPath)) die(`visuals.heroAnim.sceneSvg not found: ${srcPath} — the brain must author the scene before make-diagrams runs`);
-    const scene = fs.readFileSync(srcPath, 'utf8');
-    if (!/viewBox=/i.test(scene)) die(`heroAnim.sceneSvg has no viewBox (${srcPath}) — it cannot scale on the page`);
-    if (!/@keyframes|<animate/i.test(scene)) die(`heroAnim.sceneSvg carries no animation (${srcPath}) — a static picture belongs in a diagram slot, not the hero band`);
-    if (!/prefers-reduced-motion/i.test(scene)) die(`heroAnim.sceneSvg must honour prefers-reduced-motion with a static end state (${srcPath})`);
+  const markup = animSpec && typeof animSpec.sceneMarkup === 'string' && animSpec.sceneMarkup.trim() ? animSpec.sceneMarkup : null;
+  if (animSpec && (markup || (typeof animSpec.sceneSvg === 'string' && animSpec.sceneSvg.trim()))) {
+    // sceneMarkup = authored by the local brain; sceneSvg = a file the hosted agent wrote. Both meet the same strict contract (scoped ids, 390px text floor).
+    let scene, srcPath = null;
+    if (markup) scene = markup;
+    else {
+      srcPath = path.isAbsolute(animSpec.sceneSvg) ? animSpec.sceneSvg : path.join(buildDir, animSpec.sceneSvg);
+      if (!fs.existsSync(srcPath)) die(`visuals.heroAnim.sceneSvg not found: ${srcPath} — the brain must author the scene before make-diagrams runs`);
+      scene = fs.readFileSync(srcPath, 'utf8');
+    }
+    const defects = validateHeroScene(scene);
+    if (defects.length) die(`heroAnim scene refused (${srcPath || 'sceneMarkup'}): ${defects.join('; ')}`);
     const dest = path.join(assetsDir, 'hero-scene.svg');
-    if (path.resolve(srcPath) !== path.resolve(dest)) fs.writeFileSync(dest, scene, 'utf8');
-    assertXmllintClean(dest, 'heroAnim.sceneSvg');
-    const desc = (scene.match(/<desc[^>]*>([\s\S]*?)<\/desc>/i) || [])[1];
+    if (!srcPath || path.resolve(srcPath) !== path.resolve(dest)) fs.writeFileSync(dest, scene, 'utf8');
+    const { sceneMarkup: _drop, ...specRest } = animSpec;
     merged.heroAnim = {
-      ...animSpec, svgPath: dest, altText: (desc || animSpec.altText || 'The one idea, in motion').trim(),
+      ...specRest, sceneSvg: 'assets/hero-scene.svg' /* a re-run (refine pass) re-reads the installed file */, svgPath: dest, altText: sceneAltText(scene, animSpec.altText),
       format: 'svg-vector-animated-scene', xmllintOK: true,
     };
     process.stderr.write(`${TOOL}: hero-scene.svg — authored scene installed as the hero animation (reduced-motion safe)\n`);
   } else if (animSpec) {
     const r = renderRefusal(PAL, animSpec);
-    const svg = wrapSvg(r.W, r.H, r.body, `${name} — the one idea, in motion`, r.desc, null, r.style);
-    const p = path.join(assetsDir, 'refusal.svg');
-    fs.writeFileSync(p, svg, 'utf8');
-    assertXmllintClean(p, 'heroAnim');
-    merged.heroAnim = { ...animSpec, svgPath: p, altText: r.desc, format: 'svg-vector-animated', xmllintOK: true };
-    process.stderr.write(`${TOOL}: refusal.svg — hero animation (9s loop, reduced-motion safe)\n`);
+    const svg = wrapSvg({ id: 'dg-hero', W: r.W, H: r.H, body: r.body, title: `${name} — the one idea, in motion`, desc: r.desc, extraStyle: r.style });
+    const p = writeSvg(assetsDir, 'refusal.svg', svg, 'heroAnim');
+    const rm = renderRefusalMobile(PAL, animSpec);
+    const twin = phoneTwin('heroAnim', () => wrapSvg({ id: 'dg-hero-m', W: rm.W, H: rm.H, body: rm.body, title: `${name} — the one idea, in motion`, desc: rm.desc, extraStyle: rm.style }));
+    const px = twin.px;
+    const mp = writeSvg(assetsDir, 'refusal.m.svg', twin.svg, 'heroAnim (phone)');
+    merged.heroAnim = { ...animSpec, svgPath: p, mobileSvgPath: mp, mobileLabelPx: px, altText: r.desc, format: 'svg-vector-animated', xmllintOK: true };
+    process.stderr.write(`${TOOL}: refusal.svg + refusal.m.svg — hero animation (9s loop, reduced-motion safe, phone ${px}px)\n`);
   } else {
     process.stderr.write(`${TOOL}: no visuals.heroAnim authored — skipping the hero animation (never borrowing another repo's)\n`);
   }
@@ -1724,8 +295,9 @@ function main() {
     slot: 'visuals',
     mergedKeys: producedKeys,
     svgPaths: Object.fromEntries(producedKeys.map((k) => [k, merged[k].svgPath])),
+    mobileSvgPaths: Object.fromEntries(producedKeys.map((k) => [k, merged[k].mobileSvgPath])),
     groundedIn: { architecture: dgPath, flow: skipFlow ? null : epPath, symbols: symPath || null },
-    renderer: 'dark / glassmorphic / glowing (layered isometric)',
+    renderer: 'dark glassmorphic SVG',
   };
   process.stdout.write(JSON.stringify({ ok: true, outputs, error: null }) + '\n');
   process.exit(0);

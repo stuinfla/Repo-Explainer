@@ -9,8 +9,8 @@
 // Repo shape is DATA (kb.config.mjs target: repoDir, scopeExclude, componentRoots). NO repo
 // name is baked in here — the same script runs for ruqu / photonlayer / ruvn / metaharness.
 //
-// This file ships in the drop-in for-ai/ so the AI gets EXACT entrypoint lookups (how do I
-// build / test / run / install this) instead of guessing from semantic search.
+// Its OUTPUT (<slug>-entrypoints.json) ships in the drop-in for-ai/ so the AI gets EXACT entrypoint
+// lookups (how do I build / test / run / install this); this script itself does not ship.
 //
 // Usage: node kb/entrypoints.mjs --target ruqu
 //        node kb/entrypoints.mjs ruqu
@@ -107,7 +107,6 @@ function main() {
     target: slug,
     metaName: target.metaName,
     generated: new Date().toISOString(),
-    repo: target.bundle?.blurb ? undefined : undefined,
     workspace: { kind: null, members: [] }, // rust workspace | npm | mixed
     components: [],          // { name, path, kind:'crate'|'package', description, bins, examples, scripts, deps }
     binaries: [],            // { name, component, path }

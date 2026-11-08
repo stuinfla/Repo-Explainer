@@ -1,8 +1,5 @@
-// tests/env.test.mjs — coverage for src/env.mjs, the .env + secret loading every station and the
-// orchestrator's own Claude calls depend on. Previously zero test coverage, including the one
-// regression that actually broke a live deploy: a stale ambient NETLIFY_AUTH_TOKEN silently
-// overriding a freshly-updated .env (2026-06-30 incident). loadEnv was rewritten so the .env file
-// wins; until now nothing pinned that fix in place (see memory test-coverage-gap-2026-07-09, pass 4).
+// tests/env.test.mjs — src/env.mjs: .env + secret loading. Pins the 2026-06-30 regression where a stale
+// ambient NETLIFY_AUTH_TOKEN overrode a freshly-updated .env.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';

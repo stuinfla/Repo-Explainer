@@ -1,16 +1,14 @@
-// resolve-deps.mjs — portable resolver for the Cognitum KB scripts.
+// resolve-deps.mjs — portable resolver for the KB scripts.
 //
-// Resolves the two runtime deps the KB needs in a machine-independent order:
-//
+// Resolves the two runtime deps the KB needs:
 //   @ruvector/rvf        -> RvfDatabase (the .rvf vector store)
-//   @xenova/transformers -> the MiniLM embedder
+//   @xenova/transformers -> the embedder
 //
 // Resolution order (first hit wins) for EACH dep:
 //   1. The project's own node_modules (so `cd kb && npm i` or a root install just works).
-//   2. An explicit env override   (RVF_MODULE_PATH / XENOVA_PATH).
-//   3. The author's Mac npm-global / AppealArmor paths (LAST resort, so local dev still runs).
+//   2. An explicit env override (RVF_MODULE_PATH / XENOVA_PATH).
 //
-// This file ships INSIDE the zips, so it must not assume anything beyond Node 18+ and the
+// This file ships INSIDE knowledge packs, so it must not assume anything beyond Node 18+ and the
 // two npm deps being installable via `npm i @ruvector/rvf @xenova/transformers`.
 
 import { createRequire } from 'node:module';
@@ -27,8 +25,7 @@ const localRequire = createRequire(__filename);
 
 // @ruvector/rvf and @xenova/transformers are declared dependencies, so they resolve from
 // node_modules (step 1) on any machine after `npm install`. The env overrides remain for
-// non-standard layouts. (No machine-specific fallback paths — those don't belong in a
-// published package.)
+// non-standard layouts.
 
 function existsModuleDir(p) {
   // p may be a package root dir OR a file path; treat presence as resolvable.
@@ -37,7 +34,7 @@ function existsModuleDir(p) {
 
 /**
  * Resolve and return the @ruvector/rvf module ({ RvfDatabase, ... }).
- * Order: project node_modules -> RVF_MODULE_PATH env -> Mac npm-global.
+ * Order: project node_modules -> RVF_MODULE_PATH env.
  */
 export function loadRvf() {
   // 1. project node_modules (kb/ or root)
@@ -68,7 +65,7 @@ export function loadRvf() {
 
 /**
  * Resolve and dynamically import @xenova/transformers.
- * Order: project node_modules -> XENOVA_PATH env -> Mac AppealArmor build.
+ * Order: project node_modules -> XENOVA_PATH env.
  * Returns { T, modelCache, via } where T is the imported module namespace.
  */
 export async function loadTransformers() {
@@ -103,24 +100,16 @@ export async function loadTransformers() {
 }
 
 /**
- * Pick a model cache directory. KB_MODEL_CACHE wins; otherwise a kb-local `models-cache`
- * if it already has the model; otherwise the Mac cache if present; otherwise a kb-local
- * dir (created lazily) into which a remote download will be cached.
- * `modelName` lets the big (bge) variant resolve its cache by its own model, not just MiniLM;
- * defaults to MiniLM-384 so existing small-build callers are unchanged.
+ * Pick a model cache directory: KB_MODEL_CACHE wins, otherwise a kb-local `models-cache`
+ * (a remote download lands there on first run).
  */
-export function chooseModelCache(modelName = 'Xenova/all-MiniLM-L6-v2') {
-  if (process.env.KB_MODEL_CACHE) return process.env.KB_MODEL_CACHE;
-  const kbLocal = path.join(KB_DIR, 'models-cache');
-  if (fs.existsSync(path.join(kbLocal, modelName))) return kbLocal;
-  return kbLocal; // remote download lands here on first run
+export function chooseModelCache() {
+  return process.env.KB_MODEL_CACHE || path.join(KB_DIR, 'models-cache');
 }
 
 /**
  * Configure a transformers namespace `T` for a given model: point at the cache, and allow
  * remote download ONLY when THAT model isn't already cached (offline-first).
- * `modelName` defaults to the MiniLM-384 embedder so existing callers keep working; the big
- * variant passes `'Xenova/bge-base-en-v1.5'` so its own cache check is correct.
  * Returns { modelCache, haveLocalModel }.
  */
 export function configureModel(T, modelCache, modelName = 'Xenova/all-MiniLM-L6-v2') {

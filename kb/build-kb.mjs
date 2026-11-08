@@ -31,15 +31,11 @@ import { RULE_IMPLS } from './corpus-rules.mjs';
 import { makeContext } from './chunker.mjs';
 import {
   SYNTHETIC_PATH_RE, acquireLock, readPassages, readIdsIndex,
-  cloneFile, publish, firstIdOrderViolation,
+  cloneFile, publish, firstIdOrderViolation, storeDirFor,
 } from './store-set.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url)); // kb/
 
-// Default embedder (legacy / Seed-compatible): MiniLM-384 → <slug>-kb.small.rvf.
-// A target may override via an `embed` block in kb.config.mjs (ADR-0001 v1.3.1).
-const DEFAULT_MODEL = 'Xenova/all-MiniLM-L6-v2';
-const DEFAULT_DIM = 384;
 const BATCH = 32;
 const CHURN_LIMIT = 0.4;    // delta refuses above this work fraction (ADR-0010 D3)
 
@@ -56,23 +52,25 @@ function parseArgs(argv) {
 }
 
 // ---------- shared pieces ----------
-function resolveEmbedder(target) {
-  const emb = target.embed || {};
+// A target MUST carry an `embed` block: there is no default model, because a store embedded with a guessed
+// model would be indistinguishable from a correct one (same 384 dimensions) and silently retrieve garbage.
+export function resolveEmbedder(target) {
+  const emb = target.embed;
+  if (!emb || !emb.model || !emb.dim) {
+    throw new Error(`kb target "${target.slug}" has no embed block (model + dim) in kb.config.mjs — refusing to guess an embedder`);
+  }
   return {
-    MODEL: emb.model || DEFAULT_MODEL,
-    DIM: emb.dim || DEFAULT_DIM,
+    MODEL: emb.model,
+    DIM: emb.dim,
     POOLING: emb.pooling || 'mean',
     QUERY_PREFIX: emb.queryPrefix || '',   // passages are embedded WITHOUT the prefix
     RANK_SCALE: typeof emb.rankScale === 'number' ? emb.rankScale : 1.0,
-    RVF_SUFFIX: emb.rvfSuffix || (target.embed ? '.rvf' : '.small.rvf'),
-    hasOverride: !!target.embed,
+    RVF_SUFFIX: emb.rvfSuffix || '.rvf',
   };
 }
 
 function storePaths(slug, RVF_SUFFIX) {
-  const storeDir = process.env.KB_STORE_DIR
-    ? path.resolve(process.env.KB_STORE_DIR)
-    : path.join(__dirname, 'stores', slug);
+  const storeDir = storeDirFor(slug);
   const base = path.join(storeDir, `${slug}-kb`);
   return {
     storeDir, base,
@@ -105,7 +103,7 @@ function buildCorpus(target) {
 
 async function initEmbedder(MODEL) {
   const { T, via: tVia } = await loadTransformers();
-  const cache = chooseModelCache(MODEL);
+  const cache = chooseModelCache();
   const { haveLocalModel } = configureModel(T, cache, MODEL);
   console.log(`[build-kb] transformers via ${tVia} | model ${haveLocalModel ? 'local' : 'remote'} (${cache})`);
   return T.pipeline('feature-extraction', MODEL, { quantized: true });
@@ -139,7 +137,7 @@ const fileHash = (texts) => crypto.createHash('sha256').update(JSON.stringify(te
 
 // ---------- full build ----------
 async function fullBuild({ slug, target, entries, embCfg, paths, RvfDatabase, fe }) {
-  const { MODEL, DIM, POOLING, QUERY_PREFIX, RANK_SCALE, hasOverride } = embCfg;
+  const { MODEL, DIM, POOLING, QUERY_PREFIX, RANK_SCALE } = embCfg;
   const { OUT_RVF, OUT_PASSAGES, OUT_IDS, OUT_EMBEDCFG } = paths;
 
   fs.rmSync(OUT_RVF, { force: true });
@@ -177,11 +175,9 @@ async function fullBuild({ slug, target, entries, embCfg, paths, RvfDatabase, fe
   }, null, 0));
 
   // Embedder sidecar (read by ask-kb + index-primer so the QUERY/primer use the SAME model).
-  if (hasOverride) {
-    fs.writeFileSync(OUT_EMBEDCFG, JSON.stringify({
-      model: MODEL, pooling: POOLING, normalize: true, queryPrefix: QUERY_PREFIX, rankScale: RANK_SCALE,
-    }, null, 2));
-  }
+  fs.writeFileSync(OUT_EMBEDCFG, JSON.stringify({
+    model: MODEL, pooling: POOLING, normalize: true, queryPrefix: QUERY_PREFIX, rankScale: RANK_SCALE,
+  }, null, 2));
 
   const idCount = Object.keys(idsIndex).length;
   const ok = status.totalVectors === entries.length && passageLines === entries.length && idCount === entries.length;
@@ -415,4 +411,6 @@ async function main() {
   }
 }
 
-main().catch((e) => { console.error('[build-kb] ERROR:', e); process.exit(1); });
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((e) => { console.error('[build-kb] ERROR:', e); process.exit(1); });
+}

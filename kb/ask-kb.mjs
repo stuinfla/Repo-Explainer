@@ -1,22 +1,20 @@
 #!/usr/bin/env node
-// ask-kb.mjs — self-contained CLI to query a Cognitum RVF knowledge base and print
-// the FULL top-k passages (not previews). Joins .rvf vector hits to the full-text
-// passages sidecar (.passages.jsonl) by id.
+// ask-kb.mjs — self-contained CLI to query an RVF knowledge base and print the FULL top-k
+// documents (not previews). Joins .rvf vector hits to the full-text passages sidecar
+// (.passages.jsonl) by id.
 //
 // Usage:
 //   node kb/ask-kb.mjs <store-slug> "your question" [k]   (store slugs come from kb.config.mjs)
 //
-// Deps: @ruvector/rvf + @xenova/transformers (resolved PORTABLY — see resolve-deps.mjs:
-// project node_modules first, then RVF_MODULE_PATH/XENOVA_PATH env, then author Mac paths)
-// + the bundled kb/*.rvf and kb/*.passages.jsonl files. So `cd kb && npm i` then run.
-// Model cache is configurable via KB_MODEL_CACHE (offline if cached, else downloads MiniLM
-// from HuggingFace — works on a fresh machine).
+// Deps: @ruvector/rvf + @xenova/transformers, resolved by resolve-deps.mjs (project node_modules
+// first, then RVF_MODULE_PATH / XENOVA_PATH). Model cache: KB_MODEL_CACHE (offline if cached,
+// else downloaded from HuggingFace).
 
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
-import { loadRvf, loadTransformers, configureModel } from './resolve-deps.mjs';
+import { loadRvf, loadTransformers } from './resolve-deps.mjs';
 import { targets as CONFIG_TARGETS, defaultTarget as CONFIG_DEFAULT } from './kb.config.mjs';
 
 const { mod: rvfMod, via: rvfVia } = loadRvf();
@@ -27,11 +25,9 @@ const __filename = fileURLToPath(import.meta.url); // decodes %20 etc.
 const KB_DIR = path.dirname(__filename);
 
 // ===================================================================================
-// CONFIG BRIDGE — per-store config is read from kb.config.mjs (NO hard-coded repo names).
-// Everything the intent/rerank layer needs that used to be a hard-coded ruvector/ruview map is
-// now derived here from the target entry: metaName, productNames, componentRoots, componentWord,
-// disambiguation, offtopicMagnets, primerSlugs (auto = discovered from the live sidecar at query
-// time). knownStore() replaces the hard-coded `store !== 'ruvector' && store !== 'ruview'` checks.
+// CONFIG BRIDGE — per-store config is read from kb.config.mjs (no repo names live in this file):
+// metaName, productNames, componentRoots, componentWord, disambiguation, offtopicMagnets and
+// primerSlugs (an explicit archetype map, or 'auto' = discovered from the live sidecar).
 // ===================================================================================
 const KNOWN_STORES = new Set(Object.keys(CONFIG_TARGETS));
 function knownStore(store) { return KNOWN_STORES.has(store); }
@@ -80,79 +76,37 @@ function productNameRe(store) {
   return new RegExp(`\\b(?:${alt})\\b`, 'i');
 }
 
-// ---------- variant-aware store resolution ----------
-// Two builds ship per repo (same passages, different embedder):
-//   small (384-dim MiniLM)  — the Seed-compatible default; files: <store>-kb.rvf
-//   big   (768-dim bge)     — sharper, for Mac/PC;        files: <store>-kb.big.rvf
-// One tool serves both: the embedder for a query is read from the <rvf>.embed.json
-// sidecar the build wrote next to each .rvf, so the query is always embedded with the
-// SAME model the corpus was. Absent that sidecar we fall back to MiniLM (the small build).
+// ---------- store resolution ----------
+// The embedder for a query is read from the <rvf>.embed.json sidecar the build wrote next to the
+// .rvf, so a query is always embedded with the SAME model as the corpus. Absent that sidecar we
+// fall back to MiniLM.
 const MINILM_CFG = { model: 'Xenova/all-MiniLM-L6-v2', pooling: 'mean', normalize: true, queryPrefix: '' };
 
-// KB data files live in kb/stores/<store>/ when organized that way (clear, per-repo), and
-// fall back to a flat kb/ layout otherwise (bundles unzip flat). One rule, both layouts.
+// Store files live in kb/stores/<store>/; knowledge packs (make-pack) unzip them flat beside this
+// file, so fall back to KB_DIR when the per-store dir is absent.
 function storeDir(store) {
   const sub = path.join(KB_DIR, 'stores', store);
   return fs.existsSync(sub) ? sub : KB_DIR;
 }
 
-function variantPaths(store, variant) {
+// File set + embedder config for a store.
+function resolveConf(store) {
+  if (!knownStore(store)) throw new Error(`unknown store: ${store} (use ${[...KNOWN_STORES].join('|')})`);
   const dir = storeDir(store);
   const base = path.join(dir, `${store}-kb`);
-  // metadata sidecar (per-path `kind`): the generic builder writes *.ids.json; legacy stores used
-  // *.meta.json. Prefer ids.json, fall back to the legacy name when only it exists. (No repo baked in.)
-  const idsName = `${store}-kb.ids.json`;
-  const legacyName = `${store}-kb.meta.json`;
-  const metaFile = fs.existsSync(path.join(dir, idsName)) ? idsName
-    : (fs.existsSync(path.join(dir, legacyName)) ? legacyName : idsName);
-  // BOTH versions are explicitly named: .big.rvf (768-dim) and .small.rvf (384-dim).
-  // passages + metadata are SHARED (un-tagged) — built once, used by both.
-  // Single-384 build (recipe v1.3.1) writes the canonical un-suffixed <store>-kb.rvf; prefer it
-  // for the small variant, falling back to the legacy .small.rvf tag.
-  let rvf;
-  if (variant === 'big') {
-    rvf = `${base}.big.rvf`;
-  } else {
-    const plain = `${base}.rvf`;
-    rvf = fs.existsSync(plain) ? plain : `${base}.small.rvf`;
-  }
-  return {
-    rvf,
-    passages: `${base}.passages.jsonl`,
-    meta: path.join(dir, metaFile),
-    embedCfgPath: `${rvf}.embed.json`,
-  };
-}
-
-// Resolve the file set + embedder config for a (store, variant). variant defaults to
-// 'big' when a big build is present (best answers), else 'small' — so a fresh checkout
-// with only the Seed build still works, and a Mac bundle auto-uses the sharp one.
-function resolveConf(store, variant) {
-  if (!knownStore(store)) throw new Error(`unknown store: ${store} (use ${[...KNOWN_STORES].join('|')})`);
-  if (variant !== 'big' && variant !== 'small') {
-    variant = fs.existsSync(path.join(storeDir(store), `${store}-kb.big.rvf`)) ? 'big' : 'small';
-  }
-  const p = variantPaths(store, variant);
-  // The big variant indexes the SAME passages/metadata as the small build (only the embedder
-  // differs), so a bundle ships ONE copy. If the big-tagged sidecars are absent, fall back to
-  // the small (untagged) ones — same content, ~115 MB smaller download per repo.
-  if (variant === 'big') {
-    const small = variantPaths(store, 'small');
-    if (!fs.existsSync(p.passages)) p.passages = small.passages;
-    if (!fs.existsSync(p.meta)) p.meta = small.meta;
-  }
+  const rvf = `${base}.rvf`;
+  const embedCfgPath = `${rvf}.embed.json`;
   let embedCfg = { ...MINILM_CFG };
-  if (fs.existsSync(p.embedCfgPath)) {
-    try { embedCfg = { ...MINILM_CFG, ...JSON.parse(fs.readFileSync(p.embedCfgPath, 'utf8')) }; }
-    catch (e) { if (process.env.KB_DEBUG) console.error(`[ask-kb] bad embed.json (${p.embedCfgPath}): ${e.message}`); }
+  if (fs.existsSync(embedCfgPath)) {
+    try { embedCfg = { ...MINILM_CFG, ...JSON.parse(fs.readFileSync(embedCfgPath, 'utf8')) }; }
+    catch (e) { if (process.env.KB_DEBUG) console.error(`[ask-kb] bad embed.json (${embedCfgPath}): ${e.message}`); }
   }
-  return { ...p, embedCfg, variant };
+  return { rvf, passages: `${base}.passages.jsonl`, meta: path.join(dir, `${store}-kb.ids.json`), embedCfg };
 }
 
 // ---------- embedder (lazy, per-model, offline-first with remote fallback) ----------
-// Cached per model name so a single process can serve both the small (MiniLM) and big
-// (bge) builds without reloading. Remote download is allowed only when THAT model isn't
-// already cached locally (so a Seed-only box never reaches for the network).
+// Cached per model name so a process can serve stores built with different embedders. Remote
+// download is allowed only when THAT model isn't already cached locally.
 const _feCache = new Map();
 async function getEmbedder(model) {
   if (_feCache.has(model)) return _feCache.get(model);
@@ -213,7 +167,7 @@ function loadPassages(file) {
 // ---------- kind metadata sidecar loader ----------
 // The passages sidecar (.passages.jsonl) carries only {id,text,path,title}. The per-chunk
 // `kind` (source / crate-src / adr / doc / doc-deep / primer-orientation / …) lives in the
-// build metadata sidecar (.ids.json / .meta.json) keyed by the SAME numeric id. The intent
+// build metadata sidecar (.ids.json) keyed by the SAME numeric id. The intent
 // layer (code-vs-doc routing, ADR-vs-code pairing, PRIMER detection) needs `kind`, so we load
 // it once and fold it down to a per-PATH kind. If the sidecar is missing the layer degrades
 // gracefully (kind unknown -> no kind-based adjustments; vector+rerank still works).
@@ -320,7 +274,7 @@ const PRIMER_DEMOTE_WHEN_SPECIFIC = 0.60;
 // ===================================================================================
 // Retrieval-quality layer (retrieval-only; KBs are NOT rebuilt).
 // FIX 1 whole-document return, FIX 2 demote low-signal files,
-// FIX 3 exact-term/ADR/title boost, FIX 4 "Cognitum Seed" disambiguation.
+// FIX 3 exact-term/ADR/title boost, FIX 4 config-driven disambiguation.
 // ===================================================================================
 
 const MAX_DOC_CHARS = 12000;            // cap for an assembled full document
@@ -344,12 +298,6 @@ const LOW_SIGNAL = [
   { re: /(^|\/)tests?\//i,                           pen: 0.16, allow: /\btest/i },
   { re: /(_test\.rs|\.test\.[jt]s|_spec\.rb)$/i,    pen: 0.16, allow: /\btest/i },
 ];
-
-// FIX 4 — "Cognitum Seed" product disambiguation. When the query is about the Seed
-// product/onboarding, bias toward onboarding/Seed docs and away from RNG/pretraining seeds.
-const SEED_QUERY_RE = /\b(cognitum\s+seed|seed\s+(onboard\w*|pipeline|product)|onboard\w*\s+seed)\b/i;
-const SEED_GOOD_RE  = /(adr[-_]?069|adr[-_]?116|(^|\/)seed|onboard|(^|\/)cog-)/i;
-const SEED_BAD_RE   = /(rng|random|pretrain|nvsim|prng|np\.random|torch\.manual_seed)/i;
 
 // FIX 5 — TOP-DOWN ORIENTATION LAYER. The primers are indexed as synthetic `PRIMER#<section>`
 // documents (kind 'primer-orientation') that synthesize the answers to the six comprehension-
@@ -418,37 +366,9 @@ function orientationBoost(query, path, title = '', suppressGeneric = false) {
 // All of this is layered as effective-distance adjustments / hard rank overrides — no rebuild.
 // ===================================================================================
 
-// Per-store map of orientation archetype -> the EXACT PRIMER# slug that answers it. Slugs were
-// discovered from the live sidecars (grep 'PRIMER#…' on the ids/meta files); only real slugs are
-// listed. `adr` is the docs-location archetype's ADR-specific sub-target (the ADR index table).
-// Legacy hard-coded PRIMER slug maps are kept ONLY as a fallback for the prototype stores so an old
-// ruvector/ruview KB still routes; new targets supply slugs via config (an explicit per-archetype
-// map) or use primerSlugs:'auto' (slugs discovered from the live sidecar at query time — see
-// resolvePrimerSlug). NO new repo names are added here.
-const LEGACY_PRIMER_SLUGS = {
-  ruvector: {
-    maturity:     'PRIMER#8-maturity-gotchas',
-    capabilities: 'PRIMER#2-the-big-capabilities-and-how-to-actually-call-them',
-    docs:         'PRIMER#5-docs-tutorials-examples-skills',
-    adr:          'PRIMER#4-adr-index-the-complete-table-208-main-series-files-in-docs-adr-54-in-4-sub-ser',
-    playbook:     'PRIMER#0-executive-summary-which-crate-do-i-need',
-    whatis:       'PRIMER#1-what-ruvector-is',
-    crates:       'PRIMER#3-complete-crate-inventory',
-    hardware:     null,
-    glossary:     null,
-  },
-  ruview: {
-    maturity:     'PRIMER#7-capabilities-graded-honestly',
-    capabilities: 'PRIMER#7-capabilities-graded-honestly',
-    docs:         'PRIMER#9-docs-tutorials-scripts-firmware-where-everything-lives',
-    adr:          'PRIMER#8-the-complete-adr-index-160-adr-numbered-files-156-unique-numbers',
-    playbook:     'PRIMER#0-1-instant-playbooks-task-exact-steps',
-    whatis:       'PRIMER#1-what-ruview-is',
-    crates:       'PRIMER#3-the-crates-v2-workspace-39-incl-the-ruv-neural-git-submodule-and-homecore-plug',
-    hardware:     'PRIMER#10-hardware-matrix',
-    glossary:     'PRIMER#0-3-glossary-so-terms-are-never-guessed',
-  },
-};
+// Orientation archetype -> the PRIMER#<slug> that answers it. A target supplies an explicit per-archetype map
+// (`adr` is the docs-location archetype's ADR-index sub-target) or primerSlugs:'auto' (slugs discovered from the
+// live sidecar at query time — see resolvePrimerSlug).
 
 // Keyword cues per archetype used by 'auto' slug discovery (matched against a PRIMER#<slug> path).
 // First section whose slug matches the archetype's cues wins; whatis prefers an early "what-is"/#1.
@@ -466,14 +386,12 @@ const AUTO_SLUG_CUES = {
 
 // Resolve the PRIMER#<slug> for an archetype, store, and the live sidecar paths.
 //   1. explicit config map (target.primerSlugs is an object): use it.
-//   2. legacy hard-coded map (ruvector/ruview): use it.
-//   3. 'auto' (or anything else): discover from byPath PRIMER#… keys via AUTO_SLUG_CUES.
+//   2. 'auto' (or anything else): discover from byPath PRIMER#… keys via AUTO_SLUG_CUES.
 function resolvePrimerSlug(archetype, store, byPath) {
   if (!archetype) return null;
   const t = cfgFor(store);
   const ps = t && t.primerSlugs;
   if (ps && typeof ps === 'object') return ps[archetype] ?? null;
-  if (LEGACY_PRIMER_SLUGS[store]) return LEGACY_PRIMER_SLUGS[store][archetype] ?? null;
   // 'auto' discovery from the live sidecar.
   const cues = AUTO_SLUG_CUES[archetype];
   if (!cues || !byPath) return null;
@@ -855,31 +773,16 @@ function crateOverviewAdjust(crateTok, path, store) {
 // FIX B — targeted off-topic-magnet down-weight (RETRIEVAL POLISH). A specific document that
 // keeps surfacing as off-topic noise on UNRELATED queries gets a mild penalty UNLESS the query is
 // actually about that document's subject. General mechanism (a small allow-listed down-weight
-// table); currently a single entry for ADR-096 (rvCSI crate layout), which intruded on unrelated
-// queries (e.g. worldgraph spatial relationships). The penalty is mild so an on-topic query
-// (about rvCSI crate layout / structure) still surfaces it normally via its allow regex.
+// table). The penalty is mild so an on-topic query still surfaces the document via its allow regex.
+// Entries come from config.offtopicMagnets: { re|reSource, pen, allow|allowSource }.
 // ===================================================================================
-// Legacy default magnet table (ruvector/ruview only): ADR-096 (rvCSI crate layout) intruded on
-// unrelated queries. New targets supply their own via config.offtopicMagnets (filled during gate-A
-// tuning, P6a) — each entry { re|reSource, pen, allow|allowSource }.
-const LEGACY_OFFTOPIC_MAGNETS = {
-  ruvector: [
-    { re: /(^|\/)adr[-_]?0*96\b/i, pen: 0.22,
-      allow: /\b(rvcsi|rv[-_]?csi|crate\s+layout|crate\s+structure|crate\s+organi|workspace\s+layout|adr[-\s_]?0*96)\b/i },
-  ],
-  ruview: [
-    { re: /(^|\/)adr[-_]?0*96\b/i, pen: 0.22,
-      allow: /\b(rvcsi|rv[-_]?csi|crate\s+layout|crate\s+structure|crate\s+organi|workspace\s+layout|adr[-\s_]?0*96)\b/i },
-  ],
-};
 // Compile a config magnet entry (which may carry string sources or RegExp objects) into a usable
 // { re, pen, allow } triple. Cached per store so we don't recompile each call.
 const _magnetCache = new Map();
 function magnetsFor(store) {
   if (_magnetCache.has(store)) return _magnetCache.get(store);
   const t = cfgFor(store);
-  let list = (t && Array.isArray(t.offtopicMagnets) && t.offtopicMagnets.length) ? t.offtopicMagnets : null;
-  if (!list) list = LEGACY_OFFTOPIC_MAGNETS[store] || [];
+  const list = (t && Array.isArray(t.offtopicMagnets)) ? t.offtopicMagnets : [];
   const compiled = list.map((m) => ({
     re: m.re instanceof RegExp ? m.re : new RegExp(m.reSource || String(m.re || ''), 'i'),
     allow: m.allow instanceof RegExp ? m.allow : (m.allow || m.allowSource ? new RegExp(m.allowSource || String(m.allow), 'i') : null),
@@ -964,21 +867,12 @@ function substanceBoost(chunks) {
 
 // Disambiguation adjustment (negative = boost a "good" path, positive = penalize a "bad" path) for
 // queries matching a config disambiguation entry. Each entry: { whenSource|when, goodSource|good,
-// badSource|bad, goodBoost?, badPenalty? }. New targets fill target.disambiguation during gate-A
-// tuning (P6a). Legacy ruvector/ruview keep the hard-coded "Cognitum Seed" rule as a fallback only.
+// badSource|bad, goodBoost?, badPenalty? } from target.disambiguation.
 const _disambigCache = new Map();
 function disambigFor(store) {
   if (_disambigCache.has(store)) return _disambigCache.get(store);
   const t = cfgFor(store);
-  let list = (t && Array.isArray(t.disambiguation) && t.disambiguation.length) ? t.disambiguation : null;
-  if (!list) {
-    // legacy fallback: the prototype's "Cognitum Seed" product disambiguation.
-    if (store === 'ruvector' || store === 'ruview') {
-      list = [{ when: SEED_QUERY_RE, good: SEED_GOOD_RE, bad: SEED_BAD_RE, goodBoost: 0.25, badPenalty: 0.30 }];
-    } else {
-      list = [];
-    }
-  }
+  const list = (t && Array.isArray(t.disambiguation)) ? t.disambiguation : [];
   const compiled = list.map((d) => ({
     when: d.when instanceof RegExp ? d.when : new RegExp(d.whenSource || String(d.when || ''), 'i'),
     good: d.good instanceof RegExp ? d.good : (d.good || d.goodSource ? new RegExp(d.goodSource || String(d.good), 'i') : null),
@@ -989,7 +883,7 @@ function disambigFor(store) {
   _disambigCache.set(store, compiled);
   return compiled;
 }
-function seedAdjust(query, path, store) {
+function disambigAdjust(query, path, store) {
   let adj = 0;
   for (const d of disambigFor(store)) {
     if (!d.when.test(query)) continue;
@@ -1099,12 +993,15 @@ function assembleDocument(chunks, matchedId) {
 }
 
 // ---------- core search: returns whole-document results ----------
-// Each result: { path, title, fullText, bestDistance, effDistance, chunksJoined, truncated,
-//                distance (alias of bestDistance), text (alias of fullText) }.
-export async function searchKb({ query, k = 6, store, n, variant }) {
-  const conf = resolveConf(store, variant);
-  if (!fs.existsSync(conf.rvf)) throw new Error(`rvf not found: ${conf.rvf} (variant=${conf.variant}; run \`npm i\` then build, or copy the bundle in)`);
-  const topN = Math.max(1, n || 5);
+// Each result: { path, title, fullText, bestDistance, effDistance, kind, adrStatus, statusLabel,
+//                label, chunksJoined, truncated } (+ designIntentWarning on a proposal-as-reality top hit).
+// `k` is the result count; both callers (CLI, MCP) pass it.
+export function resultCount({ k } = {}) { return Math.max(1, k ?? 6); }
+
+export async function searchKb({ query, k = 6, store }) {
+  const conf = resolveConf(store);
+  if (!fs.existsSync(conf.rvf)) throw new Error(`rvf not found: ${conf.rvf} (run \`npm i\` then build, or copy the pack in)`);
+  const topN = resultCount({ k });
   const [qv, { byId, byPath }] = await Promise.all([embed(query, conf.embedCfg), loadPassages(conf.passages)]);
   const byPathKind = loadKinds(conf.meta);          // intent layer: per-path content kind
   const terms = queryTerms(query);
@@ -1127,7 +1024,7 @@ export async function searchKb({ query, k = 6, store, n, variant }) {
   }
   // 'whatis-concept' is a NON-routing archetype: no force-route to a PRIMER, instead a mild concept
   // boost (below) lets the vector+rerank pipeline surface the true DEFINING doc. Other archetypes
-  // force-route to their PRIMER slug (null slug -> no force-route, e.g. ruvector hardware).
+  // force-route to their PRIMER slug (null slug -> no force-route).
   const targetPrimerSlug = (archetype && archetype !== 'whatis-concept')
     ? resolvePrimerSlug(archetype, store, byPath)
     : null;
@@ -1274,7 +1171,7 @@ export async function searchKb({ query, k = 6, store, n, variant }) {
     const dkind = byPathKind.get(d.path) || null;
     const pen = demotionPenalty(query, d.path);
     const boost = lexicalBoost(query, terms, d.path, d.title);
-    const seed = seedAdjust(query, d.path, store);
+    const disambig = disambigAdjust(query, d.path, store);
     const sub = substanceBoost(byPath.get(d.path));
     // FIX 1 — when a specific entity is named, the generic orientation lift is suppressed AND
     // primer-orientation docs are demoted below source/adr/crate-src/doc for this query.
@@ -1312,11 +1209,10 @@ export async function searchKb({ query, k = 6, store, n, variant }) {
     }
 
     // RANK SCALE — the additive offsets below were calibrated against MiniLM's distance scale
-    // (relevant ~0.9–1.1). bge-base packs relevant docs much tighter (~0.4–0.8), so the same
-    // raw offset over-corrects and inverts good raw rankings. Scale the WHOLE offset bundle by
-    // the per-variant rankScale (small=1.0 → unchanged; big<1 → gentler, trusts bge's raw order).
+    // (relevant ~0.9–1.1); bge packs relevant docs tighter, so scale the WHOLE offset bundle by the
+    // store's embed.rankScale (1.0 = MiniLM scale; <1 = gentler, trusts the raw vector order).
     const RANK_SCALE = conf.embedCfg.rankScale ?? 1;
-    const offsets = pen - boost + seed - sub - orient - concept - intentAdj
+    const offsets = pen - boost + disambig - sub - orient - concept - intentAdj
       + primerDemote + crateAdj + implAdj + namedCrateAdj + magnetPen + matAdj;
     const effDistance = d.bestDistance + RANK_SCALE * offsets;
     return { ...d, effDistance, kind: dkind };
@@ -1361,14 +1257,11 @@ export async function searchKb({ query, k = 6, store, n, variant }) {
       bestDistance: d.bestDistance,
       effDistance: d.effDistance,
       kind,
-      adrStatus,                       // FIX 4 — parsed ADR status (null if none) — carried to MCP
+      adrStatus,                       // FIX 4 — parsed ADR status (null if none)
       statusLabel,                     // FIX 4 — human-visible "[ADR STATUS: …]" tag
       label: label || null,            // intent label (e.g. 'paired-source') for callers/UI
       chunksJoined,
       truncated,
-      // back-compat aliases for callers that still read .text / .distance
-      text: fullText,
-      distance: d.bestDistance,
     };
   };
 
@@ -1398,6 +1291,17 @@ export async function searchKb({ query, k = 6, store, n, variant }) {
   }
 
   return out;
+}
+
+// One search result as text for the MCP server. Carries the ADR status tag and the
+// proposal-as-reality warning, so an MCP reader never mistakes a design proposal for shipped code.
+export function formatDocument(r, i) {
+  return `#${i + 1}  (distance ${r.bestDistance.toFixed(4)})${r.kind ? `  kind=${r.kind}` : ''}${r.label ? `  [${r.label}]` : ''}${r.statusLabel ? `  [${r.statusLabel}]` : ''}\n`
+    + `path : ${r.path}\n`
+    + `title: ${r.title}\n`
+    + (r.designIntentWarning ? `${r.designIntentWarning}\n` : '')
+    + `----- full document (${r.fullText.length} chars, ${r.chunksJoined} chunk(s)${r.truncated ? ', truncated' : ''}) -----\n`
+    + `${r.fullText}\n`;
 }
 
 // ---------- structured lookups (exact, not semantic) ----------
@@ -1453,20 +1357,16 @@ async function main() {
     return;
   }
 
-  // optional trailing [big|small] variant selector; default auto-picks big if present
-  let variant;
-  const vIdx = argv.findIndex((a) => a === 'big' || a === 'small');
-  if (vIdx !== -1) variant = argv.splice(vIdx, 1)[0];
   const [store, query, kArg] = argv;
   if (!store || !query) {
-    console.error(`Usage: node kb/ask-kb.mjs <${[...KNOWN_STORES].join('|')}> "question" [k] [big|small]`);
+    console.error(`Usage: node kb/ask-kb.mjs <${[...KNOWN_STORES].join('|')}> "question" [k]`);
     console.error(`   or: node kb/ask-kb.mjs <store> --symbol <name> | --entrypoints | --deps`);
     process.exit(2);
   }
   const k = Math.max(1, parseInt(kArg || '6', 10) || 6);
-  const conf = resolveConf(store, variant);
-  const results = await searchKb({ query, k, store, variant });
-  console.log(`\n=== ${store} KB (${conf.variant} · ${conf.embedCfg.model}) — "${query}" — top ${results.length} documents ===\n`);
+  const conf = resolveConf(store);
+  const results = await searchKb({ query, k, store });
+  console.log(`\n=== ${store} KB (${conf.embedCfg.model}) — "${query}" — top ${results.length} documents ===\n`);
   results.forEach((r, i) => {
     console.log(`#${i + 1}  distance=${r.bestDistance.toFixed(4)} (eff=${r.effDistance.toFixed(4)})`
       + `${r.kind ? `  kind=${r.kind}` : ''}${r.label ? `  [${r.label}]` : ''}`

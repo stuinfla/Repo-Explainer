@@ -1,30 +1,29 @@
 #!/usr/bin/env node
-// kb-mcp-server.mjs — self-contained MCP stdio server for the Cognitum RVF knowledge bases.
+// kb-mcp-server.mjs — self-contained MCP stdio server for the RVF knowledge bases in kb.config.mjs.
 //
-// Exposes ONE tool:
-//   search_kb({ query: string, k?: number = 6, store: "ruvector"|"ruview" })
-// It embeds the query locally (MiniLM), queries the requested .rvf readonly, then loads
-// the FULL passage text for each hit from the matching .passages.jsonl and returns it as
-// readable text (path + title + full passage).
+// Tools: search_kb({ query, k?: 6, store? }), lookup_symbol, get_entrypoints, get_dep_graph.
+// `store` is optional: it defaults to the only configured store (a knowledge pack ships one),
+// else to the config's defaultTarget. search_kb embeds the query locally with the store's own
+// embedder, queries the .rvf readonly and returns whole matched documents (path + title + text).
 //
-// Self-contained: needs only @ruvector/rvf (npm-global), @xenova/transformers (AppealArmor
-// build), and the bundled kb/*.rvf + kb/*.passages.jsonl. It implements the MCP JSON-RPC
-// stdio protocol directly (no @modelcontextprotocol/sdk dependency), so it runs anywhere
-// Node 18+ is available.
+// Self-contained: needs only @ruvector/rvf and @xenova/transformers (see resolve-deps.mjs) plus
+// the store files. It implements the MCP JSON-RPC stdio protocol directly (no
+// @modelcontextprotocol/sdk dependency), so it runs anywhere Node 18+ is available.
 //
-// Wire it into .mcp.json (see kb/README) — DO NOT use @ruvector/rvf-mcp-server (a stub).
-//
-// Env overrides: KB_TRANSFORMERS_PATH, KB_MODEL_CACHE (see ask-kb.mjs).
+// Env overrides: XENOVA_PATH, RVF_MODULE_PATH, KB_MODEL_CACHE (see resolve-deps.mjs).
 
-import { searchKb, lookupSymbol, getEntrypoints, getDepGraph } from './ask-kb.mjs';
-import { targets, defaultTarget } from './kb.config.mjs';
+import { searchKb, lookupSymbol, getEntrypoints, getDepGraph, formatDocument } from './ask-kb.mjs';
+import * as kbConfig from './kb.config.mjs';
+
+const { targets } = kbConfig;
 
 const PROTOCOL_VERSION = '2024-11-05';
 
 // Server identity + tool surface are DERIVED from the config registry — NO hard-coded repo names.
 const STORE_SLUGS = Object.keys(targets);
 const KNOWN_STORES = new Set(STORE_SLUGS);
-const DEFAULT_STORE = defaultTarget;
+// A single-store pack defaults to its own store; a multi-store registry to its defaultTarget when that is known.
+const DEFAULT_STORE = KNOWN_STORES.has(kbConfig.defaultTarget) ? kbConfig.defaultTarget : STORE_SLUGS[0];
 const META_NAME = (targets[DEFAULT_STORE] && targets[DEFAULT_STORE].metaName) || DEFAULT_STORE;
 
 const SERVER_INFO = { name: `${DEFAULT_STORE}-kb`, version: '1.0.0' };
@@ -40,7 +39,7 @@ const TOOLS = [
   {
     name: 'search_kb',
     description:
-      `Semantic search over the ${META_NAME} RVF knowledge base(s). Returns up to 5 whole, `
+      `Semantic search over the ${META_NAME} RVF knowledge base(s). Returns up to k (default 6) whole, `
       + 'self-contained matched DOCUMENTS (all chunks of each reassembled in order, not fragments) '
       + '— READMEs, ADRs, package/component docs, source doc-comments, primers — each with its repo '
       + `path and title. Available stores: ${STORE_DESCRIPTIONS}.`,
@@ -49,7 +48,7 @@ const TOOLS = [
       properties: {
         query: { type: 'string', description: 'Natural-language question or keywords.' },
         store: { type: 'string', enum: STORE_SLUGS, description: 'Which knowledge base to search.', default: DEFAULT_STORE },
-        k: { type: 'integer', description: 'Number of passages to return (default 6).', default: 6 },
+        k: { type: 'integer', description: 'Number of documents to return (default 6).', default: 6 },
       },
       required: ['query'],
     },
@@ -88,7 +87,7 @@ const TOOLS = [
   },
 ];
 
-// ---------- minimal JSON-RPC over stdio (newline-delimited, also tolerates LSP framing) ----------
+// ---------- minimal JSON-RPC over stdio (newline-delimited JSON only; Content-Length framing is NOT supported) ----------
 function send(obj) {
   process.stdout.write(JSON.stringify(obj) + '\n');
 }
@@ -124,13 +123,7 @@ async function handle(msg) {
           const k = Math.max(1, parseInt(args.k ?? 6, 10) || 6);
           if (!query) return err(id, -32602, 'query is required');
           const results = await searchKb({ query, k, store });
-          const text = results.map((r, i) =>
-            `#${i + 1}  (distance ${r.bestDistance.toFixed(4)})\n`
-            + `path : ${r.path}\n`
-            + `title: ${r.title}\n`
-            + `----- full document (${r.fullText.length} chars, ${r.chunksJoined} chunk(s)${r.truncated ? ', truncated' : ''}) -----\n`
-            + `${r.fullText}\n`
-          ).join('\n========================================================\n\n');
+          const text = results.map(formatDocument).join('\n========================================================\n\n');
           return ok(id, { content: [{ type: 'text', text: text || '(no results)' }], isError: false });
         }
         if (name === 'lookup_symbol') {

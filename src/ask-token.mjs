@@ -3,6 +3,7 @@
 // token = base64url(host) + "." + base64url(HMAC-SHA256(secret, host))
 //
 // The page is public, so the token is public — that is fine: it only proves "this host is one of ours".
+// Verification lives in the service (ask-service/netlify/functions/ask.mjs verifyToken); this side only signs.
 // The service never trusts text from the browser; it fetches that host's own published index, so a copied
 // token buys nothing beyond asking questions about that one site, under that site's daily cap.
 import crypto from 'node:crypto';
@@ -17,15 +18,4 @@ export function signAskToken(host, secret) {
   if (!isHost(host)) throw new Error(`not a bare hostname: ${host}`);
   if (!secret || String(secret).length < 24) throw new Error('ASK_SIGNING_SECRET must be at least 24 characters');
   return `${b64u(host)}.${mac(secret, host)}`;
-}
-
-/** Returns the host the token was issued for, or null if it is malformed or forged. */
-export function verifyAskToken(token, secret) {
-  if (typeof token !== 'string' || !secret) return null;
-  const [h, sig, extra] = token.split('.');
-  if (!h || !sig || extra !== undefined) return null;
-  let host; try { host = Buffer.from(h, 'base64url').toString('utf8'); } catch { return null; }
-  if (!isHost(host)) return null;
-  const want = Buffer.from(mac(secret, host)), got = Buffer.from(sig);
-  return want.length === got.length && crypto.timingSafeEqual(want, got) ? host : null;
 }

@@ -14,34 +14,21 @@
 // FAIL LOUD: a missing input, a failed API write, or a write that does not persist (verified by a
 // read-back) is a non-zero exit with a clear message — never a silent green.
 
-import fs from 'node:fs';
-import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import { pathToFileURL } from 'node:url';
+import { readContext, mergeSlot } from '../src/build-context.mjs';
 
 const STOP = new Set(('the a an and or of to in for with on is are be this that it its as by from into how what why your you our we their they them use uses using via not no yes can will built make makes new one two repo repository project code library tool app site web page based simple easy fast just like more most all any each other than then over under between'.split(' ')));
 
-function readContext(buildDir) {
-  const p = path.join(buildDir, 'build.json');
-  let raw;
-  try { raw = fs.readFileSync(p, 'utf8'); }
-  catch { throw new Error(`build.json not found at ${p} (run earlier stations first)`); }
-  try { return JSON.parse(raw); }
-  catch (e) { throw new Error(`build.json is not valid JSON: ${e.message}`); }
-}
-function mergeSlot(buildDir, slot, partial) {
-  const p = path.join(buildDir, 'build.json');
-  const obj = JSON.parse(fs.readFileSync(p, 'utf8'));   // re-read fresh, merge ONLY this slot's keys
-  obj[slot] = { ...(obj[slot] || {}), ...partial };
-  fs.writeFileSync(p, JSON.stringify(obj, null, 2) + '\n');
-}
 const errText = (e) => (e.stderr ? e.stderr.toString() : '') || e.message || String(e);
 
 function requireGh() {
   try { execFileSync('gh', ['--version'], { stdio: ['ignore', 'ignore', 'ignore'] }); }
   catch { throw new Error("GitHub CLI 'gh' not found in PATH (required to set explainer-repo SEO)"); }
 }
-function parseRepoUrl(url) {
-  const m = String(url).match(/github\.com[/:]([^/]+)\/([^/.\s]+?)(?:\.git)?\/?$/);
+export function parseRepoUrl(url) {
+  const m = String(url).match(/github\.com[/:]([^/]+)\/([^/\s]+?)(?:\.git)?\/?$/);
   if (!m) throw new Error(`cannot parse owner/repo from publish.explainerRepoUrl: ${url}`);
   return { owner: m[1], repo: m[2] };
 }
@@ -130,7 +117,7 @@ async function main() {
 
   // SUGGESTED only for the SOURCE repo (offered, never set — INV-16)
   const sourceRepoSeoSuggested = {
-    topics: buildTopics(concept, summary, repo.replace(/-explainer$/, ''), { source: true }),
+    topics: buildTopics(concept, summary, '', { source: true }),
     description: clamp(summary, 350),
   };
 
@@ -138,6 +125,6 @@ async function main() {
   return { repoTopics, repoDescription, sourceRepoSeoSuggested, slot: 'publish' };
 }
 
-main()
+if (process.argv[1] && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href) main()
   .then((outputs) => { process.stdout.write(JSON.stringify({ ok: true, outputs, error: null }) + '\n'); process.exit(0); })
   .catch((e) => { process.stdout.write(JSON.stringify({ ok: false, outputs: {}, error: e.message || String(e) }) + '\n'); process.exit(1); });

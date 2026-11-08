@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://ruv-explainer-photonlayer.vercel.app/sitemap.xml

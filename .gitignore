@@ -5,9 +5,9 @@
 docs/.env
 
 # deps & build
+node_modules
 node_modules/
 **/node_modules/
-.vercel/
 
 # cloned upstream repos (not ours)
 .targets/
@@ -27,6 +27,7 @@ ruvector.db
 # local agent DB + model cache + per-run build outputs (all regenerable, not source)
 agentdb.rvf
 agentdb.rvf.lock
+agentdb.rvf.idmap.json
 kb/models-cache/
 explainer-builds/
 
@@ -50,3 +51,6 @@ explainer-builds/
 
 # pasted screenshots — one showed a complete npm token on 2026-10-06; never source
 .docs/
+
+# generated explainer builds at the repo root (the ruv-explainer-* hand-built generation was removed; builds live on Netlify)
+/ruv-explainer-*/

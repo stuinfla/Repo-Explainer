@@ -1,12 +1,25 @@
-# ADR-0016 — "Ask this project": a written, cited answer box on every explainer
+# ADR-0016 — "Ask this project": a written, cited answer box on local-door explainers
 
 Status: Accepted + Implemented (station, central service, deploy gate, tests). **Answer quality at scale is
 not yet measured** — it was checked on one repo (REA) with 11 reader-style questions, not across repos.
 Date: 2026-10-16
+Updated: 2026-11-05
 Amends: ADR-0005 (adds Station 6c `make-ask`; `deploy` gains a site-integrity gate)
 Version: ships in 3.0.0
 Prior-decision check: the recorded-decision recall timed out, so that history is UNKNOWN. Reading `docs/adr/`
 0005–0015 and searching them for an on-page chat or ask box found nothing to conflict with or supersede.
+
+> **Amended (3.0.1, 2026-11-05) — verified against code.**
+> - **Local door only for now.** `make-ask` is `doors: ['local']` in `src/stations.mjs`; hosted-door pages do not
+>   get an Ask box yet. The title and the "every explainer" wording below describe the intent, not today's reach.
+>   The note under "Consequences / open" about the hosted runner's `ASK_SIGNING_SECRET` applies only once the hosted door adds the station.
+> - **AIMDS guard, fail closed** (`ask-service/lib/guard.mjs`, `@claude-flow/aidefence`): the
+>   question is scanned before any spend, the answer before the visitor sees it; any scanner error blocks.
+> - **Answers are buffered, not streamed**, so a scanned answer is the only thing a visitor can receive.
+> - **Who signs and who verifies.** `src/ask-token.mjs` only **signs**; the service verifies
+>   (`verifyToken` in `ask.mjs`), because the two are separate deploys. `tests/ask.test.mjs` runs them against each
+>   other. Decision 3's "(`src/ask-token.mjs`)" names the signer.
+> - The default answer model is `anthropic/claude-haiku-5.5` (`ASK_MODEL`).
 
 ## Context
 

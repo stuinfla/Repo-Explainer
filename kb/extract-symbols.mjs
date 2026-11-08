@@ -12,7 +12,8 @@
 //   TS/JS: ripgrep-style scan of `export ...` (function/class/interface/type/const) + JSDoc.
 //
 // Repo shape is DATA (kb.config.mjs target: repoDir, scopeExclude, componentRoots, codeExt). NO
-// repo name is baked in here. Ships in the drop-in for-ai/ so the AI gets EXACT API lookups.
+// repo name is baked in here. Its OUTPUT (<slug>-symbols.json) ships in the drop-in for-ai/ for EXACT API
+// lookups; this script itself does not ship.
 //
 // Usage: node kb/extract-symbols.mjs --target ruqu  [--no-rustdoc]
 //        node kb/extract-symbols.mjs ruqu
@@ -102,8 +103,8 @@ function symbolsFromRustdoc(jsonPath, crateName) {
   const out = [];
   const get = (id) => idx[id];
 
-  // Render a struct's fields into a compact "{ name: Type, … }" string + emit per-field symbols.
-  const renderStructFields = (st, parentName) => {
+  // Render a struct's fields into a compact "{ name: Type, … }" string.
+  const renderStructFields = (st) => {
     const k = st.kind || {};
     const fieldIds = k.plain ? (k.plain.fields || []) : (Array.isArray(k.fields) ? k.fields : []);
     const fields = [];
@@ -151,7 +152,7 @@ function symbolsFromRustdoc(jsonPath, crateName) {
     let signature;
     if (kind === 'function') signature = renderFnSig(it.name, inner.function);
     else if (kind === 'struct') {
-      const fields = renderStructFields(inner.struct, it.name);
+      const fields = renderStructFields(inner.struct);
       signature = fields.length ? `struct ${it.name} { ${fields.join(', ')} }` : `struct ${it.name}`;
     } else if (kind === 'enum') {
       const variants = (inner.enum.variants || []).map((vid) => { const v = get(vid); return v && v.name; }).filter(Boolean);
@@ -239,6 +240,7 @@ function main() {
 
   let symbols = [];
   let method = 'source-scan';
+  const rustdocCrates = new Set();   // crate dirs (member paths) rustdoc actually covered
 
   // ---- Rust: try rustdoc-json per workspace crate ----
   const rootCargo = tryRead(path.join(repoDir, 'Cargo.toml'));
@@ -252,7 +254,6 @@ function main() {
       const name = cargo && (cargo.match(/^\s*name\s*=\s*"([^"]+)"/m) || [])[1];
       if (name) crateNames.push(name);
     }
-    var rustdocCrates = new Set();   // crate dirs (member paths) rustdoc actually covered
     let anyDoc = false;
     for (let mi = 0; mi < members.length; mi++) {
       const cn = crateNames[mi];
@@ -274,7 +275,6 @@ function main() {
       }
     }
     if (anyDoc) method = symbols.length ? 'rustdoc-json' : 'source-scan';
-    var rustdocMemberSet = rustdocCrates;
   }
 
   // ---- Fallback / complement: source scan for any file type not covered by rustdoc-json ----
@@ -283,7 +283,7 @@ function main() {
   const seen = new Set(symbols.map((s) => `${s.file}|${s.name}|${s.kind}`));
   const scan = symbolsFromSourceScan(repoDir, skip, rel, target.codeExt);
   const haveRustdoc = method === 'rustdoc-json';
-  const coveredByRustdoc = (typeof rustdocMemberSet !== 'undefined') ? rustdocMemberSet : new Set();
+  const coveredByRustdoc = rustdocCrates;
   // A .rs file is authoritatively covered ONLY if its crate member dir was rustdoc'd. Crates whose
   // rustdoc failed (e.g. a build error) still get their public symbols from the source scan.
   const fileCoveredByRustdoc = (relp) => {

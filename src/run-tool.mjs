@@ -4,7 +4,7 @@
 // `node tools/<name>.mjs <build-dir>` — and obeys the uniform return convention:
 //   • stdout carries EXACTLY one JSON result object → we capture + JSON.parse it.
 //   • stderr is diagnostics → we INHERIT it so the operator watches the tool work live.
-//   • the exit code is the source of truth → ok iff code 0 (CONTRACT §b·6).
+//   • ok iff the exit code is 0 AND stdout carried a JSON object whose `ok` is not false (CONTRACT §b·6).
 //
 // We pass the merged env (src/env.mjs) so every tool finds its own credentials in process.env.
 
@@ -43,7 +43,9 @@ export function runTool(name, buildDir, { repoRoot, env, timeoutMs = Number(proc
   }
   const result = parseResult(res.stdout);
   const code = res.status;
-  const ok = code === 0 && (!result || result.ok !== false);
-  const error = ok ? null : (result?.error || `tools/${name}.mjs exited ${code} (no JSON result on stdout)`);
+  // Exit 0 alone is not a pass: a tool that printed no JSON result object produced no verdict.
+  const hasVerdict = result !== null && typeof result === 'object' && !Array.isArray(result);
+  const ok = code === 0 && hasVerdict && result.ok !== false;
+  const error = ok ? null : (result?.error || (hasVerdict ? `tools/${name}.mjs exited ${code}` : `tools/${name}.mjs exited ${code} (no JSON result on stdout)`));
   return { ok, code, result, error };
 }

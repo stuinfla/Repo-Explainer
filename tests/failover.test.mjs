@@ -1,55 +1,95 @@
-// tests/failover.test.mjs — the executor failover lane (2026-07-19).
-//
-// Context: run 29714490286 proved a monthly usage-limit on the primary Anthropic key idles the
-// ENTIRE hosted pipeline until the cap resets — a capacity event became a 12-day outage. The
-// systemic answer follows MetaHarness ADR-167's router shape (freeze the model, evolve the
-// harness; reroute/escalate on a verified failure, with a deterministic oracle as the spine —
-// ours is the ship-bar rail): when the spend-probe classifies the primary key as usage-limited,
-// the runner fails over to OpenRouter's Anthropic-compatible endpoint ("Anthropic Skin",
-// ANTHROPIC_BASE_URL=https://openrouter.ai/api) running the SAME executor model on the owner's
-// OpenRouter credits. Same model → same quality → no A/B required; the grader + rail are
-// unchanged either way. OpenRouter guarantees the Skin only for Anthropic first-party models —
-// a non-Anthropic executor (e.g. Kimi K3) is a separate, deliberate cost experiment via
-// Moonshot's own endpoint, NOT this lane.
-//
-// Source-shape checks (repo convention: the branch is env/IO-bound; pin the invariants).
+// tests/failover.test.mjs — the hosted executor failover lane, driven through the real
+// probeCredentials with a stubbed fetch. Failover is for CAPACITY only: a usage-limited primary key
+// plus a PROVEN-live OpenRouter completion. A merely-dead key is a config bug the operator must see.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { probeCredentials, credCandidates, shouldFailOver } from '../bin/runner-preflight.mjs';
+import { buildAgentEnv } from '../bin/runner-lib.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const runner = fs.readFileSync(path.join(ROOT, 'bin', 'agentic-runner.mjs'), 'utf8');
-const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'build-explainer.yml'), 'utf8');
+const ENV = { ANTHROPIC_API_KEY: 'sk-primary', NETLIFY_AUTH_TOKEN: 'nl', OPENAI_API_KEY: 'oa', OPENROUTER_API_KEY: 'or-key' };
+const res = (status, body = '') => ({ ok: status >= 200 && status < 300, status, text: async () => body });
 
-test('failover engages ONLY on the distinct usage-limited classification, never on a merely-dead key', () => {
-  // A dead/invalid key is a configuration bug the operator must fix; silently billing a second
-  // provider would mask it. Capacity exhaustion is the one condition where rerouting is honest.
-  const idx = runner.indexOf('openrouter.ai/api');
-  assert.ok(idx > 0, 'failover branch references the OpenRouter Anthropic Skin');
-  const branch = runner.slice(Math.max(0, idx - 2500), idx);
-  assert.match(branch, /usageLimited/);
+// Routes by URL; `messages` decides the Anthropic spend probe, `orMessages` the OpenRouter one.
+function stubFetch({ models = 200, messages = 200, messagesBody = '', orMessages = 200 } = {}) {
+  const calls = [];
+  const fn = async (url, init = {}) => {
+    calls.push({ url: String(url), headers: init.headers });
+    if (url === 'https://api.anthropic.com/v1/models') return res(models);
+    if (url === 'https://api.anthropic.com/v1/messages') return res(messages, messagesBody);
+    if (url === 'https://openrouter.ai/api/v1/messages') return res(orMessages, orMessages === 200 ? '' : 'credits exhausted');
+    return res(200); // netlify + openai probes
+  };
+  fn.calls = calls;
+  return fn;
+}
+const USAGE = 'You have reached your specified API usage limits. You will regain access on 2026-12-01.';
+
+test('usage-limited primary + live OpenRouter lane: failover engages, same model, lane key handed to the agent', async () => {
+  const fetchFn = stubFetch({ messages: 400, messagesBody: USAGE });
+  const { a, executor } = await probeCredentials({ model: 'claude-sonnet-5-5', env: ENV, fetchFn });
+  assert.equal(a.ok, true);
+  assert.equal(a.usageLimited, true);
+  assert.equal(executor.lane, 'openrouter');
+  assert.equal(executor.baseUrl, 'https://openrouter.ai/api');
+  assert.equal(executor.model, 'anthropic/claude-sonnet-5.5');
+  assert.match(a.why, /FAILOVER ENGAGED/);
+  const agentEnv = buildAgentEnv(ENV, { submittedRepoId: 'a/b', executor });
+  assert.equal(agentEnv.ANTHROPIC_BASE_URL, 'https://openrouter.ai/api');
+  assert.equal(agentEnv.ANTHROPIC_API_KEY, 'or-key');
+  assert.equal(agentEnv.ANTHROPIC_AUTH_TOKEN, 'or-key');
 });
 
-test('failover is spend-probed the same way the primary is — engage only on a PROVEN-live lane', () => {
-  assert.match(runner, /openrouter\.ai\/api\/v1\/messages/);
+test('a merely-DEAD primary key (HTTP 401) never fails over, even with a live OpenRouter key present', async () => {
+  const fetchFn = stubFetch({ models: 401 });
+  const { a, executor } = await probeCredentials({ model: 'claude-sonnet-5-5', env: ENV, fetchFn });
+  assert.equal(a.ok, false);
+  assert.equal(a.usageLimited, undefined);
+  assert.equal(executor.lane, 'anthropic');
+  assert.ok(!fetchFn.calls.some((c) => c.url.includes('openrouter.ai')), 'OpenRouter must not even be probed');
 });
 
-test('failover rewires the agent env: base URL + both auth vars (Skin accepts Anthropic semantics)', () => {
-  assert.match(runner, /ANTHROPIC_BASE_URL/);
-  assert.match(runner, /ANTHROPIC_AUTH_TOKEN/);
+test('a non-usage-limit spend-probe failure (HTTP 500) is a failure, not a failover', async () => {
+  const fetchFn = stubFetch({ messages: 500, messagesBody: 'internal error' });
+  const { a, executor } = await probeCredentials({ model: 'claude-sonnet-5-5', env: ENV, fetchFn });
+  assert.equal(a.ok, false);
+  assert.match(a.why, /1-token completion on claude-sonnet-5-5 failed \(HTTP 500\)/);
+  assert.equal(executor.lane, 'anthropic');
 });
 
-test('the executor lane is stamped into the build record so admin can attribute grades and cost per lane', () => {
-  assert.match(runner, /executor:\s*executor\.lane/);
+test('usage-limited and the OpenRouter lane is itself refused: the honest refusal stands', async () => {
+  const fetchFn = stubFetch({ messages: 400, messagesBody: USAGE, orMessages: 402 });
+  const { a, executor } = await probeCredentials({ model: 'claude-sonnet-5-5', env: ENV, fetchFn });
+  assert.equal(a.ok, false);
+  assert.equal(a.usageLimited, true);
+  assert.equal(executor.lane, 'anthropic');
 });
 
-test('the spawned agent uses the executor model, not a hardcoded one', () => {
-  assert.match(runner, /'--model', executor\.model/);
+test('usage-limited with NO OpenRouter key: refusal stands, and the lane is read from .env text too', async () => {
+  const { OPENROUTER_API_KEY, ...noOr } = ENV;
+  const refused = await probeCredentials({ model: 'claude-sonnet-5-5', env: noOr, fetchFn: stubFetch({ messages: 400, messagesBody: USAGE }) });
+  assert.equal(refused.a.ok, false);
+  const viaDotenv = await probeCredentials({ model: 'claude-sonnet-5-5', env: noOr, dotenvText: 'OPENROUTER_API_KEY="or-from-file"\n', fetchFn: stubFetch({ messages: 400, messagesBody: USAGE }) });
+  assert.equal(viaDotenv.executor.key, 'or-from-file');
 });
 
-test('the workflow hands the runner the OpenRouter secret (empty when unset — lane stays inert)', () => {
+test('shouldFailOver is true only for a not-ok, usage-limited probe', () => {
+  assert.equal(shouldFailOver({ ok: false, usageLimited: true }), true);
+  assert.equal(shouldFailOver({ ok: false }), false);
+  assert.equal(shouldFailOver({ ok: true, usageLimited: true }), false);
+});
+
+test('credCandidates: process env first, then .env, deduped by value (a dead env key cannot shadow a live .env key)', () => {
+  const c = credCandidates(['K'], { env: { K: 'dead' }, dotenvText: 'K=live\n' });
+  assert.deepEqual(c.map((x) => x.val), ['dead', 'live']);
+  assert.deepEqual(credCandidates(['K'], { env: { K: 'same' }, dotenvText: 'K=same\n' }).length, 1);
+});
+
+test('the workflow hands the runner the OpenRouter secret (empty when unset: the lane stays inert)', () => {
+  const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'build-explainer.yml'), 'utf8');
   assert.match(workflow, /OPENROUTER_API_KEY:\s*\$\{\{\s*secrets\.OPENROUTER_API_KEY\s*\}\}/);
 });

@@ -1,10 +1,5 @@
-// theme-contrast.test.mjs — the CTA label must be readable on ANY brain-chosen accent.
-//
-// Regression: `.cta` paints its label with `--on-accent` over `--spectrum` (falling back to
-// `--accent`). The design-system skeleton hard-codes `--on-accent: #0a0a12` (near-black), but the
-// per-repo theme overrides the fill freely. A dark accent therefore produced near-black text on a
-// near-black button — an invisible CTA. buildTheme() now derives the ink by measuring WCAG
-// contrast against the real fill, and refuses a sub-AA explicit choice.
+// The CTA label must be readable on ANY brain-chosen accent: buildTheme() derives --on-accent by measuring
+// WCAG contrast against the real fill, and refuses a sub-AA (< 4.5:1) explicit choice.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -52,6 +47,14 @@ test('REGRESSION: an explicit sub-AA on-accent is overridden, not shipped', () =
   const fill = '#0b1020';
   assert.ok(worst(fill, DARK_INK) < AA, 'fixture must actually be a failing combination');
   assert.equal(onAccent({ accent: fill, 'on-accent': DARK_INK }), LIGHT_INK);
+});
+
+test('an explicit on-accent between 2:1 and 4.5:1 is still overridden (the AA threshold is 4.5, not "anything readable-ish")', () => {
+  const fill = '#0b1020';
+  const mid = '#5a5a5a';
+  const ratio = worst(fill, mid);
+  assert.ok(ratio > 2.5 && ratio < AA, `fixture must sit in the mid-range, got ${ratio.toFixed(2)}:1`);
+  assert.equal(onAccent({ accent: fill, 'on-accent': mid }), LIGHT_INK);
 });
 
 test('REGRESSION: a bare colour-list --spectrum becomes a real gradient (ruos/ruvector/helix CTA was invisible)', () => {

@@ -1,7 +1,17 @@
 # ADR-0006: The Comprehension Ladder — First-Principles Altitude Control
 
-Updated: 2026-07-03 13:20:00 EDT | Version 1.1.0
+Updated: 2026-11-05 12:00:00 EST | Version 1.2.1
 Created: 2026-07-03 12:05:00 EDT
+
+Status: Accepted + Implemented (D4 shipped; reader model amended by v1.2.0)
+Date: 2026-07-03
+Updated: 2026-11-05
+
+> **Note (3.0.1).** Verified against code: the sixth operator question exists (`OPERATOR_QUESTIONS` in
+> `tools/quality-grade.mjs`, `zeroKnowledgeReader`), and the INV-20 and INV-24 pre-checks run before the
+> vision pass. The "mean >= 90 / min >= 85" bar this ADR keeps is now the **EXEMPLARY** tier; delivery is
+> judged against the SHIP tier (mean >= 82, min >= 70, five ship operators) and the gate only advises
+> (ADR-0011).
 
 > **v1.1.0 (2026-07-03) — proof-run findings folded in.** Rebuilding lattice under v1.0.0
 > surfaced four refinements, all implemented: (1) **D1 gains the CONCEPT BUDGET** — a gloss is
@@ -20,8 +30,8 @@ Created: 2026-07-03 12:05:00 EDT
 > about; the ladder-authored rebuild passes INV-20 and is held only by the (correctly) stricter
 > beginner-persona operators — the gate now refuses what it used to ship.
 
-**Status:** Proposed — awaiting owner sign-off (D4 changes the operator gate, which is
-owner-signed by ADR-0005 convention; everything else is ready to implement on approval).
+**Status (v1.0.0, historical):** Proposed — awaiting owner sign-off. It was signed off and implemented; the
+current status is at the top of this file.
 
 **Amends:** ADR-0005 (Station 3 AUTHOR, Station 6 ASSEMBLE, Station 7 QUALITY GATE / The QA
 System). Does **not** supersede it — the one-brain/three-doors architecture, the stations, the

@@ -27,9 +27,10 @@ control to the skill.
    only its declared inputs, merges its slot into `build.json`, and **fails loud** (non-zero exit,
    clear message) — never a silent placeholder. Read `tools/CONTRACT.md` before running any tool.
 4. **Report honestly.** When the build finishes, return the live URL, the explainer repo, the AI
-   knowledge pack link, the dual-gate scorecard, and both screenshots. If any station could not
-   clear its bar (e.g. a criterion that genuinely cannot reach 95), **flag it honestly** — never
-   ship slop and call it done (INV-05).
+   knowledge pack link, the dual-gate scorecard, and both screenshots. If the page landed below the
+   exemplary bar (mean 90, min axis 85, all six operator questions yes), **say so and name the weakest
+   axis** (the ship tier is mean 82, min axis 70). The gate advises (ADR-0011): a below-bar page is
+   still delivered, with the shortfall disclosed. Never present a below-bar page as if it cleared the bar.
 
-> The completion bar is the mission, not a slogan: a stranger looks at the result and smiles —
-> *"that's really cool."* If a build cannot clear that bar, it is not done.
+> The target is the mission, not a slogan: a stranger looks at the result and smiles —
+> *"that's really cool."* Aim for the 90/85 bar, and report honestly where the page landed.
