@@ -156,13 +156,23 @@ const prUrl = ctx.readmePr?.prUrl;
 if (prUrl && prUrl !== 'declined') {
   links.push(`<li><b>README pull request (optional):</b> <a href="${esc(prUrl)}">${esc(prUrl)}</a></li>`);
 }
-// The closed loop (owner ask 2026-07-15: "capture their 1-100 and comments so you get smarter"):
-// every success email carries a one-click grade link; ratings land in the build-rating Netlify
-// form, show next to OUR grades on /admin, and feed the learning store as human ground truth.
+// The closed loop (owner ask 2026-07-15, softened 2026-11-09): the success email carries a gentle,
+// OPTIONAL feedback ask. Three tap-to-choose links open /rate.html with the choice preselected; nothing
+// is recorded until the person presses Send (so mail-scanner link prefetching cannot fake a rating).
+// Ratings land in the build-rating Netlify form, show on /admin next to OUR grades, and are ingested
+// into RuVector by tools/pull-ratings.mjs, where the next builds recall them.
+let feedbackBlock = '';
 {
   const repoSlug = `${ctx.repo?.owner || ''}/${ctx.repo?.name || ''}`.replace(/^\/$/, '');
-  const rateUrl = `https://explainmyrepo.isovision.ai/rate.html?repo=${encodeURIComponent(repoSlug)}&build=${encodeURIComponent(process.env.BUILD_ID || ctx.buildId || '')}`;
-  links.push(`<li><b>Grade this page (30 seconds):</b> <a href="${esc(rateUrl)}">${esc(rateUrl)}</a> — your 1–100 + a sentence directly shapes how the next pages get made.</li>`);
+  const buildId = process.env.BUILD_ID || ctx.buildId || '';
+  const rateBase = `https://explainmyrepo.isovision.ai/rate.html?repo=${encodeURIComponent(repoSlug)}&build=${encodeURIComponent(buildId)}`;
+  const btn = (v, label, bg) => `<a href="${esc(`${rateBase}&v=${v}`)}" style="display:inline-block;margin:0 6px 8px 0;padding:10px 16px;border-radius:8px;background:${bg};color:#fff;text-decoration:none;font-weight:600;font-size:14px">${label}</a>`;
+  feedbackBlock = `
+<div style="margin:24px 0 0;padding:16px 18px;border:1px solid #e3e7ec;border-radius:10px;background:#f7f9fb">
+  <p style="margin:0 0 6px;font-weight:600;color:#1a1a1a">If you have a minute, I'd really appreciate your feedback.</p>
+  <p style="margin:0 0 12px;color:#555;font-size:14px">It's how I find out whether this is actually helping people, which is the whole reason it exists. Completely optional. One tap is plenty, and a sentence is a gift.</p>
+  ${btn('nailed', 'It nailed it', '#1f7a5a')}${btn('close', 'Close, but&hellip;', '#8a6d1f')}${btn('missed', 'It missed', '#9a3b3b')}
+</div>`;
 }
 
 const seo = publish.sourceRepoSeoSuggested;
@@ -228,6 +238,7 @@ ${scoreRows ? `<h3 style="margin:16px 0 6px">Scorecard</h3>
 <tbody>${scoreRows}</tbody></table>` : ''}
 ${links.length ? `<h3 style="margin:20px 0 6px">Links</h3><ul style="margin:4px 0;padding-left:20px">${links.join('')}</ul>` : ''}
 ${seoBlock}
+${feedbackBlock}
 ${attachments.length ? `<p style="margin:16px 0 0;color:#555">Mobile + desktop screenshots are attached.</p>` : ''}
 <p style="margin:20px 0 0;color:#555">If this was worth your time, <a href="https://github.com/stuinfla/Repo-Explainer">a star on GitHub</a> genuinely helps other people find it. Something off? <a href="https://github.com/stuinfla/Repo-Explainer/issues">Tell me</a> and I'll fix it.</p>
 <p style="margin:20px 0 0;color:#333">This page was researched, written, illustrated, and quality-graded by an agentic pipeline I built — and I read every piece of feedback personally. If you're building something and want a hand telling its story, just reply to this email.</p>
