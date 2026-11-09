@@ -4,6 +4,7 @@ Status: Accepted + Implemented. The full chain was tested end to end on 2026-11-
 every link, the deployed rate page in a real browser, ingest, the brief the agent receives, RuVector readback).
 One real hosted build on GitHub Actions was the last hop; its result is recorded at the bottom.
 Date: 2026-11-09
+Updated: 2026-11-09 (admin "is this helping people?" view, owner-test tagging, JSON-LD cleanup, Search Console; see the last section)
 Amends: ADR-0005 (the runner brief gains a reader-feedback block)
 Prior-decision check: AgentDB recall returned no decision on reader feedback; nothing to supersede.
 
@@ -51,3 +52,29 @@ Real hosted build on GitHub Actions (run 42685112000) for `sindresorhus/is-plain
   feedback block and the three buttons with `&amp;`-escaped hrefs; all 9 links returned 200 (3 rate links, live
   explainer, knowledge-pack zip, repo, issues, isovision.ai, explainmyrepo).
 - Not covered: the email rendered inside the Gmail app itself (HTML verified and rendered in Chrome).
+
+## Follow-ups shipped the same day (PRs #45, #46) — 2026-11-09
+
+**Admin "Is this helping people?" view** (`landing/netlify/lib/admin-insights.js`, `admin-stats.js`, `admin.html`;
+12 tests in `tests/admin-insights.test.mjs`, mutation-proved). The admin response now carries `insights`: plain-English
+summary lines, a 14-day funnel (visits, accepted requests, finished pages, ratings), our grader's score beside each
+reader's verdict (one-tap verdicts map to 92 / 70 / 35; classify fallback thresholds 85 / 55), and the exact lessons
+every new build is told (up to 8 complaints, 3 positives; same sanitising rules as `tools/feedback-lessons.mjs`).
+`selftest/` ratings never count. Also fixed: the repo views/clones tiles read the wrong keys (`views14d`/`clones14d`
+instead of `repoViews14d`/`repoClones14d`) and always showed a dash.
+
+**Owner test builds.** `build.js` appends ` [owner-test]` to the status-gist description when the submitter is in
+`OWNER_EMAILS` (default `sikerr@gmail.com,stuart@isovision.ai`). From then on they are left out of the funnel and
+hidden behind a "Show my own test builds" checkbox. Older owner builds (about 11 at the time) cannot be separated, because
+`status.json` never recorded the submitter; the page says roughly how many remain mixed in, estimated from the email ledger.
+
+**JSON-LD** (`tools/assemble-page.mjs`, #45). The structured data no longer asserts a price or platform we cannot know
+(`offers`, `operatingSystem` removed); `codeRepository` became `sameAs` (the valid schema.org field). A test proves a hostile
+repo name cannot close the script tag. It reaches existing pages on their next build.
+
+**Search Console.** `explainmyrepo.isovision.ai` is its own property (URL prefix; the root `https://isovision.ai/` property
+does not cover subdomains), auto-verified through Google Analytics under sikerr@gmail.com. `/sitemap.xml` submitted
+2026-11-09; Google reports Success, 1 page (the homepage; each explainer lives on its own site).
+
+**Still not proven end to end:** the admin page behind the real key on production (visitor, door and ledger numbers only
+exist in the Netlify runtime); the `[owner-test]` tag through a real `/build` POST; the email rendered inside the Gmail app.
