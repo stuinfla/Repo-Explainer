@@ -199,7 +199,7 @@ The bar these are calibrated against — five hand-built explainers, five comple
 | Knowledge base | RVF single-file vector DB (`@ruvector/rvf`) + `bge-small-en-v1.5` (local, 384-dim) |
 | Imagery | `gpt-image-2` / Grok (labeled, mechanism-bearing illustration) + bespoke hand-authored **animated SVG** diagrams (archetype-diverse, width-budgeted) |
 | Quality gate | Playwright dual-viewport render + GPT-5.6 vision grading (configurable) — every diagram at full size, animations at their worst sampled frame, ship floor enforced as a deploy rail |
-| Feedback + learning | Reader 1–100 grades beside machine grades on the admin; outcomes + grades feed an oracle-tier learning store |
+| Feedback + learning | A soft, optional one-tap ask in the delivery email (`rate.html`); reader comments are recalled into every later build's brief as untrusted data and mirrored to RuVector ([ADR-0017](docs/adr/0017-reader-feedback-loop.md)); reader grades sit beside machine grades on the admin |
 | Companions (local) | [HyperFrames](https://github.com/heygen-com/hyperframes) — the page's own gated assets re-rendered into a 30–40s trailer and a 10s social loop (16:9 + 9:16), locally, for ~$0 |
 | Hosting | Netlify by default (provider-agnostic adapter) |
 
