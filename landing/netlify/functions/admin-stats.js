@@ -9,10 +9,13 @@
 
 const { getStore, connectLambda } = require("@netlify/blobs");
 const crypto = require("node:crypto");
+const { buildInsights, parseRepo } = require("../lib/admin-insights.js");
 
 const REPO = "stuinfla/Repo-Explainer";
 const SITE_ID = "df4e3cd8-a71e-4668-8da7-c8d168edd341";
 const FEEDBACK_FORM_ID = "6a456c9b29c67900095b060f";
+// Emails whose builds are the owner's own tests (build.js tags those gists "[owner-test]").
+const OWNER_EMAILS = (process.env.OWNER_EMAILS || "sikerr@gmail.com,stuart@isovision.ai").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
 
 function json(status, body) {
   return {
@@ -88,8 +91,10 @@ async function listBuilds(token) {
     if (gists.length < 100) break;
   }
   const builds = await Promise.all(out.map(async (g) => {
+    const parsed = parseRepo(g.description);
     const base = {
-      repo: (g.description || "").replace("explainmyrepo build: ", ""),
+      repo: parsed.repo,
+      ownerTest: parsed.ownerTest,
       createdAt: g.created_at,
       updatedAt: g.updated_at,
       gistUrl: g.html_url,
@@ -169,7 +174,8 @@ async function readBuildRatings() {
         id: s.id,
         repo: s.data?.repo || null,
         buildId: s.data?.build_id || null,
-        score: s.data?.score != null ? Number(s.data.score) : null,
+        score: s.data?.score != null && s.data.score !== "" ? Number(s.data.score) : null,
+        verdict: s.data?.verdict || null,
         thoughts: s.data?.thoughts || null,
         email: s.data?.email || null,
         at: s.created_at,
@@ -279,8 +285,13 @@ exports.handler = async function (event) {
     mostRecentAttempt: newestBuild ? { repo: newestBuild.repo, status: newestBuild.status, at: newestBuild.createdAt } : null,
   };
 
+  const insights = buildInsights({
+    builds, ratings: buildRatings.ratings || [], traffic: trafficArr, doors: doors || {}, ledger: ledger || {}, ownerEmails: OWNER_EMAILS,
+  });
+
   return json(200, {
     generatedAt: new Date().toISOString(),
+    insights,
     doorStatus,
     feedback,
     buildRatings,

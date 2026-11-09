@@ -15,6 +15,8 @@
    ========================================================================== */
 
 const FREE_PER_EMAIL = 5;
+// The owner's own test builds are tagged in the status-gist description so the admin page can keep them out of real numbers.
+const OWNER_EMAILS = (process.env.OWNER_EMAILS || "sikerr@gmail.com,stuart@isovision.ai").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
 const REPO = "stuinfla/Repo-Explainer"; // where build-explainer.yml lives
 
 function json(statusCode, obj) {
@@ -180,7 +182,7 @@ exports.handler = async function (event) {
   try {
     const r = await fetch("https://api.github.com/gists", {
       method: "POST", headers: gh(token),
-      body: JSON.stringify({ description: "explainmyrepo build: " + fullName, public: true, files: { "status.json": { content: JSON.stringify(initial, null, 2) } } }),
+      body: JSON.stringify({ description: "explainmyrepo build: " + fullName + (OWNER_EMAILS.includes(email) ? " [owner-test]" : ""), public: true, files: { "status.json": { content: JSON.stringify(initial, null, 2) } } }),
     });
     if (!r.ok) { console.error("gist create failed", r.status, await r.text()); return json(502, { error: "Couldn't start the build tracker — try again." }); }
     gistId = (await r.json()).id;
