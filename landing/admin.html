@@ -50,6 +50,18 @@
     .tr.up { color: var(--mint); } .tr.down { color: #ff9d9d; } .tr.flat { color: var(--ink-faint); }
     .qline { font-size: 15px; color: var(--ink-2); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; }
     .qline b { color: var(--ink); }
+    .sum li { margin: 0 0 6px 18px; font-size: 15px; color: var(--ink-2); }
+    .funnel { display: grid; gap: 8px; }
+    .frow { display: grid; grid-template-columns: 210px 1fr 56px; gap: 12px; align-items: center; font-size: 13.5px; color: var(--ink-2); }
+    .fbar { height: 14px; border-radius: 7px; background: rgba(255,255,255,.06); overflow: hidden; }
+    .fbar i { display: block; height: 100%; background: var(--mint); border-radius: 7px; min-width: 2px; }
+    .frow b { text-align: right; color: var(--ink); font-family: var(--font-mono); }
+    .vchip { font-family: var(--font-mono); font-size: 11px; border-radius: 100px; padding: 2px 9px; }
+    .vchip.nailed { background: rgba(61,242,199,.14); color: var(--mint); }
+    .vchip.close { background: rgba(255,200,100,.14); color: #ffc978; }
+    .vchip.missed { background: rgba(255,110,110,.14); color: #ff9d9d; }
+    .adm-toggle { font-size: 13px; color: var(--ink-dim); margin: 0 0 8px; display: block; }
+    @media (max-width: 860px) { .frow { grid-template-columns: 1fr 1fr 48px; } .frow span { grid-column: 1 / -1; } }
     @media (max-width: 860px) { .tiles { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
@@ -71,6 +83,29 @@
     <div data-dash hidden>
       <div class="door-banner" data-door-banner></div>
       <div class="adm-sec" style="margin-top:0">
+        <h2>Is this helping people?</h2>
+        <div class="qline"><ul class="sum" data-summary style="list-style:disc;margin:0"></ul></div>
+      </div>
+
+      <div class="adm-sec">
+        <h2>The funnel, last 14 days</h2>
+        <div class="funnel" data-funnel></div>
+        <p class="note">Your own test builds are left out from now on (older ones cannot be told apart). Readers are never required to rate, so the last step is always small.</p>
+      </div>
+
+      <div class="adm-sec">
+        <h2>Our score vs the reader&rsquo;s</h2>
+        <div class="tbl-scroll"><table class="adm" data-compare></table></div>
+        <p class="note" data-compare-note></p>
+      </div>
+
+      <div class="adm-sec">
+        <h2>What every new build is told</h2>
+        <p class="qline" data-learned></p>
+        <p class="note">This is the reader feedback passed into each build&rsquo;s brief (as quoted opinion, never as instructions) and saved to RuVector when a build runs on this Mac.</p>
+      </div>
+
+      <div class="adm-sec">
         <h2>Today vs yesterday</h2>
         <div class="tiles" data-pulse></div>
       </div>
@@ -105,6 +140,7 @@
 
       <div class="adm-sec">
         <h2>Every build ever attempted</h2>
+        <label class="adm-toggle"><input type="checkbox" data-show-test /> Show my own test builds</label>
         <div class="tbl-scroll"><table class="adm" data-builds></table></div>
       </div>
 
@@ -161,7 +197,32 @@
       return Math.round(h / 24) + 'd ago';
     }
 
+    var showTest = false;
+    var lastData = null;
+    function renderInsights(ins) {
+      if (!ins) return;
+      $('[data-summary]').innerHTML = ins.summary.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('');
+      var top = Math.max.apply(null, ins.funnel.map(function (f) { return f.n; }).concat([1]));
+      $('[data-funnel]').innerHTML = ins.funnel.map(function (f) {
+        return '<div class="frow"><span>' + esc(f.label) + '</span><div class="fbar"><i style="width:' + Math.round(100 * f.n / top) + '%"></i></div><b>' + esc(f.n) + '</b></div>';
+      }).join('');
+      var rows = ins.ratings.compared;
+      $('[data-compare]').innerHTML = '<tr><th>page</th><th>our grader</th><th>reader says</th><th>comment</th><th>when</th></tr>'
+        + (rows.length ? rows.map(function (c) {
+            return '<tr><td>' + esc(c.repo) + '</td><td>' + (c.ours != null ? esc(c.ours) : '<span style="opacity:.5">not matched</span>') + '</td><td><span class="vchip ' + esc(c.verdict) + '">' + esc(c.verdict) + '</span> ~' + esc(c.theirs) + '</td><td>' + (c.comment ? esc(c.comment) : '<span style="opacity:.5">no comment</span>') + '</td><td class="nowrap">' + day(c.at) + '</td></tr>';
+          }).join('') : '<tr><td colspan="5">No reader ratings yet.</td></tr>');
+      var o = ins.owner;
+      $('[data-compare-note]').textContent = 'A one-tap verdict is shown as ~92 (nailed), ~70 (close), ~35 (missed). Reader ratings of the operator\'s own selftest repos are excluded.'
+        + (o.markedTestBuilds || o.unmarkedEstimate ? ' Your own test builds: ' + o.markedTestBuilds + ' tagged and hidden' + (o.unmarkedEstimate ? '; about ' + o.unmarkedEstimate + ' older ones from before tagging cannot be told apart and still count in the totals.' : '.') : '');
+      var L = ins.learned;
+      $('[data-learned]').innerHTML = (L.fix.length || L.keep.length)
+        ? (L.fix.length ? '<b>Fix:</b> ' + L.fix.map(function (l) { return esc(l.repo) + ' &mdash; &ldquo;' + esc(l.text) + '&rdquo;'; }).join(' &middot; ') : '')
+          + (L.keep.length ? (L.fix.length ? '<br><br>' : '') + '<b>Keep doing:</b> ' + L.keep.map(function (l) { return esc(l.repo) + ' &mdash; &ldquo;' + esc(l.text) + '&rdquo;'; }).join(' &middot; ') : '')
+        : 'Nothing yet: a rating only becomes a lesson when the reader leaves a comment.';
+    }
+
     function render(d) {
+      lastData = d;
       $('[data-gate]').hidden = true;
       $('[data-dash]').hidden = false;
       $('[data-stamp]').textContent = 'generated ' + d.generatedAt;
@@ -177,6 +238,8 @@
         banner.innerHTML = '<span class="dot live"></span><span><b>Hosted door is LIVE</b> and accepting builds.' +
           (ds.mostRecentAttempt ? ' Most recent attempt: ' + esc(ds.mostRecentAttempt.repo) + ' (' + esc(ds.mostRecentAttempt.status) + ', ' + timeAgo(ds.mostRecentAttempt.at) + ').' : '') + '</span>';
       }
+
+      renderInsights(d.insights);
 
       $('[data-pulse]').innerHTML = [
         ptile(d.deltas.siteViews, 'website views'),
@@ -275,18 +338,18 @@
 
       $('[data-builds]').innerHTML =
         '<tr><th>repo</th><th>status</th><th>why</th><th>score</th><th>theirs</th><th>worst axis</th><th>cost</th><th>page</th><th>submitted</th></tr>' +
-        d.builds.map((b) => {
+        d.builds.filter((b) => showTest || !b.ownerTest).map((b) => {
           const cls = b.status === 'done' ? 'done' : b.status === 'failed' ? 'failed' : 'other';
           const rr = ratingFor(b);
           const g = b.grades;
           // A build superseded by a later queue submission isn't a distinct failure — it's
           // bookkeeping. Mute it so the eye lands on failures that actually need attention.
           const superseded = /superseded|replaced in the queue/i.test(b.error || '');
-          return '<tr' + (superseded ? ' class="superseded"' : '') + '><td>' + esc(b.repo) + '</td>' +
+          return '<tr' + (superseded ? ' class="superseded"' : '') + '><td>' + esc(b.repo) + (b.ownerTest ? ' <span class="chip other">my test</span>' : '') + '</td>' +
             '<td><span class="chip ' + cls + '">' + esc(b.status) + '</span>' + (g && g.exemplary ? ' <span class="chip done">exemplary</span>' : '') + '</td>' +
             '<td class="err-cell">' + (b.error ? esc(b.error) : '—') + '</td>' +
             '<td>' + (g && g.overall != null ? esc(g.overall) : '—') + '</td>' +
-            '<td>' + (rr && rr.score != null ? '<span title="' + esc(rr.thoughts || '') + '">' + esc(rr.score) + (rr.thoughts ? ' 💬' : '') + '</span>' : '—') + '</td>' +
+            '<td>' + (rr ? '<span title="' + esc(rr.thoughts || '') + '">' + (rr.score != null ? esc(rr.score) : '') + (rr.verdict ? ' <span class="vchip ' + esc(rr.verdict) + '">' + esc(rr.verdict) + '</span>' : '') + (rr.thoughts ? ' 💬' : '') + '</span>' : '—') + '</td>' +
             '<td>' + (g && g.headline != null ? esc(g.headline) : '—') + '</td>' +
             '<td>' + (b.costUsd != null ? '$' + esc(b.costUsd) : '—') + '</td>' +
             '<td>' + (b.liveUrl ? '<a href="' + esc(b.liveUrl) + '" target="_blank" rel="noopener">' + esc(b.liveUrl.replace('https://','')) + '</a>' : '—') + '</td>' +
@@ -300,8 +363,8 @@
       $('[data-reach]').innerHTML = [
         tile(d.repo ? d.repo.stars : null, 'GitHub stars'),
         tile(d.repo ? d.repo.forks : null, 'forks'),
-        tile(d.traffic.views14d ? d.traffic.views14d.total + ' (' + d.traffic.views14d.uniques + ' uniq)' : null, 'repo views, 14d'),
-        tile(d.traffic.clones14d ? d.traffic.clones14d.total + ' (' + d.traffic.clones14d.uniques + ' uniq)' : null, 'repo clones, 14d'),
+        tile(d.traffic.repoViews14d ? d.traffic.repoViews14d.total + ' (' + d.traffic.repoViews14d.uniques + ' uniq)' : null, 'repo views, 14d'),
+        tile(d.traffic.repoClones14d ? d.traffic.repoClones14d.total + ' (' + d.traffic.repoClones14d.uniques + ' uniq)' : null, 'repo clones, 14d'),
         tile(d.npm.lastWeek, 'npm downloads, week'),
         tile(d.npm.lastMonth, 'npm downloads, month'),
         tile(d.repo ? d.repo.openIssues : null, 'open issues'),
@@ -309,6 +372,7 @@
       ].join('');
     }
 
+    $('[data-show-test]').addEventListener('change', function (e) { showTest = e.target.checked; if (lastData) render(lastData); });
     $('[data-key-go]').addEventListener('click', () => load($('[data-key-input]').value.trim()));
     $('[data-key-input]').addEventListener('keydown', (e) => { if (e.key === 'Enter') load($('[data-key-input]').value.trim()); });
     const saved = localStorage.getItem(KEY_STORE);
