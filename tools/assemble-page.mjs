@@ -411,11 +411,9 @@ function main() {
     description: seoDesc,
     url: canonical,
     applicationCategory: 'DeveloperApplication',
-    operatingSystem: 'Cross-platform',
     image: cardUrl,
     author: { '@type': 'Person', name: owner },
-    codeRepository: repoUrl,
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    sameAs: repoUrl,
   };
   const jsonLdScript = JSON.stringify(jsonLd, null, 2).replace(/</g, '\\u003c');
 

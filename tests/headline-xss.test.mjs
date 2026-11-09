@@ -43,6 +43,8 @@ function xssFixture() {
     visuals: {
       hero: { file: heroFile },
       architectureDiagram: { svgPath: archFile, altText: 'architecture' },
+      // the page image contract now requires at least one generated problem/use-case image
+      sections: [{ id: 'problem', file: heroFile, alt: 'the problem' }],
     },
     brand: {
       socialCard: { file: cardFile },
@@ -66,3 +68,28 @@ test(
       'an event-handler attribute authored into content must never reach the rendered page verbatim');
   }
 );
+
+// JSON-LD block (SEO): content from the repo must never break out of its <script> tag, and the block must not
+// assert facts we cannot know for a repo we do not own (price, platform).
+test('JSON-LD: hostile repo name cannot close the script tag; no invented price or platform; valid SoftwareApplication', () => {
+  const dir = xssFixture();
+  const bj = JSON.parse(fs.readFileSync(path.join(dir, 'build.json'), 'utf8'));
+  const hostile = 'x</script><script>window.__LD_XSS=1</script>';
+  bj.repo.name = hostile;
+  fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify(bj));
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'tools', 'assemble-page.mjs'), dir], { encoding: 'utf8' });
+  assert.equal(r.status, 0, `fixture must render cleanly (got exit ${r.status}: ${r.stdout} ${r.stderr})`);
+  const html = fs.readFileSync(path.join(dir, 'site', 'index.html'), 'utf8');
+  const open = html.indexOf('<script type="application/ld+json">');
+  assert.ok(open >= 0, 'page carries a JSON-LD block');
+  const close = html.indexOf('</script>', open);
+  const body = html.slice(open + '<script type="application/ld+json">'.length, close);
+  assert.doesNotMatch(body, /<script|<\/script/i, 'nothing inside the block can open or close a script tag');
+  const ld = JSON.parse(body);
+  assert.equal(ld['@type'], 'SoftwareApplication');
+  assert.ok(JSON.stringify(ld).includes(hostile), 'the hostile name round-trips as data, unchanged');
+  assert.equal(ld.offers, undefined, 'no invented price');
+  assert.equal(ld.operatingSystem, undefined, 'no invented platform');
+  assert.equal(ld.codeRepository, undefined, 'codeRepository is not a SoftwareApplication property');
+  assert.ok(ld.sameAs, 'the repo link is carried as sameAs');
+});
