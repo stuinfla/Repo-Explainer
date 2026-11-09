@@ -382,6 +382,18 @@ if (!JSON.parse(fs.readFileSync(buildJsonPath, 'utf8')).concept) {
   }
 }
 
+// READER FEEDBACK → THE BRIEF (2026-11-09). Ratings were written but never read back, so the factory
+// could not improve from what real people said. Distil the build-rating form into a prompt-safe block
+// (untrusted data, capped, framed) and append it to the brief. Fail-open: no feedback never blocks a build.
+let feedbackBlock = '';
+try {
+  const fbPath = path.join(buildDir, 'reader-feedback.txt');
+  const fb = spawnSync(process.execPath, [path.join(REPO_ROOT, 'tools', 'feedback-lessons.mjs'), fbPath],
+    { cwd: REPO_ROOT, env: process.env, encoding: 'utf8', timeout: 60_000 });
+  log(`reader feedback: ${(fb.stdout || '').trim().slice(0, 240) || `no output (exit ${fb.status})`}`);
+  if (fs.existsSync(fbPath)) feedbackBlock = `\n\n${fs.readFileSync(fbPath, 'utf8').trim()}`;
+} catch (e) { log(`reader feedback skipped: ${e.message}`); }
+
 const prompt = `Use the explainmyrepo skill (skills/explainmyrepo/SKILL.md is the brain — read it, follow it) to build a bespoke explainer for this repo:
 
 TOKEN ECONOMY: skills/explainmyrepo/TOOLS-CONTRACT.md is the complete toolbox reference (every tool's own header docs: usage, flags, gotchas). Read THAT instead of tool source files — open a tool's source ONLY if the contract is genuinely ambiguous about something you need. Re-deriving tool interfaces from source has measured at ~25% of build spend; it is waste.
@@ -402,6 +414,7 @@ Two consequences for how you work. FIRST: there is no post-cap rescue dance any 
 You have an approximate budget of ${budgetMin} minutes and $${budgetUsd}. Track your own elapsed time and cost as you work. This repo's actual size/complexity is unknown to me in advance — YOU are the one who discovers it by reading the repo, so budget your own effort accordingly: for a small repo, take your time and polish; for a large/deep monorepo, work faster and be willing to cap exhaustiveness (e.g. don't try to full-text-sweep every file in a 10,000-file repo — sample the important ones: READMEs, top-level docs, the most-referenced components) rather than trying to be exhaustive and running out of budget.
 
 CRITICAL — never fail silently (this is INV-04 in the skill, restated because it is the single most important rule for this run): if a tool fails, or a repo's structure breaks an assumption (e.g. the dependency graph comes back empty, or the repo is unusually deep/large), do NOT just crash. STOP, THINK about why, and try a reasonable workaround — always WITHIN the pinned repo; the SOURCE-IDENTITY LAW above is never workaroundable — (e.g. hand-write a minimal-but-honest architecture note if the automated extractor genuinely cannot produce one for this repo's structure) before giving up. If you truly cannot produce a working page, say EXACTLY why in plain language as your final message — a specific, honest reason a human could act on, never a bare stack trace or a vague "something went wrong."
+${feedbackBlock}
 
 At the end, print your final status as the LAST line of your response in this exact form (nothing after it):
 RESULT: {"ok": true, "liveUrl": "<url>"}   — on success
