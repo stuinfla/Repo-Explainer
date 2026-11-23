@@ -208,9 +208,30 @@ async function readTraffic(days) {
 // browsers that ran the script, so most robots are not counted. Days before the beacon shipped
 // have no `sites` data, so `since` tells the owner where the record actually starts.
 // The aggregation itself lives in ../lib/leaderboard.js (pure, unit-tested).
+// The universe = every live explainer site on the Netlify account (site name "<slug>-explainer"),
+// so pages nobody has visited still appear at 0. Falls back to "only slugs with visits" if the
+// Netlify token is missing or the call fails (the page says which).
+async function listLiveExplainers() {
+  const npat = process.env.NETLIFY_API_TOKEN;
+  if (!npat) return null;
+  const slugs = [];
+  for (let page = 1; page <= 10; page++) {
+    const r = await fetch(`https://api.netlify.com/api/v1/sites?filter=all&per_page=100&page=${page}`, { headers: { Authorization: `Bearer ${npat}` } });
+    if (!r.ok) return null;
+    const rows = await r.json();
+    for (const s of rows) if (/-explainer$/.test(s.name || "")) slugs.push(s.name.replace(/-explainer$/, ""));
+    if (rows.length < 100) break;
+  }
+  return slugs.length ? slugs : null;
+}
+
 async function readLeaderboard(topN) {
-  try { return await readLeaderboardFrom(getStore("traffic"), topN); }
-  catch (e) { return { unavailable: String((e && e.message) || e) }; }
+  try {
+    const universe = await listLiveExplainers().catch(() => null);
+    const lb = await readLeaderboardFrom(getStore("traffic"), topN, new Date(), universe);
+    lb.universeKnown = !!universe;
+    return lb;
+  } catch (e) { return { unavailable: String((e && e.message) || e) }; }
 }
 
 const delta = (today, yesterday) => ({

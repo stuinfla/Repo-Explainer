@@ -57,3 +57,13 @@ test('a store failure degrades to {unavailable}, never throws', async () => {
   const lb = await readLeaderboard({ list: async () => { throw new Error('boom'); } }, 15, NOW);
   assert.equal(lb.unavailable, 'boom');
 });
+
+test('with a universe: every live explainer is listed (zero-filled), strays are ignored, counts reported', async () => {
+  const lb = await readLeaderboard(fakeStore(data), 15, NOW, ['alpha', 'beta', 'quiet-one', 'quiet-two']);
+  // 'gamma' and 'oldie' are not live explainers -> ignored; quiet ones appear at 0, alphabetical
+  assert.deepEqual(lb.week.map((r) => [r.slug, r.people]), [['beta', 3], ['alpha', 2], ['quiet-one', 0], ['quiet-two', 0]]);
+  assert.equal(lb.weekTotal, 4);
+  assert.equal(lb.weekActive, 2);
+  assert.equal(lb.day.find((r) => r.slug === 'quiet-one').people, 0);
+  assert.equal(lb.allActive, 2);
+});

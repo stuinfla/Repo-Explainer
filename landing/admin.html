@@ -275,7 +275,11 @@
               var url = 'https://' + encodeURIComponent(r.slug) + '-explainer.netlify.app';
               return '<tr><td>' + (i + 1) + '</td><td><a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(r.slug) + '</a></td><td><b>' + esc(r.people) + '</b></td><td>' + esc(r.views) + '</td></tr>';
             }).join('') : '<tr><td colspan="4">No visits recorded in this window yet.</td></tr>');
-        $('[data-lb-note]').textContent = 'People = first-time browsers per explainer; page views = every load. Only browsers that run the page script are counted, so most robots are left out. '
+        var tot = lb[window.lbWindow + 'Total'], act = lb[window.lbWindow + 'Active'];
+        $('[data-lb-note]').textContent = (lb.universeKnown
+            ? 'Showing the top ' + rows.length + ' of ' + tot + ' live explainers; ' + act + ' of them ' + (act === 1 ? 'has' : 'have') + ' any recorded visit in this period. '
+            : 'Could not load the list of live explainers, so only explainers with visits are shown. ')
+          + 'People = first-time browsers per explainer; page views = every load. Only browsers that run the page script are counted, so most robots are left out. '
           + (lb.since ? 'Counting started ' + lb.since + '; older days are not available. Each day ends at 7 PM Eastern (8 PM in summer).' : 'Nothing counted yet: only explainers built after the tracker shipped report here.');
       }
       document.querySelectorAll('[data-lb]').forEach(function (b) {
