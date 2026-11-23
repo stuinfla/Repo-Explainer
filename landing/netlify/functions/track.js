@@ -55,6 +55,21 @@ exports.handler = async function (event) {
     const key = "daily:" + day;
     const cur = (await store.get(key, { type: "json" })) || { views: 0, newVisitors: 0, paths: {}, referrers: {} };
 
+    // Explainer-page beacon (b.s = repo slug): count per explainer in cur.sites and return, so
+    // explainer views never inflate the landing page's own views / paths / referrers.
+    if (b.s) {
+      const slug = String(b.s).toLowerCase().replace(/[^a-z0-9._-]/g, "").slice(0, 60);
+      if (slug) {
+        cur.sites = cur.sites || {};
+        const s = cur.sites[slug] || { views: 0, newVisitors: 0 };
+        s.views += 1;
+        if (b.n) s.newVisitors += 1;
+        cur.sites[slug] = s;
+        await store.setJSON(key, cur);
+      }
+      return { statusCode: 204, headers: cors(), body: "" };
+    }
+
     cur.views += 1;
     if (b.n) cur.newVisitors += 1;
 

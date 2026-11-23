@@ -782,6 +782,20 @@ ${footer}
     });
   })();
   </script>
+  <script>
+  // First-party view beacon (no cookies, no IPs, no third party) -> the landing site's /track
+  // counter, tagged with this explainer's slug. Counts only browsers that run JS, so most robots
+  // are not counted. Analytics must never break the page: every failure is swallowed.
+  (function () { try {
+    if (navigator.webdriver) return;
+    var k = 'emr-seen-' + ${JSON.stringify(slug)};
+    var n = localStorage.getItem(k) ? 0 : 1; localStorage.setItem(k, '1');
+    var payload = JSON.stringify({ s: ${JSON.stringify(slug)}, n: n, r: document.referrer || '' });
+    var url = 'https://explainmyrepo.isovision.ai/.netlify/functions/track';
+    if (navigator.sendBeacon) navigator.sendBeacon(url, payload);
+    else fetch(url, { method: 'POST', body: payload, keepalive: true, mode: 'no-cors' });
+  } catch (e) { /* ignore */ } })();
+  </script>
 </body>
 </html>
 `;
