@@ -10,6 +10,7 @@
 const { getStore, connectLambda } = require("@netlify/blobs");
 const crypto = require("node:crypto");
 const { buildInsights, parseRepo } = require("../lib/admin-insights.js");
+const { readLeaderboard: readLeaderboardFrom } = require("../lib/leaderboard.js");
 
 const REPO = "stuinfla/Repo-Explainer";
 const SITE_ID = "df4e3cd8-a71e-4668-8da7-c8d168edd341";
@@ -200,6 +201,18 @@ async function readTraffic(days) {
   }
 }
 
+// Explainer-page leaderboard: the most-visited explainers by live people, for today / the last
+// 7 days / the last 30 days / all time. Source is the per-slug counters track.js keeps inside each
+// daily blob (`sites`), written by the beacon on every new explainer page. "people" = first-visit
+// browsers (a per-slug localStorage flag), "views" = every page load; both come only from
+// browsers that ran the script, so most robots are not counted. Days before the beacon shipped
+// have no `sites` data, so `since` tells the owner where the record actually starts.
+// The aggregation itself lives in ../lib/leaderboard.js (pure, unit-tested).
+async function readLeaderboard(topN) {
+  try { return await readLeaderboardFrom(getStore("traffic"), topN); }
+  catch (e) { return { unavailable: String((e && e.message) || e) }; }
+}
+
 const delta = (today, yesterday) => ({
   today, yesterday,
   trend: today > yesterday ? "up" : today < yesterday ? "down" : "flat",
@@ -238,12 +251,13 @@ exports.handler = async function (event) {
   const ledgerId = process.env.EMAIL_LEDGER_GIST_ID;
   const counterId = process.env.GLOBAL_COUNTER_GIST_ID;
 
-  const [ledger, counter, doors, builds, traffic, feedback, buildRatings, repoResp, viewsResp, clonesResp, npmRange] = await Promise.all([
+  const [ledger, counter, doors, builds, traffic, leaderboard, feedback, buildRatings, repoResp, viewsResp, clonesResp, npmRange] = await Promise.all([
     ledgerId ? readGist(token, ledgerId, "ledger.json") : null,
     counterId ? readGist(token, counterId, "counter.json") : null,
     counterId ? readGist(token, counterId, "doors.json") : null,
     listBuilds(token),
     readTraffic(14),
+    readLeaderboard(15),
     readSiteFeedback(),
     readBuildRatings(),
     fetch(`https://api.github.com/repos/${REPO}`, { headers: gh(token) }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
@@ -293,6 +307,7 @@ exports.handler = async function (event) {
     generatedAt: new Date().toISOString(),
     insights,
     doorStatus,
+    leaderboard,
     feedback,
     buildRatings,
     meter: counter || null,

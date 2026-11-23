@@ -60,6 +60,9 @@
     .vchip.nailed { background: rgba(61,242,199,.14); color: var(--mint); }
     .vchip.close { background: rgba(255,200,100,.14); color: #ffc978; }
     .vchip.missed { background: rgba(255,110,110,.14); color: #ff9d9d; }
+    .lb-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 10px; }
+    .lb-tabs .btn { padding: 6px 14px; font-size: 13px; }
+    .lb-tabs .btn.on { background: rgba(61,242,199,.14); color: var(--mint); }
     .adm-toggle { font-size: 13px; color: var(--ink-dim); margin: 0 0 8px; display: block; }
     @media (max-width: 860px) { .frow { grid-template-columns: 1fr 1fr 48px; } .frow span { grid-column: 1 / -1; } }
     @media (max-width: 860px) { .tiles { grid-template-columns: 1fr 1fr; } }
@@ -103,6 +106,18 @@
         <h2>What every new build is told</h2>
         <p class="qline" data-learned></p>
         <p class="note">This is the reader feedback passed into each build&rsquo;s brief (as quoted opinion, never as instructions) and saved to RuVector when a build runs on this Mac.</p>
+      </div>
+
+      <div class="adm-sec">
+        <h2>Explainer leaderboard &mdash; top 15 by live people</h2>
+        <div class="lb-tabs" data-lb-tabs role="tablist">
+          <button type="button" class="btn btn-ghost" data-lb="day">Today</button>
+          <button type="button" class="btn btn-ghost" data-lb="week">7 days</button>
+          <button type="button" class="btn btn-ghost" data-lb="month">30 days</button>
+          <button type="button" class="btn btn-ghost" data-lb="all">All time</button>
+        </div>
+        <div class="tbl-scroll"><table class="adm" data-leaderboard></table></div>
+        <p class="note" data-lb-note></p>
       </div>
 
       <div class="adm-sec">
@@ -240,6 +255,30 @@
       }
 
       renderInsights(d.insights);
+
+      // Explainer leaderboard — top 15 by live people (first-visit browsers), per window.
+      var lb = d.leaderboard || {};
+      window.lbWindow = window.lbWindow || 'week';
+      function drawLeaderboard() {
+        document.querySelectorAll('[data-lb]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-lb') === window.lbWindow); });
+        if (lb.unavailable) {
+          $('[data-leaderboard]').innerHTML = '<tr><td>Leaderboard unavailable: ' + esc(lb.unavailable) + '</td></tr>';
+          $('[data-lb-note]').textContent = '';
+          return;
+        }
+        var rows = lb[window.lbWindow] || [];
+        $('[data-leaderboard]').innerHTML = '<tr><th>#</th><th>explainer</th><th>people</th><th>page views</th></tr>'
+          + (rows.length ? rows.map(function (r, i) {
+              var url = 'https://' + encodeURIComponent(r.slug) + '-explainer.netlify.app';
+              return '<tr><td>' + (i + 1) + '</td><td><a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(r.slug) + '</a></td><td><b>' + esc(r.people) + '</b></td><td>' + esc(r.views) + '</td></tr>';
+            }).join('') : '<tr><td colspan="4">No visits recorded in this window yet.</td></tr>');
+        $('[data-lb-note]').textContent = 'People = first-time browsers per explainer; page views = every load. Only browsers that run the page script are counted, so most robots are left out. '
+          + (lb.since ? 'Counting started ' + lb.since + ' (UTC); older days are not available.' : 'Nothing counted yet: only explainers built after the tracker shipped report here.');
+      }
+      document.querySelectorAll('[data-lb]').forEach(function (b) {
+        b.onclick = function () { window.lbWindow = b.getAttribute('data-lb'); drawLeaderboard(); };
+      });
+      drawLeaderboard();
 
       $('[data-pulse]').innerHTML = [
         ptile(d.deltas.siteViews, 'website views'),
