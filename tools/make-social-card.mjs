@@ -31,6 +31,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import sharp from 'sharp';
 
 const HEX = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 const RGB = /^rgba?\(/i;
@@ -106,7 +107,50 @@ function mergeSocialCard(buildDir, slot) {
   fs.writeFileSync(bj, JSON.stringify(ctx, null, 2) + '\n');
 }
 
-function main() {
+// ── sharp fallback when ImageMagick is absent ─────────────────────────────────────────────────
+// Same composed result as the magick path: hero cover-cropped to 1200×630, a legibility scrim
+// gradient from the brand colour, the repo-name kicker top-left, and the wrapped tagline
+// bottom-left. The text is an SVG layer rendered by libvips/librsvg (DejaVu Sans is installed).
+function escapeXml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function wrapText(text, maxChars) {
+  const words = String(text).split(/\s+/).filter(Boolean);
+  const lines = [];
+  let cur = '';
+  for (const w of words) {
+    if (cur && (cur + ' ' + w).length > maxChars) { lines.push(cur); cur = w; }
+    else cur = cur ? `${cur} ${w}` : w;
+  }
+  if (cur) lines.push(cur);
+  return lines.slice(0, 4);
+}
+async function makeCardWithSharp(hero, out, { tagline, repoName, base, accent, textColor }) {
+  const rgb = hexToRgb(base);
+  const [r, g, b] = rgb || [22, 24, 40];
+  const lines = wrapText(tagline, 34);
+  const lineEls = lines.map((ln, i) =>
+    `<text x="${PAD}" y="${CARD_H - 72 - (lines.length - 1 - i) * 68}" font-family="DejaVu Sans, Ubuntu, sans-serif" font-size="58" font-weight="bold" fill="${textColor}">${escapeXml(ln)}</text>`).join('');
+  const kicker = repoName
+    ? `<text x="${PAD}" y="80" font-family="DejaVu Sans, Ubuntu, sans-serif" font-size="34" font-weight="bold" fill="${accent}">${escapeXml(repoName)}</text>`
+    : '';
+  const overlay = `<svg xmlns="http://www.w3.org/2000/svg" width="${CARD_W}" height="${CARD_H}">`
+    + `<defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1">`
+    + `<stop offset="0" stop-color="rgba(${r},${g},${b},0)"/>`
+    + `<stop offset="0.4" stop-color="rgba(${r},${g},${b},0.35)"/>`
+    + `<stop offset="1" stop-color="rgba(${r},${g},${b},0.95)"/>`
+    + `</linearGradient></defs>`
+    + `<rect width="${CARD_W}" height="${CARD_H}" fill="url(#s)"/>${kicker}${lineEls}</svg>`;
+  await sharp(hero).resize(CARD_W, CARD_H, { fit: 'cover' })
+    .composite([{ input: Buffer.from(overlay), top: 0, left: 0 }])
+    .png().toFile(out);
+  const meta = await sharp(out).metadata();
+  if (meta.width !== CARD_W || meta.height !== CARD_H) {
+    throw new Error(`social card is ${meta.width}x${meta.height}, expected ${CARD_W}x${CARD_H}`);
+  }
+}
+
+async function main() {
   const buildDir = process.argv[2];
   if (!buildDir) {
     emit({ ok: false, outputs: {}, error: 'usage: node tools/make-social-card.mjs <build-dir>' });
@@ -116,7 +160,7 @@ function main() {
   let stage = null;
   try {
     const bin = findBin();
-    if (!bin) throw new Error('ImageMagick not found — need `magick` (v7) or `convert` (v6) on PATH');
+    if (!bin) log('ImageMagick not found — using the sharp fallback renderer.');
 
     const ctx = readCtx(buildDir);
     const hero = resolveHero(buildDir, ctx);
@@ -145,40 +189,47 @@ function main() {
       ? ctx.understanding.repoName.trim()
       : (typeof ctx?.repo?.name === 'string' && ctx.repo.name.trim() ? ctx.repo.name.trim() : null);
 
-    const font = pickFont();
     const assets = path.join(buildDir, 'assets');
     fs.mkdirSync(assets, { recursive: true });
-    stage = fs.mkdtempSync(path.join(os.tmpdir(), 'social-card-'));
-    const baseImg = path.join(stage, 'base.png');
-    const tagImg = path.join(stage, 'tag.png');
     const out = path.join(assets, 'social-card.png');
+    let dims;
 
-    // 1) Hero full-bleed cover + scrim, with the repo-name kicker baked into the top-left.
-    const baseArgs = [hero, '-resize', `${CARD_W}x${CARD_H}^`, '-gravity', 'center', '-extent', `${CARD_W}x${CARD_H}`,
-      '(', '-size', `${CARD_W}x${CARD_H}`, scrim, ')', '-composite'];
-    if (repoName) {
-      baseArgs.push('-gravity', 'NorthWest', '-fill', accent);
-      if (font) baseArgs.push('-font', font);
-      baseArgs.push('-pointsize', '34', '-annotate', `+${PAD}+54`, repoName);
+    if (bin) {
+      stage = fs.mkdtempSync(path.join(os.tmpdir(), 'social-card-'));
+      const baseImg = path.join(stage, 'base.png');
+      const tagImg = path.join(stage, 'tag.png');
+
+      // 1) Hero full-bleed cover + scrim, with the repo-name kicker baked into the top-left.
+      const baseArgs = [hero, '-resize', `${CARD_W}x${CARD_H}^`, '-gravity', 'center', '-extent', `${CARD_W}x${CARD_H}`,
+        '(', '-size', `${CARD_W}x${CARD_H}`, scrim, ')', '-composite'];
+      const font = pickFont();
+      if (repoName) {
+        baseArgs.push('-gravity', 'NorthWest', '-fill', accent);
+        if (font) baseArgs.push('-font', font);
+        baseArgs.push('-pointsize', '34', '-annotate', `+${PAD}+54`, repoName);
+      }
+      baseArgs.push(baseImg);
+      magick(bin, baseArgs);
+
+      // 2) The tagline as a wrapped caption layer (auto-wrapped at the text column width).
+      const tagArgs = ['-background', 'none', '-fill', textColor];
+      if (font) tagArgs.push('-font', font);
+      tagArgs.push('-size', `${CARD_W - PAD * 2}x`, '-gravity', 'West', '-pointsize', '58', `caption:${tagline}`, tagImg);
+      magick(bin, tagArgs);
+
+      // 3) Composite the tagline into the lower-left and write the final card.
+      magick(bin, [baseImg, tagImg, '-gravity', 'SouthWest', '-geometry', `+${PAD}+72`, '-composite', out]);
+
+      if (!fs.existsSync(out) || fs.statSync(out).size === 0) throw new Error(`social card not written: ${out}`);
+      // `magick identify …` (v7) vs the standalone `identify` (v6).
+      dims = (bin === 'magick'
+        ? execFileSync(bin, ['identify', '-format', '%wx%h', out], { stdio: ['ignore', 'pipe', 'pipe'] })
+        : execFileSync('identify', ['-format', '%wx%h', out], { stdio: ['ignore', 'pipe', 'pipe'] })).toString().trim();
+      if (dims !== `${CARD_W}x${CARD_H}`) throw new Error(`social card is ${dims}, expected ${CARD_W}x${CARD_H}`);
+    } else {
+      await makeCardWithSharp(hero, out, { tagline, repoName, base, accent, textColor });
+      dims = `${CARD_W}x${CARD_H}`;
     }
-    baseArgs.push(baseImg);
-    magick(bin, baseArgs);
-
-    // 2) The tagline as a wrapped caption layer (auto-wrapped at the text column width).
-    const tagArgs = ['-background', 'none', '-fill', textColor];
-    if (font) tagArgs.push('-font', font);
-    tagArgs.push('-size', `${CARD_W - PAD * 2}x`, '-gravity', 'West', '-pointsize', '58', `caption:${tagline}`, tagImg);
-    magick(bin, tagArgs);
-
-    // 3) Composite the tagline into the lower-left and write the final card.
-    magick(bin, [baseImg, tagImg, '-gravity', 'SouthWest', '-geometry', `+${PAD}+72`, '-composite', out]);
-
-    if (!fs.existsSync(out) || fs.statSync(out).size === 0) throw new Error(`social card not written: ${out}`);
-    // `magick identify …` (v7) vs the standalone `identify` (v6).
-    const dims = (bin === 'magick'
-      ? execFileSync(bin, ['identify', '-format', '%wx%h', out], { stdio: ['ignore', 'pipe', 'pipe'] })
-      : execFileSync('identify', ['-format', '%wx%h', out], { stdio: ['ignore', 'pipe', 'pipe'] })).toString().trim();
-    if (dims !== `${CARD_W}x${CARD_H}`) throw new Error(`social card is ${dims}, expected ${CARD_W}x${CARD_H}`);
 
     const slot = { px: `${CARD_W}x${CARD_H}`, file: out, tagline };
     mergeSocialCard(buildDir, slot);
